@@ -1,15 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "#/components/page-placeholder";
+import { AutopilotLog } from "#/components/autopilot-log";
 
 export const Route = createFileRoute("/dashboard/autopilot")({
-	component: AutopilotLog,
+	component: AutopilotPage,
 });
 
-function AutopilotLog() {
+function AutopilotPage() {
 	return (
-		<PagePlaceholder
-			description="Everything the AI did without human intervention: docs ingested, classifications assigned, entries filed, statements reconciled. Spot-check here to tune autonomy thresholds and keep a defensible record for CBP."
-			title="Autopilot Log"
-		/>
+		<div className="p-4 pt-0">
+			<AutopilotLog />
+		</div>
 	);
 }

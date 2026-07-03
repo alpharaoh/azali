@@ -1,0 +1,637 @@
+import {
+	ArrowsRotateRight,
+	CircleInfo,
+	FileArrowUp,
+	FileText,
+	Flag,
+	Funnel,
+	Tag,
+} from "@gravity-ui/icons";
+import {
+	Button,
+	Chip,
+	Dropdown,
+	Label,
+	ListBox,
+	Pagination,
+	SearchField,
+	Separator,
+	Tooltip,
+} from "@heroui/react";
+import type { DataGridColumn } from "@heroui-pro/react";
+import {
+	BarChart,
+	ChartTooltip,
+	DataGrid,
+	InlineSelect,
+	PieChart,
+	TrendChip,
+	Widget,
+} from "@heroui-pro/react";
+import { format, formatDistanceToNowStrict, subDays, subHours } from "date-fns";
+import type { ComponentType, SVGProps } from "react";
+import { useMemo, useState } from "react";
+import type { SortDescriptor } from "react-aria-components";
+
+import type { AutopilotAction, AutopilotActionType } from "#/data/autopilot";
+import { autopilotActions, dailyActionTotals } from "#/data/autopilot";
+
+/* -------------------------------------------------------------------------------------------------
+ * Meta
+ * -----------------------------------------------------------------------------------------------*/
+const typeMeta: Record<
+	AutopilotActionType,
+	{
+		color: string;
+		icon: ComponentType<SVGProps<SVGSVGElement>>;
+		label: string;
+	}
+> = {
+	classification: {
+		color: "var(--chart-1)",
+		icon: Tag,
+		label: "Classification",
+	},
+	extraction: { color: "var(--chart-2)", icon: FileText, label: "Extraction" },
+	filing: { color: "var(--chart-3)", icon: FileArrowUp, label: "Filing" },
+	reconciliation: {
+		color: "var(--chart-4)",
+		icon: ArrowsRotateRight,
+		label: "Reconciliation",
+	},
+};
+
+const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
+
+const overviewStats = [
+	{
+		change: "+18%",
+		title: "Actions Today",
+		trend: "up" as const,
+		value: "342",
+	},
+	{
+		change: "+0.8%",
+		info: "Share of all work completed without a human touch. The rest landed in the Review Queue.",
+		title: "Auto-Handled Rate",
+		trend: "up" as const,
+		value: "96.4%",
+	},
+	{
+		change: "+6",
+		title: "Entries Filed",
+		trend: "neutral" as const,
+		value: "28",
+	},
+	{
+		change: "+0.3%",
+		info: "Accuracy of autopilot decisions your team spot-checked. This number is what justifies raising the autonomy threshold in Settings.",
+		title: "Spot-Check Accuracy",
+		trend: "up" as const,
+		value: "99.2%",
+	},
+];
+
+// Trailing seven days ending today, so the chart never goes stale.
+const dailyActions = dailyActionTotals.map((totals, index) => ({
+	...totals,
+	day: format(subDays(new Date(), dailyActionTotals.length - 1 - index), "EEE"),
+}));
+
+const weeklyByType = typeIds.map((type) => ({
+	color: typeMeta[type].color,
+	name: typeMeta[type].label,
+	value: dailyActionTotals.reduce((sum, day) => sum + day[type], 0),
+}));
+
+function occurredAgo(hoursAgo: number) {
+	return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
+		addSuffix: true,
+	});
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Actions table
+ * -----------------------------------------------------------------------------------------------*/
+const DEFAULT_ROWS_PER_PAGE = 10;
+
+const actionColumns: DataGridColumn<AutopilotAction>[] = [
+	{
+		accessorKey: "title",
+		cell: (action) => {
+			const Icon = typeMeta[action.type].icon;
+
+			return (
+				<div className="flex min-w-0 items-start gap-2.5">
+					<Icon className="text-muted mt-0.5 size-4 shrink-0" />
+					<div className="flex min-w-0 flex-col">
+						<span className="text-foreground truncate text-sm font-medium">
+							{action.title}
+						</span>
+						{action.detail ? (
+							<span className="text-muted truncate text-xs">
+								{action.detail}
+							</span>
+						) : null}
+					</div>
+				</div>
+			);
+		},
+		header: "Action",
+		id: "title",
+		isRowHeader: true,
+		minWidth: 340,
+	},
+	{
+		accessorKey: "type",
+		allowsSorting: true,
+		cell: (action) => (
+			<span className="inline-flex items-center gap-1.5 text-sm">
+				<span
+					className="size-1.5 rounded-full"
+					style={{ backgroundColor: typeMeta[action.type].color }}
+				/>
+				{typeMeta[action.type].label}
+			</span>
+		),
+		header: "Type",
+		id: "type",
+		minWidth: 140,
+	},
+	{
+		accessorKey: "client",
+		allowsSorting: true,
+		cell: (action) => (
+			<div className="flex flex-col">
+				<span className="text-sm">{action.client}</span>
+				<span className="text-muted text-xs tabular-nums">
+					{action.reference}
+				</span>
+			</div>
+		),
+		header: "Client",
+		id: "client",
+		minWidth: 180,
+	},
+	{
+		accessorKey: "confidence",
+		allowsSorting: true,
+		cell: (action) => (
+			<Chip
+				color={action.confidence >= 0.95 ? "success" : "warning"}
+				size="sm"
+				variant="soft"
+			>
+				<Chip.Label className="tabular-nums">
+					{Math.round(action.confidence * 100)}%
+				</Chip.Label>
+			</Chip>
+		),
+		header: "Confidence",
+		id: "confidence",
+		minWidth: 110,
+	},
+	{
+		accessorKey: "occurredHoursAgo",
+		allowsSorting: true,
+		cell: (action) => (
+			<span className="text-muted whitespace-nowrap text-sm">
+				{occurredAgo(action.occurredHoursAgo)}
+			</span>
+		),
+		header: "When",
+		id: "when",
+		minWidth: 120,
+	},
+	{
+		align: "end",
+		cell: () => (
+			<Tooltip>
+				<Button
+					isIconOnly
+					aria-label="Flag for review"
+					className="text-muted hover:text-foreground"
+					size="sm"
+					variant="ghost"
+				>
+					<Flag className="size-3.5" />
+				</Button>
+				<Tooltip.Content>Flag for review</Tooltip.Content>
+			</Tooltip>
+		),
+		header: "",
+		id: "flag",
+		minWidth: 60,
+		pinned: "end",
+	},
+];
+
+/* -------------------------------------------------------------------------------------------------
+ * AutopilotLog
+ * -----------------------------------------------------------------------------------------------*/
+export function AutopilotLog() {
+	const [search, setSearch] = useState("");
+	const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+	const [page, setPage] = useState(1);
+	const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
+	const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+		column: "when",
+		direction: "ascending",
+	});
+
+	const visibleActions = useMemo(() => {
+		const query = search.trim().toLowerCase();
+		const result = autopilotActions.filter(
+			(action) =>
+				(typeFilter.size === 0 || typeFilter.has(action.type)) &&
+				(query.length === 0 ||
+					action.title.toLowerCase().includes(query) ||
+					action.client.toLowerCase().includes(query) ||
+					action.reference.toLowerCase().includes(query)),
+		);
+
+		return [...result].sort((a, b) => {
+			const col = sortDescriptor.column as string;
+			let cmp: number;
+
+			if (col === "when") {
+				cmp = a.occurredHoursAgo - b.occurredHoursAgo;
+			} else if (col === "confidence") {
+				cmp = a.confidence - b.confidence;
+			} else if (col === "type") {
+				cmp = a.type.localeCompare(b.type);
+			} else {
+				cmp = a.client.localeCompare(b.client);
+			}
+
+			if (sortDescriptor.direction === "descending") cmp *= -1;
+
+			return cmp;
+		});
+	}, [search, typeFilter, sortDescriptor]);
+
+	const totalPages = Math.ceil(visibleActions.length / rowsPerPage) || 1;
+	const safePage = Math.min(page, totalPages);
+	const paginatedActions = useMemo(() => {
+		const start = (safePage - 1) * rowsPerPage;
+
+		return visibleActions.slice(start, start + rowsPerPage);
+	}, [visibleActions, safePage, rowsPerPage]);
+
+	const paginationPages = useMemo(() => {
+		const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+
+		if (totalPages <= 7) {
+			for (let i = 1; i <= totalPages; i++)
+				pages.push({ key: `p-${i}`, value: i });
+		} else {
+			pages.push({ key: "p-1", value: 1 });
+			if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
+			const start = Math.max(2, safePage - 1);
+			const end = Math.min(totalPages - 1, safePage + 1);
+
+			for (let i = start; i <= end; i++)
+				pages.push({ key: `p-${i}`, value: i });
+			if (safePage < totalPages - 2)
+				pages.push({ key: "e-end", value: "ellipsis" });
+			pages.push({ key: `p-${totalPages}`, value: totalPages });
+		}
+
+		return pages;
+	}, [totalPages, safePage]);
+
+	const rangeStart = (safePage - 1) * rowsPerPage + 1;
+	const rangeEnd = Math.min(safePage * rowsPerPage, visibleActions.length);
+
+	return (
+		<div className="flex w-full flex-col gap-4">
+			{/* Header */}
+			<div>
+				<h1 className="text-foreground text-xl font-semibold">Autopilot Log</h1>
+				<p className="text-muted mt-1 max-w-2xl text-sm">
+					Everything the AI did without human intervention — spot-check it,
+					build trust, and use the accuracy to raise the autonomy threshold.
+				</p>
+			</div>
+
+			{/* Overview */}
+			<Widget>
+				<Widget.Header>
+					<Widget.Title>Overview</Widget.Title>
+				</Widget.Header>
+				<Widget.Content className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+					{overviewStats.map((stat) => (
+						<div key={stat.title} className="flex flex-col gap-1">
+							<span className="text-muted inline-flex items-center gap-1 text-sm font-medium">
+								{stat.title}
+								{stat.info ? (
+									<Tooltip>
+										<Button
+											isIconOnly
+											aria-label={`About ${stat.title}`}
+											className="text-muted hover:text-foreground size-5 min-h-5 min-w-5"
+											size="sm"
+											variant="ghost"
+										>
+											<CircleInfo className="size-3.5" />
+										</Button>
+										<Tooltip.Content className="max-w-64">
+											{stat.info}
+										</Tooltip.Content>
+									</Tooltip>
+								) : null}
+							</span>
+							<div className="flex items-center gap-2">
+								<span className="text-foreground text-2xl font-semibold tabular-nums tracking-tight">
+									{stat.value}
+								</span>
+								<TrendChip trend={stat.trend} variant="soft">
+									{stat.change}
+								</TrendChip>
+							</div>
+						</div>
+					))}
+				</Widget.Content>
+			</Widget>
+
+			{/* Charts */}
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+				<Widget className="lg:col-span-2">
+					<Widget.Header>
+						<Widget.Title>Autonomous Actions · Last 7 Days</Widget.Title>
+						<Widget.Legend>
+							{typeIds.map((type) => (
+								<Widget.LegendItem key={type} color={typeMeta[type].color}>
+									{typeMeta[type].label}
+								</Widget.LegendItem>
+							))}
+						</Widget.Legend>
+					</Widget.Header>
+					<Widget.Content>
+						<BarChart data={dailyActions} height={220}>
+							<BarChart.Grid vertical={false} />
+							<BarChart.XAxis dataKey="day" tickMargin={8} />
+							<BarChart.YAxis width={36} />
+							{typeIds.map((type, index) => (
+								<BarChart.Bar
+									key={type}
+									dataKey={type}
+									fill={typeMeta[type].color}
+									name={typeMeta[type].label}
+									radius={
+										index === typeIds.length - 1 ? [4, 4, 0, 0] : undefined
+									}
+									stackId="actions"
+								/>
+							))}
+							<BarChart.Tooltip
+								content={({ active, label, payload }) => {
+									if (!active || !payload?.length) return null;
+
+									return (
+										<ChartTooltip>
+											<ChartTooltip.Header>{label}</ChartTooltip.Header>
+											{payload.map((entry) => (
+												<ChartTooltip.Item key={String(entry.dataKey)}>
+													<ChartTooltip.Indicator
+														color={entry.color ?? entry.stroke}
+													/>
+													<ChartTooltip.Label>{entry.name}</ChartTooltip.Label>
+													<ChartTooltip.Value>
+														{Number(entry.value).toLocaleString()}
+													</ChartTooltip.Value>
+												</ChartTooltip.Item>
+											))}
+										</ChartTooltip>
+									);
+								}}
+								cursor={{ fill: "var(--surface-secondary)" }}
+							/>
+						</BarChart>
+					</Widget.Content>
+				</Widget>
+
+				<Widget>
+					<Widget.Header>
+						<Widget.Title>This Week by Type</Widget.Title>
+					</Widget.Header>
+					<Widget.Content>
+						<PieChart height={200}>
+							<PieChart.Pie
+								data={weeklyByType}
+								dataKey="value"
+								innerRadius={55}
+								nameKey="name"
+								outerRadius={80}
+								strokeWidth={0}
+							>
+								{weeklyByType.map((entry) => (
+									<PieChart.Cell key={entry.name} fill={entry.color} />
+								))}
+							</PieChart.Pie>
+							<PieChart.Tooltip
+								content={({ active, payload }) => {
+									if (!active || !payload?.length) return null;
+
+									return (
+										<ChartTooltip>
+											{payload.map((entry) => (
+												<ChartTooltip.Item key={String(entry.name)}>
+													<ChartTooltip.Indicator
+														color={(entry.payload as { color?: string })?.color}
+													/>
+													<ChartTooltip.Label>
+														{String(entry.name)}
+													</ChartTooltip.Label>
+													<ChartTooltip.Value>
+														{Number(entry.value).toLocaleString()}
+													</ChartTooltip.Value>
+												</ChartTooltip.Item>
+											))}
+										</ChartTooltip>
+									);
+								}}
+							/>
+						</PieChart>
+						<div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+							{weeklyByType.map((entry) => (
+								<span
+									key={entry.name}
+									className="text-muted inline-flex items-center gap-1.5 text-xs"
+								>
+									<span
+										className="size-1.5 rounded-full"
+										style={{ backgroundColor: entry.color }}
+									/>
+									{entry.name}
+									<span className="text-foreground font-medium tabular-nums">
+										{entry.value.toLocaleString()}
+									</span>
+								</span>
+							))}
+						</div>
+					</Widget.Content>
+				</Widget>
+			</div>
+
+			{/* Feed */}
+			<div className="flex flex-col gap-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<h2 className="text-foreground text-base font-semibold">
+						Recent Actions
+					</h2>
+					<div className="flex items-center gap-2">
+						<SearchField
+							aria-label="Search actions"
+							value={search}
+							onChange={(value) => {
+								setSearch(value);
+								setPage(1);
+							}}
+						>
+							<SearchField.Group>
+								<SearchField.SearchIcon />
+								<SearchField.Input
+									className="w-[200px]"
+									placeholder="Search actions..."
+								/>
+								<SearchField.ClearButton />
+							</SearchField.Group>
+						</SearchField>
+						<Dropdown>
+							<Button size="sm" variant="secondary">
+								<Funnel />
+								Type
+							</Button>
+							<Dropdown.Popover>
+								<Dropdown.Menu
+									selectedKeys={typeFilter}
+									selectionMode="multiple"
+									onSelectionChange={(keys) => {
+										setTypeFilter(
+											keys === "all"
+												? new Set(typeIds)
+												: new Set([...keys].map(String)),
+										);
+										setPage(1);
+									}}
+								>
+									{typeIds.map((type) => {
+										const Icon = typeMeta[type].icon;
+
+										return (
+											<Dropdown.Item
+												key={type}
+												id={type}
+												textValue={typeMeta[type].label}
+											>
+												<Icon className="text-muted size-4" />
+												<Label>{typeMeta[type].label}</Label>
+												<Dropdown.ItemIndicator />
+											</Dropdown.Item>
+										);
+									})}
+								</Dropdown.Menu>
+							</Dropdown.Popover>
+						</Dropdown>
+					</div>
+				</div>
+				<DataGrid
+					aria-label="Autopilot actions"
+					columns={actionColumns}
+					data={paginatedActions}
+					getRowId={(action) => action.id}
+					renderEmptyState={() => (
+						<div className="text-muted py-8 text-center text-sm">
+							No actions match your filters.
+						</div>
+					)}
+					sortDescriptor={sortDescriptor}
+					variant="primary"
+					onSortChange={setSortDescriptor}
+				/>
+
+				{/* Pagination footer */}
+				<div className="flex flex-wrap items-center justify-between gap-3 whitespace-nowrap text-xs">
+					<Pagination size="sm">
+						<Pagination.Content>
+							<Pagination.Item>
+								<Pagination.Previous
+									isDisabled={safePage === 1}
+									onPress={() => setPage((p) => Math.max(1, p - 1))}
+								>
+									<Pagination.PreviousIcon />
+								</Pagination.Previous>
+							</Pagination.Item>
+							{paginationPages.map((p) =>
+								p.value === "ellipsis" ? (
+									<Pagination.Item key={p.key}>
+										<Pagination.Ellipsis />
+									</Pagination.Item>
+								) : (
+									<Pagination.Item key={p.key}>
+										<Pagination.Link
+											isActive={p.value === safePage}
+											onPress={() => setPage(p.value as number)}
+										>
+											{p.value}
+										</Pagination.Link>
+									</Pagination.Item>
+								),
+							)}
+							<Pagination.Item>
+								<Pagination.Next
+									isDisabled={safePage === totalPages}
+									onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+								>
+									<Pagination.NextIcon />
+								</Pagination.Next>
+							</Pagination.Item>
+						</Pagination.Content>
+					</Pagination>
+
+					<div className="flex items-center gap-3">
+						<InlineSelect
+							aria-label="Rows per page"
+							value={String(rowsPerPage)}
+							onChange={(v) => {
+								if (v) {
+									setRowsPerPage(Number(v));
+									setPage(1);
+								}
+							}}
+						>
+							<InlineSelect.Trigger>
+								<span className="text-muted">Rows per page</span>
+								<InlineSelect.Value />
+								<InlineSelect.Indicator />
+							</InlineSelect.Trigger>
+							<InlineSelect.Popover className="w-[80px]">
+								<ListBox>
+									<ListBox.Item id="10" textValue="10">
+										10
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+									<ListBox.Item id="25" textValue="25">
+										25
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+									<ListBox.Item id="50" textValue="50">
+										50
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+								</ListBox>
+							</InlineSelect.Popover>
+						</InlineSelect>
+						<Separator className="!h-4" orientation="vertical" />
+						<span className="text-muted tabular-nums">
+							{visibleActions.length === 0
+								? "0 actions"
+								: `${rangeStart}–${rangeEnd} of ${visibleActions.length}`}
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
