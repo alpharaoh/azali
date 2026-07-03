@@ -1,25 +1,32 @@
 import { Calendar, CircleFill, Eye } from "@gravity-ui/icons";
 import { Button, Chip } from "@heroui/react";
 import { Kanban, TrendChip, Widget } from "@heroui-pro/react";
+import { addDays, differenceInCalendarDays, format } from "date-fns";
+import { useMemo } from "react";
 
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
  * -----------------------------------------------------------------------------------------------*/
-interface TariffEvent {
+interface TariffEventSeed {
 	id: number;
 	/** Plain-English headline — what a human would say is happening. */
 	title: string;
-	/** Regulatory citation and technical detail. */
+	/** Regulatory citation and technical detail — shown in the View drill-down. */
 	description: string;
-	effectiveDate: string;
-	/** Days until effective; null = already in effect. */
-	daysOut: number | null;
+	/** Days relative to today the change takes effect; negative = already in effect. */
+	daysFromNow: number;
 	skus: number;
 	clients: number;
 	/** Dollar impact on clients, with a caption explaining what the number means. */
 	impact: string;
 	impactCaption: string;
 	impactTone: "negative" | "neutral" | "positive";
+}
+
+interface TariffEvent extends TariffEventSeed {
+	effectiveDate: Date;
+	/** Days until effective; null = already in effect. */
+	daysOut: number | null;
 }
 
 const overviewStats = [
@@ -49,13 +56,12 @@ const overviewStats = [
 	},
 ];
 
-const events: TariffEvent[] = [
+const eventSeeds: TariffEventSeed[] = [
 	{
 		clients: 6,
-		daysOut: 23,
+		daysFromNow: 23,
 		description:
 			"USTR Section 301, List 4B — 87 HTS subheadings in Chapters 84, 85 & 94.",
-		effectiveDate: "2026-07-25",
 		id: 1,
 		impact: "+$212K/yr",
 		impactCaption: "added duty for clients",
@@ -65,10 +71,9 @@ const events: TariffEvent[] = [
 	},
 	{
 		clients: 1,
-		daysOut: 29,
+		daysFromNow: 29,
 		description:
 			"Section 301 exclusion on HTS 8517.62.00 — duty reverts to 25% when it lapses.",
-		effectiveDate: "2026-07-31",
 		id: 2,
 		impact: "+$84K/yr",
 		impactCaption: "added duty if not renewed",
@@ -78,10 +83,9 @@ const events: TariffEvent[] = [
 	},
 	{
 		clients: 3,
-		daysOut: 43,
+		daysFromNow: 43,
 		description:
 			"Section 232 derivatives expansion — fabricated aluminum components.",
-		effectiveDate: "2026-08-14",
 		id: 3,
 		impact: "+$67K/yr",
 		impactCaption: "added duty for clients",
@@ -91,10 +95,8 @@ const events: TariffEvent[] = [
 	},
 	{
 		clients: 4,
-		daysOut: null,
-		description:
-			"HTS mid-year revision — heading 6404 split by upper material.",
-		effectiveDate: "2026-07-01",
+		daysFromNow: -1,
+		description: "HTS mid-year revision — heading 6404 split by upper material.",
 		id: 4,
 		impact: "$0",
 		impactCaption: "no duty change, codes only",
@@ -104,10 +106,9 @@ const events: TariffEvent[] = [
 	},
 	{
 		clients: 2,
-		daysOut: null,
+		daysFromNow: -12,
 		description:
 			"Section 301 exclusion granted on HTS 9403.20.00 — retroactive to April.",
-		effectiveDate: "2026-06-20",
 		id: 5,
 		impact: "−$38K/yr",
 		impactCaption: "savings for clients",
@@ -145,14 +146,6 @@ const impactToneClass = {
 	positive: "text-emerald-600 dark:text-emerald-400",
 } as const;
 
-function formatDate(dateStr: string) {
-	return new Date(dateStr).toLocaleDateString("en-US", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	});
-}
-
 /* -------------------------------------------------------------------------------------------------
  * Time-left chip
  * -----------------------------------------------------------------------------------------------*/
@@ -168,13 +161,15 @@ function TimeLeftChip({ daysOut }: { daysOut: number | null }) {
 
 	return (
 		<Chip color={daysOut <= 30 ? "danger" : "default"} size="sm" variant="soft">
-			<Chip.Label>{daysOut} days left</Chip.Label>
+			<Chip.Label>
+				{daysOut} {daysOut === 1 ? "day" : "days"} left
+			</Chip.Label>
 		</Chip>
 	);
 }
 
 /* -------------------------------------------------------------------------------------------------
- * Event card — time left → title → description → stats → footer
+ * Event card — time left → title → stats → footer
  * -----------------------------------------------------------------------------------------------*/
 function TariffEventCard({ event }: { event: TariffEvent }) {
 	return (
@@ -211,7 +206,7 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
 				<div className="mt-1.5 flex items-center justify-between gap-2">
 					<span className="text-muted inline-flex items-center gap-1.5 text-xs">
 						<Calendar className="size-3.5 shrink-0" />
-						Effective {formatDate(event.effectiveDate)}
+						Effective {format(event.effectiveDate, "MMM d, yyyy")}
 					</span>
 					<Button size="sm" variant="outline">
 						<Eye />
@@ -227,6 +222,17 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
  * TariffRadarOverview
  * -----------------------------------------------------------------------------------------------*/
 export function TariffRadarOverview() {
+	const events = useMemo<TariffEvent[]>(() => {
+		const now = new Date();
+
+		return eventSeeds.map((seed) => {
+			const effectiveDate = addDays(now, seed.daysFromNow);
+			const days = differenceInCalendarDays(effectiveDate, now);
+
+			return { ...seed, daysOut: days > 0 ? days : null, effectiveDate };
+		});
+	}, []);
+
 	return (
 		<div className="flex w-full flex-col gap-4">
 			{/* Header */}
@@ -276,7 +282,10 @@ export function TariffRadarOverview() {
 								<Kanban.ColumnCount>{columnEvents.length}</Kanban.ColumnCount>
 							</Kanban.ColumnHeader>
 							<Kanban.ColumnBody>
-								<Kanban.CardList aria-label={column.title} items={columnEvents}>
+								<Kanban.CardList
+									aria-label={column.title}
+									items={columnEvents}
+								>
 									{(event) => <TariffEventCard event={event} />}
 								</Kanban.CardList>
 							</Kanban.ColumnBody>
