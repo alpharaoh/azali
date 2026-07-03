@@ -6,18 +6,22 @@ import {
 	ArrowUp,
 	ArrowUpRightFromSquare,
 	BookOpen,
+	Calculator,
 	ChevronLeft,
 	CircleCheck,
 	CircleDollar,
 	Envelope,
 	FileCheck,
 	FileText,
+	Flag,
 	Funnel,
+	Magnifier,
 	PaperPlane,
 	Pencil,
 	Person,
 	ShieldExclamation,
 	Sparkles,
+	SquareCheck,
 	Tag,
 } from "@gravity-ui/icons";
 import {
@@ -52,6 +56,7 @@ import type {
 	ReviewItem,
 	ReviewItemType,
 	ThreadMessage,
+	TraceStepKind,
 } from "#/data/review-queue";
 import {
 	addThreadMessage,
@@ -277,6 +282,18 @@ const citationMeta: Record<
 	ruling: { chip: "accent", label: "CROSS Ruling" },
 };
 
+const traceIconMap: Record<
+	TraceStepKind,
+	ComponentType<SVGProps<SVGSVGElement>>
+> = {
+	calc: Calculator,
+	check: SquareCheck,
+	decision: CircleCheck,
+	flag: Flag,
+	lookup: Magnifier,
+	read: FileText,
+};
+
 /** Canned AI reply for the item thread — cites the top source for questions. */
 function aiReply(item: ReviewItem, message: string): string {
 	const citation = item.citations[0];
@@ -342,6 +359,19 @@ function EventTimelineItem({
 				</div>
 				{event.detail ? (
 					<p className="text-muted m-0 text-xs leading-5">{event.detail}</p>
+				) : null}
+				{event.steps ? (
+					<div className="bg-background/40 mt-1.5 flex flex-col gap-1 rounded-lg border p-2.5">
+						{event.steps.map((step) => (
+							<span
+								key={step}
+								className="text-muted flex items-start gap-1.5 text-xs leading-5"
+							>
+								<span className="bg-muted/60 mt-2 size-1 shrink-0 rounded-full" />
+								{step}
+							</span>
+						))}
+					</div>
 				) : null}
 			</Timeline.Content>
 		</Timeline.Item>
@@ -637,23 +667,65 @@ function ReviewDetail({
 						<Widget.Header>
 							<Widget.Title className="inline-flex items-center gap-1.5">
 								<BookOpen className="text-muted size-4" />
-								Reasoning &amp; Citations
+								Agent Trace
 							</Widget.Title>
 							<span className="text-muted text-xs">
-								{item.reasoning.length} steps · {item.citations.length} sources
+								{item.trace.reduce((sum, phase) => sum + phase.steps.length, 0)}{" "}
+								steps · {item.citations.length} sources
 							</span>
 						</Widget.Header>
-						<Widget.Content className="flex flex-col gap-4">
-							<ol className="flex list-decimal flex-col gap-2 pl-4">
-								{item.reasoning.map((step) => (
-									<li key={step.label} className="text-sm leading-relaxed">
-										<span className="text-foreground font-medium">
-											{step.label}.
-										</span>{" "}
-										<span className="text-muted">{step.body}</span>
-									</li>
-								))}
-							</ol>
+						<Widget.Content className="flex flex-col gap-5">
+							{item.trace.map((phase, phaseIndex) => (
+								<div key={phase.label} className="flex flex-col gap-3">
+									<div className="flex items-center gap-2">
+										<span className="text-muted text-xs font-semibold uppercase tracking-wider">
+											{phaseIndex + 1} · {phase.label}
+										</span>
+										<div className="bg-separator h-px flex-1" />
+									</div>
+									{phase.steps.map((step) => {
+										const StepIcon = traceIconMap[step.kind];
+
+										return (
+											<div key={step.title} className="flex gap-2.5">
+												<StepIcon
+													className={`mt-0.5 size-3.5 shrink-0 ${
+														step.kind === "flag"
+															? "text-warning"
+															: step.kind === "decision"
+																? "text-accent"
+																: "text-muted"
+													}`}
+												/>
+												<div className="flex min-w-0 flex-1 flex-col gap-1">
+													<span className="text-foreground text-sm font-medium leading-tight">
+														{step.title}
+													</span>
+													<span className="text-muted text-xs leading-relaxed">
+														{step.detail}
+													</span>
+													{step.data ? (
+														<div className="bg-background/40 mt-1 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+															{step.data.map((line) => (
+																<span key={line}>{line}</span>
+															))}
+														</div>
+													) : null}
+													{step.citationRef ? (
+														<span className="text-muted inline-flex items-center gap-1.5 text-xs">
+															<BookOpen className="size-3 shrink-0" />
+															cites{" "}
+															<span className="text-foreground font-mono font-medium">
+																{step.citationRef}
+															</span>
+														</span>
+													) : null}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							))}
 							<Separator />
 							<div className="flex flex-col gap-2">
 								{item.citations.map((citation) => (
