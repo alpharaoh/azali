@@ -184,14 +184,9 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
 					<TimeLeftChip daysOut={event.daysOut} />
 				</div>
 
-				<div className="flex flex-col gap-1">
-					<span className="text-foreground text-sm font-semibold leading-snug">
-						{event.title}
-					</span>
-					<span className="text-muted text-xs leading-relaxed">
-						{event.description}
-					</span>
-				</div>
+				<span className="text-foreground text-sm font-semibold leading-snug">
+					{event.title}
+				</span>
 
 				<div className="grid grid-cols-2 gap-2">
 					<div className="bg-background/50 flex flex-col rounded-lg border p-2.5">
