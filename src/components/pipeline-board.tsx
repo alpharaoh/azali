@@ -39,7 +39,8 @@ type Priority = 1 | 2 | 3 | 4;
 
 type Row = Shipment & {
 	effectiveStage: PipelineStage;
-	priority: Priority;
+	/** Null when nothing is actionable (filed / awaiting CBP / released). */
+	priority: Priority | null;
 	status: ShipmentStatus;
 };
 
@@ -68,10 +69,10 @@ function priorityFor(
 	status: ShipmentStatus,
 	arrivesInHours: number,
 	value: number,
-): Priority {
-	// Filed or released — nothing left for us to do before arrival.
+): Priority | null {
+	// Filed, awaiting CBP, or released — it's not on us anymore.
 	if (status === "released" || stage === "filed" || stage === "released")
-		return 4;
+		return null;
 
 	const stagesLeft = 4 - stageOrder.indexOf(stage); // pre-filed stages remaining
 	const hoursPerStage = arrivesInHours / Math.max(stagesLeft, 1);
@@ -311,7 +312,9 @@ export function PipelineBoard() {
 			let cmp: number;
 
 			if (col === "priority") {
-				cmp = a.priority - b.priority || a.arrivesInHours - b.arrivesInHours;
+				cmp =
+					(a.priority ?? 5) - (b.priority ?? 5) ||
+					a.arrivesInHours - b.arrivesInHours;
 			} else if (col === "arrives") {
 				cmp = a.arrivesInHours - b.arrivesInHours;
 			} else if (col === "value") {
@@ -439,20 +442,24 @@ export function PipelineBoard() {
 			{
 				accessorKey: "priority",
 				allowsSorting: true,
-				cell: (row) => (
-					<Chip
-						color={priorityMeta[row.priority].chip}
-						size="sm"
-						variant="soft"
-					>
-						<Chip.Label className="font-semibold tabular-nums">
-							{priorityMeta[row.priority].label}
-						</Chip.Label>
-					</Chip>
-				),
+				cell: (row) =>
+					row.priority === null ? (
+						<span className="text-muted text-sm">—</span>
+					) : (
+						<Chip
+							color={priorityMeta[row.priority].chip}
+							size="sm"
+							variant="soft"
+						>
+							<Chip.Label className="font-semibold tabular-nums">
+								{priorityMeta[row.priority].label}
+							</Chip.Label>
+						</Chip>
+					),
 				header: "Priority",
+				headerClassName: "whitespace-nowrap",
 				id: "priority",
-				minWidth: 90,
+				minWidth: 110,
 			},
 			{
 				allowsSorting: true,
@@ -806,7 +813,6 @@ export function PipelineBoard() {
 				columns={columns}
 				contentClassName="min-w-[1200px]"
 				data={paginatedRows}
-				scrollContainerClassName="max-h-[560px] overflow-y-auto"
 				getRowId={(row) => row.id}
 				renderEmptyState={() => (
 					<div className="text-muted py-8 text-center text-sm">

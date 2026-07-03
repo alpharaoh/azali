@@ -76,7 +76,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 		],
 	},
 	{
-		label: "Money & Clients",
+		label: "Revenue",
 		items: [
 			{
 				id: "recoveries",
