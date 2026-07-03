@@ -17,10 +17,8 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settin
 import { Route as DashboardReviewRouteImport } from './routes/dashboard/review'
 import { Route as DashboardRecoveriesRouteImport } from './routes/dashboard/recoveries'
 import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
-import { Route as DashboardComplianceRouteImport } from './routes/dashboard/compliance'
 import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
 import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
-import { Route as DashboardBillingRouteImport } from './routes/dashboard/billing'
 import { Route as DashboardAutopilotRouteImport } from './routes/dashboard/autopilot'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
@@ -63,11 +61,6 @@ const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardComplianceRoute = DashboardComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 const DashboardClientsRoute = DashboardClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -79,11 +72,6 @@ const DashboardClassificationsRoute =
     path: '/classifications',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
-const DashboardBillingRoute = DashboardBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 const DashboardAutopilotRoute = DashboardAutopilotRouteImport.update({
   id: '/autopilot',
   path: '/autopilot',
@@ -94,10 +82,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/autopilot': typeof DashboardAutopilotRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
-  '/dashboard/compliance': typeof DashboardComplianceRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/review': typeof DashboardReviewRoute
@@ -108,10 +94,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/autopilot': typeof DashboardAutopilotRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
-  '/dashboard/compliance': typeof DashboardComplianceRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/review': typeof DashboardReviewRoute
@@ -124,10 +108,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/autopilot': typeof DashboardAutopilotRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
-  '/dashboard/compliance': typeof DashboardComplianceRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/review': typeof DashboardReviewRoute
@@ -141,10 +123,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/autopilot'
-    | '/dashboard/billing'
     | '/dashboard/classifications'
     | '/dashboard/clients'
-    | '/dashboard/compliance'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
     | '/dashboard/review'
@@ -155,10 +135,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard/autopilot'
-    | '/dashboard/billing'
     | '/dashboard/classifications'
     | '/dashboard/clients'
-    | '/dashboard/compliance'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
     | '/dashboard/review'
@@ -170,10 +148,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/dashboard/autopilot'
-    | '/dashboard/billing'
     | '/dashboard/classifications'
     | '/dashboard/clients'
-    | '/dashboard/compliance'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
     | '/dashboard/review'
@@ -245,13 +221,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPipelineRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/compliance': {
-      id: '/dashboard/compliance'
-      path: '/compliance'
-      fullPath: '/dashboard/compliance'
-      preLoaderRoute: typeof DashboardComplianceRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/dashboard/clients': {
       id: '/dashboard/clients'
       path: '/clients'
@@ -266,13 +235,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClassificationsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/billing': {
-      id: '/dashboard/billing'
-      path: '/billing'
-      fullPath: '/dashboard/billing'
-      preLoaderRoute: typeof DashboardBillingRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/dashboard/autopilot': {
       id: '/dashboard/autopilot'
       path: '/autopilot'
@@ -285,10 +247,8 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteRouteChildren {
   DashboardAutopilotRoute: typeof DashboardAutopilotRoute
-  DashboardBillingRoute: typeof DashboardBillingRoute
   DashboardClassificationsRoute: typeof DashboardClassificationsRoute
   DashboardClientsRoute: typeof DashboardClientsRoute
-  DashboardComplianceRoute: typeof DashboardComplianceRoute
   DashboardPipelineRoute: typeof DashboardPipelineRoute
   DashboardRecoveriesRoute: typeof DashboardRecoveriesRoute
   DashboardReviewRoute: typeof DashboardReviewRoute
@@ -299,10 +259,8 @@ interface DashboardRouteRouteChildren {
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAutopilotRoute: DashboardAutopilotRoute,
-  DashboardBillingRoute: DashboardBillingRoute,
   DashboardClassificationsRoute: DashboardClassificationsRoute,
   DashboardClientsRoute: DashboardClientsRoute,
-  DashboardComplianceRoute: DashboardComplianceRoute,
   DashboardPipelineRoute: DashboardPipelineRoute,
   DashboardRecoveriesRoute: DashboardRecoveriesRoute,
   DashboardReviewRoute: DashboardReviewRoute,

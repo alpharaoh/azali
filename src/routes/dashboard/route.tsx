@@ -1,13 +1,12 @@
 import {
   Book,
-  Boxes3,
   CircleDollar,
   FileDollar,
   Gear,
   ListCheck,
   Persons,
+  Pipeline,
   Pulse,
-  ShieldCheck,
   Sparkles,
 } from "@gravity-ui/icons";
 import { Breadcrumbs } from "@heroui/react";
@@ -48,7 +47,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "pipeline",
         label: "Pipeline",
         href: "/dashboard/pipeline",
-        icon: Boxes3,
+        icon: Pipeline,
       },
       {
         id: "autopilot",
@@ -63,7 +62,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       {
         id: "classifications",
-        label: "Classification Brain",
+        label: "Classification Engine",
         href: "/dashboard/classifications",
         icon: Book,
       },
@@ -84,12 +83,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         label: "Recoveries",
         href: "/dashboard/recoveries",
         icon: CircleDollar,
-      },
-      {
-        id: "billing",
-        label: "Billing",
-        href: "/dashboard/billing",
-        icon: FileDollar,
       },
       {
         id: "clients",
