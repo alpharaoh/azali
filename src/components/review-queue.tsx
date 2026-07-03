@@ -406,6 +406,18 @@ function ReviewDetail({
 	total: number;
 }) {
 	const [alternate, setAlternate] = useState<string | null>(null);
+	const activity = [
+		...item.documents.map((document) => ({
+			document,
+			hoursAgo: document.receivedHoursAgo,
+			kind: "document" as const,
+		})),
+		...(item.events ?? []).map((event) => ({
+			event,
+			hoursAgo: event.occurredHoursAgo,
+			kind: "event" as const,
+		})),
+	].sort((a, b) => b.hoursAgo - a.hoursAgo);
 	const TypeIcon = typeMeta[item.type].icon;
 	const tone = deadlineTone(deadline);
 
@@ -554,36 +566,27 @@ function ReviewDetail({
 					<div className="flex flex-col gap-2">
 						<span className="text-muted text-xs font-medium">Activity</span>
 						<Timeline density="compact" size="sm">
-							{[
-								...item.documents.map((document) => ({
-									document,
-									hoursAgo: document.receivedHoursAgo,
-									kind: "document" as const,
-								})),
-								...(item.events ?? []).map((event) => ({
-									event,
-									hoursAgo: event.occurredHoursAgo,
-									kind: "event" as const,
-								})),
-							]
-								.sort((a, b) => b.hoursAgo - a.hoursAgo)
-								.map((entry) =>
-									entry.kind === "document" ? (
-										<DocumentTimelineItem
-											key={
-												entry.document.kind === "email"
-													? entry.document.subject
-													: entry.document.name
-											}
-											document={entry.document}
-										/>
-									) : (
-										<EventTimelineItem
-											key={entry.event.title}
-											event={entry.event}
-										/>
-									),
-								)}
+							{activity.map((entry, index) =>
+								entry.kind === "document" ? (
+									<DocumentTimelineItem
+										key={
+											entry.document.kind === "email"
+												? entry.document.subject
+												: entry.document.name
+										}
+										_index={index}
+										_isLast={index === activity.length - 1}
+										document={entry.document}
+									/>
+								) : (
+									<EventTimelineItem
+										key={entry.event.title}
+										_index={index}
+										_isLast={index === activity.length - 1}
+										event={entry.event}
+									/>
+								),
+							)}
 						</Timeline>
 					</div>
 
