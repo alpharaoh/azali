@@ -10,6 +10,49 @@ export type ReviewItemType =
 	| "valuation"
 	| "signoff";
 
+export interface DocumentLine {
+	label: string;
+	value: string;
+	highlight?: boolean;
+}
+
+export type ReviewDocument =
+	| {
+			kind: "pdf";
+			name: string;
+			meta: string;
+			receivedHoursAgo: number;
+			lines: DocumentLine[];
+			note?: string;
+	  }
+	| {
+			kind: "email";
+			from: string;
+			subject: string;
+			body: string;
+			meta: string;
+			receivedHoursAgo: number;
+	  }
+	| {
+			kind: "scan";
+			name: string;
+			meta: string;
+			receivedHoursAgo: number;
+			/** Public path to the scanned image. */
+			src: string;
+			extracted: DocumentLine[];
+			note?: string;
+	  };
+
+export interface ShipmentFacts {
+	origin: string;
+	port: string;
+	mode: string;
+	arrivesInHours: number;
+	incoterm: string;
+	entryType: string;
+}
+
 export interface ReviewItem {
 	id: string;
 	type: ReviewItemType;
@@ -23,7 +66,14 @@ export interface ReviewItem {
 	confidence: number;
 	proposal: { label: string; value: string; detail: string };
 	reasoning: Array<{ label: string; body: string }>;
-	evidence: { source: string; quote: string };
+	shipment: ShipmentFacts;
+	documents: ReviewDocument[];
+	/** Side-by-side comparison when two documents disagree. */
+	comparison?: {
+		docA: string;
+		docB: string;
+		rows: Array<{ label: string; a: string; b: string }>;
+	};
 	alternates?: Array<{ value: string; detail: string; confidence: number }>;
 	approveLabel: string;
 	canRequestInfo?: boolean;
@@ -45,11 +95,38 @@ export const reviewItems: ReviewItem[] = [
 		client: "Pacific Rim Imports",
 		confidence: 0.98,
 		deadlineHoursFromNow: 1.5,
-		evidence: {
-			quote:
-				"24 lines · declared value $186,400 · estimated duty $12,430 · no AD/CVD or PGA flags.",
-			source: "Entry summary ENT-4471",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Entry no.", value: "AZL-2026-4471" },
+					{
+						label: "Importer of record",
+						value: "Pacific Rim Imports · 36-4821997",
+					},
+					{ label: "Lines", value: "24" },
+					{ label: "Declared value", value: "$186,400" },
+					{ highlight: true, label: "Estimated duty", value: "$12,430" },
+					{ label: "AD/CVD · PGA flags", value: "None" },
+				],
+				meta: "CBP 7501 draft · 4 pages",
+				name: "Entry Summary Draft",
+				note: "All 24 lines matched classifications your team previously approved — nothing new to decide.",
+				receivedHoursAgo: 1,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Seller", value: "Shenzhen Kaida Trading Co." },
+					{ label: "Buyer", value: "Pacific Rim Imports" },
+					{ label: "Terms", value: "FOB Shanghai" },
+					{ label: "Invoice total", value: "$186,400" },
+				],
+				meta: "PDF · 6 pages",
+				name: "Commercial Invoice PRI-3301",
+				receivedHoursAgo: 26,
+			},
+		],
 		id: "rev-1",
 		proposal: {
 			detail: "All 24 lines classified at ≥98% confidence · duty $12,430",
@@ -76,6 +153,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "ENT-4471",
+		shipment: {
+			arrivesInHours: 5,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Shanghai",
+			mode: "Ocean · MSC Aurora 229E",
+			origin: "China (Shanghai)",
+			port: "LA/Long Beach",
+		},
 		shipmentValue: 186400,
 		type: "signoff",
 	},
@@ -84,11 +169,29 @@ export const reviewItems: ReviewItem[] = [
 		client: "Harbor Foods Co.",
 		confidence: 0.93,
 		deadlineHoursFromNow: 3,
-		evidence: {
-			quote:
-				"Line items sum to $45,780 — printed total reads $48,250. Packing list quantities match the line items.",
-			source: "Commercial invoice INV-88231, page 2",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Line items (12)", value: "see page 1–2" },
+					{ highlight: true, label: "Sum of line items", value: "$45,780" },
+					{ highlight: true, label: "Total (printed)", value: "$48,250" },
+					{ label: "Currency", value: "USD" },
+				],
+				meta: "PDF · 2 pages",
+				name: "Commercial Invoice INV-88231",
+				note: "The two totals disagree by $2,470 — the packing list quantities support the line-item sum.",
+				receivedHoursAgo: 3,
+			},
+			{
+				body: "Hi team — attached invoice and packing list for the Laem Chabang shipment. Please clear before the weekend if possible, we have a DC appointment Monday morning.",
+				from: "ops@harborfoods.com",
+				kind: "email",
+				meta: "Email · 2 attachments",
+				receivedHoursAgo: 3,
+				subject: "SHP-2209 — docs for Savannah arrival",
+			},
+		],
 		id: "rev-2",
 		proposal: {
 			detail:
@@ -116,6 +219,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2209",
+		shipment: {
+			arrivesInHours: 9,
+			entryType: "01 — Consumption",
+			incoterm: "CIF Savannah",
+			mode: "Ocean · Evergreen Ever Lucid 044E",
+			origin: "Thailand (Laem Chabang)",
+			port: "Savannah",
+		},
 		shipmentValue: 45780,
 		type: "document",
 	},
@@ -131,11 +242,44 @@ export const reviewItems: ReviewItem[] = [
 		client: "Bluewave Electronics",
 		confidence: 0.87,
 		deadlineHoursFromNow: 6,
-		evidence: {
-			quote:
-				"“AX5400 tri-band wireless mesh Wi-Fi 6 router, 2-pack, model RBK762”",
-			source: "Commercial invoice, line 3",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Line 1", value: "USB-C cables (2m) · $6,200" },
+					{ label: "Line 2", value: "Mesh extender EX-3 · $14,800" },
+					{
+						highlight: true,
+						label: "Line 3",
+						value: "AX5400 tri-band mesh router, 2-pack · $128,000",
+					},
+					{ label: "Country of origin", value: "Taiwan" },
+				],
+				meta: "PDF · 3 pages",
+				name: "Commercial Invoice BW-5540",
+				note: "Line 3 is the SKU in question — lines 1 and 2 matched the catalog automatically.",
+				receivedHoursAgo: 7,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{
+						label: "Merchandise",
+						value: "Mesh Wi-Fi system (router + satellites)",
+					},
+					{
+						highlight: true,
+						label: "Holding",
+						value: "8517.62.0090 · free of duty",
+					},
+					{ label: "Ruling date", value: "March 2022" },
+				],
+				meta: "Reference · CBP rulings database",
+				name: "CROSS Ruling NY N324089",
+				note: "Closest precedent — a comparable consumer mesh system with the same principal function.",
+				receivedHoursAgo: 7,
+			},
+		],
 		id: "rev-3",
 		proposal: {
 			detail: "Machines for reception/conversion/transmission of data · Free",
@@ -162,8 +306,125 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2214",
+		shipment: {
+			arrivesInHours: 18,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Kaohsiung",
+			mode: "Ocean · ONE Falcon 077W",
+			origin: "Taiwan (Kaohsiung)",
+			port: "LA/Long Beach",
+		},
 		shipmentValue: 128000,
 		type: "classification",
+	},
+	{
+		approveLabel: "Accept CBP 1300",
+		canRequestInfo: true,
+		client: "Windward Marine Group",
+		comparison: {
+			docA: "Vessel Clearance (CBP 1300)",
+			docB: "Customs Declaration (6059B)",
+			rows: [
+				{
+					a: "Vessel clearance statement",
+					b: "Traveler's personal declaration",
+					label: "Form type",
+				},
+				{
+					a: "Yacht “Harmonie” · Karen Smith",
+					b: "Traveler “Armstrong, Nel A.”",
+					label: "Party",
+				},
+				{
+					a: "Stamped May 1, 2022",
+					b: "Stamped March 2010",
+					label: "CBP stamp",
+				},
+				{
+					a: "Yes — supports the vessel import",
+					b: "No — unrelated transaction",
+					label: "Belongs to this entry",
+				},
+			],
+		},
+		confidence: 0.78,
+		deadlineHoursFromNow: 12,
+		documents: [
+			{
+				extracted: [
+					{ label: "Form", value: "CBP 1300 — Vessel Entrance/Clearance" },
+					{ label: "Vessel", value: "“Harmonie” · 49′4″ yacht · USA flag" },
+					{ label: "Built", value: "La Rochelle, France · 1996" },
+					{ label: "Route", value: "Simpson Bay, SX → Culebra, PR" },
+					{
+						highlight: true,
+						label: "Box 3 date (handwritten)",
+						value: "01 MAY 2020",
+					},
+					{ highlight: true, label: "CBP stamp", value: "Cleared MAY 01 2022" },
+				],
+				kind: "scan",
+				meta: "Scan · 1 page",
+				name: "Vessel Entrance or Clearance Statement",
+				note: "The handwritten year contradicts the CBP stamp and the April 2022 voyage dates — almost certainly a pen slip for 2022.",
+				receivedHoursAgo: 4,
+				src: "/mock.jpeg",
+			},
+			{
+				extracted: [
+					{ label: "Form", value: "CBP 6059B — Customs Declaration" },
+					{ highlight: true, label: "Traveler", value: "Armstrong, Nel A." },
+					{
+						label: "Countries visited",
+						value: "Germany, Kuwait, Qatar, UK",
+					},
+					{ highlight: true, label: "CBP stamp", value: "March 2010" },
+				],
+				kind: "scan",
+				meta: "Scan · 1 page",
+				name: "Customs Declaration (6059B)",
+				note: "Different person, different trip, stamped 2010 — this doesn't belong to SHP-2218 and was likely misfiled by the client.",
+				receivedHoursAgo: 4,
+				src: "/mock2.jpeg",
+			},
+		],
+		id: "rev-9",
+		proposal: {
+			detail:
+				"File the vessel clearance with the year read as 2022; return the traveler declaration to the client as misfiled",
+			label: "Proposed document handling",
+			value: "Accept CBP 1300 · set aside 6059B",
+		},
+		question: "Two scanned CBP forms disagree — which one supports this entry?",
+		reasoning: [
+			{
+				body: "The client emailed two scans for the yacht import: a CBP 1300 vessel clearance and a 6059B customs declaration.",
+				label: "What arrived",
+			},
+			{
+				body: "The 1300 matches this entry: yacht “Harmonie”, Simpson Bay → Culebra, ship's agent Karen Smith.",
+				label: "Match check",
+			},
+			{
+				body: "Its handwritten date reads 2020, but the CBP stamp and the voyage particulars both say 2022 — treated as a writing error.",
+				label: "Internal discrepancy",
+			},
+			{
+				body: "The 6059B is a traveler's declaration for a different person, stamped 2010 — it cannot support this transaction.",
+				label: "Misfiled document",
+			},
+		],
+		reference: "SHP-2218",
+		shipment: {
+			arrivesInHours: 16,
+			entryType: "01 — Consumption",
+			incoterm: "As-is · Simpson Bay",
+			mode: "Own keel · yacht “Harmonie”",
+			origin: "Sint Maarten (Simpson Bay)",
+			port: "Miami",
+		},
+		shipmentValue: 415000,
+		type: "document",
 	},
 	{
 		alternates: [
@@ -177,11 +438,33 @@ export const reviewItems: ReviewItem[] = [
 		client: "Solstice Apparel",
 		confidence: 0.82,
 		deadlineHoursFromNow: 26,
-		evidence: {
-			quote:
-				"“Women's single-breasted blazer — shell 55% wool / 45% polyester, lining 100% polyester”",
-			source: "Product spec sheet, style SA-2241",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Style", value: "SA-2241 women's blazer" },
+					{
+						highlight: true,
+						label: "Shell",
+						value: "55% wool / 45% polyester",
+					},
+					{ label: "Lining", value: "100% polyester" },
+					{ label: "Units", value: "3,800" },
+				],
+				meta: "PDF · 1 page",
+				name: "Spec Sheet — Style SA-2241",
+				note: "Chief weight decides the code — 55% wool puts it in 6204.31 at 17.5% instead of 26.9%.",
+				receivedHoursAgo: 12,
+			},
+			{
+				body: "Confirming shell composition is 55/45 wool-poly per the mill certificate. The final commercial invoice will match the spec sheet — certificate attached for your records.",
+				from: "merch@solsticeapparel.com",
+				kind: "email",
+				meta: "Email · 1 attachment",
+				receivedHoursAgo: 6,
+				subject: "RE: SA-2241 fabric composition",
+			},
+		],
 		id: "rev-4",
 		proposal: {
 			detail: "Women's suit-type jackets, of wool — 17.5% duty",
@@ -208,6 +491,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2216",
+		shipment: {
+			arrivesInHours: 40,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Haiphong",
+			mode: "Ocean · Maersk Emden 24E",
+			origin: "Vietnam (Haiphong)",
+			port: "NY/NJ",
+		},
 		shipmentValue: 64200,
 		type: "classification",
 	},
@@ -217,11 +508,33 @@ export const reviewItems: ReviewItem[] = [
 		client: "Juniper Beauty Labs",
 		confidence: 0.74,
 		deadlineHoursFromNow: 30,
-		evidence: {
-			quote:
-				"“LED light therapy facial mask — red & blue light modes for skin rejuvenation”",
-			source: "Product listing, SKU JB-LED-01",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Product", value: "LED facial mask · SKU JB-LED-01" },
+					{
+						highlight: true,
+						label: "Claims",
+						value: "“red & blue light for skin rejuvenation”",
+					},
+					{ label: "Power", value: "USB-C · 5V" },
+					{ label: "Units", value: "6,500" },
+				],
+				meta: "PDF · 1 page",
+				name: "Product Listing — JB-LED-01",
+				note: "The wellness-vs-medical-device line turns on the claims printed on the packaging.",
+				receivedHoursAgo: 20,
+			},
+			{
+				body: "Packaging files attached — there are no medical claims on the retail box, only 'wellness' language. Let us know if the FDA prior notice is still needed; we can adjust artwork for the next PO if that helps.",
+				from: "ops@juniperbeautylabs.com",
+				kind: "email",
+				meta: "Email · 1 attachment",
+				receivedHoursAgo: 5,
+				subject: "JB-LED-01 packaging artwork",
+			},
+		],
 		id: "rev-5",
 		proposal: {
 			detail: "File with FDA prior notice as a general wellness device",
@@ -248,6 +561,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2220",
+		shipment: {
+			arrivesInHours: 44,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Busan",
+			mode: "Ocean · HMM Algeciras 011E",
+			origin: "South Korea (Busan)",
+			port: "Seattle",
+		},
 		shipmentValue: 38900,
 		type: "pga",
 	},
@@ -257,11 +578,36 @@ export const reviewItems: ReviewItem[] = [
 		client: "Meridian Auto Parts",
 		confidence: 0.71,
 		deadlineHoursFromNow: 48,
-		evidence: {
-			quote:
-				"Unit price $8.40 — the trailing 12-month average for the same part from unrelated sellers is $10.25 (−18%).",
-			source: "Invoice INV-4471 vs. 12-month price history",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Seller", value: "Meridian GmbH (parent company)" },
+					{ highlight: true, label: "Unit price", value: "$8.40" },
+					{ label: "Quantity", value: "11,000 units" },
+					{ label: "Part", value: "RW-4471 sensor housing" },
+				],
+				meta: "PDF · 5 pages",
+				name: "Commercial Invoice INV-4471",
+				note: "Related-party price sits 18% under the unrelated-seller average for the same part.",
+				receivedHoursAgo: 30,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{
+						highlight: true,
+						label: "Unrelated sellers (12-mo avg)",
+						value: "$10.25/unit",
+					},
+					{ label: "This invoice", value: "$8.40/unit (−18%)" },
+					{ label: "Prior related-party entries", value: "$8.35–8.55/unit" },
+				],
+				meta: "Generated by Azali · entry history",
+				name: "12-Month Price Comparison",
+				receivedHoursAgo: 1,
+			},
+		],
 		id: "rev-6",
 		proposal: {
 			detail: "Accept the related-party price with documentation on file",
@@ -288,6 +634,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2225",
+		shipment: {
+			arrivesInHours: 60,
+			entryType: "01 — Consumption",
+			incoterm: "DAP Houston",
+			mode: "Ocean · Hapag-Lloyd Berlin Express",
+			origin: "Germany (Hamburg)",
+			port: "Houston",
+		},
 		shipmentValue: 92400,
 		type: "valuation",
 	},
@@ -296,11 +650,39 @@ export const reviewItems: ReviewItem[] = [
 		client: "Summit Footwear",
 		confidence: 0.91,
 		deadlineHoursFromNow: 72,
-		evidence: {
-			quote:
-				"Heading 6404 subdivided by upper material; 3 of Summit's 132 affected SKUs need manual reassignment.",
-			source: "Tariff Radar — HTS mid-year revision",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{
+						highlight: true,
+						label: "Change",
+						value: "6404.11.90 split by upper material",
+					},
+					{ label: "Effective", value: "Current period (mid-year revision)" },
+					{ label: "Summit SKUs affected", value: "132 (129 auto-reassigned)" },
+				],
+				meta: "Reference · USITC revision record",
+				name: "HTS Revision Notice — Heading 6404",
+				note: "This item came from Tariff Radar — the code split left 3 SKUs needing a manual call.",
+				receivedHoursAgo: 25,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{
+						highlight: true,
+						label: "Upper",
+						value: "78% textile mesh / 22% synthetic overlays",
+					},
+					{ label: "Sole", value: "Rubber" },
+					{ label: "Style", value: "TR-9 trail runner" },
+				],
+				meta: "PDF · 2 pages",
+				name: "Spec — TR-9 Trail Runner",
+				receivedHoursAgo: 24,
+			},
+		],
 		id: "rev-7",
 		proposal: {
 			detail: "Textile upper, rubber sole, athletic — duty unchanged",
@@ -327,6 +709,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2230",
+		shipment: {
+			arrivesInHours: 80,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Ho Chi Minh",
+			mode: "Ocean · CMA CGM Ivanhoe 0MX3E",
+			origin: "Vietnam (Ho Chi Minh)",
+			port: "LA/Long Beach",
+		},
 		shipmentValue: 51600,
 		type: "classification",
 	},
@@ -335,11 +725,39 @@ export const reviewItems: ReviewItem[] = [
 		client: "Atlas Machinery Corp.",
 		confidence: 0.85,
 		deadlineHoursFromNow: 96,
-		evidence: {
-			quote:
-				"Seller: Rheinwerk Präzision GmbH, Stuttgart, DE — the country-of-origin field is blank.",
-			source: "Commercial invoice INV-7702 header",
-		},
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{
+						label: "Seller",
+						value: "Rheinwerk Präzision GmbH, Stuttgart",
+					},
+					{ highlight: true, label: "Country of origin", value: "(blank)" },
+					{ label: "Port of lading", value: "Hamburg" },
+					{ label: "Part", value: "RW-2205 precision spindle" },
+				],
+				meta: "PDF · 2 pages",
+				name: "Commercial Invoice INV-7702",
+				note: "Origin is required for entry — every other signal on this shipment points to Germany.",
+				receivedHoursAgo: 40,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{
+						highlight: true,
+						label: "Prior entries for RW-2205",
+						value: "14 · all origin DE",
+					},
+					{ label: "Most recent", value: "3 weeks ago" },
+					{ label: "Duty impact", value: "None (no special tariffs for DE)" },
+				],
+				meta: "Generated by Azali · entry history",
+				name: "Entry History — Part RW-2205",
+				receivedHoursAgo: 1,
+			},
+		],
 		id: "rev-8",
 		proposal: {
 			detail:
@@ -363,6 +781,14 @@ export const reviewItems: ReviewItem[] = [
 			},
 		],
 		reference: "SHP-2233",
+		shipment: {
+			arrivesInHours: 90,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Hamburg",
+			mode: "Ocean · ACL Atlantic Sail 87W",
+			origin: "Germany (Hamburg)",
+			port: "NY/NJ",
+		},
 		shipmentValue: 143700,
 		type: "document",
 	},

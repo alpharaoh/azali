@@ -5,10 +5,12 @@ import {
 	ChevronLeft,
 	CircleCheck,
 	CircleDollar,
+	Envelope,
 	FileCheck,
 	FileText,
 	Funnel,
 	ShieldExclamation,
+	Sparkles,
 	Tag,
 } from "@gravity-ui/icons";
 import {
@@ -26,6 +28,7 @@ import {
 	addHours,
 	differenceInHours,
 	formatDistanceToNowStrict,
+	subHours,
 } from "date-fns";
 import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
@@ -33,6 +36,8 @@ import { useMemo, useState } from "react";
 import type {
 	Decision,
 	DecisionAction,
+	DocumentLine,
+	ReviewDocument,
 	ReviewItem,
 	ReviewItemType,
 } from "#/data/review-queue";
@@ -184,14 +189,142 @@ function QueueRow({
 							<Chip.Label>{typeMeta[item.type].label}</Chip.Label>
 						</Chip>
 						<Chip size="sm" variant="soft">
-							<Chip.Label className="tabular-nums">
-								{item.reference}
-							</Chip.Label>
+							<Chip.Label className="tabular-nums">{item.reference}</Chip.Label>
 						</Chip>
 					</div>
 				</div>
 			</button>
 		</li>
+	);
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Shipment fact + document previews
+ * -----------------------------------------------------------------------------------------------*/
+function receivedAgo(hoursAgo: number) {
+	return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
+		addSuffix: true,
+	});
+}
+
+function ShipmentFact({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="flex min-w-0 flex-col gap-0.5">
+			<span className="text-muted text-xs">{label}</span>
+			<span className="text-foreground truncate text-sm font-medium">
+				{value}
+			</span>
+		</div>
+	);
+}
+
+function DocumentLineRow({ line }: { line: DocumentLine }) {
+	return (
+		<div
+			className={`flex items-baseline justify-between gap-4 rounded px-1.5 py-0.5 ${
+				line.highlight ? "bg-warning/15" : ""
+			}`}
+		>
+			<span className="text-muted shrink-0">{line.label}</span>
+			<span
+				className={`text-right ${
+					line.highlight ? "text-foreground font-semibold" : "text-foreground"
+				}`}
+			>
+				{line.value}
+			</span>
+		</div>
+	);
+}
+
+function DocumentCard({ document }: { document: ReviewDocument }) {
+	if (document.kind === "scan") {
+		return (
+			<div className="flex flex-col gap-2 rounded-xl border p-3">
+				<div className="flex items-center justify-between gap-2">
+					<span className="text-foreground inline-flex min-w-0 items-center gap-1.5 text-xs font-medium">
+						<FileText className="text-muted size-3.5 shrink-0" />
+						<span className="truncate">{document.name}</span>
+					</span>
+					<span className="text-muted shrink-0 text-xs">
+						{document.meta} · {receivedAgo(document.receivedHoursAgo)}
+					</span>
+				</div>
+				<a
+					className="block"
+					href={document.src}
+					rel="noreferrer"
+					target="_blank"
+				>
+					<img
+						alt={document.name}
+						className="max-h-80 w-full rounded-lg border bg-white object-contain"
+						src={document.src}
+					/>
+				</a>
+				<span className="text-muted text-xs font-medium">
+					AI-extracted fields
+				</span>
+				<div className="bg-surface flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+					{document.extracted.map((line) => (
+						<DocumentLineRow key={line.label} line={line} />
+					))}
+				</div>
+				{document.note ? (
+					<span className="text-muted inline-flex items-start gap-1.5 text-xs">
+						<Sparkles className="mt-0.5 size-3 shrink-0" />
+						{document.note}
+					</span>
+				) : null}
+			</div>
+		);
+	}
+
+	if (document.kind === "email") {
+		return (
+			<div className="flex flex-col gap-2 rounded-xl border p-3">
+				<div className="flex items-center justify-between gap-2">
+					<span className="text-foreground inline-flex min-w-0 items-center gap-1.5 text-xs font-medium">
+						<Envelope className="text-muted size-3.5 shrink-0" />
+						<span className="truncate">{document.subject}</span>
+					</span>
+					<span className="text-muted shrink-0 text-xs">
+						{receivedAgo(document.receivedHoursAgo)}
+					</span>
+				</div>
+				<span className="text-muted text-xs">
+					From: {document.from} · {document.meta}
+				</span>
+				<p className="bg-surface text-foreground rounded-lg border p-3 text-xs leading-relaxed">
+					{document.body}
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-col gap-2 rounded-xl border p-3">
+			<div className="flex items-center justify-between gap-2">
+				<span className="text-foreground inline-flex min-w-0 items-center gap-1.5 text-xs font-medium">
+					<FileText className="text-muted size-3.5 shrink-0" />
+					<span className="truncate">{document.name}</span>
+				</span>
+				<span className="text-muted shrink-0 text-xs">
+					{document.meta} · {receivedAgo(document.receivedHoursAgo)}
+				</span>
+			</div>
+			<div className="bg-surface flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+				{document.lines.map((line) => (
+					<DocumentLineRow key={line.label} line={line} />
+				))}
+			</div>
+			{document.note ? (
+				<span className="text-muted inline-flex items-start gap-1.5 text-xs">
+					<Sparkles className="mt-0.5 size-3 shrink-0" />
+					{document.note}
+				</span>
+			) : null}
+		</div>
 	);
 }
 
@@ -316,6 +449,22 @@ function ReviewDetail({
 						<span className="text-muted text-sm">{item.proposal.detail}</span>
 					</div>
 
+					{/* Shipment */}
+					<div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+						<ShipmentFact label="Origin" value={item.shipment.origin} />
+						<ShipmentFact label="Port of entry" value={item.shipment.port} />
+						<ShipmentFact
+							label="Arrives"
+							value={formatDistanceToNowStrict(
+								addHours(new Date(), item.shipment.arrivesInHours),
+								{ addSuffix: true },
+							)}
+						/>
+						<ShipmentFact label="Mode" value={item.shipment.mode} />
+						<ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
+						<ShipmentFact label="Entry type" value={item.shipment.entryType} />
+					</div>
+
 					{/* Reasoning */}
 					<ChainOfThought>
 						<ChainOfThought.Trigger>
@@ -334,14 +483,53 @@ function ReviewDetail({
 
 					<Separator />
 
-					{/* Evidence */}
-					<div className="flex flex-col gap-1">
-						<span className="text-muted text-xs font-medium">Evidence</span>
-						<blockquote className="border-accent/40 border-l-2 pl-3 text-sm">
-							{item.evidence.quote}
-						</blockquote>
-						<span className="text-muted text-xs">{item.evidence.source}</span>
+					{/* Source documents */}
+					<div className="flex flex-col gap-2">
+						<span className="text-muted text-xs font-medium">
+							Source documents
+						</span>
+						{item.documents.map((document) => (
+							<DocumentCard
+								key={
+									document.kind === "email" ? document.subject : document.name
+								}
+								document={document}
+							/>
+						))}
 					</div>
+
+					{/* Comparison — when two documents disagree */}
+					{item.comparison ? (
+						<div className="flex flex-col gap-2">
+							<span className="text-muted text-xs font-medium">
+								What differs between them
+							</span>
+							<div className="overflow-hidden rounded-xl border">
+								<div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] text-xs">
+									<div className="bg-default/40 p-2.5" />
+									<div className="bg-default/40 text-foreground p-2.5 font-medium">
+										{item.comparison.docA}
+									</div>
+									<div className="bg-default/40 text-foreground p-2.5 font-medium">
+										{item.comparison.docB}
+									</div>
+									{item.comparison.rows.map((row) => (
+										<div key={row.label} className="contents">
+											<div className="text-muted border-t p-2.5">
+												{row.label}
+											</div>
+											<div className="text-foreground border-t p-2.5">
+												{row.a}
+											</div>
+											<div className="text-foreground border-t p-2.5">
+												{row.b}
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+					) : null}
 
 					{/* Alternates */}
 					{item.alternates && item.alternates.length > 0 ? (
