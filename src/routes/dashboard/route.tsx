@@ -19,6 +19,8 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { Fragment, useEffect, useState } from "react";
 
+import { usePendingReviewCount } from "#/data/review-queue";
+
 export const Route = createFileRoute("/dashboard")({
 	component: DashboardLayout,
 });
@@ -40,7 +42,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 				label: "Review Queue",
 				href: "/dashboard/review",
 				icon: ListCheck,
-				chip: "14",
 			},
 			{
 				id: "pipeline",
@@ -123,6 +124,14 @@ const SidebarBrand = () => (
 	</div>
 );
 
+const ReviewCountChip = () => {
+	const count = usePendingReviewCount();
+
+	if (count === 0) return null;
+
+	return <Sidebar.MenuChip>{count}</Sidebar.MenuChip>;
+};
+
 const SidebarNav = ({
 	idSuffix = "",
 	pathname,
@@ -149,7 +158,9 @@ const SidebarNav = ({
 									<item.icon className="size-4" />
 								</Sidebar.MenuIcon>
 								<Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
-								{item.chip ? (
+								{item.id === "review" ? (
+									<ReviewCountChip />
+								) : item.chip ? (
 									<Sidebar.MenuChip>{item.chip}</Sidebar.MenuChip>
 								) : null}
 							</Sidebar.MenuItem>
