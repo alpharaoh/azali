@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "#/components/page-placeholder";
+import { RecoveriesOverview } from "#/components/recoveries-overview";
 
 export const Route = createFileRoute("/dashboard/recoveries")({
 	component: Recoveries,
@@ -7,9 +7,8 @@ export const Route = createFileRoute("/dashboard/recoveries")({
 
 function Recoveries() {
 	return (
-		<PagePlaceholder
-			description="Drawback and refund opportunities the AI surfaces from entry history, and claims in flight. Money found, not hours billed."
-			title="Recoveries"
-		/>
+		<div className="p-4 pt-0">
+			<RecoveriesOverview />
+		</div>
 	);
 }
