@@ -14,3 +14,74 @@ body,
 body {
   margin: 0;
 }
+
+/*
+ * HeroUI Pro Theme
+ * Add this to your globals.css after importing @heroui/styles
+ * @see https://heroui.com/docs/react/getting-started/theming
+ */
+
+/*
+ * Font: Bricolage Grotesque
+ * Load this font in your app:
+ * <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@200..800&display=swap" rel="stylesheet" />
+ *
+ * Font: Inter
+ * Load this font in your app:
+ * <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+ */
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+  /* Theme Colors */
+  --background: oklch(97.02% 0.002 237.99);
+  --muted: oklch(55.17% 0.004 237.99);
+  --scrollbar: oklch(87.1% 0.002 237.99);
+  --surface-secondary: oklch(95.24% 0.003 237.99);
+  --surface-tertiary: oklch(93.73% 0.003 237.99);
+  --default: oklch(94% 0.002 237.99);
+  --accent: oklch(60.92% 0.1201 237.99);
+  --danger: oklch(66.99% 0.1583 20.89);
+  --field-border: oklch(90% 0.002 237.99);
+  --border: oklch(90% 0.002 237.99);
+  --separator: oklch(92% 0.002 237.99);
+
+  /* Border Radius */
+  --field-radius: 0.5rem;
+
+  /* Border Width */
+  --border-width-field: 0.05px;
+  --field-border-width: 0.05px;
+
+  /* Font */
+  --font-sans: var(--font-bricolage-grotesque);
+
+  /* Misc */
+  --cursor-interactive: pointer;
+}
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Theme Colors */
+  --background: oklch(12% 0.002 237.99);
+  --muted: oklch(70.5% 0.004 237.99);
+  --scrollbar: oklch(70.5% 0.002 237.99);
+  --surface: oklch(21.03% 0.004 237.99);
+  --surface-secondary: oklch(25.7% 0.003 237.99);
+  --surface-secondary-foreground: oklch(25.7% 0 237.99);
+  --surface-tertiary: oklch(27.21% 0.003 237.99);
+  --surface-tertiary-foreground: oklch(27.21% 0 237.99);
+  --overlay: oklch(21.03% 0.004 237.99);
+  --default: oklch(27.4% 0.002 237.99);
+  --accent: oklch(60.92% 0.1201 237.99);
+  --danger: oklch(59.4% 0.1967 24.62);
+  --field-background: oklch(21.03% 0.004 237.99);
+  --field-placeholder: oklch(70.5% 0 237.99);
+  --field-border: oklch(28% 0.002 237.99);
+  --segment: oklch(39.64% 0.002 237.99);
+  --border: oklch(28% 0.002 237.99);
+  --separator: oklch(25% 0.002 237.99);
+}
