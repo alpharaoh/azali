@@ -9,38 +9,193 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardTariffRadarRouteImport } from './routes/dashboard/tariff-radar'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardReviewRouteImport } from './routes/dashboard/review'
+import { Route as DashboardRecoveriesRouteImport } from './routes/dashboard/recoveries'
+import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
+import { Route as DashboardComplianceRouteImport } from './routes/dashboard/compliance'
+import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
+import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
+import { Route as DashboardBillingRouteImport } from './routes/dashboard/billing'
+import { Route as DashboardAutopilotRouteImport } from './routes/dashboard/autopilot'
 
+const DashboardRouteRoute = DashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardTariffRadarRoute = DashboardTariffRadarRouteImport.update({
+  id: '/tariff-radar',
+  path: '/tariff-radar',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardReviewRoute = DashboardReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardRecoveriesRoute = DashboardRecoveriesRouteImport.update({
+  id: '/recoveries',
+  path: '/recoveries',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardComplianceRoute = DashboardComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardClientsRoute = DashboardClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardClassificationsRoute =
+  DashboardClassificationsRouteImport.update({
+    id: '/classifications',
+    path: '/classifications',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
+const DashboardBillingRoute = DashboardBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardAutopilotRoute = DashboardAutopilotRouteImport.update({
+  id: '/autopilot',
+  path: '/autopilot',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/dashboard/autopilot': typeof DashboardAutopilotRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/classifications': typeof DashboardClassificationsRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/compliance': typeof DashboardComplianceRoute
+  '/dashboard/pipeline': typeof DashboardPipelineRoute
+  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard/autopilot': typeof DashboardAutopilotRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/classifications': typeof DashboardClassificationsRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/compliance': typeof DashboardComplianceRoute
+  '/dashboard/pipeline': typeof DashboardPipelineRoute
+  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
+  '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteRouteWithChildren
+  '/dashboard/autopilot': typeof DashboardAutopilotRoute
+  '/dashboard/billing': typeof DashboardBillingRoute
+  '/dashboard/classifications': typeof DashboardClassificationsRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/compliance': typeof DashboardComplianceRoute
+  '/dashboard/pipeline': typeof DashboardPipelineRoute
+  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/dashboard/autopilot'
+    | '/dashboard/billing'
+    | '/dashboard/classifications'
+    | '/dashboard/clients'
+    | '/dashboard/compliance'
+    | '/dashboard/pipeline'
+    | '/dashboard/recoveries'
+    | '/dashboard/review'
+    | '/dashboard/settings'
+    | '/dashboard/tariff-radar'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard/autopilot'
+    | '/dashboard/billing'
+    | '/dashboard/classifications'
+    | '/dashboard/clients'
+    | '/dashboard/compliance'
+    | '/dashboard/pipeline'
+    | '/dashboard/recoveries'
+    | '/dashboard/review'
+    | '/dashboard/settings'
+    | '/dashboard/tariff-radar'
+    | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/dashboard/autopilot'
+    | '/dashboard/billing'
+    | '/dashboard/classifications'
+    | '/dashboard/clients'
+    | '/dashboard/compliance'
+    | '/dashboard/pipeline'
+    | '/dashboard/recoveries'
+    | '/dashboard/review'
+    | '/dashboard/settings'
+    | '/dashboard/tariff-radar'
+    | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +203,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/tariff-radar': {
+      id: '/dashboard/tariff-radar'
+      path: '/tariff-radar'
+      fullPath: '/dashboard/tariff-radar'
+      preLoaderRoute: typeof DashboardTariffRadarRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/review': {
+      id: '/dashboard/review'
+      path: '/review'
+      fullPath: '/dashboard/review'
+      preLoaderRoute: typeof DashboardReviewRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/recoveries': {
+      id: '/dashboard/recoveries'
+      path: '/recoveries'
+      fullPath: '/dashboard/recoveries'
+      preLoaderRoute: typeof DashboardRecoveriesRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/pipeline': {
+      id: '/dashboard/pipeline'
+      path: '/pipeline'
+      fullPath: '/dashboard/pipeline'
+      preLoaderRoute: typeof DashboardPipelineRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/compliance': {
+      id: '/dashboard/compliance'
+      path: '/compliance'
+      fullPath: '/dashboard/compliance'
+      preLoaderRoute: typeof DashboardComplianceRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/clients': {
+      id: '/dashboard/clients'
+      path: '/clients'
+      fullPath: '/dashboard/clients'
+      preLoaderRoute: typeof DashboardClientsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/classifications': {
+      id: '/dashboard/classifications'
+      path: '/classifications'
+      fullPath: '/dashboard/classifications'
+      preLoaderRoute: typeof DashboardClassificationsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/billing': {
+      id: '/dashboard/billing'
+      path: '/billing'
+      fullPath: '/dashboard/billing'
+      preLoaderRoute: typeof DashboardBillingRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/autopilot': {
+      id: '/dashboard/autopilot'
+      path: '/autopilot'
+      fullPath: '/dashboard/autopilot'
+      preLoaderRoute: typeof DashboardAutopilotRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
   }
 }
 
+interface DashboardRouteRouteChildren {
+  DashboardAutopilotRoute: typeof DashboardAutopilotRoute
+  DashboardBillingRoute: typeof DashboardBillingRoute
+  DashboardClassificationsRoute: typeof DashboardClassificationsRoute
+  DashboardClientsRoute: typeof DashboardClientsRoute
+  DashboardComplianceRoute: typeof DashboardComplianceRoute
+  DashboardPipelineRoute: typeof DashboardPipelineRoute
+  DashboardRecoveriesRoute: typeof DashboardRecoveriesRoute
+  DashboardReviewRoute: typeof DashboardReviewRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardTariffRadarRoute: typeof DashboardTariffRadarRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardAutopilotRoute: DashboardAutopilotRoute,
+  DashboardBillingRoute: DashboardBillingRoute,
+  DashboardClassificationsRoute: DashboardClassificationsRoute,
+  DashboardClientsRoute: DashboardClientsRoute,
+  DashboardComplianceRoute: DashboardComplianceRoute,
+  DashboardPipelineRoute: DashboardPipelineRoute,
+  DashboardRecoveriesRoute: DashboardRecoveriesRoute,
+  DashboardReviewRoute: DashboardReviewRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardTariffRadarRoute: DashboardTariffRadarRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
+  DashboardRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRouteRoute: DashboardRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
