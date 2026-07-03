@@ -84,7 +84,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         label: "Recoveries",
         href: "/dashboard/recoveries",
         icon: CircleDollar,
-        chip: "$48K",
       },
       {
         id: "billing",
@@ -124,7 +123,7 @@ const ALL_ITEMS = [
 
 const SidebarBrand = () => (
   <div className="flex items-center gap-3 px-1 py-2">
-    <div className="bg-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+    <div className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
       <span className="text-background text-sm font-bold">A</span>
     </div>
     <div className="flex flex-col">
