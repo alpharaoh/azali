@@ -96,7 +96,8 @@ const eventSeeds: TariffEventSeed[] = [
 	{
 		clients: 4,
 		daysFromNow: -1,
-		description: "HTS mid-year revision — heading 6404 split by upper material.",
+		description:
+			"HTS mid-year revision — heading 6404 split by upper material.",
 		id: 4,
 		impact: "$0",
 		impactCaption: "no duty change, codes only",
@@ -282,10 +283,7 @@ export function TariffRadarOverview() {
 								<Kanban.ColumnCount>{columnEvents.length}</Kanban.ColumnCount>
 							</Kanban.ColumnHeader>
 							<Kanban.ColumnBody>
-								<Kanban.CardList
-									aria-label={column.title}
-									items={columnEvents}
-								>
+								<Kanban.CardList aria-label={column.title} items={columnEvents}>
 									{(event) => <TariffEventCard event={event} />}
 								</Kanban.CardList>
 							</Kanban.ColumnBody>
