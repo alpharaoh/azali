@@ -208,7 +208,7 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
 					</div>
 				</div>
 
-				<div className="flex items-center justify-between gap-2">
+				<div className="mt-1.5 flex items-center justify-between gap-2">
 					<span className="text-muted inline-flex items-center gap-1.5 text-xs">
 						<Calendar className="size-3.5 shrink-0" />
 						Effective {formatDate(event.effectiveDate)}
