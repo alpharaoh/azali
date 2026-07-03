@@ -340,23 +340,19 @@ export function ClientsTable() {
 		column: "name",
 		direction: "ascending",
 	});
-	const [statusFilter, setStatusFilter] = useState<Set<string>>(
-		() => new Set(statuses),
-	);
-	const [autonomyFilter, setAutonomyFilter] = useState<Set<string>>(
-		() => new Set(autonomyModes),
-	);
+	const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
+	const [autonomyFilter, setAutonomyFilter] = useState<Set<string>>(new Set());
 	const [visibleColumns, setVisibleColumns] = useState<Selection>(
 		new Set(ALL_COLUMNS),
 	);
 
-	const statusActive = statusFilter.size < statuses.length;
-	const autonomyActive = autonomyFilter.size < autonomyModes.length;
+	const statusActive = statusFilter.size > 0;
+	const autonomyActive = autonomyFilter.size > 0;
 
 	const clearFilters = useCallback(() => {
 		setSearch("");
-		setAutonomyFilter(new Set(autonomyModes));
-		setStatusFilter(new Set(statuses));
+		setAutonomyFilter(new Set());
+		setStatusFilter(new Set());
 		setPage(1);
 	}, []);
 
@@ -639,7 +635,6 @@ export function ClientsTable() {
 					</Button>
 					<Dropdown.Popover>
 						<Dropdown.Menu
-							disallowEmptySelection
 							selectedKeys={autonomyFilter}
 							selectionMode="multiple"
 							onSelectionChange={(keys) =>
@@ -674,7 +669,6 @@ export function ClientsTable() {
 					</Button>
 					<Dropdown.Popover>
 						<Dropdown.Menu
-							disallowEmptySelection
 							selectedKeys={statusFilter}
 							selectionMode="multiple"
 							onSelectionChange={(keys) =>
