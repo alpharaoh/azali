@@ -1,15 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "#/components/page-placeholder";
+import { ClassificationEngine } from "#/components/classification-engine";
 
 export const Route = createFileRoute("/dashboard/classifications")({
-	component: ClassificationBrain,
+	component: ClassificationsPage,
 });
 
-function ClassificationBrain() {
+function ClassificationsPage() {
 	return (
-		<PagePlaceholder
-			description="The per-client product catalog mapped to HTS codes — each with its rationale, CROSS citations, and decision history. Every human correction in the Review Queue feeds back here."
-			title="Classification Brain"
-		/>
+		<div className="p-4 pt-0">
+			<ClassificationEngine />
+		</div>
 	);
 }
