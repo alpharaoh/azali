@@ -1608,6 +1608,8 @@ export interface ThreadMessage {
 	id: string;
 	author: "ai" | "broker";
 	body: string;
+	/** Notes live on the Overview timeline; chat messages in the Agent Trace conversation. */
+	kind: "chat" | "note";
 }
 
 let threads: ReadonlyMap<string, readonly ThreadMessage[]> = new Map();

@@ -5,23 +5,18 @@ import {
   ArrowRotateLeft,
   ArrowUp,
   ArrowUpRightFromSquare,
-  BookOpen,
-  Calculator,
   ChevronLeft,
   CircleCheck,
   CircleDollar,
   Envelope,
   FileCheck,
   FileText,
-  Flag,
   Funnel,
-  Magnifier,
   PaperPlane,
   Pencil,
   Person,
   ShieldExclamation,
   Sparkles,
-  SquareCheck,
   Tag,
 } from "@gravity-ui/icons";
 import {
@@ -34,9 +29,20 @@ import {
   ScrollShadow,
   SearchField,
   Separator,
-  Tooltip,
 } from "@heroui/react";
-import { PromptInput, Timeline, Widget } from "@heroui-pro/react";
+import {
+  ChainOfThought,
+  ChatLoader,
+  ChatMessage,
+  ChatSource,
+  HoverCard,
+  PromptInput,
+  PromptSuggestion,
+  Segment,
+  TextShimmer,
+  Timeline,
+  Widget,
+} from "@heroui-pro/react";
 import {
   addHours,
   differenceInHours,
@@ -48,6 +54,7 @@ import { useMemo, useState } from "react";
 
 import type {
   ActivityEvent,
+  Citation,
   CitationKind,
   Decision,
   DecisionAction,
@@ -56,7 +63,6 @@ import type {
   ReviewItem,
   ReviewItemType,
   ThreadMessage,
-  TraceStepKind,
 } from "#/data/review-queue";
 import {
   addThreadMessage,
@@ -282,17 +288,43 @@ const citationMeta: Record<
   ruling: { chip: "accent", label: "CROSS Ruling" },
 };
 
-const traceIconMap: Record<
-  TraceStepKind,
-  ComponentType<SVGProps<SVGSVGElement>>
-> = {
-  calc: Calculator,
-  check: SquareCheck,
-  decision: CircleCheck,
-  flag: Flag,
-  lookup: Magnifier,
-  read: FileText,
-};
+/** Compact source pill — hover reveals the exact passage the agent relied on. */
+function CitationPill({ citation }: { citation: Citation }) {
+  const meta = citationMeta[citation.kind];
+
+  return (
+    <HoverCard closeDelay={100} openDelay={150}>
+      <HoverCard.Trigger className="inline-flex max-w-full">
+        <ChatSource sourceType="document" title={citation.ref} />
+      </HoverCard.Trigger>
+      <HoverCard.Content className="max-w-80 p-3" placement="top">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <Chip color={meta.chip} size="sm" variant="soft">
+              <Chip.Label>{meta.label}</Chip.Label>
+            </Chip>
+            <span className="text-foreground font-mono text-xs font-semibold">
+              {citation.ref}
+            </span>
+          </div>
+          <p className="text-muted m-0 text-xs leading-relaxed">
+            “{citation.quote}”
+          </p>
+        </div>
+      </HoverCard.Content>
+    </HoverCard>
+  );
+}
+
+/** Deterministic mock "thinking time" so every trace feels like real agent work. */
+function traceDuration(item: ReviewItem) {
+  const steps = item.trace.reduce((sum, phase) => sum + phase.steps.length, 0);
+  const seconds = steps * 19 + item.citations.length * 11;
+
+  return seconds >= 60
+    ? `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+    : `${seconds}s`;
+}
 
 /** Canned AI reply for the item thread — cites the top source for questions. */
 function aiReply(item: ReviewItem, message: string): string {
@@ -361,17 +393,25 @@ function EventTimelineItem({
           <p className="text-muted m-0 text-xs leading-5">{event.detail}</p>
         ) : null}
         {event.steps ? (
-          <div className="bg-background/40 mt-1.5 flex flex-col gap-1 rounded-lg border p-2.5">
-            {event.steps.map((step) => (
-              <span
-                key={step}
-                className="text-muted flex items-start gap-1.5 text-xs leading-5"
-              >
-                <span className="bg-muted/60 mt-2 size-1 shrink-0 rounded-full" />
-                {step}
-              </span>
-            ))}
-          </div>
+          <ChainOfThought className="mt-1">
+            <ChainOfThought.Trigger className="text-xs">
+              <Sparkles className="size-3" />
+              Show reasoning
+              <span className="text-muted/80">{event.steps.length} steps</span>
+            </ChainOfThought.Trigger>
+            <ChainOfThought.Content>
+              <ChainOfThought.Steps>
+                {event.steps.map((step) => (
+                  <ChainOfThought.Step
+                    key={step}
+                    label={<span className="text-xs">{step}</span>}
+                  >
+                    {null}
+                  </ChainOfThought.Step>
+                ))}
+              </ChainOfThought.Steps>
+            </ChainOfThought.Content>
+          </ChainOfThought>
         ) : null}
       </Timeline.Content>
     </Timeline.Item>
@@ -478,6 +518,125 @@ function DocumentTimelineItem({
   );
 }
 
+/** One input, two jobs — notes on the Overview, questions in the Agent Trace. */
+function Composer({
+  onSubmit,
+  onValueChange,
+  placeholder,
+  value,
+}: {
+  onSubmit: () => void;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <PromptInput
+      value={value}
+      onSubmit={onSubmit}
+      onValueChange={onValueChange}
+    >
+      <PromptInput.Shell>
+        <PromptInput.Content>
+          <PromptInput.TextArea placeholder={placeholder} />
+        </PromptInput.Content>
+        <PromptInput.Toolbar>
+          <PromptInput.ToolbarEnd>
+            <PromptInput.Send>
+              <ArrowUp className="size-4" />
+            </PromptInput.Send>
+          </PromptInput.ToolbarEnd>
+        </PromptInput.Toolbar>
+      </PromptInput.Shell>
+    </PromptInput>
+  );
+}
+
+/** The full phased reasoning transcript with inline citations — the Agent Trace tab. */
+function TraceSection({ item }: { item: ReviewItem }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1.5">
+        <Sparkles className="text-muted size-3.5" />
+        <span className="text-muted text-sm">
+          Thought for {traceDuration(item)} ·{" "}
+          {item.trace.reduce((sum, phase) => sum + phase.steps.length, 0)} steps
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {item.trace.map((phase) => (
+          <ChainOfThought key={phase.label} defaultExpanded>
+            <ChainOfThought.Trigger>
+              <span className="text-foreground font-medium">{phase.label}</span>
+              <span className="text-muted text-xs">
+                {phase.steps.length}{" "}
+                {phase.steps.length === 1 ? "step" : "steps"}
+              </span>
+            </ChainOfThought.Trigger>
+            <ChainOfThought.Content>
+              <ChainOfThought.Steps>
+                {phase.steps.map((step) => {
+                  const citation = step.citationRef
+                    ? item.citations.find(
+                        (entry) => entry.ref === step.citationRef,
+                      )
+                    : undefined;
+
+                  return (
+                    <ChainOfThought.Step
+                      key={step.title}
+                      label={
+                        <span
+                          className={
+                            step.kind === "flag"
+                              ? "text-warning font-medium"
+                              : step.kind === "decision"
+                                ? "text-accent font-medium"
+                                : "text-foreground font-medium"
+                          }
+                        >
+                          {step.title}
+                        </span>
+                      }
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-muted text-xs leading-relaxed">
+                          {step.detail}
+                        </span>
+                        {step.data ? (
+                          <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+                            {step.data.map((line) => (
+                              <span key={line}>{line}</span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {citation ? <CitationPill citation={citation} /> : null}
+                      </div>
+                    </ChainOfThought.Step>
+                  );
+                })}
+              </ChainOfThought.Steps>
+            </ChainOfThought.Content>
+          </ChainOfThought>
+        ))}
+        <Separator className="my-2" />
+        <div className="flex flex-col gap-2">
+          <span className="text-muted text-xs font-medium">
+            {item.citations.length}{" "}
+            {item.citations.length === 1 ? "source" : "sources"} — hover to read
+            the cited passage
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {item.citations.map((citation) => (
+              <CitationPill key={citation.ref} citation={citation} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* -------------------------------------------------------------------------------------------------
  * Detail pane — email-detail structure: toolbar · scrollable body · pinned action bar
  * -----------------------------------------------------------------------------------------------*/
@@ -499,10 +658,13 @@ function ReviewDetail({
   total: number;
 }) {
   const [alternate, setAlternate] = useState<string | null>(null);
+  const [view, setView] = useState<"overview" | "trace">("overview");
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const threads = useReviewThreads();
-  const messages = threads.get(item.id) ?? [];
+  const thread = threads.get(item.id) ?? [];
+  const notes = thread.filter((message) => message.kind === "note");
+  const chat = thread.filter((message) => message.kind === "chat");
   const activity = [
     ...item.documents.map((document) => ({
       document,
@@ -518,8 +680,21 @@ function ReviewDetail({
   const TypeIcon = typeMeta[item.type].icon;
   const tone = deadlineTone(deadline);
 
-  const handleSend = () => {
+  const handleAddNote = () => {
     const body = draft.trim();
+
+    if (!body) return;
+    setDraft("");
+    addThreadMessage(item.id, {
+      author: "broker",
+      body,
+      id: `msg-${Date.now()}`,
+      kind: "note",
+    });
+  };
+
+  const handleAsk = (question?: string) => {
+    const body = (question ?? draft).trim();
 
     if (!body || isThinking) return;
     setDraft("");
@@ -527,6 +702,7 @@ function ReviewDetail({
       author: "broker",
       body,
       id: `msg-${Date.now()}`,
+      kind: "chat",
     });
     setIsThinking(true);
     setTimeout(() => {
@@ -534,6 +710,7 @@ function ReviewDetail({
         author: "ai",
         body: aiReply(item, body),
         id: `msg-${Date.now()}-ai`,
+        kind: "chat",
       });
       setIsThinking(false);
     }, 1100);
@@ -598,334 +775,288 @@ function ReviewDetail({
         </div>
       </div>
 
+      {/* Title + view switch */}
+      <div className="flex flex-col gap-3 lg:px-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-foreground text-base font-semibold leading-normal">
+            {item.question}
+          </h1>
+          <span className="text-muted text-xs">
+            {item.client} · {item.reference} ·{" "}
+            {formatCurrency(item.shipmentValue)} shipment
+          </span>
+        </div>
+        <Segment
+          className="self-start w-80"
+          selectedKey={view}
+          onSelectionChange={(key) =>
+            setView(key === "trace" ? "trace" : "overview")
+          }
+        >
+          <Segment.Item id="overview">Overview</Segment.Item>
+          <Segment.Item id="trace">
+            <Sparkles className="size-3.5" />
+            Agent Trace
+          </Segment.Item>
+        </Segment>
+      </div>
+
       {/* Body */}
       <ScrollShadow
         hideScrollBar
         className="min-h-0 flex-1 overflow-y-auto lg:px-4"
       >
-        <div className="flex select-text flex-col gap-5 pb-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-foreground text-base font-semibold leading-normal">
-              {item.question}
-            </h1>
-            <span className="text-muted text-xs">
-              {item.client} · {item.reference} ·{" "}
-              {formatCurrency(item.shipmentValue)} shipment
-            </span>
-          </div>
-
-          {/* Proposal */}
-          <Widget>
-            <Widget.Header>
-              <Widget.Title>{item.proposal.label}</Widget.Title>
-            </Widget.Header>
-            <Widget.Content className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
-                  {item.proposal.value}
+        {view === "overview" ? (
+          <div className="flex select-text flex-col gap-5 pb-4">
+            {/* Proposal */}
+            <Widget>
+              <Widget.Header>
+                <Widget.Title>{item.proposal.label}</Widget.Title>
+              </Widget.Header>
+              <Widget.Content className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
+                    {item.proposal.value}
+                  </span>
+                  <Chip
+                    color={item.confidence >= 0.9 ? "success" : "warning"}
+                    size="md"
+                    variant="soft"
+                  >
+                    <Chip.Label>
+                      {Math.round(item.confidence * 100)}% confident
+                    </Chip.Label>
+                  </Chip>
+                </div>
+                <span className="text-muted text-sm">
+                  {item.proposal.detail}
                 </span>
-                <Chip
-                  color={item.confidence >= 0.9 ? "success" : "warning"}
-                  size="md"
-                  variant="soft"
-                >
-                  <Chip.Label>
-                    {Math.round(item.confidence * 100)}% confident
-                  </Chip.Label>
-                </Chip>
-              </div>
-              <span className="text-muted text-sm">{item.proposal.detail}</span>
-            </Widget.Content>
-          </Widget>
+              </Widget.Content>
+            </Widget>
 
-          {/* Shipment */}
-          <Widget>
-            <Widget.Header>
-              <Widget.Title>Shipment</Widget.Title>
-            </Widget.Header>
-            <Widget.Content className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-              <ShipmentFact label="Origin" value={item.shipment.origin} />
-              <ShipmentFact label="Port of entry" value={item.shipment.port} />
-              <ShipmentFact
-                label="Arrives"
-                value={formatDistanceToNowStrict(
-                  addHours(new Date(), item.shipment.arrivesInHours),
-                  { addSuffix: true },
+            {/* Shipment */}
+            <Widget>
+              <Widget.Header>
+                <Widget.Title>Shipment</Widget.Title>
+              </Widget.Header>
+              <Widget.Content className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+                <ShipmentFact label="Origin" value={item.shipment.origin} />
+                <ShipmentFact
+                  label="Port of entry"
+                  value={item.shipment.port}
+                />
+                <ShipmentFact
+                  label="Arrives"
+                  value={formatDistanceToNowStrict(
+                    addHours(new Date(), item.shipment.arrivesInHours),
+                    { addSuffix: true },
+                  )}
+                />
+                <ShipmentFact label="Mode" value={item.shipment.mode} />
+                <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
+                <ShipmentFact
+                  label="Entry type"
+                  value={item.shipment.entryType}
+                />
+              </Widget.Content>
+            </Widget>
+
+            {/* Activity — documents, events, and your notes to the AI, oldest first */}
+            <div className="flex flex-col gap-2">
+              <span className="text-muted text-xs font-medium">Activity</span>
+              <Timeline density="compact" size="sm">
+                {activity.map((entry, index) =>
+                  entry.kind === "document" ? (
+                    <DocumentTimelineItem
+                      key={
+                        entry.document.kind === "email"
+                          ? entry.document.subject
+                          : entry.document.name
+                      }
+                      _index={index}
+                      _isLast={false}
+                      document={entry.document}
+                    />
+                  ) : (
+                    <EventTimelineItem
+                      key={entry.event.title}
+                      _index={index}
+                      _isLast={false}
+                      event={entry.event}
+                    />
+                  ),
                 )}
-              />
-              <ShipmentFact label="Mode" value={item.shipment.mode} />
-              <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
-              <ShipmentFact
-                label="Entry type"
-                value={item.shipment.entryType}
-              />
-            </Widget.Content>
-          </Widget>
+                {notes.map((message, index) => (
+                  <ThreadTimelineItem
+                    key={message.id}
+                    _index={activity.length + index}
+                    _isLast={false}
+                    message={message}
+                  />
+                ))}
+                <Timeline.Item
+                  _index={activity.length + notes.length}
+                  _isLast
+                  align="start"
+                  status="default"
+                >
+                  <Timeline.Marker aria-hidden="true" className="size-6">
+                    <Pencil className="size-3.5" />
+                  </Timeline.Marker>
+                  <Timeline.Content className="gap-2">
+                    <Composer
+                      placeholder="Add a note to the audit record…"
+                      value={draft}
+                      onSubmit={handleAddNote}
+                      onValueChange={setDraft}
+                    />
+                  </Timeline.Content>
+                </Timeline.Item>
+              </Timeline>
+            </div>
 
-          {/* Reasoning & citations — always visible; this is where trust lives */}
-          <Widget>
-            <Widget.Header>
-              <Widget.Title className="inline-flex items-center gap-1.5">
-                <BookOpen className="text-muted size-4" />
-                Agent Trace
-              </Widget.Title>
-              <span className="text-muted text-xs">
-                {item.trace.reduce((sum, phase) => sum + phase.steps.length, 0)}{" "}
-                steps · {item.citations.length} sources
-              </span>
-            </Widget.Header>
-            <Widget.Content className="flex flex-col gap-5">
-              {item.trace.map((phase, phaseIndex) => (
-                <div key={phase.label} className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted text-xs font-semibold uppercase tracking-wider">
-                      {phaseIndex + 1} · {phase.label}
-                    </span>
-                    <div className="bg-separator h-px flex-1" />
-                  </div>
-                  {phase.steps.map((step) => {
-                    const StepIcon = traceIconMap[step.kind];
-
-                    return (
-                      <div key={step.title} className="flex gap-2.5">
-                        <StepIcon
-                          className={`mt-0.5 size-3.5 shrink-0 ${
-                            step.kind === "flag"
-                              ? "text-warning"
-                              : step.kind === "decision"
-                                ? "text-accent"
-                                : "text-muted"
-                          }`}
-                        />
-                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <span className="text-foreground text-sm font-medium leading-tight">
-                            {step.title}
-                          </span>
-                          <span className="text-muted text-xs leading-relaxed">
-                            {step.detail}
-                          </span>
-                          {step.data ? (
-                            <div className="bg-background/40 mt-1 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
-                              {step.data.map((line) => (
-                                <span key={line}>{line}</span>
-                              ))}
-                            </div>
-                          ) : null}
-                          {step.citationRef ? (
-                            <span className="text-muted inline-flex items-center gap-1.5 text-xs">
-                              <BookOpen className="size-3 shrink-0" />
-                              cites{" "}
-                              <span className="text-foreground font-mono font-medium">
-                                {step.citationRef}
-                              </span>
-                            </span>
-                          ) : null}
+            {/* Comparison — when two documents disagree */}
+            {item.comparison ? (
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>What differs between them</Widget.Title>
+                </Widget.Header>
+                <Widget.Content>
+                  <div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] overflow-hidden rounded-lg border text-xs">
+                    <div className="bg-default/40 p-2.5" />
+                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
+                      {item.comparison.docA}
+                    </div>
+                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
+                      {item.comparison.docB}
+                    </div>
+                    {item.comparison.rows.map((row) => (
+                      <div key={row.label} className="contents">
+                        <div className="text-muted border-t p-2.5">
+                          {row.label}
+                        </div>
+                        <div className="text-foreground border-t p-2.5">
+                          {row.a}
+                        </div>
+                        <div className="text-foreground border-t p-2.5">
+                          {row.b}
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </Widget.Content>
+              </Widget>
+            ) : null}
+
+            {/* Alternates */}
+            {item.alternates && item.alternates.length > 0 ? (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <span className="text-muted text-xs font-medium">
+                    Alternate classifications
+                  </span>
+                  {item.alternates.map((alt) => {
+                    const isSelected = alternate === alt.value;
+
+                    return (
+                      <button
+                        key={alt.value}
+                        className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                          isSelected
+                            ? "border-accent ring-accent/40 ring-1"
+                            : "hover:border-foreground/25"
+                        }`}
+                        type="button"
+                        onClick={() =>
+                          setAlternate(isSelected ? null : alt.value)
+                        }
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-foreground text-sm font-semibold tabular-nums">
+                            {alt.value}
+                          </span>
+                          <span className="text-muted text-xs">
+                            {alt.detail}
+                          </span>
+                        </div>
+                        <span className="text-muted text-xs tabular-nums">
+                          {Math.round(alt.confidence * 100)}%
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
-              ))}
-              <Separator />
-              <div className="flex flex-col gap-2">
-                {item.citations.map((citation) => (
-                  <div
-                    key={citation.ref}
-                    className="bg-background/40 flex items-start justify-between gap-3 rounded-lg border p-3"
-                  >
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <Chip
-                          color={citationMeta[citation.kind].chip}
-                          size="sm"
-                          variant="soft"
-                        >
-                          <Chip.Label>
-                            {citationMeta[citation.kind].label}
-                          </Chip.Label>
-                        </Chip>
-                        <span className="text-foreground font-mono text-xs font-semibold">
-                          {citation.ref}
-                        </span>
-                      </span>
-                      <span className="text-muted text-xs leading-relaxed">
-                        “{citation.quote}”
-                      </span>
-                    </div>
-                    <Tooltip>
-                      <Button
-                        isIconOnly
-                        aria-label="Open source"
-                        className="text-muted hover:text-foreground shrink-0"
-                        size="sm"
-                        variant="ghost"
-                      >
-                        <ArrowUpRightFromSquare className="size-3.5" />
-                      </Button>
-                      <Tooltip.Content>Open source</Tooltip.Content>
-                    </Tooltip>
-                  </div>
-                ))}
-              </div>
-            </Widget.Content>
-          </Widget>
-
-          {/* Activity — documents, events, and your notes to the AI, oldest first */}
-          <div className="flex flex-col gap-2">
-            <span className="text-muted text-xs font-medium">Activity</span>
-            <Timeline density="compact" size="sm">
-              {activity.map((entry, index) =>
-                entry.kind === "document" ? (
-                  <DocumentTimelineItem
-                    key={
-                      entry.document.kind === "email"
-                        ? entry.document.subject
-                        : entry.document.name
-                    }
-                    _index={index}
-                    _isLast={false}
-                    document={entry.document}
-                  />
-                ) : (
-                  <EventTimelineItem
-                    key={entry.event.title}
-                    _index={index}
-                    _isLast={false}
-                    event={entry.event}
-                  />
-                ),
-              )}
-              {messages.map((message, index) => (
-                <ThreadTimelineItem
-                  key={message.id}
-                  _index={activity.length + index}
-                  _isLast={false}
-                  message={message}
-                />
-              ))}
-              {isThinking ? (
-                <Timeline.Item
-                  _index={activity.length + messages.length}
-                  _isLast={false}
-                  align="start"
-                  status="current"
-                >
-                  <Timeline.Marker aria-hidden="true" className="size-6">
-                    <Sparkles className="size-3.5 animate-pulse" />
-                  </Timeline.Marker>
-                  <Timeline.Content className="gap-0.5">
-                    <span className="text-muted animate-pulse text-xs leading-5">
-                      Azali AI is thinking…
-                    </span>
-                  </Timeline.Content>
-                </Timeline.Item>
-              ) : null}
-              <Timeline.Item
-                _index={activity.length + messages.length + 1}
-                _isLast
-                align="start"
-                status="default"
-              >
-                <Timeline.Marker aria-hidden="true" className="size-6">
-                  <Pencil className="size-3.5" />
-                </Timeline.Marker>
-                <Timeline.Content className="gap-2">
-                  <PromptInput
-                    value={draft}
-                    onSubmit={handleSend}
-                    onValueChange={setDraft}
-                  >
-                    <PromptInput.Shell>
-                      <PromptInput.Content>
-                        <PromptInput.TextArea placeholder="Add a note or ask the AI about this decision…" />
-                      </PromptInput.Content>
-                      <PromptInput.Toolbar>
-                        <PromptInput.ToolbarEnd>
-                          <PromptInput.Send>
-                            <ArrowUp className="size-4" />
-                          </PromptInput.Send>
-                        </PromptInput.ToolbarEnd>
-                      </PromptInput.Toolbar>
-                    </PromptInput.Shell>
-                  </PromptInput>
-                </Timeline.Content>
-              </Timeline.Item>
-            </Timeline>
+              </>
+            ) : null}
           </div>
+        ) : (
+          <div className="flex select-text flex-col gap-5 pb-4">
+            <TraceSection item={item} />
 
-          {/* Comparison — when two documents disagree */}
-          {item.comparison ? (
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>What differs between them</Widget.Title>
-              </Widget.Header>
-              <Widget.Content>
-                <div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] overflow-hidden rounded-lg border text-xs">
-                  <div className="bg-default/40 p-2.5" />
-                  <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                    {item.comparison.docA}
-                  </div>
-                  <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                    {item.comparison.docB}
-                  </div>
-                  {item.comparison.rows.map((row) => (
-                    <div key={row.label} className="contents">
-                      <div className="text-muted border-t p-2.5">
-                        {row.label}
-                      </div>
-                      <div className="text-foreground border-t p-2.5">
-                        {row.a}
-                      </div>
-                      <div className="text-foreground border-t p-2.5">
-                        {row.b}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Widget.Content>
-            </Widget>
-          ) : null}
-
-          {/* Alternates */}
-          {item.alternates && item.alternates.length > 0 ? (
-            <>
-              <Separator />
-              <div className="flex flex-col gap-2">
-                <span className="text-muted text-xs font-medium">
-                  Alternate classifications
-                </span>
-                {item.alternates.map((alt) => {
-                  const isSelected = alternate === alt.value;
-
-                  return (
-                    <button
-                      key={alt.value}
-                      className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
-                        isSelected
-                          ? "border-accent ring-accent/40 ring-1"
-                          : "hover:border-foreground/25"
-                      }`}
-                      type="button"
-                      onClick={() =>
-                        setAlternate(isSelected ? null : alt.value)
+            {/* Conversation — interrogate the agent; answers join the audit record */}
+            <div className="flex flex-col gap-3">
+              <span className="text-muted text-xs font-medium">
+                Ask the agent
+              </span>
+              {chat.length === 0 && !isThinking ? (
+                <PromptSuggestion>
+                  <PromptSuggestion.Items>
+                    <PromptSuggestion.Item
+                      onPress={() =>
+                        handleAsk("Why are you confident in this?")
                       }
                     >
-                      <div className="flex flex-col">
-                        <span className="text-foreground text-sm font-semibold tabular-nums">
-                          {alt.value}
-                        </span>
-                        <span className="text-muted text-xs">{alt.detail}</span>
-                      </div>
-                      <span className="text-muted text-xs tabular-nums">
-                        {Math.round(alt.confidence * 100)}%
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
-        </div>
+                      Why are you confident in this?
+                    </PromptSuggestion.Item>
+                    <PromptSuggestion.Item
+                      onPress={() =>
+                        handleAsk("What would change your recommendation?")
+                      }
+                    >
+                      What would change your recommendation?
+                    </PromptSuggestion.Item>
+                  </PromptSuggestion.Items>
+                </PromptSuggestion>
+              ) : null}
+              {chat.map((message) =>
+                message.author === "broker" ? (
+                  <ChatMessage.User key={message.id}>
+                    <ChatMessage.Bubble>
+                      <p className="m-0 text-sm">{message.body}</p>
+                    </ChatMessage.Bubble>
+                  </ChatMessage.User>
+                ) : (
+                  <ChatMessage.Assistant key={message.id}>
+                    <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
+                    <ChatMessage.Body>
+                      <ChatMessage.Content>{message.body}</ChatMessage.Content>
+                    </ChatMessage.Body>
+                  </ChatMessage.Assistant>
+                ),
+              )}
+              {isThinking ? (
+                <ChatMessage.Assistant>
+                  <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
+                  <ChatMessage.Body>
+                    <div className="flex items-center gap-2 py-1.5">
+                      <ChatLoader.Dots size="sm" />
+                      <TextShimmer className="text-xs">
+                        Azali AI is thinking…
+                      </TextShimmer>
+                    </div>
+                  </ChatMessage.Body>
+                </ChatMessage.Assistant>
+              ) : null}
+              <Composer
+                placeholder="Ask the agent — answers cite sources and join the audit record…"
+                value={draft}
+                onSubmit={() => handleAsk()}
+                onValueChange={setDraft}
+              />
+            </div>
+          </div>
+        )}
       </ScrollShadow>
 
       {/* Actions — pinned below the scroll area */}
