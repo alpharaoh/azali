@@ -16,6 +16,8 @@
     "check": "biome check"
   },
   "dependencies": {
+    "@heroui/react": "^3.2.1",
+    "@heroui/styles": "^3.2.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-router": "latest",
