@@ -9,6 +9,7 @@ import {
   TrendChip,
   Widget,
 } from "@heroui-pro/react";
+import { format, subDays, subMonths } from "date-fns";
 
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
@@ -23,7 +24,7 @@ interface RecoveryOpportunity {
   amount: number;
   confidence: number;
   status: ClaimStatus;
-  identifiedAt: string;
+  identifiedAt: Date;
 }
 
 const kpiCards = [
@@ -53,14 +54,23 @@ const kpiCards = [
   },
 ];
 
-const monthlyRecoveries = [
-  { drawback: 18400, exclusion: 4100, month: "Jan", overpayment: 9200 },
-  { drawback: 24800, exclusion: 6800, month: "Feb", overpayment: 7600 },
-  { drawback: 31500, exclusion: 5400, month: "Mar", overpayment: 12300 },
-  { drawback: 28200, exclusion: 9100, month: "Apr", overpayment: 15800 },
-  { drawback: 42600, exclusion: 7300, month: "May", overpayment: 11400 },
-  { drawback: 38900, exclusion: 12600, month: "Jun", overpayment: 18700 },
+const monthlyTotals = [
+  { drawback: 18400, exclusion: 4100, overpayment: 9200 },
+  { drawback: 24800, exclusion: 6800, overpayment: 7600 },
+  { drawback: 31500, exclusion: 5400, overpayment: 12300 },
+  { drawback: 28200, exclusion: 9100, overpayment: 15800 },
+  { drawback: 42600, exclusion: 7300, overpayment: 11400 },
+  { drawback: 38900, exclusion: 12600, overpayment: 18700 },
 ];
+
+// Trailing six months ending with the current month, so the chart never goes stale.
+const monthlyRecoveries = monthlyTotals.map((totals, index) => ({
+  ...totals,
+  month: format(
+    subMonths(new Date(), monthlyTotals.length - 1 - index),
+    "MMM",
+  ),
+}));
 
 const mechanismColors: Record<Mechanism, string> = {
   Drawback: "var(--chart-1)",
@@ -181,12 +191,8 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+function formatDate(date: Date) {
+  return format(date, "MMM d, yyyy");
 }
 
 /* -------------------------------------------------------------------------------------------------
