@@ -37,6 +37,7 @@ import {
 } from "@heroui-pro/react";
 import { useCallback, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
+import { clientLogos } from "#/data/client-logos";
 
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
@@ -65,6 +66,7 @@ interface Client {
 	iorNumber: string;
 	bondNumber: string;
 	name: string;
+	logo?: string;
 	origin: Country;
 	industry: string;
 	autonomy: AutonomyMode;
@@ -199,9 +201,14 @@ function randomBondNumber(seed: number): string {
 	return `99${num}`.slice(0, 9);
 }
 
+function pickStatus(random: number): StatusOption {
+	if (random < 0.03) return "Onboarding";
+	if (random < 0.1) return "Paused";
+	return "Active";
+}
+
 const clients: Client[] = companyNames.map((name, i) => {
 	const r = (offset: number) => seededRandom(i * 7 + offset);
-	const statusIndex = (i * 3 + Math.floor(r(5) * 7)) % statuses.length;
 
 	return {
 		autonomy: pickSeeded(autonomyModes, r(4)),
@@ -211,10 +218,11 @@ const clients: Client[] = companyNames.map((name, i) => {
 		id: i + 1,
 		industry: pickSeeded(industries, r(2)),
 		iorNumber: randomIorNumber(i * 13 + 1),
+		logo: clientLogos[name],
 		name,
 		origin: pickSeeded(origins, r(3)),
 		ports: randomPorts(i * 11 + 3),
-		status: statuses[statusIndex % statuses.length] as StatusOption,
+		status: pickStatus(r(5)),
 	};
 });
 
@@ -435,6 +443,7 @@ export function ClientsTable() {
 				cell: (item) => (
 					<div className="flex items-center gap-3">
 						<Avatar size="sm">
+							<Avatar.Image src={item.logo} />
 							<Avatar.Fallback>
 								{item.name
 									.split(" ")

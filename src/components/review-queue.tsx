@@ -3,7 +3,9 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	ArrowRotateLeft,
+	ArrowUp,
 	ArrowUpRightFromSquare,
+	BookOpen,
 	ChevronLeft,
 	CircleCheck,
 	CircleDollar,
@@ -12,6 +14,8 @@ import {
 	FileText,
 	Funnel,
 	PaperPlane,
+	Pencil,
+	Person,
 	ShieldExclamation,
 	Sparkles,
 	Tag,
@@ -26,8 +30,9 @@ import {
 	ScrollShadow,
 	SearchField,
 	Separator,
+	Tooltip,
 } from "@heroui/react";
-import { ChainOfThought, Timeline, Widget } from "@heroui-pro/react";
+import { PromptInput, Timeline, Widget } from "@heroui-pro/react";
 import {
 	addHours,
 	differenceInHours,
@@ -39,18 +44,22 @@ import { useMemo, useState } from "react";
 
 import type {
 	ActivityEvent,
+	CitationKind,
 	Decision,
 	DecisionAction,
 	DocumentLine,
 	ReviewDocument,
 	ReviewItem,
 	ReviewItemType,
+	ThreadMessage,
 } from "#/data/review-queue";
 import {
+	addThreadMessage,
 	resolveReviewItem,
 	reviewItems,
 	undoReviewItem,
 	useReviewDecisions,
+	useReviewThreads,
 } from "#/data/review-queue";
 
 /* -------------------------------------------------------------------------------------------------
@@ -157,6 +166,7 @@ function QueueRow({
 				onClick={onSelect}
 			>
 				<Avatar className="size-9 shrink-0">
+					<Avatar.Image src={item.logo} />
 					<Avatar.Fallback>{getInitials(item.client)}</Avatar.Fallback>
 				</Avatar>
 
@@ -256,6 +266,59 @@ const eventIconMap: Record<
 	check: CircleCheck,
 	mail: PaperPlane,
 };
+
+const citationMeta: Record<
+	CitationKind,
+	{ chip: "accent" | "default" | "success" | "warning"; label: string }
+> = {
+	catalog: { chip: "success", label: "Catalog" },
+	evidence: { chip: "warning", label: "Evidence" },
+	regulation: { chip: "default", label: "Regulation" },
+	ruling: { chip: "accent", label: "CROSS Ruling" },
+};
+
+/** Canned AI reply for the item thread — cites the top source for questions. */
+function aiReply(item: ReviewItem, message: string): string {
+	const citation = item.citations[0];
+	const kind = typeMeta[item.type].label.toLowerCase();
+
+	if (message.trim().endsWith("?") && citation) {
+		return `Good question — my proposal leans on ${citation.ref}: “${citation.quote}” If you read it differently, correct me and I'll apply your preference to future ${item.client} ${kind} decisions.`;
+	}
+
+	return `Noted — I've added this to ${item.reference}'s audit record and will factor it into future ${kind} decisions for ${item.client}.`;
+}
+
+function ThreadTimelineItem({
+	message,
+	...rest
+}: { message: ThreadMessage } & TimelineItemPassthrough) {
+	const isAi = message.author === "ai";
+	const Icon = isAi ? Sparkles : Person;
+
+	return (
+		<Timeline.Item
+			align="start"
+			status={isAi ? "current" : "default"}
+			{...rest}
+		>
+			<Timeline.Marker aria-hidden="true" className="size-6">
+				<Icon className="size-3.5" />
+			</Timeline.Marker>
+			<Timeline.Content className="gap-0.5">
+				<div className="flex min-w-0 items-center justify-between gap-4">
+					<h3 className="text-foreground m-0 text-xs font-medium leading-5">
+						{isAi ? "Azali AI" : "You"}
+					</h3>
+					<time className="text-muted shrink-0 text-xs leading-5">
+						just now
+					</time>
+				</div>
+				<p className="text-muted m-0 text-xs leading-5">{message.body}</p>
+			</Timeline.Content>
+		</Timeline.Item>
+	);
+}
 
 function EventTimelineItem({
 	event,
@@ -406,6 +469,10 @@ function ReviewDetail({
 	total: number;
 }) {
 	const [alternate, setAlternate] = useState<string | null>(null);
+	const [draft, setDraft] = useState("");
+	const [isThinking, setIsThinking] = useState(false);
+	const threads = useReviewThreads();
+	const messages = threads.get(item.id) ?? [];
 	const activity = [
 		...item.documents.map((document) => ({
 			document,
@@ -420,6 +487,27 @@ function ReviewDetail({
 	].sort((a, b) => b.hoursAgo - a.hoursAgo);
 	const TypeIcon = typeMeta[item.type].icon;
 	const tone = deadlineTone(deadline);
+
+	const handleSend = () => {
+		const body = draft.trim();
+
+		if (!body || isThinking) return;
+		setDraft("");
+		addThreadMessage(item.id, {
+			author: "broker",
+			body,
+			id: `msg-${Date.now()}`,
+		});
+		setIsThinking(true);
+		setTimeout(() => {
+			addThreadMessage(item.id, {
+				author: "ai",
+				body: aiReply(item, body),
+				id: `msg-${Date.now()}-ai`,
+			});
+			setIsThinking(false);
+		}, 1100);
+	};
 
 	return (
 		<div className="bg-background/40 flex max-h-full min-h-0 flex-1 flex-col gap-4 overflow-clip rounded-2xl border p-4">
@@ -544,25 +632,73 @@ function ReviewDetail({
 						</Widget.Content>
 					</Widget>
 
-					{/* Reasoning */}
-					<ChainOfThought>
-						<ChainOfThought.Trigger>
-							AI reasoning · {item.reasoning.length} steps
-						</ChainOfThought.Trigger>
-						<ChainOfThought.Content>
-							<ChainOfThought.Steps>
+					{/* Reasoning & citations — always visible; this is where trust lives */}
+					<Widget>
+						<Widget.Header>
+							<Widget.Title className="inline-flex items-center gap-1.5">
+								<BookOpen className="text-muted size-4" />
+								Reasoning &amp; Citations
+							</Widget.Title>
+							<span className="text-muted text-xs">
+								{item.reasoning.length} steps · {item.citations.length} sources
+							</span>
+						</Widget.Header>
+						<Widget.Content className="flex flex-col gap-4">
+							<ol className="flex list-decimal flex-col gap-2 pl-4">
 								{item.reasoning.map((step) => (
-									<ChainOfThought.Step key={step.label} label={step.label}>
-										{step.body}
-									</ChainOfThought.Step>
+									<li key={step.label} className="text-sm leading-relaxed">
+										<span className="text-foreground font-medium">
+											{step.label}.
+										</span>{" "}
+										<span className="text-muted">{step.body}</span>
+									</li>
 								))}
-							</ChainOfThought.Steps>
-						</ChainOfThought.Content>
-					</ChainOfThought>
+							</ol>
+							<Separator />
+							<div className="flex flex-col gap-2">
+								{item.citations.map((citation) => (
+									<div
+										key={citation.ref}
+										className="bg-background/40 flex items-start justify-between gap-3 rounded-lg border p-3"
+									>
+										<div className="flex min-w-0 flex-col gap-1">
+											<span className="flex flex-wrap items-center gap-2">
+												<Chip
+													color={citationMeta[citation.kind].chip}
+													size="sm"
+													variant="soft"
+												>
+													<Chip.Label>
+														{citationMeta[citation.kind].label}
+													</Chip.Label>
+												</Chip>
+												<span className="text-foreground font-mono text-xs font-semibold">
+													{citation.ref}
+												</span>
+											</span>
+											<span className="text-muted text-xs leading-relaxed">
+												“{citation.quote}”
+											</span>
+										</div>
+										<Tooltip>
+											<Button
+												isIconOnly
+												aria-label="Open source"
+												className="text-muted hover:text-foreground shrink-0"
+												size="sm"
+												variant="ghost"
+											>
+												<ArrowUpRightFromSquare className="size-3.5" />
+											</Button>
+											<Tooltip.Content>Open source</Tooltip.Content>
+										</Tooltip>
+									</div>
+								))}
+							</div>
+						</Widget.Content>
+					</Widget>
 
-					<Separator />
-
-					{/* Activity — documents and events, chronological, oldest first */}
+					{/* Activity — documents, events, and your notes to the AI, oldest first */}
 					<div className="flex flex-col gap-2">
 						<span className="text-muted text-xs font-medium">Activity</span>
 						<Timeline density="compact" size="sm">
@@ -575,18 +711,78 @@ function ReviewDetail({
 												: entry.document.name
 										}
 										_index={index}
-										_isLast={index === activity.length - 1}
+										_isLast={false}
 										document={entry.document}
 									/>
 								) : (
 									<EventTimelineItem
 										key={entry.event.title}
 										_index={index}
-										_isLast={index === activity.length - 1}
+										_isLast={false}
 										event={entry.event}
 									/>
 								),
 							)}
+							{messages.map((message, index) => (
+								<ThreadTimelineItem
+									key={message.id}
+									_index={activity.length + index}
+									_isLast={false}
+									message={message}
+								/>
+							))}
+							{isThinking ? (
+								<Timeline.Item
+									_index={activity.length + messages.length}
+									_isLast={false}
+									align="start"
+									status="current"
+								>
+									<Timeline.Marker aria-hidden="true" className="size-6">
+										<Sparkles className="size-3.5 animate-pulse" />
+									</Timeline.Marker>
+									<Timeline.Content className="gap-0.5">
+										<span className="text-muted animate-pulse text-xs leading-5">
+											Azali AI is thinking…
+										</span>
+									</Timeline.Content>
+								</Timeline.Item>
+							) : null}
+							<Timeline.Item
+								_index={activity.length + messages.length + 1}
+								_isLast
+								align="start"
+								status="default"
+							>
+								<Timeline.Marker aria-hidden="true" className="size-6">
+									<Pencil className="size-3.5" />
+								</Timeline.Marker>
+								<Timeline.Content className="gap-2">
+									<PromptInput
+										value={draft}
+										onSubmit={handleSend}
+										onValueChange={setDraft}
+									>
+										<PromptInput.Shell>
+											<PromptInput.Content>
+												<PromptInput.TextArea placeholder="Add a note or ask the AI about this decision…" />
+											</PromptInput.Content>
+											<PromptInput.Toolbar>
+												<PromptInput.ToolbarStart>
+													<span className="text-muted text-xs">
+														Notes and answers join the audit record
+													</span>
+												</PromptInput.ToolbarStart>
+												<PromptInput.ToolbarEnd>
+													<PromptInput.Send>
+														<ArrowUp className="size-4" />
+													</PromptInput.Send>
+												</PromptInput.ToolbarEnd>
+											</PromptInput.Toolbar>
+										</PromptInput.Shell>
+									</PromptInput>
+								</Timeline.Content>
+							</Timeline.Item>
 						</Timeline>
 					</div>
 

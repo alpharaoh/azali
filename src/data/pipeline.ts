@@ -1,3 +1,4 @@
+import { clientLogos } from "./client-logos";
 import type { ReviewItemType } from "./review-queue";
 import { reviewItems } from "./review-queue";
 
@@ -16,6 +17,7 @@ export interface Shipment {
 	id: string;
 	reference: string;
 	client: string;
+	logo?: string;
 	/** Short origin port, e.g. "Shanghai". */
 	origin: string;
 	/** US port of entry. */
@@ -52,6 +54,7 @@ const stageForReviewType: Record<ReviewItemType, PipelineStage> = {
 const reviewShipments: Shipment[] = reviewItems.map((item) => ({
 	arrivesInHours: item.shipment.arrivesInHours,
 	client: item.client,
+	logo: item.logo,
 	duty: Math.max(100, Math.round((item.shipmentValue * 0.05) / 100) * 100),
 	fromReview: true,
 	id: item.reference,
@@ -70,6 +73,7 @@ const flowingShipments: Shipment[] = [
 		client: "Vela Cosmetics",
 		duty: 1500,
 		id: "SHP-2226",
+		logo: clientLogos["Vela Cosmetics"],
 		mode: "Ocean · HMM Songdo 023E",
 		origin: "Busan",
 		port: "LA/Long Beach",
@@ -82,6 +86,7 @@ const flowingShipments: Shipment[] = [
 		client: "Titan Tools USA",
 		duty: 4800,
 		id: "SHP-2228",
+		logo: clientLogos["Titan Tools USA"],
 		mode: "Ocean · OOCL Spain 118W",
 		origin: "Ningbo",
 		port: "Seattle",
@@ -94,6 +99,7 @@ const flowingShipments: Shipment[] = [
 		client: "Redwood Home Goods",
 		duty: 3500,
 		id: "SHP-2231",
+		logo: clientLogos["Redwood Home Goods"],
 		mode: "Ocean · Wan Hai A16 067E",
 		origin: "Ho Chi Minh",
 		port: "Savannah",
@@ -106,6 +112,7 @@ const flowingShipments: Shipment[] = [
 		client: "Crestline Sporting Goods",
 		duty: 2500,
 		id: "SHP-2235",
+		logo: clientLogos["Crestline Sporting Goods"],
 		mode: "Air · KE214",
 		origin: "Taipei",
 		port: "LA/Long Beach",
@@ -118,6 +125,7 @@ const flowingShipments: Shipment[] = [
 		client: "Golden Gate Trading",
 		duty: 8400,
 		id: "ENT-4468",
+		logo: clientLogos["Golden Gate Trading"],
 		mode: "Ocean · MSC Anna 226E",
 		origin: "Shanghai",
 		port: "LA/Long Beach",
@@ -130,6 +138,7 @@ const flowingShipments: Shipment[] = [
 		client: "Lotus Textiles",
 		duty: 11200,
 		id: "ENT-4465",
+		logo: clientLogos["Lotus Textiles"],
 		mode: "Ocean · Maersk Ohio 27E",
 		origin: "Haiphong",
 		port: "NY/NJ",
@@ -142,6 +151,7 @@ const flowingShipments: Shipment[] = [
 		client: "Aurora Lighting Co.",
 		duty: 2100,
 		id: "ENT-4459",
+		logo: clientLogos["Aurora Lighting Co."],
 		mode: "Ocean · ONE Stork 044E",
 		origin: "Shenzhen",
 		port: "LA/Long Beach",
@@ -154,6 +164,7 @@ const flowingShipments: Shipment[] = [
 		client: "Pinnacle Components",
 		duty: 6300,
 		id: "ENT-4455",
+		logo: clientLogos["Pinnacle Components"],
 		mode: "Air · BR032",
 		origin: "Taipei",
 		port: "Chicago",

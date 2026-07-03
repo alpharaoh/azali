@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { clientLogos } from "./client-logos";
 
 /* -------------------------------------------------------------------------------------------------
  * Types
@@ -52,6 +53,15 @@ export interface ActivityEvent {
 	status?: "current" | "default" | "success" | "warning";
 }
 
+export type CitationKind = "catalog" | "evidence" | "regulation" | "ruling";
+
+/** A formal source the AI relied on — rulings, regulations, catalog precedent. */
+export interface Citation {
+	kind: CitationKind;
+	ref: string;
+	quote: string;
+}
+
 export interface ShipmentFacts {
 	origin: string;
 	port: string;
@@ -65,6 +75,7 @@ export interface ReviewItem {
 	id: string;
 	type: ReviewItemType;
 	client: string;
+	logo?: string;
 	reference: string;
 	/** The decision being asked of the broker — the list title. */
 	question: string;
@@ -74,6 +85,8 @@ export interface ReviewItem {
 	confidence: number;
 	proposal: { label: string; value: string; detail: string };
 	reasoning: Array<{ label: string; body: string }>;
+	/** The sources behind the proposal — always shown, never collapsed. */
+	citations: Citation[];
 	shipment: ShipmentFacts;
 	documents: ReviewDocument[];
 	/** Non-document activity — AI actions, emails sent, status changes. */
@@ -103,6 +116,7 @@ export const reviewItems: ReviewItem[] = [
 	{
 		approveLabel: "Approve & File",
 		client: "Pacific Rim Imports",
+		logo: clientLogos["Pacific Rim Imports"],
 		confidence: 0.98,
 		deadlineHoursFromNow: 1.5,
 		documents: [
@@ -151,6 +165,20 @@ export const reviewItems: ReviewItem[] = [
 				title: "Queued for licensed sign-off",
 			},
 		],
+		citations: [
+			{
+				kind: "catalog",
+				quote:
+					"All 24 lines matched classifications previously approved by your team.",
+				ref: "Classification Engine · 24 entries",
+			},
+			{
+				kind: "regulation",
+				quote:
+					"Entry documentation must be filed within 15 calendar days of arrival; filing before arrival avoids storage charges.",
+				ref: "19 CFR §142.2",
+			},
+		],
 		id: "rev-1",
 		proposal: {
 			detail: "All 24 lines classified at ≥98% confidence · duty $12,430",
@@ -191,6 +219,7 @@ export const reviewItems: ReviewItem[] = [
 	{
 		approveLabel: "Approve Correction",
 		client: "Harbor Foods Co.",
+		logo: clientLogos["Harbor Foods Co."],
 		confidence: 0.93,
 		deadlineHoursFromNow: 3,
 		documents: [
@@ -223,6 +252,20 @@ export const reviewItems: ReviewItem[] = [
 				occurredHoursAgo: 2,
 				status: "warning",
 				title: "AI flagged a totals mismatch",
+			},
+		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Each invoice shall set forth an accurate and itemized statement of the purchase price of each item.",
+				ref: "19 CFR §141.86(a)",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Packing list quantities and unit prices agree with the 12 line items, not the printed total.",
+				ref: "Packing list PL-88231",
 			},
 		],
 		id: "rev-2",
@@ -273,6 +316,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		approveLabel: "Approve",
 		client: "Bluewave Electronics",
+		logo: clientLogos["Bluewave Electronics"],
 		confidence: 0.87,
 		deadlineHoursFromNow: 6,
 		documents: [
@@ -322,6 +366,26 @@ export const reviewItems: ReviewItem[] = [
 				title: "AI proposed 8517.62.0090 at 87%",
 			},
 		],
+		citations: [
+			{
+				kind: "ruling",
+				quote:
+					"A mesh Wi-Fi system comprising a router and satellite units is classified under subheading 8517.62.00, free of duty.",
+				ref: "CROSS NY N324089",
+			},
+			{
+				kind: "regulation",
+				quote:
+					"Heading 8517 covers machines for the reception, conversion and transmission of voice, images or other data.",
+				ref: "HTSUS Heading 8517",
+			},
+			{
+				kind: "catalog",
+				quote:
+					"Mesh extender EX-3 approved under 8517.62.0090 for Bluewave in March — same principal function.",
+				ref: "Catalog · BW-EXT-003",
+			},
+		],
 		id: "rev-3",
 		proposal: {
 			detail: "Machines for reception/conversion/transmission of data · Free",
@@ -363,6 +427,7 @@ export const reviewItems: ReviewItem[] = [
 		approveLabel: "Accept CBP 1300",
 		canRequestInfo: true,
 		client: "Windward Marine Group",
+		logo: clientLogos["Windward Marine Group"],
 		comparison: {
 			docA: "Vessel Clearance (CBP 1300)",
 			docB: "Customs Declaration (6059B)",
@@ -439,6 +504,20 @@ export const reviewItems: ReviewItem[] = [
 				title: "AI compared the two scans",
 			},
 		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Vessel entrance and clearance statements are made on CBP Form 1300.",
+				ref: "19 CFR §4.61",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"The CBP stamp reads MAY 01 2022 and voyage particulars list April 2022 calls — contradicting the handwritten 2020.",
+				ref: "Scan · CBP Form 1300",
+			},
+		],
 		id: "rev-9",
 		proposal: {
 			detail:
@@ -487,6 +566,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		approveLabel: "Approve",
 		client: "Solstice Apparel",
+		logo: clientLogos["Solstice Apparel"],
 		confidence: 0.82,
 		deadlineHoursFromNow: 26,
 		documents: [
@@ -531,6 +611,20 @@ export const reviewItems: ReviewItem[] = [
 				title: "AI confirmed the chief-weight call",
 			},
 		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Garments are classified by the fabric of the outer shell; the chief-weight fibre of the shell governs.",
+				ref: "HTSUS Ch. 62, Subheading Note 2",
+			},
+			{
+				kind: "ruling",
+				quote:
+					"A woven blazer of 55% wool and 45% polyester is classifiable under subheading 6204.31.",
+				ref: "CROSS HQ 960950",
+			},
+		],
 		id: "rev-4",
 		proposal: {
 			detail: "Women's suit-type jackets, of wool — 17.5% duty",
@@ -572,6 +666,7 @@ export const reviewItems: ReviewItem[] = [
 		approveLabel: "Approve FDA Filing",
 		canRequestInfo: true,
 		client: "Juniper Beauty Labs",
+		logo: clientLogos["Juniper Beauty Labs"],
 		confidence: 0.74,
 		deadlineHoursFromNow: 30,
 		documents: [
@@ -607,6 +702,20 @@ export const reviewItems: ReviewItem[] = [
 				icon: "mail",
 				occurredHoursAgo: 8,
 				title: "Packaging artwork requested",
+			},
+		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Light-based devices intended for medical purposes are Class II devices requiring premarket notification.",
+				ref: "21 CFR §878.4810",
+			},
+			{
+				kind: "regulation",
+				quote:
+					"Products with claims limited to general wellness and low safety risk are not regulated as medical devices.",
+				ref: "FDA General Wellness Guidance",
 			},
 		],
 		id: "rev-5",
@@ -650,6 +759,7 @@ export const reviewItems: ReviewItem[] = [
 		approveLabel: "Accept Transaction Value",
 		canRequestInfo: true,
 		client: "Meridian Auto Parts",
+		logo: clientLogos["Meridian Auto Parts"],
 		confidence: 0.71,
 		deadlineHoursFromNow: 48,
 		documents: [
@@ -689,6 +799,20 @@ export const reviewItems: ReviewItem[] = [
 				occurredHoursAgo: 28,
 				status: "warning",
 				title: "AI flagged related-party pricing",
+			},
+		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Transaction value between related persons is acceptable where circumstances of sale indicate the relationship did not influence the price.",
+				ref: "19 USC §1401a(b)(2)(B)",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Prior related-party entries for this part ran $8.35–8.55/unit and were accepted at liquidation.",
+				ref: "Entry history · RW-4471",
 			},
 		],
 		id: "rev-6",
@@ -731,6 +855,7 @@ export const reviewItems: ReviewItem[] = [
 	{
 		approveLabel: "Approve",
 		client: "Summit Footwear",
+		logo: clientLogos["Summit Footwear"],
 		confidence: 0.91,
 		deadlineHoursFromNow: 72,
 		documents: [
@@ -775,6 +900,20 @@ export const reviewItems: ReviewItem[] = [
 				title: "Tariff Radar triggered a reclassification sweep",
 			},
 		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Subheading 6404.11.90 is subdivided according to the constituent material of the upper.",
+				ref: "USITC HTS Rev. (mid-year)",
+			},
+			{
+				kind: "catalog",
+				quote:
+					"129 sibling SKUs were reassigned automatically under the new subdivision.",
+				ref: "Catalog · Summit Footwear",
+			},
+		],
 		id: "rev-7",
 		proposal: {
 			detail: "Textile upper, rubber sole, athletic — duty unchanged",
@@ -815,6 +954,7 @@ export const reviewItems: ReviewItem[] = [
 	{
 		approveLabel: "Approve Origin",
 		client: "Atlas Machinery Corp.",
+		logo: clientLogos["Atlas Machinery Corp."],
 		confidence: 0.85,
 		deadlineHoursFromNow: 96,
 		documents: [
@@ -857,6 +997,20 @@ export const reviewItems: ReviewItem[] = [
 				occurredHoursAgo: 1,
 				status: "current",
 				title: "AI inferred German origin",
+			},
+		],
+		citations: [
+			{
+				kind: "regulation",
+				quote:
+					"Every article of foreign origin imported into the United States shall be marked to indicate the country of origin.",
+				ref: "19 CFR §134.11",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"14 prior entries for part RW-2205, all declared origin DE and accepted.",
+				ref: "Entry history · RW-2205",
 			},
 		],
 		id: "rev-8",
@@ -941,4 +1095,40 @@ export function usePendingReviewCount() {
 	const current = useReviewDecisions();
 
 	return reviewItems.length - current.size;
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Per-item threads — broker notes and questions to the AI, part of the audit record
+ * -----------------------------------------------------------------------------------------------*/
+export interface ThreadMessage {
+	id: string;
+	author: "ai" | "broker";
+	body: string;
+}
+
+let threads: ReadonlyMap<string, readonly ThreadMessage[]> = new Map();
+const threadListeners = new Set<() => void>();
+
+function threadSubscribe(listener: () => void) {
+	threadListeners.add(listener);
+
+	return () => {
+		threadListeners.delete(listener);
+	};
+}
+
+function threadSnapshot() {
+	return threads;
+}
+
+export function addThreadMessage(itemId: string, message: ThreadMessage) {
+	const next = new Map(threads);
+
+	next.set(itemId, [...(next.get(itemId) ?? []), message]);
+	threads = next;
+	for (const listener of threadListeners) listener();
+}
+
+export function useReviewThreads() {
+	return useSyncExternalStore(threadSubscribe, threadSnapshot, threadSnapshot);
 }
