@@ -18,6 +18,7 @@ import {
 import {
 	Avatar,
 	Button,
+	Card,
 	Chip,
 	Dropdown,
 	Label,
@@ -259,21 +260,28 @@ function DocumentCard({ document }: { document: ReviewDocument }) {
 	const ActionIcon = action.icon;
 
 	return (
-		<Widget>
-			<Widget.Header>
-				<Widget.Title className="inline-flex min-w-0 items-center gap-1.5">
-					<Icon className="text-muted size-3.5 shrink-0" />
-					<span className="truncate">{title}</span>
-				</Widget.Title>
-				<div className="flex shrink-0 items-center gap-2">
-					<span className="text-muted text-xs">{meta}</span>
-					<Button size="sm" variant="tertiary" onPress={action.onPress}>
-						<ActionIcon />
-						{action.label}
-					</Button>
+		<Card>
+			<Card.Header>
+				<div className="flex w-full items-center justify-between gap-2">
+					<Card.Title className="inline-flex min-w-0 items-center gap-2 text-sm">
+						<Icon className="text-muted size-4.5 shrink-0" />
+						<span className="truncate">{title}</span>
+					</Card.Title>
+					<div className="flex shrink-0 items-center gap-2">
+						<span className="text-muted text-xs">{meta}</span>
+						<Button
+							isIconOnly
+							aria-label={action.label}
+							size="sm"
+							variant="tertiary"
+							onPress={action.onPress}
+						>
+							<ActionIcon />
+						</Button>
+					</div>
 				</div>
-			</Widget.Header>
-			<Widget.Content className="flex flex-col gap-2">
+			</Card.Header>
+			<Card.Content className="flex flex-col gap-2">
 				{document.kind === "email" ? (
 					<>
 						<span className="text-muted text-xs">
@@ -320,8 +328,8 @@ function DocumentCard({ document }: { document: ReviewDocument }) {
 						) : null}
 					</>
 				)}
-			</Widget.Content>
-		</Widget>
+			</Card.Content>
+		</Card>
 	);
 }
 
