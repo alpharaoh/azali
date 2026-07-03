@@ -1,5 +1,5 @@
-import { Calendar, CircleFill, Eye } from "@gravity-ui/icons";
-import { Button, Chip } from "@heroui/react";
+import { Calendar, ChevronRight, CircleFill } from "@gravity-ui/icons";
+import { Button, Chip, Separator } from "@heroui/react";
 import { Kanban, TrendChip, Widget } from "@heroui-pro/react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useMemo } from "react";
@@ -174,8 +174,12 @@ function TimeLeftChip({ daysOut }: { daysOut: number | null }) {
  * -----------------------------------------------------------------------------------------------*/
 function TariffEventCard({ event }: { event: TariffEvent }) {
 	return (
-		<Kanban.Card id={event.id} textValue={event.title}>
-			<div className="flex w-full flex-col gap-2.5">
+		<Kanban.Card
+			className="cursor-auto select-text"
+			id={event.id}
+			textValue={event.title}
+		>
+			<div className="flex w-full flex-col gap-3 p-1">
 				<div>
 					<TimeLeftChip daysOut={event.daysOut} />
 				</div>
@@ -184,17 +188,18 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
 					{event.title}
 				</span>
 
-				<div className="grid grid-cols-2 gap-2">
-					<div className="bg-background/50 flex flex-col rounded-lg border p-2.5">
+				<div className="flex items-center gap-3 py-1">
+					<div className="flex flex-1 flex-col">
 						<span
-							className={`text-base font-semibold tabular-nums tracking-tight ${impactToneClass[event.impactTone]}`}
+							className={`text-lg font-semibold tabular-nums tracking-tight ${impactToneClass[event.impactTone]}`}
 						>
 							{event.impact}
 						</span>
 						<span className="text-muted text-xs">{event.impactCaption}</span>
 					</div>
-					<div className="bg-background/50 flex flex-col rounded-lg border p-2.5">
-						<span className="text-foreground text-base font-semibold tabular-nums tracking-tight">
+					<Separator className="!h-8" orientation="vertical" />
+					<div className="flex flex-1 flex-col">
+						<span className="text-foreground text-lg font-semibold tabular-nums tracking-tight">
 							{event.skus}
 						</span>
 						<span className="text-muted text-xs">
@@ -204,14 +209,14 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
 					</div>
 				</div>
 
-				<div className="mt-1.5 flex items-center justify-between gap-2">
+				<div className="mt-2 flex items-center justify-between gap-2">
 					<span className="text-muted inline-flex items-center gap-1.5 text-xs">
 						<Calendar className="size-3.5 shrink-0" />
 						Effective {format(event.effectiveDate, "MMM d, yyyy")}
 					</span>
 					<Button size="sm" variant="outline">
-						<Eye />
-						View
+						Open
+						<ChevronRight />
 					</Button>
 				</div>
 			</div>
@@ -271,7 +276,7 @@ export function TariffRadarOverview() {
 			</Widget>
 
 			{/* Time-bucketed board */}
-			<Kanban size="md">
+			<Kanban size="lg">
 				{columns.map((column) => {
 					const columnEvents = events.filter(column.filter);
 
