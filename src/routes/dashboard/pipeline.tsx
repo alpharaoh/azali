@@ -1,15 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "#/components/page-placeholder";
+import { PipelineBoard } from "#/components/pipeline-board";
 
 export const Route = createFileRoute("/dashboard/pipeline")({
-	component: Pipeline,
+	component: PipelinePage,
 });
 
-function Pipeline() {
+function PipelinePage() {
 	return (
-		<PagePlaceholder
-			description="Every shipment as a live status stream: what stage it's in, what the AI has done, what it's waiting on, and ETA to clearance. Green flows through untouched; red pops to the Review Queue."
-			title="Pipeline"
-		/>
+		<div className="p-4 pt-0">
+			<PipelineBoard />
+		</div>
 	);
 }
