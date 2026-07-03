@@ -35,8 +35,11 @@ import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
  * -----------------------------------------------------------------------------------------------*/
 type ShipmentStatus = "autopilot" | "awaiting" | "blocked" | "released";
 
+type Priority = 1 | 2 | 3 | 4;
+
 type Row = Shipment & {
 	effectiveStage: PipelineStage;
+	priority: Priority;
 	status: ShipmentStatus;
 };
 
@@ -54,6 +57,50 @@ function advanceStage(stage: PipelineStage): PipelineStage {
 
 	return stageOrder[Math.min(index + 1, stageOrder.length - 1)] ?? stage;
 }
+
+/**
+ * Priority derives from how much work remains vs. how soon the cargo lands,
+ * nudged by shipment value. P1 is reserved for the extreme case: arrival is
+ * imminent and the entry still isn't filed.
+ */
+function priorityFor(
+	stage: PipelineStage,
+	status: ShipmentStatus,
+	arrivesInHours: number,
+	value: number,
+): Priority {
+	// Filed or released — nothing left for us to do before arrival.
+	if (status === "released" || stage === "filed" || stage === "released")
+		return 4;
+
+	const stagesLeft = 4 - stageOrder.indexOf(stage); // pre-filed stages remaining
+	const hoursPerStage = arrivesInHours / Math.max(stagesLeft, 1);
+
+	// Extreme: arrival is imminent, or the remaining stages leave almost no
+	// time each (e.g. still in intake with the vessel hours away).
+	if (arrivesInHours <= 8 || hoursPerStage < 4) return 1;
+
+	let priority: Priority;
+
+	if (hoursPerStage < 12) priority = 2;
+	else if (hoursPerStage < 36) priority = 3;
+	else priority = 4;
+
+	// High-value shipments move up one level (but never into P1 on value alone).
+	if (value >= 100000 && priority > 2) priority = (priority - 1) as Priority;
+
+	return priority;
+}
+
+const priorityMeta: Record<
+	Priority,
+	{ chip: "accent" | "danger" | "default" | "warning"; label: string }
+> = {
+	1: { chip: "danger", label: "P1" },
+	2: { chip: "warning", label: "P2" },
+	3: { chip: "accent", label: "P3" },
+	4: { chip: "default", label: "P4" },
+};
 
 const statusMeta: Record<
 	ShipmentStatus,
@@ -176,7 +223,7 @@ export function PipelineBoard() {
 		[],
 	);
 	const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-		column: "arrives",
+		column: "priority",
 		direction: "ascending",
 	});
 	const [page, setPage] = useState(1);
@@ -207,7 +254,17 @@ export function PipelineBoard() {
 						? "awaiting"
 						: "autopilot";
 
-			return { ...shipment, effectiveStage, status };
+			return {
+				...shipment,
+				effectiveStage,
+				priority: priorityFor(
+					effectiveStage,
+					status,
+					shipment.arrivesInHours,
+					shipment.value,
+				),
+				status,
+			};
 		});
 	}, [pendingRefs]);
 
@@ -253,7 +310,9 @@ export function PipelineBoard() {
 			const col = sortDescriptor.column as string;
 			let cmp: number;
 
-			if (col === "arrives") {
+			if (col === "priority") {
+				cmp = a.priority - b.priority || a.arrivesInHours - b.arrivesInHours;
+			} else if (col === "arrives") {
 				cmp = a.arrivesInHours - b.arrivesInHours;
 			} else if (col === "value") {
 				cmp = a.value - b.value;
@@ -325,12 +384,14 @@ export function PipelineBoard() {
 				accessorKey: "client",
 				allowsSorting: true,
 				cell: (row) => (
-					<div className="flex items-center gap-3">
+					<div className="flex min-w-0 items-center gap-3">
 						<Avatar size="sm">
 							<Avatar.Fallback>{getInitials(row.client)}</Avatar.Fallback>
 						</Avatar>
-						<div className="flex flex-col">
-							<span className="text-sm font-medium">{row.client}</span>
+						<div className="flex min-w-0 flex-col">
+							<span className="truncate whitespace-nowrap text-sm font-medium">
+								{row.client}
+							</span>
 							<span className="text-muted text-xs tabular-nums">
 								{row.reference}
 							</span>
@@ -340,7 +401,7 @@ export function PipelineBoard() {
 				header: "Shipment",
 				id: "client",
 				isRowHeader: true,
-				minWidth: 220,
+				minWidth: 260,
 				pinned: "start",
 			},
 			{
@@ -374,6 +435,24 @@ export function PipelineBoard() {
 				header: "Status",
 				id: "status",
 				minWidth: 130,
+			},
+			{
+				accessorKey: "priority",
+				allowsSorting: true,
+				cell: (row) => (
+					<Chip
+						color={priorityMeta[row.priority].chip}
+						size="sm"
+						variant="soft"
+					>
+						<Chip.Label className="font-semibold tabular-nums">
+							{priorityMeta[row.priority].label}
+						</Chip.Label>
+					</Chip>
+				),
+				header: "Priority",
+				id: "priority",
+				minWidth: 90,
 			},
 			{
 				allowsSorting: true,
@@ -725,8 +804,9 @@ export function PipelineBoard() {
 			<DataGrid
 				aria-label="Shipment pipeline"
 				columns={columns}
-				contentClassName="min-w-[1100px]"
+				contentClassName="min-w-[1200px]"
 				data={paginatedRows}
+				scrollContainerClassName="max-h-[560px] overflow-y-auto"
 				getRowId={(row) => row.id}
 				renderEmptyState={() => (
 					<div className="text-muted py-8 text-center text-sm">

@@ -8,6 +8,11 @@
   overflow-wrap: break-word;
 }
 
+/* Chips should never wrap onto multiple lines. */
+.chip {
+  white-space: nowrap;
+}
+
 * {
   box-sizing: border-box;
 }
