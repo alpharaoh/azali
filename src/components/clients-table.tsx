@@ -340,16 +340,23 @@ export function ClientsTable() {
 		column: "name",
 		direction: "ascending",
 	});
-	const [statusFilter, setStatusFilter] = useState("all");
-	const [autonomyFilter, setAutonomyFilter] = useState("all");
+	const [statusFilter, setStatusFilter] = useState<Set<string>>(
+		() => new Set(statuses),
+	);
+	const [autonomyFilter, setAutonomyFilter] = useState<Set<string>>(
+		() => new Set(autonomyModes),
+	);
 	const [visibleColumns, setVisibleColumns] = useState<Selection>(
 		new Set(ALL_COLUMNS),
 	);
 
+	const statusActive = statusFilter.size < statuses.length;
+	const autonomyActive = autonomyFilter.size < autonomyModes.length;
+
 	const clearFilters = useCallback(() => {
 		setSearch("");
-		setAutonomyFilter("all");
-		setStatusFilter("all");
+		setAutonomyFilter(new Set(autonomyModes));
+		setStatusFilter(new Set(statuses));
 		setPage(1);
 	}, []);
 
@@ -366,13 +373,11 @@ export function ClientsTable() {
 					c.bondNumber.toLowerCase().includes(q),
 			);
 		}
-		if (statusFilter !== "all") {
-			result = result.filter((c) => c.status.toLowerCase() === statusFilter);
+		if (statusFilter.size > 0) {
+			result = result.filter((c) => statusFilter.has(c.status));
 		}
-		if (autonomyFilter !== "all") {
-			result = result.filter(
-				(c) => c.autonomy.toLowerCase() === autonomyFilter,
-			);
+		if (autonomyFilter.size > 0) {
+			result = result.filter((c) => autonomyFilter.has(c.autonomy));
 		}
 
 		return result;
@@ -634,26 +639,29 @@ export function ClientsTable() {
 					</Button>
 					<Dropdown.Popover>
 						<Dropdown.Menu
-							selectedKeys={new Set([autonomyFilter])}
-							selectionMode="single"
-							onSelectionChange={(keys) => {
-								const key = [...keys][0] as string | undefined;
-
-								setAutonomyFilter(key ?? "all");
-							}}
+							disallowEmptySelection
+							selectedKeys={autonomyFilter}
+							selectionMode="multiple"
+							onSelectionChange={(keys) =>
+								setAutonomyFilter(
+									keys === "all"
+										? new Set(autonomyModes)
+										: new Set([...keys].map(String)),
+								)
+							}
 						>
-							<Dropdown.Item id="all" textValue="All">
-								<Label>All</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
-							<Dropdown.Item id="autopilot" textValue="Autopilot">
-								<Label>Autopilot</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
-							<Dropdown.Item id="supervised" textValue="Supervised">
-								<Label>Supervised</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
+							{autonomyModes.map((mode) => (
+								<Dropdown.Item key={mode} id={mode} textValue={mode}>
+									<Chip
+										color={mode === "Autopilot" ? "accent" : "default"}
+										size="sm"
+										variant="soft"
+									>
+										<Chip.Label>{mode}</Chip.Label>
+									</Chip>
+									<Dropdown.ItemIndicator />
+								</Dropdown.Item>
+							))}
 						</Dropdown.Menu>
 					</Dropdown.Popover>
 				</Dropdown>
@@ -666,30 +674,26 @@ export function ClientsTable() {
 					</Button>
 					<Dropdown.Popover>
 						<Dropdown.Menu
-							selectedKeys={new Set([statusFilter])}
-							selectionMode="single"
-							onSelectionChange={(keys) => {
-								const key = [...keys][0] as string | undefined;
-
-								setStatusFilter(key ?? "all");
-							}}
+							disallowEmptySelection
+							selectedKeys={statusFilter}
+							selectionMode="multiple"
+							onSelectionChange={(keys) =>
+								setStatusFilter(
+									keys === "all"
+										? new Set(statuses)
+										: new Set([...keys].map(String)),
+								)
+							}
 						>
-							<Dropdown.Item id="all" textValue="All">
-								<Label>All</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
-							<Dropdown.Item id="active" textValue="Active">
-								<Label>Active</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
-							<Dropdown.Item id="onboarding" textValue="Onboarding">
-								<Label>Onboarding</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
-							<Dropdown.Item id="paused" textValue="Paused">
-								<Label>Paused</Label>
-								<Dropdown.ItemIndicator />
-							</Dropdown.Item>
+							{statuses.map((status) => (
+								<Dropdown.Item key={status} id={status} textValue={status}>
+									<Chip color={statusColorMap[status]} size="sm" variant="soft">
+										<CircleFill width={6} />
+										<Chip.Label>{status}</Chip.Label>
+									</Chip>
+									<Dropdown.ItemIndicator />
+								</Dropdown.Item>
+							))}
 						</Dropdown.Menu>
 					</Dropdown.Popover>
 				</Dropdown>
@@ -817,7 +821,7 @@ export function ClientsTable() {
 			</div>
 
 			{/* Active filters */}
-			{!!(search || autonomyFilter !== "all" || statusFilter !== "all") && (
+			{!!(search || autonomyActive || statusActive) && (
 				<div className="flex flex-wrap items-center gap-2">
 					{!!search && (
 						<Chip size="sm" variant="secondary">
@@ -835,36 +839,46 @@ export function ClientsTable() {
 							</button>
 						</Chip>
 					)}
-					{autonomyFilter !== "all" && (
-						<Chip size="sm" variant="secondary">
-							<Chip.Label>
-								Autonomy: <span className="capitalize">{autonomyFilter}</span>
-							</Chip.Label>
-							<button
-								aria-label="Clear autonomy filter"
-								className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
-								type="button"
-								onClick={() => setAutonomyFilter("all")}
-							>
-								<Xmark className="size-3" />
-							</button>
-						</Chip>
-					)}
-					{statusFilter !== "all" && (
-						<Chip size="sm" variant="secondary">
-							<Chip.Label>
-								Status: <span className="capitalize">{statusFilter}</span>
-							</Chip.Label>
-							<button
-								aria-label="Clear status filter"
-								className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
-								type="button"
-								onClick={() => setStatusFilter("all")}
-							>
-								<Xmark className="size-3" />
-							</button>
-						</Chip>
-					)}
+					{autonomyActive
+						? [...autonomyFilter].map((mode) => (
+								<Chip key={mode} size="sm" variant="secondary">
+									<Chip.Label>Autonomy: {mode}</Chip.Label>
+									<button
+										aria-label={`Remove ${mode} filter`}
+										className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+										type="button"
+										onClick={() => {
+											const next = new Set(autonomyFilter);
+
+											next.delete(mode);
+											setAutonomyFilter(next);
+										}}
+									>
+										<Xmark className="size-3" />
+									</button>
+								</Chip>
+							))
+						: null}
+					{statusActive
+						? [...statusFilter].map((status) => (
+								<Chip key={status} size="sm" variant="secondary">
+									<Chip.Label>Status: {status}</Chip.Label>
+									<button
+										aria-label={`Remove ${status} filter`}
+										className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+										type="button"
+										onClick={() => {
+											const next = new Set(statusFilter);
+
+											next.delete(status);
+											setStatusFilter(next);
+										}}
+									>
+										<Xmark className="size-3" />
+									</button>
+								</Chip>
+							))
+						: null}
 					<Button size="sm" variant="ghost" onPress={clearFilters}>
 						Clear all
 					</Button>
