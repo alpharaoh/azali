@@ -11,6 +11,7 @@ import {
 	FileCheck,
 	FileText,
 	Funnel,
+	PaperPlane,
 	ShieldExclamation,
 	Sparkles,
 	Tag,
@@ -26,17 +27,18 @@ import {
 	SearchField,
 	Separator,
 } from "@heroui/react";
-import { ChainOfThought, Widget } from "@heroui-pro/react";
+import { ChainOfThought, Timeline, Widget } from "@heroui-pro/react";
 import {
 	addHours,
 	differenceInHours,
 	formatDistanceToNowStrict,
 	subHours,
 } from "date-fns";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentProps, ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
 
 import type {
+	ActivityEvent,
 	Decision,
 	DecisionAction,
 	DocumentLine,
@@ -240,13 +242,57 @@ function DocumentLineRow({ line }: { line: DocumentLine }) {
 	);
 }
 
-function DocumentCard({ document }: { document: ReviewDocument }) {
+/**
+ * Timeline injects `_index`/`_isLast` into its direct children — forward them
+ * so the connector line stops at the last node.
+ */
+type TimelineItemPassthrough = Partial<ComponentProps<typeof Timeline.Item>>;
+
+const eventIconMap: Record<
+	ActivityEvent["icon"],
+	ComponentType<SVGProps<SVGSVGElement>>
+> = {
+	ai: Sparkles,
+	check: CircleCheck,
+	mail: PaperPlane,
+};
+
+function EventTimelineItem({
+	event,
+	...rest
+}: { event: ActivityEvent } & TimelineItemPassthrough) {
+	const Icon = eventIconMap[event.icon];
+
+	return (
+		<Timeline.Item align="start" status={event.status ?? "default"} {...rest}>
+			<Timeline.Marker aria-hidden="true" className="size-6">
+				<Icon className="size-3.5" />
+			</Timeline.Marker>
+			<Timeline.Content className="gap-0.5">
+				<div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
+						{event.title}
+					</h3>
+					<time className="text-muted shrink-0 text-xs leading-5">
+						{receivedAgo(event.occurredHoursAgo)}
+					</time>
+				</div>
+				{event.detail ? (
+					<p className="text-muted m-0 text-xs leading-5">{event.detail}</p>
+				) : null}
+			</Timeline.Content>
+		</Timeline.Item>
+	);
+}
+
+function DocumentTimelineItem({
+	document,
+	...rest
+}: { document: ReviewDocument } & TimelineItemPassthrough) {
 	const Icon = document.kind === "email" ? Envelope : FileText;
 	const title = document.kind === "email" ? document.subject : document.name;
 	const meta =
-		document.kind === "email"
-			? receivedAgo(document.receivedHoursAgo)
-			: `${document.meta} · ${receivedAgo(document.receivedHoursAgo)}`;
+		document.kind === "email" ? `From ${document.from}` : document.meta;
 	const action =
 		document.kind === "email"
 			? { icon: ArrowUpRightFromSquare, label: "Open" }
@@ -260,76 +306,82 @@ function DocumentCard({ document }: { document: ReviewDocument }) {
 	const ActionIcon = action.icon;
 
 	return (
-		<Card>
-			<Card.Header>
-				<div className="flex w-full items-center justify-between gap-2">
-					<Card.Title className="inline-flex min-w-0 items-center gap-2 text-sm">
-						<Icon className="text-muted size-4.5 shrink-0" />
-						<span className="truncate">{title}</span>
-					</Card.Title>
-					<div className="flex shrink-0 items-center gap-2">
-						<span className="text-muted text-xs">{meta}</span>
+		<Timeline.Item align="start" status="default" {...rest}>
+			<Timeline.Marker aria-hidden="true" className="size-6">
+				<Icon className="text-muted size-3.5" />
+			</Timeline.Marker>
+			<Timeline.Content className="gap-2">
+				<div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
+						{title}
+					</h3>
+					<div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
+						<span>{meta}</span>
+						<time>{receivedAgo(document.receivedHoursAgo)}</time>
 						<Button
 							isIconOnly
 							aria-label={action.label}
+							className="size-6 min-h-6 min-w-6"
 							size="sm"
 							variant="tertiary"
 							onPress={action.onPress}
 						>
-							<ActionIcon />
+							<ActionIcon className="size-3.5" />
 						</Button>
 					</div>
 				</div>
-			</Card.Header>
-			<Card.Content className="flex flex-col gap-2">
-				{document.kind === "email" ? (
-					<>
-						<span className="text-muted text-xs">
-							From: {document.from} · {document.meta}
-						</span>
-						<p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
-							{document.body}
-						</p>
-					</>
-				) : (
-					<>
-						{document.kind === "scan" ? (
+				<Card>
+					<Card.Content className="flex flex-col gap-2">
+						{document.kind === "email" ? (
 							<>
-								<a
-									className="block"
-									href={document.src}
-									rel="noreferrer"
-									target="_blank"
-								>
-									<img
-										alt={document.name}
-										className="max-h-80 w-full rounded-lg border bg-white object-contain"
-										src={document.src}
-									/>
-								</a>
-								<span className="text-muted text-xs font-medium">
-									AI-extracted fields
+								<span className="text-muted text-xs">
+									From: {document.from} · {document.meta}
 								</span>
+								<p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
+									{document.body}
+								</p>
 							</>
-						) : null}
-						<div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-							{(document.kind === "scan"
-								? document.extracted
-								: document.lines
-							).map((line) => (
-								<DocumentLineRow key={line.label} line={line} />
-							))}
-						</div>
-						{document.note ? (
-							<span className="text-muted inline-flex items-start gap-1.5 text-xs">
-								<Sparkles className="mt-0.5 size-3 shrink-0" />
-								{document.note}
-							</span>
-						) : null}
-					</>
-				)}
-			</Card.Content>
-		</Card>
+						) : (
+							<>
+								{document.kind === "scan" ? (
+									<>
+										<a
+											className="block"
+											href={document.src}
+											rel="noreferrer"
+											target="_blank"
+										>
+											<img
+												alt={document.name}
+												className="max-h-80 w-full rounded-lg border bg-white object-contain"
+												src={document.src}
+											/>
+										</a>
+										<span className="text-muted text-xs font-medium">
+											AI-extracted fields
+										</span>
+									</>
+								) : null}
+								<div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+									{(document.kind === "scan"
+										? document.extracted
+										: document.lines
+									).map((line) => (
+										<DocumentLineRow key={line.label} line={line} />
+									))}
+								</div>
+								{document.note ? (
+									<span className="text-muted inline-flex items-start gap-1.5 text-xs">
+										<Sparkles className="mt-0.5 size-3 shrink-0" />
+										{document.note}
+									</span>
+								) : null}
+							</>
+						)}
+					</Card.Content>
+				</Card>
+			</Timeline.Content>
+		</Timeline.Item>
 	);
 }
 
@@ -498,19 +550,41 @@ function ReviewDetail({
 
 					<Separator />
 
-					{/* Source documents */}
+					{/* Activity — documents and events, chronological, oldest first */}
 					<div className="flex flex-col gap-2">
-						<span className="text-muted text-xs font-medium">
-							Source documents
-						</span>
-						{item.documents.map((document) => (
-							<DocumentCard
-								key={
-									document.kind === "email" ? document.subject : document.name
-								}
-								document={document}
-							/>
-						))}
+						<span className="text-muted text-xs font-medium">Activity</span>
+						<Timeline density="compact" size="sm">
+							{[
+								...item.documents.map((document) => ({
+									document,
+									hoursAgo: document.receivedHoursAgo,
+									kind: "document" as const,
+								})),
+								...(item.events ?? []).map((event) => ({
+									event,
+									hoursAgo: event.occurredHoursAgo,
+									kind: "event" as const,
+								})),
+							]
+								.sort((a, b) => b.hoursAgo - a.hoursAgo)
+								.map((entry) =>
+									entry.kind === "document" ? (
+										<DocumentTimelineItem
+											key={
+												entry.document.kind === "email"
+													? entry.document.subject
+													: entry.document.name
+											}
+											document={entry.document}
+										/>
+									) : (
+										<EventTimelineItem
+											key={entry.event.title}
+											event={entry.event}
+										/>
+									),
+								)}
+						</Timeline>
 					</div>
 
 					{/* Comparison — when two documents disagree */}
