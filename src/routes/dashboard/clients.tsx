@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "#/components/page-placeholder";
+import { ClientsTable } from "#/components/clients-table";
 
 export const Route = createFileRoute("/dashboard/clients")({
 	component: Clients,
@@ -7,9 +7,8 @@ export const Route = createFileRoute("/dashboard/clients")({
 
 function Clients() {
 	return (
-		<PagePlaceholder
-			description="Importer profiles, bonds, POAs, and catalogs — plus the client-facing status portal, so clients see where their shipments are without emailing us."
-			title="Clients"
-		/>
+		<div className="p-4 pt-0">
+			<ClientsTable />
+		</div>
 	);
 }
