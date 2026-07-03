@@ -170,9 +170,11 @@ function randomDate(seed: number): string {
   const base = new Date(2023, 0, 1).getTime();
   const range = 900 * 24 * 60 * 60 * 1000;
 
-  return new Date(base + seededRandom(seed) * range)
-    .toISOString()
-    .split("T")[0]!;
+  return new Date(base + seededRandom(seed) * range).toISOString().slice(0, 10);
+}
+
+function pickSeeded<T>(items: readonly T[], random: number): T {
+  return items[Math.floor(random * items.length)] as T;
 }
 
 function randomPorts(seed: number): PortName[] {
@@ -200,17 +202,17 @@ const clients: Client[] = companyNames.map((name, i) => {
   const statusIndex = (i * 3 + Math.floor(r(5) * 7)) % statuses.length;
 
   return {
-    autonomy: autonomyModes[Math.floor(r(4) * autonomyModes.length)]!,
+    autonomy: pickSeeded(autonomyModes, r(4)),
     bondNumber: randomBondNumber(i * 17 + 5),
     clientSince: randomDate(i * 13 + 7),
     entriesYtd: Math.floor(r(6) * 4800) + 40,
     id: i + 1,
-    industry: industries[Math.floor(r(2) * industries.length)]!,
+    industry: pickSeeded(industries, r(2)),
     iorNumber: randomIorNumber(i * 13 + 1),
     name,
-    origin: origins[Math.floor(r(3) * origins.length)]!,
+    origin: pickSeeded(origins, r(3)),
     ports: randomPorts(i * 11 + 3),
-    status: statuses[statusIndex]!,
+    status: statuses[statusIndex % statuses.length] as StatusOption,
   };
 });
 
