@@ -46,26 +46,30 @@ export const pipelineStages = [
 const stageForReviewType: Record<ReviewItemType, PipelineStage> = {
 	classification: "classification",
 	document: "intake",
+	enforcement: "compliance",
 	pga: "compliance",
 	signoff: "entry",
 	valuation: "compliance",
 };
 
-const reviewShipments: Shipment[] = reviewItems.map((item) => ({
-	arrivesInHours: item.shipment.arrivesInHours,
-	client: item.client,
-	logo: item.logo,
-	duty: Math.max(100, Math.round((item.shipmentValue * 0.05) / 100) * 100),
-	fromReview: true,
-	id: item.reference,
-	mode: item.shipment.mode,
-	origin:
-		item.shipment.origin.match(/\(([^)]+)\)/)?.[1] ?? item.shipment.origin,
-	port: item.shipment.port,
-	reference: item.reference,
-	stage: stageForReviewType[item.type],
-	value: item.shipmentValue,
-}));
+// Post-entry items (Form 28/29 responses) have no live shipment to track.
+const reviewShipments: Shipment[] = reviewItems
+	.filter((item) => !item.postEntry)
+	.map((item) => ({
+		arrivesInHours: item.shipment.arrivesInHours,
+		client: item.client,
+		logo: item.logo,
+		duty: Math.max(100, Math.round((item.shipmentValue * 0.05) / 100) * 100),
+		fromReview: true,
+		id: item.reference,
+		mode: item.shipment.mode,
+		origin:
+			item.shipment.origin.match(/\(([^)]+)\)/)?.[1] ?? item.shipment.origin,
+		port: item.shipment.port,
+		reference: item.reference,
+		stage: stageForReviewType[item.type],
+		value: item.shipmentValue,
+	}));
 
 const flowingShipments: Shipment[] = [
 	{

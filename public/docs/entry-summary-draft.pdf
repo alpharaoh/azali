@@ -15,7 +15,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 1094 >>
+<< /Length 1217 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Entry Summary Draft) Tj ET
 BT /F1 9 Tf 0.45 g 72 724 Td (CBP 7501 draft - 4 pages) Tj ET
@@ -30,11 +30,13 @@ BT /F1 9.5 Tf 0.45 g 72 620 Td (Declared value) Tj ET
 BT /F2 10 Tf 0 g 250 620 Td ($186,400) Tj ET
 BT /F1 9.5 Tf 0.45 g 72 598 Td (Estimated duty) Tj ET
 BT /F2 10 Tf 0 g 250 598 Td ($12,430) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 576 Td (AD/CVD - PGA flags) Tj ET
-BT /F2 10 Tf 0 g 250 576 Td (None) Tj ET
-0.85 G 0.5 w 72 546 m 540 546 l S
-BT /F2 8.5 Tf 0.45 g 72 528 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 515 Td (All 24 lines matched classifications your team previously approved - nothing new to decide.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 576 Td (Ch. 99 measures) Tj ET
+BT /F2 10 Tf 0 g 250 576 Td (301 List 4A - 7.5% \(22 lines\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 554 Td (AD/CVD - PGA flags) Tj ET
+BT /F2 10 Tf 0 g 250 554 Td (None) Tj ET
+0.85 G 0.5 w 72 524 m 540 524 l S
+BT /F2 8.5 Tf 0.45 g 72 506 Td (Note) Tj ET
+BT /F1 9 Tf 0.3 g 72 493 Td (All 24 lines matched classifications your team previously approved - nothing new to decide.) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -51,5 +53,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1542
+1665
 %%EOF

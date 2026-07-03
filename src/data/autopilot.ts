@@ -100,6 +100,28 @@ export const autopilotActions: AutopilotAction[] = [
 		type: "reconciliation",
 	},
 	{
+		client: "Stonebridge Hardware",
+		confidence: 0.98,
+		detail:
+			"9903.88.03 (25%) applied to 6 of 9 lines · exclusion registry checked — none active.",
+		id: "act-27",
+		occurredHoursAgo: 7,
+		reference: "SHP-2236",
+		title: "Stacked Ch. 99 measures (Section 301)",
+		type: "classification",
+	},
+	{
+		client: "Meridian Auto Parts",
+		confidence: 0.97,
+		detail:
+			"Utilization hit 82% after the new tariff stack — renewal packet prepared for the surety.",
+		id: "act-28",
+		occurredHoursAgo: 14,
+		reference: "BOND-2201",
+		title: "Monitored continuous bond utilization",
+		type: "reconciliation",
+	},
+	{
 		client: "Lotus Textiles",
 		confidence: 0.98,
 		detail: "18 lines · duty $11,200.",

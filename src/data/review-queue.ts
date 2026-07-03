@@ -7,6 +7,7 @@ import { clientLogos } from "./client-logos";
 export type ReviewItemType =
 	| "classification"
 	| "document"
+	| "enforcement"
 	| "pga"
 	| "valuation"
 	| "signoff";
@@ -131,6 +132,8 @@ export interface ReviewItem {
 	alternates?: Array<{ value: string; detail: string; confidence: number }>;
 	approveLabel: string;
 	canRequestInfo?: boolean;
+	/** Post-entry work (Form 28/29 responses) — has no live shipment in the Pipeline. */
+	postEntry?: boolean;
 }
 
 /** Stable public path slug for a document name — used for the generated PDF files. */
@@ -171,6 +174,7 @@ export const reviewItems: ReviewItem[] = [
 					{ label: "Lines", value: "24" },
 					{ label: "Declared value", value: "$186,400" },
 					{ highlight: true, label: "Estimated duty", value: "$12,430" },
+					{ label: "Ch. 99 measures", value: "301 List 4A · 7.5% (22 lines)" },
 					{ label: "AD/CVD · PGA flags", value: "None" },
 				],
 				meta: "CBP 7501 draft · 4 pages",
@@ -200,7 +204,7 @@ export const reviewItems: ReviewItem[] = [
 				steps: [
 					"Invoice ↔ packing list ↔ B/L: 72 field comparisons, 0 conflicts",
 					"24/24 lines matched approved catalog entries (22 exact SKU, 2 similarity ≥0.97)",
-					"Duty $12,430 computed across 3 chapters · AD/CVD and PGA screens clean",
+					"Duty $12,430 = Ch. 85/94/39 base + Section 301 List 4A stack (9903.88.15) · AD/CVD and PGA screens clean",
 				],
 				title: "AI reconciled documents & computed duty",
 			},
@@ -244,6 +248,13 @@ export const reviewItems: ReviewItem[] = [
 				quote:
 					"No active anti-dumping or countervailing duty orders for the declared HTS/origin pairs.",
 				ref: "AD/CVD case registry",
+			},
+			{
+				href: "https://hts.usitc.gov/search?query=9903.88.15",
+				kind: "regulation",
+				quote:
+					"Articles the product of China, as provided for in U.S. note 20(r) to this subchapter — additional duty of 7.5% (9903.88.15).",
+				ref: "USTR Section 301 · List 4A",
 			},
 			{
 				kind: "evidence",
@@ -316,6 +327,18 @@ export const reviewItems: ReviewItem[] = [
 						kind: "flag",
 						title: "Screened AD/CVD and PGA requirements",
 					},
+					{
+						citationRef: "USTR Section 301 · List 4A",
+						data: [
+							"In scope: 22 of 24 lines · $92,521 entered value",
+							"Measure: 9903.88.15 (List 4A) @ 7.5% — no active exclusions match",
+							"Out of scope: 2 Ch. 94 lines outside the 301 lists",
+						],
+						detail:
+							"China origin triggers the Section 301 check. Walked each subheading through the Chapter 99 lists and the exclusion registry — List 4A applies to 22 lines; no exclusion covers them.",
+						kind: "lookup",
+						title: "Stacked Chapter 99 measures (Section 301)",
+					},
 				],
 			},
 			{
@@ -325,11 +348,13 @@ export const reviewItems: ReviewItem[] = [
 						data: [
 							"Ch. 85 (14 lines): $102,300 @ 0–2.6% = $1,890.40",
 							"Ch. 94 (7 lines): $61,200 @ 3.9% = $2,386.80",
-							"Ch. 39 (3 lines): $22,900 @ various = $8,152.80",
+							"Ch. 39 (3 lines): $22,900 @ 5.3% = $1,213.70",
+							"Ch. 99 · 301 List 4A (9903.88.15): 7.5% × $92,521 = $6,939.10",
 							"Total estimated duty: $12,430.00 (MPF/HMF itemized separately)",
 						],
 						citationRef: "HTSUS Column 1 rates",
-						detail: "Computed line by line across 3 HTS chapters.",
+						detail:
+							"Computed line by line across 3 HTS chapters, then stacked the Section 301 surcharge on the in-scope lines.",
 						kind: "calc",
 						title: "Computed duties",
 					},
@@ -646,6 +671,13 @@ export const reviewItems: ReviewItem[] = [
 					"Goods put up in sets for retail sale shall be classified by the component which gives them their essential character.",
 				ref: "GRI 3(b)",
 			},
+			{
+				href: "https://hts.usitc.gov/search?query=9903.88",
+				kind: "regulation",
+				quote:
+					"Section 301 additional duties apply to products of China — Taiwan-origin goods fall outside the lists.",
+				ref: "HTSUS Ch. 99, Subch. III",
+			},
 		],
 		id: "rev-3",
 		proposal: {
@@ -713,6 +745,13 @@ export const reviewItems: ReviewItem[] = [
 							"8517.69 (“other apparatus”) applies only where transmission/reception is not the principal function. For a router it plainly is. Posterior for 8517.69: 0.11 — rejected but surfaced as the alternate.",
 						kind: "check",
 						title: "Considered and rejected 8517.69",
+					},
+					{
+						citationRef: "HTSUS Ch. 99, Subch. III",
+						detail:
+							"Origin Taiwan — outside the Section 301 China lists, and no Section 232 or other Chapter 99 measure reaches 8517.62. No surcharge stacks on this entry.",
+						kind: "check",
+						title: "Checked Chapter 99 exposure — none",
 					},
 				],
 			},
@@ -1335,6 +1374,14 @@ export const reviewItems: ReviewItem[] = [
 				status: "warning",
 				title: "AI flagged related-party pricing",
 			},
+			{
+				detail:
+					"Continuous bond utilization hit 82% after the new tariff stack — the surety requires updated financials before renewal. Renewal packet drafted.",
+				icon: "check",
+				occurredHoursAgo: 12,
+				status: "warning",
+				title: "Surety flagged bond utilization",
+			},
 		],
 		citations: [
 			{
@@ -1746,6 +1793,185 @@ export const reviewItems: ReviewItem[] = [
 		},
 		shipmentValue: 143700,
 		type: "document",
+	},
+	{
+		approveLabel: "Approve Response",
+		client: "Titan Tools USA",
+		logo: clientLogos["Titan Tools USA"],
+		confidence: 0.92,
+		deadlineHoursFromNow: 130,
+		documents: [
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Entry no.", value: "ENT-3979 · liquidation pending" },
+					{
+						highlight: true,
+						label: "CBP asks",
+						value: "Basis for classification under 8467.21.0030",
+					},
+					{ label: "Response due", value: "30 days from issue date" },
+					{ label: "Port", value: "Seattle (3001)" },
+				],
+				meta: "Received via ACE · 1 page",
+				name: "CBP Form 28 — Request for Information",
+				note: "CBP is questioning a March entry's classification — the response clock is running.",
+				receivedHoursAgo: 50,
+			},
+			{
+				kind: "pdf",
+				lines: [
+					{ label: "Exhibit A", value: "Commercial invoice + product spec" },
+					{ label: "Exhibit B", value: "CROSS NY N302876 (impact drivers)" },
+					{ label: "Exhibit C", value: "Entry history · 9 prior entries" },
+					{
+						highlight: true,
+						label: "Position",
+						value: "8467.21.0030 affirmed",
+					},
+				],
+				meta: "Generated by Azali · 6 pages + 3 exhibits",
+				name: "Draft Response — Entry ENT-3979",
+				receivedHoursAgo: 2,
+			},
+		],
+		events: [
+			{
+				detail:
+					"CBP is questioning the classification basis on a liquidation-pending entry.",
+				icon: "mail",
+				occurredHoursAgo: 50,
+				status: "warning",
+				title: "CBP Form 28 received via ACE",
+			},
+			{
+				detail:
+					"Response drafted with the ruling, product spec, and entry-history exhibits.",
+				icon: "ai",
+				occurredHoursAgo: 2,
+				status: "current",
+				steps: [
+					"Pulled the full ENT-3979 entry file: invoice, spec, 7501, original decision",
+					"Matched CROSS NY N302876 — cordless impact drivers → 8467.21",
+					"9 prior entries, same SKU, all liquidated as entered — reasonable-care record",
+				],
+				title: "AI assembled the evidence package",
+			},
+		],
+		citations: [
+			{
+				href: "https://www.law.cornell.edu/uscode/text/19/1509",
+				kind: "regulation",
+				quote:
+					"CBP may examine records and request information to ascertain the correctness of any entry.",
+				ref: "19 USC §1509",
+			},
+			{
+				href: "https://rulings.cbp.gov/ruling/N302876",
+				kind: "ruling",
+				quote:
+					"Cordless impact drivers with self-contained electric motor are classified in subheading 8467.21.",
+				ref: "CROSS NY N302876",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"9 prior entries for this SKU under 8467.21.0030 — all liquidated as entered, no prior CBP action.",
+				ref: "Entry history · Titan Tools",
+			},
+			{
+				documentName: "CBP Form 28 — Request for Information",
+				kind: "evidence",
+				quote:
+					"Provide the basis for classification under 8467.21.0030, including product literature and supporting documentation.",
+				ref: "CBP Form 28 · ENT-3979",
+			},
+		],
+		id: "rev-10",
+		postEntry: true,
+		proposal: {
+			detail:
+				"Affirm the entered classification with ruling, spec, and history exhibits",
+			label: "Proposed response to CBP",
+			value: "Affirm 8467.21.0030",
+		},
+		question: "CBP Form 28 challenges a prior classification — response ready",
+		reference: "ENT-3979",
+		trace: [
+			{
+				label: "Ingestion",
+				steps: [
+					{
+						citationRef: "CBP Form 28 · ENT-3979",
+						data: [
+							"CBP Form 28 · Entry ENT-3979 · issued at Seattle (3001)",
+							"Ask: basis for 8467.21.0030 · statutory response window: 30 days",
+						],
+						detail:
+							"Parsed the ACE notification and registered the response deadline. Enforcement volume is up — Form 28s route straight to the queue with the clock attached.",
+						kind: "read",
+						title: "Parsed CBP Form 28",
+					},
+					{
+						detail:
+							"Retrieved the March entry file: commercial invoice, product spec, the filed 7501, and the original catalog classification decision with its reasoning.",
+						kind: "lookup",
+						title: "Pulled the entry file for ENT-3979",
+					},
+				],
+			},
+			{
+				label: "Evidence assembly",
+				steps: [
+					{
+						citationRef: "CROSS NY N302876",
+						detail:
+							"Directly analogous CBP ruling: cordless impact drivers with self-contained electric motors classify in 8467.21. The entered code sits squarely on precedent.",
+						kind: "lookup",
+						title: "Matched CROSS precedent",
+					},
+					{
+						citationRef: "Entry history · Titan Tools",
+						data: [
+							"9 prior entries · same SKU · 8467.21.0030",
+							"All liquidated as entered — no Form 29, no rate advance",
+						],
+						detail:
+							"A consistent, unchallenged history is the core of the reasonable-care defense.",
+						kind: "check",
+						title: "Compiled the entry history",
+					},
+					{
+						citationRef: "19 USC §1509",
+						detail:
+							"Drafted the response: GRI 1 analysis, product literature, the ruling cite, and history exhibits — exactly the documentation §1509 entitles CBP to demand.",
+						kind: "decision",
+						title: "Drafted the response package",
+					},
+				],
+			},
+			{
+				label: "Decision",
+				steps: [
+					{
+						detail:
+							"Form 28 responses always require licensed sign-off before transmission — an incomplete answer invites a Form 29 rate advance and penalties.",
+						kind: "flag",
+						title: "Queued for broker sign-off",
+					},
+				],
+			},
+		],
+		shipment: {
+			arrivesInHours: -2160,
+			entryType: "01 — Consumption",
+			incoterm: "FOB Ningbo",
+			mode: "Ocean · ONE Grus 034E (arrived)",
+			origin: "China (Ningbo)",
+			port: "Seattle",
+		},
+		shipmentValue: 74600,
+		type: "enforcement",
 	},
 ];
 
