@@ -103,12 +103,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 
 const FOOTER_ITEMS: NavItem[] = [
   {
-    id: "compliance",
-    label: "Compliance Vault",
-    href: "/dashboard/compliance",
-    icon: ShieldCheck,
-  },
-  {
     id: "settings",
     label: "Settings",
     href: "/dashboard/settings",
