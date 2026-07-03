@@ -1,5 +1,10 @@
-import { Calendar, ChevronRight, CircleFill } from "@gravity-ui/icons";
-import { Button, Chip, Separator } from "@heroui/react";
+import {
+	Calendar,
+	ChevronRight,
+	CircleFill,
+	CircleInfo,
+} from "@gravity-ui/icons";
+import { Button, Chip, Separator, Tooltip } from "@heroui/react";
 import { Kanban, TrendChip, Widget } from "@heroui-pro/react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useMemo } from "react";
@@ -29,29 +34,36 @@ interface TariffEvent extends TariffEventSeed {
 	daysOut: number | null;
 }
 
-const overviewStats = [
+const overviewStats: Array<{
+	change: string;
+	title: string;
+	trend: "neutral" | "up";
+	value: string;
+	info?: string;
+}> = [
 	{
 		change: "+2",
 		title: "Changes on Radar",
-		trend: "neutral" as const,
+		trend: "neutral",
 		value: "5",
 	},
 	{
 		change: "+214",
 		title: "Products Affected",
-		trend: "neutral" as const,
+		trend: "neutral",
 		value: "420",
 	},
 	{
 		change: "+$113K",
 		title: "Client Duty Impact",
-		trend: "neutral" as const,
+		trend: "neutral",
 		value: "+$325K/yr",
 	},
 	{
 		change: "+$17K",
+		info: "Estimated fees your brokerage could earn by acting on these changes — exclusion renewal filings, contingency fees on refund claims, and reclassification work.",
 		title: "Est. Fee Opportunity",
-		trend: "up" as const,
+		trend: "up",
 		value: "$52K",
 	},
 ];
@@ -259,8 +271,24 @@ export function TariffRadarOverview() {
 				<Widget.Content className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 					{overviewStats.map((card) => (
 						<div key={card.title} className="flex flex-col gap-1">
-							<span className="text-muted text-sm font-medium">
+							<span className="text-muted inline-flex items-center gap-1 text-sm font-medium">
 								{card.title}
+								{card.info ? (
+									<Tooltip>
+										<Button
+											isIconOnly
+											aria-label={`About ${card.title}`}
+											className="text-muted hover:text-foreground size-5 min-h-5 min-w-5"
+											size="sm"
+											variant="ghost"
+										>
+											<CircleInfo className="size-3.5" />
+										</Button>
+										<Tooltip.Content className="max-w-64">
+											{card.info}
+										</Tooltip.Content>
+									</Tooltip>
+								) : null}
 							</span>
 							<div className="flex items-center gap-2">
 								<span className="text-foreground text-2xl font-semibold tracking-tight">

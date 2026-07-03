@@ -2,6 +2,12 @@
 @import "@heroui/styles";
 @import "@heroui-pro/react/css";
 
+/* HeroUI tooltips ship with `break-all`, which wraps mid-word; wrap whole words instead. */
+.tooltip {
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 * {
   box-sizing: border-box;
 }
