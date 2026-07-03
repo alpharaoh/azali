@@ -5,6 +5,7 @@ import {
 	FileText,
 	Flag,
 	Funnel,
+	Pipeline,
 	Tag,
 } from "@gravity-ui/icons";
 import {
@@ -28,6 +29,7 @@ import {
 	TrendChip,
 	Widget,
 } from "@heroui-pro/react";
+import { useNavigate } from "@tanstack/react-router";
 import { format, formatDistanceToNowStrict, subDays, subHours } from "date-fns";
 import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
@@ -205,7 +207,32 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
 	},
 	{
 		align: "end",
-		cell: () => (
+		cell: () => <ActionRowButtons />,
+		header: "",
+		id: "actions",
+		minWidth: 90,
+		pinned: "end",
+	},
+];
+
+function ActionRowButtons() {
+	const navigate = useNavigate();
+
+	return (
+		<div className="flex items-center justify-end gap-1">
+			<Tooltip>
+				<Button
+					isIconOnly
+					aria-label="View in Pipeline"
+					className="text-muted hover:text-foreground"
+					size="sm"
+					variant="ghost"
+					onPress={() => navigate({ to: "/dashboard/pipeline" })}
+				>
+					<Pipeline className="size-3.5" />
+				</Button>
+				<Tooltip.Content>View in Pipeline</Tooltip.Content>
+			</Tooltip>
 			<Tooltip>
 				<Button
 					isIconOnly
@@ -218,13 +245,9 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
 				</Button>
 				<Tooltip.Content>Flag for review</Tooltip.Content>
 			</Tooltip>
-		),
-		header: "",
-		id: "flag",
-		minWidth: 60,
-		pinned: "end",
-	},
-];
+		</div>
+	);
+}
 
 /* -------------------------------------------------------------------------------------------------
  * AutopilotLog
@@ -552,7 +575,7 @@ export function AutopilotLog() {
 				/>
 
 				{/* Pagination footer */}
-				<div className="flex flex-wrap items-center justify-between gap-3 whitespace-nowrap text-xs">
+				<div className="flex items-center justify-between whitespace-nowrap text-xs">
 					<Pagination size="sm">
 						<Pagination.Content>
 							<Pagination.Item>
@@ -629,6 +652,24 @@ export function AutopilotLog() {
 								? "0 actions"
 								: `${rangeStart}–${rangeEnd} of ${visibleActions.length}`}
 						</span>
+						<div className="flex gap-2">
+							<Button
+								isDisabled={safePage === 1}
+								size="sm"
+								variant="secondary"
+								onPress={() => setPage((p) => Math.max(1, p - 1))}
+							>
+								Previous
+							</Button>
+							<Button
+								isDisabled={safePage === totalPages}
+								size="sm"
+								variant="secondary"
+								onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+							>
+								Next
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>

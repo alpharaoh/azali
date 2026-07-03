@@ -11,12 +11,15 @@ import {
 	Chip,
 	Dropdown,
 	Label,
+	ListBox,
+	Pagination,
 	Popover,
 	SearchField,
+	Separator,
 	Slider,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
-import { DataGrid, Widget } from "@heroui-pro/react";
+import { DataGrid, InlineSelect, Widget } from "@heroui-pro/react";
 import { useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import { useMemo, useState } from "react";
@@ -175,6 +178,8 @@ export function PipelineBoard() {
 		column: "arrives",
 		direction: "ascending",
 	});
+	const [page, setPage] = useState(1);
+	const [rowsPerPage, setRowsPerPage] = useState(10);
 
 	const pendingRefs = useMemo(() => {
 		return new Set(
@@ -262,6 +267,39 @@ export function PipelineBoard() {
 	}, [rows, search, clientFilter, statusFilter, valueRange, sortDescriptor]);
 
 	const statusActive = statusFilter.size > 0;
+
+	const totalPages = Math.ceil(visibleRows.length / rowsPerPage) || 1;
+	const safePage = Math.min(page, totalPages);
+	const paginatedRows = useMemo(() => {
+		const start = (safePage - 1) * rowsPerPage;
+
+		return visibleRows.slice(start, start + rowsPerPage);
+	}, [visibleRows, safePage, rowsPerPage]);
+
+	const paginationPages = useMemo(() => {
+		const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+
+		if (totalPages <= 7) {
+			for (let i = 1; i <= totalPages; i++)
+				pages.push({ key: `p-${i}`, value: i });
+		} else {
+			pages.push({ key: "p-1", value: 1 });
+			if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
+			const start = Math.max(2, safePage - 1);
+			const end = Math.min(totalPages - 1, safePage + 1);
+
+			for (let i = start; i <= end; i++)
+				pages.push({ key: `p-${i}`, value: i });
+			if (safePage < totalPages - 2)
+				pages.push({ key: "e-end", value: "ellipsis" });
+			pages.push({ key: `p-${totalPages}`, value: totalPages });
+		}
+
+		return pages;
+	}, [totalPages, safePage]);
+
+	const rangeStart = (safePage - 1) * rowsPerPage + 1;
+	const rangeEnd = Math.min(safePage * rowsPerPage, visibleRows.length);
 
 	const hasActiveFilters =
 		search.length > 0 || clientFilter.size > 0 || statusActive || valueActive;
@@ -687,7 +725,7 @@ export function PipelineBoard() {
 				aria-label="Shipment pipeline"
 				columns={columns}
 				contentClassName="min-w-[1100px]"
-				data={visibleRows}
+				data={paginatedRows}
 				getRowId={(row) => row.id}
 				renderEmptyState={() => (
 					<div className="text-muted py-8 text-center text-sm">
@@ -698,6 +736,105 @@ export function PipelineBoard() {
 				variant="primary"
 				onSortChange={setSortDescriptor}
 			/>
+
+			{/* Pagination footer */}
+			<div className="flex items-center justify-between whitespace-nowrap text-xs">
+				<Pagination size="sm">
+					<Pagination.Content>
+						<Pagination.Item>
+							<Pagination.Previous
+								isDisabled={safePage === 1}
+								onPress={() => setPage((p) => Math.max(1, p - 1))}
+							>
+								<Pagination.PreviousIcon />
+							</Pagination.Previous>
+						</Pagination.Item>
+						{paginationPages.map((p) =>
+							p.value === "ellipsis" ? (
+								<Pagination.Item key={p.key}>
+									<Pagination.Ellipsis />
+								</Pagination.Item>
+							) : (
+								<Pagination.Item key={p.key}>
+									<Pagination.Link
+										isActive={p.value === safePage}
+										onPress={() => setPage(p.value as number)}
+									>
+										{p.value}
+									</Pagination.Link>
+								</Pagination.Item>
+							),
+						)}
+						<Pagination.Item>
+							<Pagination.Next
+								isDisabled={safePage === totalPages}
+								onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+							>
+								<Pagination.NextIcon />
+							</Pagination.Next>
+						</Pagination.Item>
+					</Pagination.Content>
+				</Pagination>
+
+				<div className="flex items-center gap-3">
+					<InlineSelect
+						aria-label="Rows per page"
+						value={String(rowsPerPage)}
+						onChange={(v) => {
+							if (v) {
+								setRowsPerPage(Number(v));
+								setPage(1);
+							}
+						}}
+					>
+						<InlineSelect.Trigger>
+							<span className="text-muted">Rows per page</span>
+							<InlineSelect.Value />
+							<InlineSelect.Indicator />
+						</InlineSelect.Trigger>
+						<InlineSelect.Popover className="w-[80px]">
+							<ListBox>
+								<ListBox.Item id="10" textValue="10">
+									10
+									<ListBox.ItemIndicator />
+								</ListBox.Item>
+								<ListBox.Item id="25" textValue="25">
+									25
+									<ListBox.ItemIndicator />
+								</ListBox.Item>
+								<ListBox.Item id="50" textValue="50">
+									50
+									<ListBox.ItemIndicator />
+								</ListBox.Item>
+							</ListBox>
+						</InlineSelect.Popover>
+					</InlineSelect>
+					<Separator className="!h-4" orientation="vertical" />
+					<span className="text-muted tabular-nums">
+						{visibleRows.length === 0
+							? "0 shipments"
+							: `${rangeStart}–${rangeEnd} of ${visibleRows.length}`}
+					</span>
+					<div className="flex gap-2">
+						<Button
+							isDisabled={safePage === 1}
+							size="sm"
+							variant="secondary"
+							onPress={() => setPage((p) => Math.max(1, p - 1))}
+						>
+							Previous
+						</Button>
+						<Button
+							isDisabled={safePage === totalPages}
+							size="sm"
+							variant="secondary"
+							onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+						>
+							Next
+						</Button>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
