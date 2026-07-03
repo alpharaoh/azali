@@ -1,18 +1,26 @@
-import { ChevronRight, CircleFill, Eye, Funnel } from "@gravity-ui/icons";
+import {
+  ChevronRight,
+  CircleFill,
+  Eye,
+  Funnel,
+  Xmark,
+} from "@gravity-ui/icons";
 import {
   Avatar,
   Button,
   Chip,
   Dropdown,
   Label,
+  Popover,
   SearchField,
+  Slider,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, Widget } from "@heroui-pro/react";
 import { useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import { useMemo, useState } from "react";
-import type { SortDescriptor } from "react-aria-components";
+import type { Selection, SortDescriptor } from "react-aria-components";
 
 import type { PipelineStage, Shipment } from "#/data/pipeline";
 import { pipelineStages, shipments } from "#/data/pipeline";
@@ -53,13 +61,37 @@ const statusMeta: Record<
   released: { chip: "success", label: "Released" },
 };
 
-const statusFilters: Array<{ id: string; label: string }> = [
-  { id: "all", label: "All" },
+const statusOptions: Array<{ id: ShipmentStatus; label: string }> = [
   { id: "autopilot", label: "On Autopilot" },
   { id: "blocked", label: "Needs Review" },
   { id: "awaiting", label: "Awaiting CBP" },
   { id: "released", label: "Released" },
 ];
+
+const maxShipmentValue =
+  Math.ceil(Math.max(...shipments.map((shipment) => shipment.value)) / 50000) *
+  50000;
+
+function compactCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    maximumFractionDigits: 0,
+    notation: "compact",
+    style: "currency",
+  }).format(value);
+}
+
+function toStringSet(keys: Selection, all: string[]) {
+  return keys === "all" ? new Set(all) : new Set([...keys].map(String));
+}
+
+function without<T>(set: Set<T>, value: T) {
+  const next = new Set(set);
+
+  next.delete(value);
+
+  return next;
+}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -126,7 +158,21 @@ export function PipelineBoard() {
   const navigate = useNavigate();
   const decisions = useReviewDecisions();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [clientFilter, setClientFilter] = useState<Set<string>>(new Set());
+  const [clientQuery, setClientQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(
+    () => new Set(statusOptions.map((option) => option.id)),
+  );
+  const [valueRange, setValueRange] = useState<[number, number]>([
+    0,
+    maxShipmentValue,
+  ]);
+  const valueActive = valueRange[0] > 0 || valueRange[1] < maxShipmentValue;
+
+  const allClients = useMemo(
+    () => [...new Set(shipments.map((shipment) => shipment.client))].sort(),
+    [],
+  );
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "arrives",
     direction: "ascending",
@@ -186,8 +232,16 @@ export function PipelineBoard() {
           row.reference.toLowerCase().includes(q),
       );
     }
-    if (statusFilter !== "all") {
-      result = result.filter((row) => row.status === statusFilter);
+    if (clientFilter.size > 0) {
+      result = result.filter((row) => clientFilter.has(row.client));
+    }
+    if (statusFilter.size > 0) {
+      result = result.filter((row) => statusFilter.has(row.status));
+    }
+    if (valueRange[0] > 0 || valueRange[1] < maxShipmentValue) {
+      result = result.filter(
+        (row) => row.value >= valueRange[0] && row.value <= valueRange[1],
+      );
     }
     if (!sortDescriptor.column) return result;
 
@@ -207,7 +261,26 @@ export function PipelineBoard() {
 
       return cmp;
     });
-  }, [rows, search, statusFilter, sortDescriptor]);
+  }, [rows, search, clientFilter, statusFilter, valueRange, sortDescriptor]);
+
+  const statusActive = statusFilter.size < statusOptions.length;
+
+  const hasActiveFilters =
+    search.length > 0 || clientFilter.size > 0 || statusActive || valueActive;
+
+  const clearFilters = () => {
+    setSearch("");
+    setClientFilter(new Set());
+    setClientQuery("");
+    setStatusFilter(new Set(statusOptions.map((option) => option.id)));
+    setValueRange([0, maxShipmentValue]);
+  };
+
+  const filteredClients = clientQuery
+    ? allClients.filter((client) =>
+        client.toLowerCase().includes(clientQuery.toLowerCase()),
+      )
+    : allClients;
 
   const columns = useMemo<DataGridColumn<Row>[]>(
     () => [
@@ -389,45 +462,228 @@ export function PipelineBoard() {
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
+        {/* Filter: Client */}
         <Dropdown>
           <Button size="sm" variant="secondary">
             <Funnel />
-            {statusFilters.find((filter) => filter.id === statusFilter)
-              ?.label ?? "All"}
+            Client
           </Button>
-          <Dropdown.Popover>
+          <Dropdown.Popover className="w-72">
+            <div className="p-1.5 pb-2">
+              <SearchField
+                aria-label="Search clients"
+                value={clientQuery}
+                onChange={setClientQuery}
+              >
+                <SearchField.Group className="rounded-full">
+                  <SearchField.SearchIcon />
+                  <SearchField.Input placeholder="Search clients..." />
+                  <SearchField.ClearButton />
+                </SearchField.Group>
+              </SearchField>
+            </div>
             <Dropdown.Menu
-              selectedKeys={new Set([statusFilter])}
-              selectionMode="single"
-              onSelectionChange={(keys) => {
-                const key = [...keys][0];
-
-                setStatusFilter(key ? String(key) : "all");
-              }}
+              className="max-h-96 overflow-y-auto"
+              selectedKeys={clientFilter}
+              selectionMode="multiple"
+              onSelectionChange={(keys) =>
+                setClientFilter(toStringSet(keys, allClients))
+              }
             >
-              {statusFilters.map((filter) => {
-                const count =
-                  filter.id === "all"
-                    ? rows.length
-                    : rows.filter((row) => row.status === filter.id).length;
+              {filteredClients.length === 0 ? (
+                <Dropdown.Item id="__no-match" isDisabled textValue="No match">
+                  <Label>No clients match</Label>
+                </Dropdown.Item>
+              ) : (
+                filteredClients.map((client) => {
+                  const count = rows.filter(
+                    (row) => row.client === client,
+                  ).length;
 
-                return (
-                  <Dropdown.Item
-                    key={filter.id}
-                    id={filter.id}
-                    textValue={filter.label}
-                  >
-                    <Label>
-                      {filter.label} ({count})
-                    </Label>
-                    <Dropdown.ItemIndicator />
-                  </Dropdown.Item>
-                );
-              })}
+                  return (
+                    <Dropdown.Item key={client} id={client} textValue={client}>
+                      <Avatar className="size-6 shrink-0">
+                        <Avatar.Fallback className="text-[10px]">
+                          {getInitials(client)}
+                        </Avatar.Fallback>
+                      </Avatar>
+                      <Label>
+                        {client}{" "}
+                        {count > 1 && (
+                          <Chip size="sm" className="ml-1">
+                            {count}
+                          </Chip>
+                        )}
+                      </Label>
+                      <Dropdown.ItemIndicator />
+                    </Dropdown.Item>
+                  );
+                })
+              )}
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown>
+
+        {/* Filter: Status */}
+        <Dropdown>
+          <Button size="sm" variant="secondary">
+            <Funnel />
+            Status
+          </Button>
+          <Dropdown.Popover>
+            <Dropdown.Menu
+              disallowEmptySelection
+              selectedKeys={statusFilter}
+              selectionMode="multiple"
+              onSelectionChange={(keys) =>
+                setStatusFilter(
+                  toStringSet(
+                    keys,
+                    statusOptions.map((option) => option.id),
+                  ),
+                )
+              }
+            >
+              {statusOptions.map((option) => (
+                <Dropdown.Item
+                  key={option.id}
+                  id={option.id}
+                  textValue={option.label}
+                >
+                  <Chip
+                    color={statusMeta[option.id].chip}
+                    size="sm"
+                    variant="soft"
+                  >
+                    <CircleFill width={6} />
+                    <Chip.Label>{option.label}</Chip.Label>
+                  </Chip>
+                  <Dropdown.ItemIndicator />
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+
+        {/* Filter: Value range */}
+        <Popover>
+          <Button size="sm" variant="secondary">
+            <Funnel />
+            Value
+          </Button>
+          <Popover.Content className="w-80">
+            <Popover.Dialog className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted text-xs font-medium">
+                  Shipment value
+                </span>
+                <span className="text-foreground text-xs font-medium tabular-nums">
+                  {compactCurrency(valueRange[0])} –{" "}
+                  {compactCurrency(valueRange[1])}
+                </span>
+              </div>
+              <Slider
+                aria-label="Shipment value range"
+                maxValue={maxShipmentValue}
+                minValue={0}
+                step={5000}
+                value={valueRange}
+                onChange={(value) => {
+                  if (Array.isArray(value) && value.length === 2) {
+                    setValueRange(value as [number, number]);
+                  }
+                }}
+              >
+                <Slider.Track>
+                  <Slider.Fill />
+                  <Slider.Thumb index={0} />
+                  <Slider.Thumb index={1} />
+                </Slider.Track>
+              </Slider>
+              <Button
+                className="self-end"
+                isDisabled={!valueActive}
+                size="sm"
+                variant="ghost"
+                onPress={() => setValueRange([0, maxShipmentValue])}
+              >
+                Reset
+              </Button>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
       </div>
+
+      {/* Active filters */}
+      {hasActiveFilters ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {search ? (
+            <Chip size="sm" variant="secondary">
+              <Chip.Label>Search: {search}</Chip.Label>
+              <button
+                aria-label="Clear search"
+                className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+                type="button"
+                onClick={() => setSearch("")}
+              >
+                <Xmark className="size-3" />
+              </button>
+            </Chip>
+          ) : null}
+          {[...clientFilter].map((client) => (
+            <Chip key={client} size="sm" variant="secondary">
+              <Chip.Label>{client}</Chip.Label>
+              <button
+                aria-label={`Remove ${client} filter`}
+                className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+                type="button"
+                onClick={() => setClientFilter(without(clientFilter, client))}
+              >
+                <Xmark className="size-3" />
+              </button>
+            </Chip>
+          ))}
+          {statusActive
+            ? [...statusFilter].map((status) => (
+                <Chip key={status} size="sm" variant="secondary">
+                  <Chip.Label>
+                    {statusOptions.find((option) => option.id === status)
+                      ?.label ?? status}
+                  </Chip.Label>
+                  <button
+                    aria-label={`Remove ${status} filter`}
+                    className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+                    type="button"
+                    onClick={() =>
+                      setStatusFilter(without(statusFilter, status))
+                    }
+                  >
+                    <Xmark className="size-3" />
+                  </button>
+                </Chip>
+              ))
+            : null}
+          {valueActive ? (
+            <Chip size="sm" variant="secondary">
+              <Chip.Label>
+                Value: {compactCurrency(valueRange[0])} –{" "}
+                {compactCurrency(valueRange[1])}
+              </Chip.Label>
+              <button
+                aria-label="Remove value filter"
+                className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
+                type="button"
+                onClick={() => setValueRange([0, maxShipmentValue])}
+              >
+                <Xmark className="size-3" />
+              </button>
+            </Chip>
+          ) : null}
+          <Button size="sm" variant="ghost" onPress={clearFilters}>
+            Clear all
+          </Button>
+        </div>
+      ) : null}
 
       {/* Run list */}
       <DataGrid
