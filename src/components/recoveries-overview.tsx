@@ -4,12 +4,22 @@ import {
 	CircleFill,
 	Funnel,
 } from "@gravity-ui/icons";
-import { Button, Chip, Dropdown, Label, SearchField } from "@heroui/react";
+import {
+	Button,
+	Chip,
+	Dropdown,
+	Label,
+	ListBox,
+	Pagination,
+	SearchField,
+	Separator,
+} from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import {
 	BarChart,
 	ChartTooltip,
 	DataGrid,
+	InlineSelect,
 	PieChart,
 	TrendChip,
 	Widget,
@@ -17,6 +27,8 @@ import {
 import { format, subDays, subMonths } from "date-fns";
 import { useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
+
+import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
@@ -319,6 +331,8 @@ export function RecoveriesOverview() {
 		column: "amount",
 		direction: "descending",
 	});
+	const [page, setPage] = useState(1);
+	const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
 	const visibleOpportunities = useMemo(() => {
 		let result = opportunities;
@@ -356,6 +370,42 @@ export function RecoveriesOverview() {
 			return cmp;
 		});
 	}, [search, statusFilter, sortDescriptor]);
+
+	const totalPages = Math.ceil(visibleOpportunities.length / rowsPerPage) || 1;
+	const safePage = Math.min(page, totalPages);
+	const paginatedOpportunities = useMemo(() => {
+		const start = (safePage - 1) * rowsPerPage;
+
+		return visibleOpportunities.slice(start, start + rowsPerPage);
+	}, [visibleOpportunities, safePage, rowsPerPage]);
+
+	const paginationPages = useMemo(() => {
+		const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+
+		if (totalPages <= 7) {
+			for (let i = 1; i <= totalPages; i++)
+				pages.push({ key: `p-${i}`, value: i });
+		} else {
+			pages.push({ key: "p-1", value: 1 });
+			if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
+			const start = Math.max(2, safePage - 1);
+			const end = Math.min(totalPages - 1, safePage + 1);
+
+			for (let i = start; i <= end; i++)
+				pages.push({ key: `p-${i}`, value: i });
+			if (safePage < totalPages - 2)
+				pages.push({ key: "e-end", value: "ellipsis" });
+			pages.push({ key: `p-${totalPages}`, value: totalPages });
+		}
+
+		return pages;
+	}, [totalPages, safePage]);
+
+	const rangeStart = (safePage - 1) * rowsPerPage + 1;
+	const rangeEnd = Math.min(
+		safePage * rowsPerPage,
+		visibleOpportunities.length,
+	);
 
 	return (
 		<div className="flex w-full flex-col gap-4">
@@ -585,7 +635,7 @@ export function RecoveriesOverview() {
 				<DataGrid
 					aria-label="Recovery opportunities"
 					columns={opportunityColumns}
-					data={visibleOpportunities}
+					data={paginatedOpportunities}
 					getRowId={(item) => item.id}
 					renderEmptyState={() => (
 						<div className="text-muted py-8 text-center text-sm">
@@ -596,6 +646,103 @@ export function RecoveriesOverview() {
 					variant="primary"
 					onSortChange={setSortDescriptor}
 				/>
+
+				{/* Pagination footer */}
+				<div className="flex items-center justify-between whitespace-nowrap text-xs">
+					<Pagination size="sm">
+						<Pagination.Content>
+							<Pagination.Item>
+								<Pagination.Previous
+									isDisabled={safePage === 1}
+									onPress={() => setPage((p) => Math.max(1, p - 1))}
+								>
+									<Pagination.PreviousIcon />
+								</Pagination.Previous>
+							</Pagination.Item>
+							{paginationPages.map((p) =>
+								p.value === "ellipsis" ? (
+									<Pagination.Item key={p.key}>
+										<Pagination.Ellipsis />
+									</Pagination.Item>
+								) : (
+									<Pagination.Item key={p.key}>
+										<Pagination.Link
+											isActive={p.value === safePage}
+											onPress={() => setPage(p.value as number)}
+										>
+											{p.value}
+										</Pagination.Link>
+									</Pagination.Item>
+								),
+							)}
+							<Pagination.Item>
+								<Pagination.Next
+									isDisabled={safePage === totalPages}
+									onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+								>
+									<Pagination.NextIcon />
+								</Pagination.Next>
+							</Pagination.Item>
+						</Pagination.Content>
+					</Pagination>
+
+					<div className="flex items-center gap-3">
+						<InlineSelect
+							aria-label="Rows per page"
+							value={String(rowsPerPage)}
+							onChange={(v) => {
+								if (v) {
+									setRowsPerPage(Number(v));
+									setPage(1);
+								}
+							}}
+						>
+							<InlineSelect.Trigger>
+								<span className="text-muted">Rows per page</span>
+								<InlineSelect.Value />
+								<InlineSelect.Indicator />
+							</InlineSelect.Trigger>
+							<InlineSelect.Popover className="w-[80px]">
+								<ListBox>
+									{ROWS_PER_PAGE_OPTIONS.map((option) => (
+										<ListBox.Item
+											key={option}
+											id={String(option)}
+											textValue={String(option)}
+										>
+											{option}
+											<ListBox.ItemIndicator />
+										</ListBox.Item>
+									))}
+								</ListBox>
+							</InlineSelect.Popover>
+						</InlineSelect>
+						<Separator className="!h-4" orientation="vertical" />
+						<span className="text-muted tabular-nums">
+							{visibleOpportunities.length === 0
+								? "0 opportunities"
+								: `${rangeStart}–${rangeEnd} of ${visibleOpportunities.length}`}
+						</span>
+						<div className="flex gap-2">
+							<Button
+								isDisabled={safePage === 1}
+								size="sm"
+								variant="secondary"
+								onPress={() => setPage((p) => Math.max(1, p - 1))}
+							>
+								Previous
+							</Button>
+							<Button
+								isDisabled={safePage === totalPages}
+								size="sm"
+								variant="secondary"
+								onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+							>
+								Next
+							</Button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

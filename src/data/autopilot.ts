@@ -62,6 +62,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Titan Tools USA",
 		confidence: 0.96,
+		detail: "Repeat category — matched from the client's catalog history.",
 		id: "act-5",
 		occurredHoursAgo: 3,
 		reference: "SHP-2228",
@@ -71,6 +72,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Crestline Sporting Goods",
 		confidence: 0.97,
+		detail: "8 fields extracted · matches the carrier booking.",
 		id: "act-6",
 		occurredHoursAgo: 4,
 		reference: "SHP-2235",
@@ -130,6 +132,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Golden Gate Trading",
 		confidence: 0.97,
+		detail: "Filed 26 hours before the loading window.",
 		id: "act-12",
 		occurredHoursAgo: 20,
 		reference: "SHP-2240",
@@ -160,6 +163,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Bayview Kitchenware",
 		confidence: 0.97,
+		detail: "Filed 30 hours before the loading window.",
 		id: "act-15",
 		occurredHoursAgo: 28,
 		reference: "SHP-2238",
@@ -169,6 +173,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Stonebridge Hardware",
 		confidence: 0.98,
+		detail: "Base-metal mountings · 3.5% duty.",
 		id: "act-16",
 		occurredHoursAgo: 30,
 		reference: "SHP-2236",
@@ -198,6 +203,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Halcyon Pet Supply",
 		confidence: 0.97,
+		detail: "Ceramic tableware subheading · 9.8% duty.",
 		id: "act-19",
 		occurredHoursAgo: 36,
 		reference: "SHP-2239",
@@ -227,6 +233,7 @@ export const autopilotActions: AutopilotAction[] = [
 	{
 		client: "Cobalt Optics",
 		confidence: 0.96,
+		detail: "Chapter 90 optics · free of duty.",
 		id: "act-22",
 		occurredHoursAgo: 48,
 		reference: "SHP-2242",

@@ -129,11 +129,7 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
 						<span className="text-foreground truncate text-sm font-medium">
 							{action.title}
 						</span>
-						{action.detail ? (
-							<span className="text-muted truncate text-xs">
-								{action.detail}
-							</span>
-						) : null}
+						<span className="text-muted truncate text-xs">{action.detail}</span>
 					</div>
 				</div>
 			);
@@ -141,7 +137,9 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
 		header: "Action",
 		id: "title",
 		isRowHeader: true,
-		minWidth: 340,
+		maxWidth: 340,
+		minWidth: 280,
+		width: 340,
 	},
 	{
 		accessorKey: "type",
@@ -163,16 +161,16 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
 		accessorKey: "client",
 		allowsSorting: true,
 		cell: (action) => (
-			<div className="flex flex-col">
-				<span className="text-sm">{action.client}</span>
-				<span className="text-muted text-xs tabular-nums">
-					{action.reference}
-				</span>
-			</div>
+			<span className="block min-w-0 truncate text-sm">
+				{action.client}
+				<span className="text-muted tabular-nums"> · {action.reference}</span>
+			</span>
 		),
 		header: "Client",
 		id: "client",
+		maxWidth: 240,
 		minWidth: 180,
+		width: 240,
 	},
 	{
 		accessorKey: "confidence",
