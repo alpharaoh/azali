@@ -35,6 +35,7 @@ import {
   ChatLoader,
   ChatMessage,
   ChatSource,
+  ChatSources,
   HoverCard,
   PromptInput,
   PromptSuggestion,
@@ -66,6 +67,7 @@ import type {
 } from "#/data/review-queue";
 import {
   addThreadMessage,
+  docSlug,
   resolveReviewItem,
   reviewItems,
   undoReviewItem,
@@ -288,28 +290,133 @@ const citationMeta: Record<
   ruling: { chip: "accent", label: "CROSS Ruling" },
 };
 
-/** Compact source pill — hover reveals the exact passage the agent relied on. */
-function CitationPill({ citation }: { citation: Citation }) {
+function faviconFor(href: string) {
+  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(href)}&sz=64`;
+}
+
+/** The hover body shared by both pill variants — kind, reference, exact passage. */
+function CitationQuote({ citation }: { citation: Citation }) {
   const meta = citationMeta[citation.kind];
 
   return (
+    <div className="flex max-w-72 flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <Chip color={meta.chip} size="sm" variant="soft">
+          <Chip.Label>{meta.label}</Chip.Label>
+        </Chip>
+        <span className="text-foreground font-mono text-xs font-semibold">
+          {citation.ref}
+        </span>
+      </div>
+      <p className="text-muted m-0 text-xs leading-relaxed">
+        “{citation.quote}”
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The top half of the cited document inside the hover card — the real scan for
+ * scans, a reconstructed sheet for PDFs. Hovering fades in "View full document",
+ * which opens the file in a new tab.
+ */
+function DocPeek({ document: doc }: { document: ReviewDocument }) {
+  if (doc.kind === "email") return null;
+
+  const href = doc.kind === "scan" ? doc.src : `/docs/${docSlug(doc.name)}.pdf`;
+
+  return (
+    <a
+      className="group relative block h-28 overflow-hidden border-b"
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {doc.kind === "scan" ? (
+        <img
+          alt={doc.name}
+          className="h-full w-full object-cover object-top"
+          src={doc.src}
+        />
+      ) : (
+        <div className="bg-surface flex h-full flex-col gap-1 px-3.5 py-3">
+          <span className="text-foreground text-[11px] font-semibold leading-tight">
+            {doc.name}
+          </span>
+          <span className="text-muted text-[9px]">{doc.meta}</span>
+          <div className="bg-separator my-0.5 h-px" />
+          {doc.lines.slice(0, 4).map((line) => (
+            <div
+              key={line.label}
+              className="flex items-baseline justify-between gap-3"
+            >
+              <span className="text-muted shrink-0 text-[9px]">
+                {line.label}
+              </span>
+              <span className="text-foreground truncate text-[9px] font-medium">
+                {line.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
+        <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
+          <ArrowUpRightFromSquare className="size-3.5" />
+          View full document
+        </span>
+      </span>
+    </a>
+  );
+}
+
+/** Resolve the document a citation points at, for the hover preview. */
+function findCitedDocument(item: ReviewItem, citation: Citation) {
+  if (!citation.documentName) return undefined;
+
+  return item.documents.find(
+    (doc) => doc.kind !== "email" && doc.name === citation.documentName,
+  );
+}
+
+/**
+ * Compact source pill — hover reveals the exact passage the agent relied on.
+ * External sources (rulings, eCFR, HTSUS) get a favicon and open the real page;
+ * internal evidence renders as a document pill with a peek at the document.
+ */
+function CitationPill({
+  citation,
+  document,
+}: {
+  citation: Citation;
+  document?: ReviewDocument;
+}) {
+  if (citation.href) {
+    return (
+      <ChatSource enablePreview className="self-start" href={citation.href}>
+        <ChatSource.Trigger>
+          <ChatSource.Icon faviconUrl={faviconFor(citation.href)} />
+          <ChatSource.Title>{citation.ref}</ChatSource.Title>
+        </ChatSource.Trigger>
+        <ChatSource.Preview className="p-3">
+          <CitationQuote citation={citation} />
+        </ChatSource.Preview>
+      </ChatSource>
+    );
+  }
+
+  return (
     <HoverCard closeDelay={100} openDelay={150}>
-      <HoverCard.Trigger className="inline-flex max-w-full">
+      <HoverCard.Trigger className="inline-flex w-fit max-w-full self-start">
         <ChatSource sourceType="document" title={citation.ref} />
       </HoverCard.Trigger>
-      <HoverCard.Content className="max-w-80 p-3" placement="top">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <Chip color={meta.chip} size="sm" variant="soft">
-              <Chip.Label>{meta.label}</Chip.Label>
-            </Chip>
-            <span className="text-foreground font-mono text-xs font-semibold">
-              {citation.ref}
-            </span>
-          </div>
-          <p className="text-muted m-0 text-xs leading-relaxed">
-            “{citation.quote}”
-          </p>
+      <HoverCard.Content
+        className={document ? "w-72 overflow-hidden p-0" : "p-3"}
+        placement="top"
+      >
+        {document ? <DocPeek document={document} /> : null}
+        <div className={document ? "p-3" : undefined}>
+          <CitationQuote citation={citation} />
         </div>
       </HoverCard.Content>
     </HoverCard>
@@ -610,7 +717,12 @@ function TraceSection({ item }: { item: ReviewItem }) {
                             ))}
                           </div>
                         ) : null}
-                        {citation ? <CitationPill citation={citation} /> : null}
+                        {citation ? (
+                          <CitationPill
+                            citation={citation}
+                            document={findCitedDocument(item, citation)}
+                          />
+                        ) : null}
                       </div>
                     </ChainOfThought.Step>
                   );
@@ -619,19 +731,40 @@ function TraceSection({ item }: { item: ReviewItem }) {
             </ChainOfThought.Content>
           </ChainOfThought>
         ))}
-        <Separator className="my-2" />
-        <div className="flex flex-col gap-2">
-          <span className="text-muted text-xs font-medium">
-            {item.citations.length}{" "}
-            {item.citations.length === 1 ? "source" : "sources"} — hover to read
-            the cited passage
-          </span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {item.citations.map((citation) => (
-              <CitationPill key={citation.ref} citation={citation} />
-            ))}
-          </div>
-        </div>
+        <ChatSources defaultExpanded className="pt-3">
+          <ChatSources.Trigger>
+            <span className="inline-flex -space-x-1.5">
+              {item.citations
+                .filter((citation) => citation.href)
+                .slice(0, 3)
+                .map((citation) => (
+                  <img
+                    key={citation.ref}
+                    alt=""
+                    className="border-background size-5 rounded-full border object-cover"
+                    src={faviconFor(citation.href ?? "")}
+                  />
+                ))}
+            </span>
+            <span>
+              {item.citations.length}{" "}
+              {item.citations.length === 1
+                ? "source in total"
+                : "sources in total"}
+            </span>
+          </ChatSources.Trigger>
+          <ChatSources.Content>
+            <ChatSources.List>
+              {item.citations.map((citation) => (
+                <CitationPill
+                  key={citation.ref}
+                  citation={citation}
+                  document={findCitedDocument(item, citation)}
+                />
+              ))}
+            </ChatSources.List>
+          </ChatSources.Content>
+        </ChatSources>
       </div>
     </div>
   );
@@ -709,6 +842,10 @@ function ReviewDetail({
       addThreadMessage(item.id, {
         author: "ai",
         body: aiReply(item, body),
+        citationRef:
+          body.endsWith("?") && item.citations[0]
+            ? item.citations[0].ref
+            : undefined,
         id: `msg-${Date.now()}-ai`,
         kind: "chat",
       });
@@ -1031,6 +1168,20 @@ function ReviewDetail({
                     <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
                     <ChatMessage.Body>
                       <ChatMessage.Content>{message.body}</ChatMessage.Content>
+                      {(() => {
+                        const cited = message.citationRef
+                          ? item.citations.find(
+                              (entry) => entry.ref === message.citationRef,
+                            )
+                          : undefined;
+
+                        return cited ? (
+                          <CitationPill
+                            citation={cited}
+                            document={findCitedDocument(item, cited)}
+                          />
+                        ) : null;
+                      })()}
                     </ChatMessage.Body>
                   </ChatMessage.Assistant>
                 ),
@@ -1194,7 +1345,7 @@ export function ReviewQueue() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-104px)] min-h-[480px] w-full flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-4">
+    <div className="flex h-[calc(100dvh-72px)] min-h-[480px] w-full flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-4">
       {/* Queue list */}
       <div
         className={`min-h-0 overflow-hidden ${

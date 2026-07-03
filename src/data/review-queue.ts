@@ -86,6 +86,10 @@ export interface Citation {
 	kind: CitationKind;
 	ref: string;
 	quote: string;
+	/** External source URL — rulings, eCFR, HTSUS. Internal evidence has none. */
+	href?: string;
+	/** Name of the item document this cites — enables the hover preview. */
+	documentName?: string;
 }
 
 export interface ShipmentFacts {
@@ -127,6 +131,15 @@ export interface ReviewItem {
 	alternates?: Array<{ value: string; detail: string; confidence: number }>;
 	approveLabel: string;
 	canRequestInfo?: boolean;
+}
+
+/** Stable public path slug for a document name — used for the generated PDF files. */
+export function docSlug(name: string) {
+	return name
+		.toLowerCase()
+		.normalize("NFKD")
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
 }
 
 export type DecisionAction = "approved" | "corrected" | "info-requested";
@@ -205,10 +218,38 @@ export const reviewItems: ReviewItem[] = [
 				ref: "Classification Engine · 24 entries",
 			},
 			{
+				href: "https://www.ecfr.gov/current/title-19/section-142.2",
 				kind: "regulation",
 				quote:
 					"Entry documentation must be filed within 15 calendar days of arrival; filing before arrival avoids storage charges.",
 				ref: "19 CFR §142.2",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Invoice, packing list, and bill of lading agree on quantity, weight, consignee, and value — 72 of 72 field comparisons, Σ line values $186,400.00.",
+				documentName: "Commercial Invoice PRI-3301",
+				ref: "Docs · PRI-3301 / PL / B-L",
+			},
+			{
+				href: "https://hts.usitc.gov/",
+				kind: "regulation",
+				quote:
+					"Column 1 general rates for the declared subheadings: Ch. 85 0–2.6% · Ch. 94 3.9% · Ch. 39 various.",
+				ref: "HTSUS Column 1 rates",
+			},
+			{
+				href: "https://access.trade.gov/adcvd",
+				kind: "regulation",
+				quote:
+					"No active anti-dumping or countervailing duty orders for the declared HTS/origin pairs.",
+				ref: "AD/CVD case registry",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Trailing 12-month effective duty rate for this product mix: 6.5%.",
+				ref: "Entry history · Pacific Rim",
 			},
 		],
 		id: "rev-1",
@@ -224,6 +265,7 @@ export const reviewItems: ReviewItem[] = [
 				label: "Ingestion",
 				steps: [
 					{
+						citationRef: "Docs · PRI-3301 / PL / B-L",
 						data: [
 							"Seller: Shenzhen Kaida Trading Co. · Buyer: Pacific Rim Imports",
 							"Terms: FOB Shanghai · Currency: USD",
@@ -235,12 +277,14 @@ export const reviewItems: ReviewItem[] = [
 						title: "Parsed Commercial Invoice PRI-3301",
 					},
 					{
+						citationRef: "Docs · PRI-3301 / PL / B-L",
 						detail:
 							"Carton counts and gross weights matched invoice quantities on all 24 lines. Bill of lading consignee matches importer of record 36-4821997; port of lading Shanghai matches invoice terms.",
 						kind: "read",
 						title: "Parsed packing list & bill of lading",
 					},
 					{
+						citationRef: "Docs · PRI-3301 / PL / B-L",
 						detail:
 							"Invoice ↔ packing list ↔ B/L agreed on quantity, weight, consignee, and value on every line. 0 conflicts found across 72 field comparisons.",
 						kind: "check",
@@ -259,12 +303,14 @@ export const reviewItems: ReviewItem[] = [
 						title: "Matched all 24 lines against the catalog",
 					},
 					{
+						citationRef: "HTSUS Column 1 rates",
 						detail:
 							"None of the 24 subheadings were touched by the mid-year HTS revision, and no Section 301/232 changes affect these HTS/origin pairs since Pacific Rim's last entry.",
 						kind: "check",
 						title: "Re-validated codes against the current HTS",
 					},
 					{
+						citationRef: "AD/CVD case registry",
 						detail:
 							"No anti-dumping or countervailing orders on these HTS/origin pairs. No FDA, USDA, or EPA flags — all lines are consumer goods outside PGA scope.",
 						kind: "flag",
@@ -282,11 +328,13 @@ export const reviewItems: ReviewItem[] = [
 							"Ch. 39 (3 lines): $22,900 @ various = $8,152.80",
 							"Total estimated duty: $12,430.00 (MPF/HMF itemized separately)",
 						],
+						citationRef: "HTSUS Column 1 rates",
 						detail: "Computed line by line across 3 HTS chapters.",
 						kind: "calc",
 						title: "Computed duties",
 					},
 					{
+						citationRef: "Entry history · Pacific Rim",
 						detail:
 							"Effective rate 6.7% is consistent with Pacific Rim's trailing 12-month average of 6.5% for this product mix — no anomaly.",
 						kind: "check",
@@ -369,6 +417,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://www.ecfr.gov/current/title-19/section-141.86",
 				kind: "regulation",
 				quote:
 					"Each invoice shall set forth an accurate and itemized statement of the purchase price of each item.",
@@ -379,6 +428,19 @@ export const reviewItems: ReviewItem[] = [
 				quote:
 					"Packing list quantities and unit prices agree with the 12 line items, not the printed total.",
 				ref: "Packing list PL-88231",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Printed TOTAL (page 2): $48,250.00 · Σ line items 1–12: $45,780.00 — the document disagrees with itself.",
+				documentName: "Commercial Invoice INV-88231",
+				ref: "Invoice INV-88231",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Please clear before the weekend if possible, we have a DC appointment Monday morning.",
+				ref: "Email · ops@harborfoods.com",
 			},
 		],
 		id: "rev-2",
@@ -400,18 +462,21 @@ export const reviewItems: ReviewItem[] = [
 							"Printed TOTAL (page 2): $48,250.00 · OCR confidence 0.98",
 							"Σ line items (1–12): $45,780.00",
 						],
+						citationRef: "Invoice INV-88231",
 						detail:
 							"2 pages. Every line item extracted with confidence ≥ 0.96 — the printed total itself read cleanly, so this is not an OCR error.",
 						kind: "read",
 						title: "Parsed Commercial Invoice INV-88231",
 					},
 					{
+						citationRef: "Packing list PL-88231",
 						detail:
 							"Quantities and unit prices on PL-88231 match invoice lines 1–12 exactly — 24 of 24 field comparisons agree with the line items.",
 						kind: "read",
 						title: "Parsed packing list PL-88231",
 					},
 					{
+						citationRef: "Email · ops@harborfoods.com",
 						detail:
 							"Client asked to clear before the weekend (DC appointment Monday). Deadline registered against the Savannah ETA.",
 						kind: "read",
@@ -427,11 +492,13 @@ export const reviewItems: ReviewItem[] = [
 							"Σ(line items) $45,780.00 ≠ printed total $48,250.00",
 							"Discrepancy: −$2,470.00 (5.1% of declared value)",
 						],
+						citationRef: "Invoice INV-88231",
 						detail: "The arithmetic cross-check failed.",
 						kind: "flag",
 						title: "Cross-checked totals — MISMATCH",
 					},
 					{
+						citationRef: "Packing list PL-88231",
 						detail:
 							"Tested and rejected: freight/insurance add-on (CIF charges already itemized on line 12); currency mix-up (single USD column); missing page (page count complete, line numbering contiguous). The residual explanation is a typo in the printed total.",
 						kind: "lookup",
@@ -546,12 +613,14 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://rulings.cbp.gov/ruling/N324089",
 				kind: "ruling",
 				quote:
 					"A mesh Wi-Fi system comprising a router and satellite units is classified under subheading 8517.62.00, free of duty.",
 				ref: "CROSS NY N324089",
 			},
 			{
+				href: "https://hts.usitc.gov/search?query=8517",
 				kind: "regulation",
 				quote:
 					"Heading 8517 covers machines for the reception, conversion and transmission of voice, images or other data.",
@@ -562,6 +631,20 @@ export const reviewItems: ReviewItem[] = [
 				quote:
 					"Mesh extender EX-3 approved under 8517.62.0090 for Bluewave in March — same principal function.",
 				ref: "Catalog · BW-EXT-003",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"AX5400 tri-band wireless mesh Wi-Fi 6 router, 2-pack, model RBK762 — $128,000 · origin Taiwan.",
+				documentName: "Commercial Invoice BW-5540",
+				ref: "Invoice BW-5540 · line 3",
+			},
+			{
+				href: "https://hts.usitc.gov/",
+				kind: "regulation",
+				quote:
+					"Goods put up in sets for retail sale shall be classified by the component which gives them their essential character.",
+				ref: "GRI 3(b)",
 			},
 		],
 		id: "rev-3",
@@ -581,12 +664,14 @@ export const reviewItems: ReviewItem[] = [
 							"“AX5400 tri-band wireless mesh Wi-Fi 6 router, 2-pack, model RBK762”",
 							"Line value: $128,000.00 · Country of origin: Taiwan",
 						],
+						citationRef: "Invoice BW-5540 · line 3",
 						detail:
 							"Lines 1 and 2 (cables, extender) matched the catalog automatically — only line 3 required classification.",
 						kind: "read",
 						title: "Parsed invoice line 3",
 					},
 					{
+						citationRef: "Invoice BW-5540 · line 3",
 						detail:
 							"Attributes extracted: wireless router · data transmission and reception · consumer networking · sold as a 2-pack (router + satellite unit) · Wi-Fi 6 / tri-band.",
 						kind: "lookup",
@@ -623,6 +708,7 @@ export const reviewItems: ReviewItem[] = [
 						title: "Read the heading terms",
 					},
 					{
+						citationRef: "HTSUS Heading 8517",
 						detail:
 							"8517.69 (“other apparatus”) applies only where transmission/reception is not the principal function. For a router it plainly is. Posterior for 8517.69: 0.11 — rejected but surfaced as the alternate.",
 						kind: "check",
@@ -634,12 +720,14 @@ export const reviewItems: ReviewItem[] = [
 				label: "Verification & decision",
 				steps: [
 					{
+						citationRef: "GRI 3(b)",
 						detail:
 							"The 2-pack could arguably be a GRI 3(b) set. Both components classify identically, so the outcome doesn't change — but the unresolved framing question caps confidence below your threshold.",
 						kind: "check",
 						title: "GRI set analysis on the 2-pack",
 					},
 					{
+						citationRef: "HTSUS Heading 8517",
 						data: [
 							"8517.62.0090: Free → $0 duty",
 							"8517.69.0000: Free → $0 duty",
@@ -757,6 +845,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://www.ecfr.gov/current/title-19/section-4.61",
 				kind: "regulation",
 				quote:
 					"Vessel entrance and clearance statements are made on CBP Form 1300.",
@@ -766,7 +855,21 @@ export const reviewItems: ReviewItem[] = [
 				kind: "evidence",
 				quote:
 					"The CBP stamp reads MAY 01 2022 and voyage particulars list April 2022 calls — contradicting the handwritten 2020.",
+				documentName: "Vessel Entrance or Clearance Statement",
 				ref: "Scan · CBP Form 1300",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Vessel “Harmonie”, Simpson Bay → Culebra, agent Karen Smith — matches the CBP 1300 particulars line for line.",
+				ref: "Booking · SHP-2218",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Traveler “Armstrong, Nel A.”, countries visited Germany/Kuwait/Qatar/UK, stamped March 2010 — no overlap with this transaction.",
+				documentName: "Customs Declaration (6059B)",
+				ref: "Scan · CBP Form 6059B",
 			},
 		],
 		id: "rev-9",
@@ -787,12 +890,14 @@ export const reviewItems: ReviewItem[] = [
 							"Scan 1: CBP Form 1300 — Vessel Entrance or Clearance Statement",
 							"Scan 2: CBP Form 6059B — Customs Declaration (traveler)",
 						],
+						citationRef: "19 CFR §4.61",
 						detail:
 							"Two scans arrived on the client email for the yacht import. Form types identified from layout and OMB numbers; both OCR'd including handwriting.",
 						kind: "read",
 						title: "Classified both scanned forms",
 					},
 					{
+						citationRef: "Booking · SHP-2218",
 						data: [
 							"Vessel: “Harmonie” · 49′4″ yacht · USA flag",
 							"Route: Simpson Bay, SX → Culebra, PR · Agent: Karen Smith",
@@ -820,6 +925,7 @@ export const reviewItems: ReviewItem[] = [
 						title: "Resolved the 1300's internal date conflict",
 					},
 					{
+						citationRef: "Scan · CBP Form 6059B",
 						detail:
 							"Traveler “Armstrong, Nel A.”, countries visited Germany/Kuwait/Qatar/UK, stamped March 2010. No field overlaps this transaction — wrong person, wrong trip, wrong decade.",
 						kind: "flag",
@@ -908,16 +1014,38 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://hts.usitc.gov/search?query=6204",
 				kind: "regulation",
 				quote:
 					"Garments are classified by the fabric of the outer shell; the chief-weight fibre of the shell governs.",
 				ref: "HTSUS Ch. 62, Subheading Note 2",
 			},
 			{
+				href: "https://rulings.cbp.gov/ruling/960950",
 				kind: "ruling",
 				quote:
 					"A woven blazer of 55% wool and 45% polyester is classifiable under subheading 6204.31.",
 				ref: "CROSS HQ 960950",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Shell: 55% wool / 45% polyester · Lining: 100% polyester · 3,800 units.",
+				documentName: "Spec Sheet — Style SA-2241",
+				ref: "Spec sheet SA-2241",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Confirming shell composition is 55/45 wool-poly per the mill certificate. The final commercial invoice will match the spec sheet.",
+				ref: "Email · merch@solsticeapparel.com",
+			},
+			{
+				href: "https://hts.usitc.gov/search?query=6204.31",
+				kind: "regulation",
+				quote:
+					"6204.31 (of wool): 17.5% ad valorem · 6204.33 (of synthetic fibres): 26.9% ad valorem.",
+				ref: "HTSUS 6204 rate lines",
 			},
 		],
 		id: "rev-4",
@@ -937,12 +1065,14 @@ export const reviewItems: ReviewItem[] = [
 							"Shell: 55% wool / 45% polyester",
 							"Lining: 100% polyester · Units: 3,800",
 						],
+						citationRef: "Spec sheet SA-2241",
 						detail:
 							"Fabric composition extracted from the spec sheet; the commercial invoice hasn't arrived yet, so the spec sheet is the controlling evidence for now.",
 						kind: "read",
 						title: "Parsed spec sheet SA-2241",
 					},
 					{
+						citationRef: "Email · merch@solsticeapparel.com",
 						detail:
 							"Emailed Solstice's merch team to confirm composition; reply confirmed 55/45 wool-poly per the mill certificate and promised the invoice will match.",
 						kind: "check",
@@ -978,6 +1108,7 @@ export const reviewItems: ReviewItem[] = [
 							"6204.33.5010 (synthetic): 26.9% × $64,200 = $17,270",
 							"Δ duty at stake: $6,035 — wait on invoice? No: spec + mill cert suffice",
 						],
+						citationRef: "HTSUS 6204 rate lines",
 						detail:
 							"A 5-point composition error on the final invoice would flip the code and add ~$4,120–6,000 in duty exposure.",
 						kind: "calc",
@@ -1047,16 +1178,31 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://www.ecfr.gov/current/title-21/section-878.4810",
 				kind: "regulation",
 				quote:
 					"Light-based devices intended for medical purposes are Class II devices requiring premarket notification.",
 				ref: "21 CFR §878.4810",
 			},
 			{
+				href: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/general-wellness-policy-low-risk-devices",
 				kind: "regulation",
 				quote:
 					"Products with claims limited to general wellness and low safety risk are not regulated as medical devices.",
 				ref: "FDA General Wellness Guidance",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"“LED light therapy facial mask — red & blue light modes for skin rejuvenation” — the claim language on the listing.",
+				documentName: "Product Listing — JB-LED-01",
+				ref: "Listing · JB-LED-01",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"There are no medical claims on the retail box, only 'wellness' language.",
+				ref: "Email · ops@juniperbeautylabs.com",
 			},
 		],
 		id: "rev-5",
@@ -1076,12 +1222,14 @@ export const reviewItems: ReviewItem[] = [
 							"“LED light therapy facial mask — red & blue light modes for skin rejuvenation”",
 							"Power: USB-C · 5V · Units: 6,500",
 						],
+						citationRef: "Listing · JB-LED-01",
 						detail:
 							"The claim language is the regulatory trigger — “light therapy” and “rejuvenation” both pattern-match device claims.",
 						kind: "read",
 						title: "Parsed the product listing",
 					},
 					{
+						citationRef: "Email · ops@juniperbeautylabs.com",
 						detail:
 							"Requested the retail packaging artwork from Juniper; their reply says the box uses only “wellness” language with no medical claims — artwork attached but not yet verified against the listing.",
 						kind: "check",
@@ -1116,6 +1264,7 @@ export const reviewItems: ReviewItem[] = [
 							"With FDA flag: prior notice + possible exam · no penalty risk",
 							"Without flag, if CBP disagrees: refused entry, exam delays, re-export costs",
 						],
+						citationRef: "21 CFR §878.4810",
 						detail:
 							"Asymmetric downside — over-flagging costs days; under-flagging can cost the shipment.",
 						kind: "calc",
@@ -1189,6 +1338,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://www.law.cornell.edu/uscode/text/19/1401a",
 				kind: "regulation",
 				quote:
 					"Transaction value between related persons is acceptable where circumstances of sale indicate the relationship did not influence the price.",
@@ -1198,7 +1348,22 @@ export const reviewItems: ReviewItem[] = [
 				kind: "evidence",
 				quote:
 					"Prior related-party entries for this part ran $8.35–8.55/unit and were accepted at liquidation.",
+				documentName: "12-Month Price Comparison",
 				ref: "Entry history · RW-4471",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Seller: Meridian GmbH (parent company) · $8.40/unit × 11,000 units = $92,400.",
+				documentName: "Commercial Invoice INV-4471",
+				ref: "Invoice INV-4471",
+			},
+			{
+				href: "https://www.law.cornell.edu/uscode/text/19/1592",
+				kind: "regulation",
+				quote:
+					"Penalties for entry of merchandise by fraud, gross negligence, or negligence — exposure reaches prior entries at the same price.",
+				ref: "19 USC §1592",
 			},
 		],
 		id: "rev-6",
@@ -1218,6 +1383,7 @@ export const reviewItems: ReviewItem[] = [
 							"Seller: Meridian GmbH (parent company) · related party",
 							"Unit price: $8.40 × 11,000 units = $92,400",
 						],
+						citationRef: "Invoice INV-4471",
 						detail:
 							"Corporate registry match flagged the seller as the importer's parent — this invoice is a related-party transaction under 19 USC 1401a.",
 						kind: "read",
@@ -1234,6 +1400,7 @@ export const reviewItems: ReviewItem[] = [
 							"This invoice: $8.40/unit → −18.0% vs. unrelated average",
 							"Prior related-party entries: $8.35–8.55/unit · all liquidated without question",
 						],
+						citationRef: "Entry history · RW-4471",
 						detail:
 							"Built the comparison set from your entry history — the price is below unrelated benchmarks but consistent with the client's own related-party history.",
 						kind: "calc",
@@ -1256,6 +1423,7 @@ export const reviewItems: ReviewItem[] = [
 							"If undervaluation found: back-duties across all prior entries + penalties (19 USC 1592)",
 							"Missing evidence: transfer-pricing study or CoS documentation",
 						],
+						citationRef: "19 USC §1592",
 						detail:
 							"The exposure isn't this entry's duty — it's the retroactive liability across every prior entry at this price.",
 						kind: "flag",
@@ -1331,6 +1499,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://hts.usitc.gov/search?query=6404.11",
 				kind: "regulation",
 				quote:
 					"Subheading 6404.11.90 is subdivided according to the constituent material of the upper.",
@@ -1341,6 +1510,13 @@ export const reviewItems: ReviewItem[] = [
 				quote:
 					"129 sibling SKUs were reassigned automatically under the new subdivision.",
 				ref: "Catalog · Summit Footwear",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Upper: 78% textile mesh / 22% synthetic overlays (by surface area) · rubber sole.",
+				documentName: "Spec — TR-9 Trail Runner",
+				ref: "Spec · TR-9",
 			},
 		],
 		id: "rev-7",
@@ -1379,12 +1555,14 @@ export const reviewItems: ReviewItem[] = [
 							"Upper: 78% textile mesh / 22% synthetic overlays (by surface area)",
 							"New split: textile-dominant → 6404.11.9050 · synthetic-dominant → sibling code",
 						],
+						citationRef: "Spec · TR-9",
 						detail:
 							"Textile governs at 78% — but overlay measurement methodology (surface area vs. weight) can shift borderline uppers, which is why this queued.",
 						kind: "read",
 						title: "Re-measured TR-9's upper composition",
 					},
 					{
+						citationRef: "USITC HTS Rev. (mid-year)",
 						data: [
 							"Old code and new code both carry 20% duty",
 							"Codes-only correction — $0 duty impact",
@@ -1463,6 +1641,7 @@ export const reviewItems: ReviewItem[] = [
 		],
 		citations: [
 			{
+				href: "https://www.ecfr.gov/current/title-19/section-134.11",
 				kind: "regulation",
 				quote:
 					"Every article of foreign origin imported into the United States shall be marked to indicate the country of origin.",
@@ -1472,7 +1651,22 @@ export const reviewItems: ReviewItem[] = [
 				kind: "evidence",
 				quote:
 					"14 prior entries for part RW-2205, all declared origin DE and accepted.",
+				documentName: "Entry History — Part RW-2205",
 				ref: "Entry history · RW-2205",
+			},
+			{
+				kind: "evidence",
+				quote:
+					"Seller: Rheinwerk Präzision GmbH, Stuttgart · country-of-origin field blank · port of lading Hamburg.",
+				documentName: "Commercial Invoice INV-7702",
+				ref: "Invoice INV-7702",
+			},
+			{
+				href: "https://hts.usitc.gov/search?query=8483.10",
+				kind: "regulation",
+				quote:
+					"8483.10.3050: Free (column 1 general) — no Section 232/301 action for German origin.",
+				ref: "HTSUS 8483.10.3050",
 			},
 		],
 		id: "rev-8",
@@ -1494,6 +1688,7 @@ export const reviewItems: ReviewItem[] = [
 							"Country of origin field: (blank)",
 							"Port of lading: Hamburg",
 						],
+						citationRef: "Invoice INV-7702",
 						detail:
 							"Origin is a required entry element — the blank field blocks the entry from advancing.",
 						kind: "read",
@@ -1520,6 +1715,7 @@ export const reviewItems: ReviewItem[] = [
 							"DE origin: no Section 232/301 exposure for 8483.10.3050",
 							"Duty impact of the inference: $0 (Free either way)",
 						],
+						citationRef: "HTSUS 8483.10.3050",
 						detail:
 							"Low monetary stakes — but origin declarations are penalty events if wrong, so the inference still needs sign-off.",
 						kind: "calc",
@@ -1610,6 +1806,8 @@ export interface ThreadMessage {
 	body: string;
 	/** Notes live on the Overview timeline; chat messages in the Agent Trace conversation. */
 	kind: "chat" | "note";
+	/** Reference into the item's citations — AI answers cite their source. */
+	citationRef?: string;
 }
 
 let threads: ReadonlyMap<string, readonly ThreadMessage[]> = new Map();
