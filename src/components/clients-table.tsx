@@ -38,6 +38,8 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 
+import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
  * -----------------------------------------------------------------------------------------------*/
@@ -225,7 +227,6 @@ const statusColorMap: Record<StatusOption, "success" | "danger" | "warning"> = {
 	Paused: "danger",
 };
 
-const DEFAULT_ROWS_PER_PAGE = 25;
 const MAX_VISIBLE_PORTS = 3;
 
 const ALL_COLUMNS = [
@@ -334,7 +335,7 @@ function PortsCell({ ports }: { ports: PortName[] }) {
 export function ClientsTable() {
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
-	const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
+	const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 	const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
 	const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
 		column: "name",
@@ -978,18 +979,16 @@ export function ClientsTable() {
 						</InlineSelect.Trigger>
 						<InlineSelect.Popover className="w-[80px]">
 							<ListBox>
-								<ListBox.Item id="10" textValue="10">
-									10
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-								<ListBox.Item id="25" textValue="25">
-									25
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-								<ListBox.Item id="50" textValue="50">
-									50
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
+								{ROWS_PER_PAGE_OPTIONS.map((option) => (
+									<ListBox.Item
+										key={option}
+										id={String(option)}
+										textValue={String(option)}
+									>
+										{option}
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+								))}
 							</ListBox>
 						</InlineSelect.Popover>
 					</InlineSelect>

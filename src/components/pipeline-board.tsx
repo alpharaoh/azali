@@ -28,6 +28,7 @@ import type { Selection, SortDescriptor } from "react-aria-components";
 import type { PipelineStage, Shipment } from "#/data/pipeline";
 import { pipelineStages, shipments } from "#/data/pipeline";
 import { reviewItems, useReviewDecisions } from "#/data/review-queue";
+import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
  * Derivation — a shipment's live state comes from the Review Queue store
@@ -179,7 +180,7 @@ export function PipelineBoard() {
 		direction: "ascending",
 	});
 	const [page, setPage] = useState(1);
-	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
 	const pendingRefs = useMemo(() => {
 		return new Set(
@@ -794,18 +795,16 @@ export function PipelineBoard() {
 						</InlineSelect.Trigger>
 						<InlineSelect.Popover className="w-[80px]">
 							<ListBox>
-								<ListBox.Item id="10" textValue="10">
-									10
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-								<ListBox.Item id="25" textValue="25">
-									25
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-								<ListBox.Item id="50" textValue="50">
-									50
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
+								{ROWS_PER_PAGE_OPTIONS.map((option) => (
+									<ListBox.Item
+										key={option}
+										id={String(option)}
+										textValue={String(option)}
+									>
+										{option}
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+								))}
 							</ListBox>
 						</InlineSelect.Popover>
 					</InlineSelect>
