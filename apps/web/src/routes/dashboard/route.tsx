@@ -1,4 +1,5 @@
 import {
+  ArrowRightFromSquare,
   Book,
   CircleDollar,
   Gear,
@@ -186,26 +187,43 @@ const SidebarBase = ({
 }: {
   idSuffix?: string;
   pathname: string;
-}) => (
-  <Sidebar.Footer>
-    <Sidebar.Menu aria-label="Workspace">
-      {FOOTER_ITEMS.map((item) => (
+}) => {
+  const navigate = useNavigate();
+
+  return (
+    <Sidebar.Footer>
+      <Sidebar.Menu aria-label="Workspace">
+        {FOOTER_ITEMS.map((item) => (
+          <Sidebar.MenuItem
+            key={item.id}
+            href={item.href}
+            id={`${item.id}${idSuffix}`}
+            isCurrent={pathname.startsWith(item.href)}
+            textValue={item.label}
+          >
+            <Sidebar.MenuIcon>
+              <item.icon className="size-4" />
+            </Sidebar.MenuIcon>
+            <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+          </Sidebar.MenuItem>
+        ))}
         <Sidebar.MenuItem
-          key={item.id}
-          href={item.href}
-          id={`${item.id}${idSuffix}`}
-          isCurrent={pathname.startsWith(item.href)}
-          textValue={item.label}
+          id={`sign-out${idSuffix}`}
+          textValue="Sign out"
+          onAction={async () => {
+            await authClient.signOut();
+            navigate({ to: "/login" });
+          }}
         >
           <Sidebar.MenuIcon>
-            <item.icon className="size-4" />
+            <ArrowRightFromSquare className="size-4" />
           </Sidebar.MenuIcon>
-          <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+          <Sidebar.MenuLabel>Sign out</Sidebar.MenuLabel>
         </Sidebar.MenuItem>
-      ))}
-    </Sidebar.Menu>
-  </Sidebar.Footer>
-);
+      </Sidebar.Menu>
+    </Sidebar.Footer>
+  );
+};
 
 const DashboardSidebar = ({ pathname }: { pathname: string }) => (
   <>
