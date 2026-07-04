@@ -29,6 +29,31 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const now = new Date();
+          const orgId = crypto.randomUUID();
+          const baseSlug =
+            user.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ??
+            "workspace";
+
+          await db.insert(schema.organization).values({
+            id: orgId,
+            name: user.name || user.email,
+            slug: `${baseSlug}-${orgId.slice(0, 8)}`,
+            createdAt: now,
+          });
+          await db.insert(schema.member).values({
+            id: crypto.randomUUID(),
+            organizationId: orgId,
+            userId: user.id,
+            role: "owner",
+            createdAt: now,
+          });
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {
