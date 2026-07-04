@@ -1,6 +1,6 @@
-import { inngest } from "@/inngest/client";
 import { Logger } from "@nestjs/common";
-import { AppService } from "src/app.service";
+import { inngest } from "../../inngest/client";
+import { AppService } from "../../app.service";
 
 export type InngestHello = {
   data: {
