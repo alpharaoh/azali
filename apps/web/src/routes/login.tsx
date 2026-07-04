@@ -7,15 +7,17 @@ import {
   Label,
   Link,
   REGEXP_ONLY_DIGITS,
+  Spinner,
   TextField,
 } from "@heroui/react";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import loginImage from "#/assets/login.jpeg";
-import { authClient } from "#/lib/auth";
+import { authClient, isSigningOut } from "#/lib/auth";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
+    if (isSigningOut()) return;
     const { data: session } = await authClient.getSession();
     if (session) {
       throw redirect({ to: "/dashboard" });
@@ -61,11 +63,15 @@ function LoginPage() {
   async function handleGoogleSignIn() {
     setLoading(true);
     setError(null);
-    await authClient.signIn.social({
+    const { error: err } = await authClient.signIn.social({
       provider: "google",
       callbackURL: `${window.location.origin}/dashboard`,
     });
-    setLoading(false);
+    // On success the browser redirects to Google, so keep the spinner going.
+    if (err) {
+      setLoading(false);
+      setError(err.message ?? "Failed to sign in with Google.");
+    }
   }
 
   async function handleSendCode() {
@@ -146,8 +152,16 @@ function LoginPage() {
                   isPending={loading}
                   onPress={handleGoogleSignIn}
                 >
-                  <GoogleIcon />
-                  Sign in with Google
+                  {({ isPending }) => (
+                    <>
+                      {isPending ? (
+                        <Spinner color="current" size="sm" />
+                      ) : (
+                        <GoogleIcon />
+                      )}
+                      Sign in with Google
+                    </>
+                  )}
                 </Button>
 
                 <div className="my-1 flex items-center gap-3">
@@ -164,6 +178,8 @@ function LoginPage() {
                   <Envelope className="size-4" />
                   Sign in with Email
                 </Button>
+
+                {error && <p className="text-danger text-xs">{error}</p>}
               </div>
             </>
           )}

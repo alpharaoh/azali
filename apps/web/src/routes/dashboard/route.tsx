@@ -30,7 +30,7 @@ import { Fragment, useEffect, useState } from "react";
 
 import { ThemeSwitcher } from "#/components/theme-switcher";
 import { usePendingReviewCount } from "#/data/review-queue";
-import { authClient } from "#/lib/auth";
+import { authClient, signOutAndRedirect } from "#/lib/auth";
 import { toggleTheme } from "#/lib/theme";
 
 export const Route = createFileRoute("/dashboard")({
@@ -219,9 +219,8 @@ const SidebarBase = ({
         <Sidebar.MenuItem
           id={`sign-out${idSuffix}`}
           textValue="Sign out"
-          onAction={async () => {
-            await authClient.signOut();
-            navigate({ to: "/login" });
+          onAction={() => {
+            signOutAndRedirect(() => navigate({ to: "/login" }));
           }}
         >
           <Sidebar.MenuIcon>
@@ -356,10 +355,9 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           </div>
           <Dropdown.Menu
             aria-label="Session"
-            onAction={async (key) => {
+            onAction={(key) => {
               if (key === "logout") {
-                await authClient.signOut();
-                navigate({ to: "/login" });
+                signOutAndRedirect(() => navigate({ to: "/login" }));
               }
             }}
           >
