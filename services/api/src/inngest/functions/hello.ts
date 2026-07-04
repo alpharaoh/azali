@@ -18,8 +18,7 @@ export const hello = (dependencies: {
   logger: Logger;
 }) => {
   return inngest.createFunction(
-    { id: "hello-world" },
-    { event: "job/hello.world" },
+    { id: "hello-world", triggers: [{ event: "job/hello.world" }] },
     async ({ step }) => {
       return await step.run("start-single-jobs", () => {
         dependencies.logger.log(`Initiating Job`);
