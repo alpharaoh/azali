@@ -41,11 +41,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { clientLogos } from "#/data/client-logos";
 import type {
+  ListClientsResponseDtoDataItem as ApiClient,
   ClientsControllerFindAllAutonomyItem as ClientAutonomy,
-  ClientsControllerFindAllParams,
   ClientsControllerFindAllSortBy as ClientSortColumn,
   ClientsControllerFindAllStatusItem as ClientStatus,
-  ListClientsResponseDtoDataItem as ApiClient,
+  ClientsControllerFindAllParams,
 } from "#/generated/api";
 import {
   getClientsControllerFindAllQueryKey,
@@ -232,7 +232,9 @@ export function ClientsTable() {
 
   const params: ClientsControllerFindAllParams = {
     search: debouncedSearch || undefined,
-    status: statusFilter.size ? ([...statusFilter] as ClientStatus[]) : undefined,
+    status: statusFilter.size
+      ? ([...statusFilter] as ClientStatus[])
+      : undefined,
     autonomy: autonomyFilter.size
       ? ([...autonomyFilter] as ClientAutonomy[])
       : undefined,
@@ -871,12 +873,7 @@ export function ClientsTable() {
 /* -------------------------------------------------------------------------------------------------
  * Row Actions
  * -----------------------------------------------------------------------------------------------*/
-function RowActions({
-  onDelete,
-}: {
-  clientId: string;
-  onDelete: () => void;
-}) {
+function RowActions({ onDelete }: { clientId: string; onDelete: () => void }) {
   return (
     <Dropdown>
       <Button isIconOnly aria-label="Row actions" size="sm" variant="tertiary">
