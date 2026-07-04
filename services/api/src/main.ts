@@ -19,8 +19,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle("Norium API")
-    .setDescription("The official API for Norium")
+    .setTitle("Azali API")
+    .setDescription("The official API for Azali")
     .setVersion("1.0")
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);

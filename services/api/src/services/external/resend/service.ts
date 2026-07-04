@@ -9,11 +9,11 @@ export enum EmailServiceType {
 
 const EMAIL_SERVICE_CONTENT = {
   [EmailServiceType.SIGN_IN]: ({ otp }: { otp: string }) => ({
-    subject: "Sign in to Norium",
+    subject: "Sign in to Azali",
     html: `
-      <p>You are receiving this email because you signed in to Norium.</p>
+      <p>You are receiving this email because you signed in to Azali.</p>
       <p>Your one-time password is: <strong>${otp}</strong></p>
-      <p>If you did not sign in to Norium, please ignore this email.</p>
+      <p>If you did not sign in to Azali, please ignore this email.</p>
     `,
   }),
 } satisfies Record<
