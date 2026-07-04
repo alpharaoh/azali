@@ -48,7 +48,9 @@ function LoginPage() {
     timerRef.current = setInterval(() => {
       setResendTimer((t) => {
         if (t <= 1) {
-          clearInterval(timerRef.current!);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
           return 0;
         }
         return t - 1;
