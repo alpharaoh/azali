@@ -21,8 +21,10 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { Fragment, useEffect, useState } from "react";
 
+import { ThemeSwitcher } from "#/components/theme-switcher";
 import { usePendingReviewCount } from "#/data/review-queue";
 import { authClient } from "#/lib/auth";
+import { toggleTheme } from "#/lib/theme";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -310,19 +312,15 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
               </Avatar>
               <div className="flex flex-col gap-0">
                 <p className="text-sm leading-5 font-medium">{user?.name}</p>
-                <p className="text-muted text-xs leading-none">
-                  {user?.email}
-                </p>
+                <p className="text-muted text-xs leading-none">{user?.email}</p>
               </div>
             </div>
           </div>
           <Dropdown.Menu
-            onAction={async (key) => {
+            aria-label="Account"
+            onAction={(key) => {
               if (key === "settings") {
                 navigate({ to: "/dashboard/settings" });
-              } else if (key === "logout") {
-                await authClient.signOut();
-                navigate({ to: "/login" });
               }
             }}
           >
@@ -332,6 +330,28 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
                 <Gear className="text-muted size-3.5" />
               </div>
             </Dropdown.Item>
+          </Dropdown.Menu>
+          <div className="px-1">
+            <button
+              className="menu-item group w-full cursor-pointer"
+              onClick={toggleTheme}
+              type="button"
+            >
+              <div className="flex w-full items-center justify-between gap-2">
+                <Label>Theme</Label>
+                <ThemeSwitcher readOnly />
+              </div>
+            </button>
+          </div>
+          <Dropdown.Menu
+            aria-label="Session"
+            onAction={async (key) => {
+              if (key === "logout") {
+                await authClient.signOut();
+                navigate({ to: "/login" });
+              }
+            }}
+          >
             <Dropdown.Item id="logout" textValue="Logout" variant="danger">
               <div className="flex w-full items-center justify-between gap-2">
                 <Label>Log Out</Label>

@@ -2,6 +2,9 @@
 @import "@heroui/styles";
 @import "@heroui-pro/react/css";
 
+/* Make Tailwind's dark: variant follow the .dark class instead of the OS preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* HeroUI tooltips ship with `break-all`, which wraps mid-word; wrap whole words instead. */
 .tooltip {
   word-break: normal;
