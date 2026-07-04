@@ -41,7 +41,7 @@ export class EmailService {
     const props = emailFunc(args);
 
     return await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "onboarding@azali.ai",
       to,
       ...props,
     });
