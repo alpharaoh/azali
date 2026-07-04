@@ -9,8 +9,15 @@ import {
   Pulse,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Avatar, Breadcrumbs, Dropdown, Label } from "@heroui/react";
-import { AppLayout, Sidebar } from "@heroui-pro/react";
+import {
+  Avatar,
+  Breadcrumbs,
+  Dropdown,
+  dropdownVariants,
+  Label,
+} from "@heroui/react";
+import { menuItemVariants } from "@heroui/styles";
+import { AppLayout, cn, Sidebar } from "@heroui-pro/react";
 import {
   createFileRoute,
   Outlet,
@@ -331,9 +338,13 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
-          <div className="px-1">
+          <div className={cn(dropdownVariants({}).menu())}>
             <button
-              className="menu-item group w-full cursor-pointer"
+              className={cn(
+                menuItemVariants({}).item(),
+                "group w-full cursor-pointer",
+              )}
+              data-slot="menu-item"
               onClick={toggleTheme}
               type="button"
             >
