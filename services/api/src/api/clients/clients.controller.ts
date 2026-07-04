@@ -8,10 +8,15 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
 import { ClientsService } from "./clients.service";
+import {
+  ClientResponseDto,
+  ListClientsResponseDto,
+} from "./dto/client.response.dto";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { ListClientsDto } from "./dto/list-clients.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
@@ -21,6 +26,7 @@ export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Post()
+  @ApiCreatedResponse({ type: ClientResponseDto })
   create(
     @Session() session: UserSession<typeof auth>,
     @Body() dto: CreateClientDto,
@@ -33,6 +39,7 @@ export class ClientsController {
   }
 
   @Get()
+  @ApiOkResponse({ type: ListClientsResponseDto })
   findAll(
     @Session() session: UserSession<typeof auth>,
     @Query() query: ListClientsDto,
@@ -41,6 +48,7 @@ export class ClientsController {
   }
 
   @Get(":id")
+  @ApiOkResponse({ type: ClientResponseDto })
   findOne(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
@@ -49,6 +57,7 @@ export class ClientsController {
   }
 
   @Patch(":id")
+  @ApiOkResponse({ type: ClientResponseDto })
   update(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
@@ -62,6 +71,7 @@ export class ClientsController {
   }
 
   @Delete(":id")
+  @ApiOkResponse({ type: ClientResponseDto })
   remove(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,

@@ -7,6 +7,7 @@ import {
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { serve } from "inngest/fastify";
 import { Logger } from "nestjs-pino";
+import { cleanupOpenApiDoc } from "nestjs-zod";
 import { AppModule } from "./app.module";
 import { AppService } from "./app.service";
 import { inngest } from "./inngest/client";
@@ -23,7 +24,8 @@ async function bootstrap() {
     .setDescription("The official API for Azali")
     .setVersion("1.0")
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  const documentFactory = () =>
+    cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));
   SwaggerModule.setup("/swagger", app, documentFactory, {
     jsonDocumentUrl: "openapi.json",
   });
