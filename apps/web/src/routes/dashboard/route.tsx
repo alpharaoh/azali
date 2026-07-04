@@ -9,7 +9,7 @@ import {
   Pulse,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Breadcrumbs } from "@heroui/react";
+import { Avatar, Breadcrumbs } from "@heroui/react";
 import { AppLayout, Sidebar } from "@heroui-pro/react";
 import {
   createFileRoute,
@@ -249,6 +249,9 @@ const DashboardSidebar = ({ pathname }: { pathname: string }) => (
 );
 
 const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
+  const { data: session } = authClient.useSession();
+  console.log(session);
+  const user = session?.user;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -282,6 +285,12 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           <span className="truncate">{sectionLabel}</span>
         </Breadcrumbs.Item>
       </Breadcrumbs>
+      <Avatar size="sm" className="ml-auto shrink-0">
+        {user?.image && <Avatar.Image alt={user.name ?? ""} src={user.image} />}
+        <Avatar.Fallback className="text-xs">
+          {getInitials(user?.name || user?.email)}
+        </Avatar.Fallback>
+      </Avatar>
     </div>
   );
 };
@@ -304,4 +313,14 @@ function DashboardLayout() {
       <Outlet />
     </AppLayout>
   );
+}
+
+function getInitials(name?: string | null) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
