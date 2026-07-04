@@ -35,16 +35,22 @@ import {
   EmptyState,
   InlineSelect,
 } from "@heroui-pro/react";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { clientLogos } from "#/data/client-logos";
 import type {
-  ApiClient,
-  ClientAutonomy,
-  ClientSortColumn,
-  ClientStatus,
-} from "#/lib/api/clients";
-import { deleteClient, listClients } from "#/lib/api/clients";
+  ClientsControllerFindAllAutonomyItem as ClientAutonomy,
+  ClientsControllerFindAllParams,
+  ClientsControllerFindAllSortBy as ClientSortColumn,
+  ClientsControllerFindAllStatusItem as ClientStatus,
+  ListClientsResponseDtoDataItem as ApiClient,
+} from "#/generated/api";
+import {
+  getClientsControllerFindAllQueryKey,
+  useClientsControllerFindAll,
+  useClientsControllerRemove,
+} from "#/generated/api";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
@@ -223,56 +229,38 @@ export function ClientsTable() {
     new Set(ALL_COLUMNS),
   );
 
-  const [clients, setClients] = useState<ApiClient[]>([]);
-  const [count, setCount] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-
     const timer = setTimeout(
-      async () => {
-        try {
-          const result = await listClients({
-            search: search || undefined,
-            status: [...statusFilter] as ClientStatus[],
-            autonomy: [...autonomyFilter] as ClientAutonomy[],
-            sortBy: (sortDescriptor.column as ClientSortColumn) ?? "createdAt",
-            sortDir:
-              sortDescriptor.direction === "ascending" ? "asc" : "desc",
-            limit: rowsPerPage,
-            offset: (page - 1) * rowsPerPage,
-          });
-
-          if (!cancelled) {
-            setClients(result.data);
-            setCount(result.count);
-          }
-        } catch {
-          if (!cancelled) {
-            setClients([]);
-            setCount(0);
-          }
-        }
-      },
-      search ? SEARCH_DEBOUNCE_MS : 0,
+      () => setDebouncedSearch(search),
+      SEARCH_DEBOUNCE_MS,
     );
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [
-    search,
-    statusFilter,
-    autonomyFilter,
-    sortDescriptor,
-    page,
-    rowsPerPage,
-    refreshKey,
-  ]);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const queryClient = useQueryClient();
+  const removeClient = useClientsControllerRemove();
+
+  const params: ClientsControllerFindAllParams = {
+    search: debouncedSearch || undefined,
+    status: statusFilter.size ? ([...statusFilter] as ClientStatus[]) : undefined,
+    autonomy: autonomyFilter.size
+      ? ([...autonomyFilter] as ClientAutonomy[])
+      : undefined,
+    sortBy: (sortDescriptor.column as ClientSortColumn) ?? "createdAt",
+    sortDir: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+    limit: rowsPerPage,
+    offset: (page - 1) * rowsPerPage,
+  };
+
+  const { data: response } = useClientsControllerFindAll(params, {
+    query: { placeholderData: keepPreviousData },
+  });
+
+  const clients = response?.data.data ?? [];
+  const count = response?.data.count ?? 0;
 
   const statusActive = statusFilter.size > 0;
   const autonomyActive = autonomyFilter.size > 0;
@@ -286,11 +274,13 @@ export function ClientsTable() {
 
   const handleDelete = useCallback(
     async (ids: string[]) => {
-      await Promise.all(ids.map((id) => deleteClient(id)));
+      await Promise.all(ids.map((id) => removeClient.mutateAsync({ id })));
       setSelectedKeys(new Set());
-      refresh();
+      await queryClient.invalidateQueries({
+        queryKey: getClientsControllerFindAllQueryKey(),
+      });
     },
-    [refresh],
+    [removeClient.mutateAsync, queryClient],
   );
 
   const totalPages = Math.ceil(count / rowsPerPage) || 1;

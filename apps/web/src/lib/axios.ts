@@ -8,11 +8,18 @@ export const AXIOS_INSTANCE = Axios.create({
 
 export const axios = async <T>(
   url: string,
-  { body, ...config }: RequestInit & AxiosRequestConfig = {},
+  {
+    body,
+    headers,
+    signal,
+    ...config
+  }: RequestInit & Omit<AxiosRequestConfig, "headers" | "signal"> = {},
 ): Promise<T> => {
   return await AXIOS_INSTANCE({
     url,
     data: body,
+    headers: headers as AxiosRequestConfig["headers"],
+    signal: signal ?? undefined,
     ...config,
   });
 };
