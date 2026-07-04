@@ -44,6 +44,7 @@ import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { useLocalStorage } from "usehooks-ts";
+import { ClientFormDrawer } from "#/components/client-form-drawer";
 import { clientLogos } from "#/data/client-logos";
 import type {
   ListClientsResponseDtoDataItem as ApiClient,
@@ -416,6 +417,19 @@ export function ClientsTable() {
   const [pendingDelete, setPendingDelete] = useState<ApiClient[] | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [formOpen, setFormOpen] = useState(false);
+  const [formClient, setFormClient] = useState<ApiClient | null>(null);
+
+  const openCreateForm = useCallback(() => {
+    setFormClient(null);
+    setFormOpen(true);
+  }, []);
+
+  const openEditForm = useCallback((client: ApiClient) => {
+    setFormClient(client);
+    setFormOpen(true);
+  }, []);
+
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete?.length) return;
     setIsDeleting(true);
@@ -546,6 +560,7 @@ export function ClientsTable() {
           <RowActions
             clientId={item.id}
             onDelete={() => setPendingDelete([item])}
+            onEdit={() => openEditForm(item)}
           />
         ),
         header: "",
@@ -605,7 +620,7 @@ export function ClientsTable() {
             Importer profiles, bonds, POAs, and catalogs.
           </p>
         </div>
-        <Button variant="primary">
+        <Button variant="primary" onPress={openCreateForm}>
           Add Client
           <Plus />
         </Button>
@@ -882,7 +897,7 @@ export function ClientsTable() {
                 <Button variant="ghost" onPress={clearFilters}>
                   Clear Filters
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onPress={openCreateForm}>
                   <Plus />
                   Add Client
                 </Button>
@@ -1043,6 +1058,13 @@ export function ClientsTable() {
         </ActionBar.Suffix>
       </ActionBar>
 
+      {/* Create / edit form */}
+      <ClientFormDrawer
+        client={formClient}
+        isOpen={formOpen}
+        onOpenChange={setFormOpen}
+      />
+
       {/* Delete confirmation */}
       <Modal
         isOpen={pendingDelete !== null}
@@ -1097,7 +1119,14 @@ export function ClientsTable() {
 /* -------------------------------------------------------------------------------------------------
  * Row Actions
  * -----------------------------------------------------------------------------------------------*/
-function RowActions({ onDelete }: { clientId: string; onDelete: () => void }) {
+function RowActions({
+  onDelete,
+  onEdit,
+}: {
+  clientId: string;
+  onDelete: () => void;
+  onEdit: () => void;
+}) {
   return (
     <Dropdown>
       <Button isIconOnly aria-label="Row actions" size="sm" variant="tertiary">
@@ -1106,6 +1135,7 @@ function RowActions({ onDelete }: { clientId: string; onDelete: () => void }) {
       <Dropdown.Popover className="min-w-[160px]">
         <Dropdown.Menu
           onAction={(key) => {
+            if (key === "edit") onEdit();
             if (key === "delete") onDelete();
           }}
         >
