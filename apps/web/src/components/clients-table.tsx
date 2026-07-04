@@ -684,17 +684,28 @@ export function ClientsTable() {
       )}
 
       {/* Table */}
-      <DataGrid
-        allowsColumnResize
-        showSelectionCheckboxes
-        aria-label="Clients"
-        columns={columns}
-        contentClassName="min-w-[1500px]"
-        data={clients}
-        getRowId={(item) => item.id}
-        renderEmptyState={() => (
-          <div className="py-6">
-            <EmptyState size="sm">
+      <div className="relative">
+        <DataGrid
+          allowsColumnResize
+          showSelectionCheckboxes
+          aria-label="Clients"
+          columns={columns}
+          contentClassName="min-w-[1500px]"
+          data={clients}
+          getRowId={(item) => item.id}
+          renderEmptyState={() => <div className="h-[280px]" />}
+          selectedKeys={selectedKeys}
+          selectionMode="multiple"
+          sortDescriptor={sortDescriptor}
+          variant="primary"
+          onSelectionChange={setSelectedKeys}
+          onSortChange={setSortDescriptor}
+        />
+        {/* Centered over the grid instead of inside its horizontally
+            scrollable content, so it stays put when scrolling */}
+        {clients.length === 0 && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <EmptyState className="pointer-events-auto" size="sm">
               <EmptyState.Header>
                 <EmptyState.Media className="border" variant="icon">
                   <Persons />
@@ -717,13 +728,7 @@ export function ClientsTable() {
             </EmptyState>
           </div>
         )}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
-        sortDescriptor={sortDescriptor}
-        variant="primary"
-        onSelectionChange={setSelectedKeys}
-        onSortChange={setSortDescriptor}
-      />
+      </div>
 
       {/* Pagination footer */}
       <div className="flex items-center justify-between whitespace-nowrap text-xs">
