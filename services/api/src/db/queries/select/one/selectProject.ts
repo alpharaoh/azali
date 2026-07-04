@@ -1,5 +1,5 @@
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { eq, and, isNull } from "drizzle-orm";
 import { project } from "@/db/schema";
 
 export const selectProject = async (id: string, organizationId: string) => {

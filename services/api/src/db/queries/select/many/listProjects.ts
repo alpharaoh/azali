@@ -1,6 +1,6 @@
-import { isNull, SQL } from "drizzle-orm";
-import { project, InsertProject } from "@/db/schema";
+import { isNull, type SQL } from "drizzle-orm";
 import { buildListQuery } from "@/db/lib/buildListQuery";
+import { type InsertProject, project } from "@/db/schema";
 
 export interface ListProjectsFilters {
   ids?: string[];

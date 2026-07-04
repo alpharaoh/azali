@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { project, InsertProject } from "@/db/schema";
+import { type InsertProject, project } from "@/db/schema";
 
 export const insertProject = async (values: InsertProject) => {
   const entry = await db.insert(project).values(values).returning();

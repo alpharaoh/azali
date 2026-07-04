@@ -1,8 +1,8 @@
-import { and, count, inArray, SQL } from "drizzle-orm";
-import { PgTable, TableConfig } from "drizzle-orm/pg-core";
-import { buildWhere } from "./buildWhere";
-import { buildOrderBy } from "./buildOrderBy";
+import { and, count, inArray, type SQL } from "drizzle-orm";
+import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
 import { db } from "@/db";
+import { buildOrderBy } from "./buildOrderBy";
+import { buildWhere } from "./buildWhere";
 
 interface ListQueryOptions<TInsert extends Record<string, any>> {
   where?: Partial<TInsert> & { ids?: string[] };

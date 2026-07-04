@@ -1,6 +1,6 @@
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { eq, and, isNull } from "drizzle-orm";
-import { project, InsertProject } from "@/db/schema";
+import { type InsertProject, project } from "@/db/schema";
 
 export const updateProject = async (
   id: string,

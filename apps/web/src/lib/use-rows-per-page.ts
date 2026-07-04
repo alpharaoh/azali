@@ -7,5 +7,5 @@ export const ROWS_PER_PAGE_OPTIONS = [25, 50, 100] as const;
  * paginated table in the app.
  */
 export function useRowsPerPage() {
-	return useLocalStorage<number>("azali:rows-per-page", 25);
+  return useLocalStorage<number>("azali:rows-per-page", 25);
 }

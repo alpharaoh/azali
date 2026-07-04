@@ -1,4 +1,4 @@
-import { asc, desc, SQLWrapper } from "drizzle-orm";
+import { asc, desc, type SQLWrapper } from "drizzle-orm";
 
 export function buildOrderBy<
   InsertRow extends Record<string, any>,

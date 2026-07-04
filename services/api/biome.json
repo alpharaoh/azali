@@ -2,6 +2,21 @@
 	"$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
 	"root": false,
 	"extends": ["../../biome.json"],
+	"javascript": {
+		"parser": {
+			"unsafeParameterDecoratorsEnabled": true
+		}
+	},
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noExplicitAny": "off"
+			},
+			"complexity": {
+				"noStaticOnlyClass": "off"
+			}
+		}
+	},
 	"files": {
 		"ignoreUnknown": true,
 		"includes": ["src/**/*", "test/**/*", "drizzle.config.ts"]

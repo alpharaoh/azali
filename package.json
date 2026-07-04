@@ -13,7 +13,11 @@
     "build": "turbo build",
     "lint": "turbo lint"
   },
-  "workspaces": ["apps/*", "services/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
   "devDependencies": {
     "turbo": "^2.10.3"
   }
