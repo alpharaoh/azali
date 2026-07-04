@@ -30,16 +30,27 @@ import { Fragment, useEffect, useState } from "react";
 
 import { ThemeSwitcher } from "#/components/theme-switcher";
 import { usePendingReviewCount } from "#/data/review-queue";
-import { authClient, signOutAndRedirect } from "#/lib/auth";
+import {
+  getUsersControllerGetProfileQueryOptions,
+  useUsersControllerGetProfile,
+} from "#/generated/api";
+import { sessionQueryOptions, signOutAndRedirect } from "#/lib/auth";
 import { toggleTheme } from "#/lib/theme";
-import { useMe } from "#/lib/use-me";
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async () => {
-    const { data: session } = await authClient.getSession();
+  beforeLoad: async ({ context }) => {
+    const session = await context.queryClient.ensureQueryData(
+      sessionQueryOptions,
+    );
     if (!session) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: ({ context }) => {
+    // Warm the navbar profile query; don't block navigation on it.
+    void context.queryClient.prefetchQuery(
+      getUsersControllerGetProfileQueryOptions(),
+    );
   },
   component: DashboardLayout,
 });
@@ -259,8 +270,8 @@ const DashboardSidebar = ({ pathname }: { pathname: string }) => (
 
 const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
   const navigate = useNavigate();
-  const me = useMe();
-  const user = me?.user;
+  const { data: me } = useUsersControllerGetProfile();
+  const user = me?.data.user;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {

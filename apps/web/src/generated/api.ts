@@ -26,6 +26,52 @@ import type {
 
 import { axios } from '../lib/axios';
 import type { ErrorType } from '../lib/axios';
+export type MeResponseDtoUser = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  /** @nullable */
+  image?: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  updatedAt: string;
+};
+
+/**
+ * @nullable
+ */
+export type MeResponseDtoOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  logo: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
+  /** @nullable */
+  metadata: string | null;
+} | null;
+
+/**
+ * @nullable
+ */
+export type MeResponseDtoMember = {
+  id: string;
+  role: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
+} | null;
+
+export interface MeResponseDto {
+  user: MeResponseDtoUser;
+  /** @nullable */
+  organization: MeResponseDtoOrganization;
+  /** @nullable */
+  member: MeResponseDtoMember;
+}
+
 export type CreateClientDtoAutonomy = typeof CreateClientDtoAutonomy[keyof typeof CreateClientDtoAutonomy];
 
 
@@ -363,7 +409,7 @@ export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appCo
 
 
 export type usersControllerGetProfileResponse200 = {
-  data: void
+  data: MeResponseDto
   status: 200
 }
 

@@ -13,7 +13,7 @@ import {
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import loginImage from "#/assets/login.jpeg";
-import { authClient, isSigningOut } from "#/lib/auth";
+import { authClient, clearAuthCache, isSigningOut } from "#/lib/auth";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
@@ -117,6 +117,7 @@ function LoginPage() {
       setError(err.message ?? "Invalid code. Please try again.");
       return;
     }
+    clearAuthCache();
     navigate({ to: "/dashboard" });
   }
 
