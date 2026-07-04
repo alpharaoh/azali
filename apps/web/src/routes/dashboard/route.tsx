@@ -13,6 +13,7 @@ import { AppLayout, Sidebar } from "@heroui-pro/react";
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
@@ -20,8 +21,15 @@ import type { ComponentType, SVGProps } from "react";
 import { Fragment, useEffect, useState } from "react";
 
 import { usePendingReviewCount } from "#/data/review-queue";
+import { authClient } from "#/lib/auth";
 
 export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async () => {
+    const { data: session } = await authClient.getSession();
+    if (!session) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: DashboardLayout,
 });
 

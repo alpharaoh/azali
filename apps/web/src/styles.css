@@ -54,7 +54,8 @@ body {
   --surface-secondary: oklch(95.24% 0.003 237.99);
   --surface-tertiary: oklch(93.73% 0.003 237.99);
   --default: oklch(94% 0.002 237.99);
-  --accent: oklch(60.92% 0.1201 237.99);
+  /* --accent: oklch(60.92% 0.1201 237.99); */
+  --accent: oklch(57.74% 0.1588 253.72);
   --danger: oklch(66.99% 0.1583 20.89);
   --field-border: oklch(90% 0.002 237.99);
   --border: oklch(90% 0.002 237.99);
@@ -88,7 +89,8 @@ body {
   --surface-tertiary-foreground: oklch(27.21% 0 237.99);
   --overlay: oklch(21.03% 0.004 237.99);
   --default: oklch(27.4% 0.002 237.99);
-  --accent: oklch(60.92% 0.1201 237.99);
+  /* --accent: oklch(60.92% 0.1201 237.99); */
+  --accent: oklch(57.74% 0.1588 253.72);
   --danger: oklch(59.4% 0.1967 24.62);
   --field-background: oklch(21.03% 0.004 237.99);
   --field-placeholder: oklch(70.5% 0 237.99);
