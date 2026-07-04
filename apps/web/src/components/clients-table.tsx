@@ -36,9 +36,11 @@ import {
   InlineSelect,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
 import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
+import { useLocalStorage } from "usehooks-ts";
 import { clientLogos } from "#/data/client-logos";
 import type {
   ListClientsResponseDtoDataItem as ApiClient,
@@ -53,6 +55,7 @@ import {
   useClientsControllerRemove,
 } from "#/generated/api";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+import type { ClientsSearch } from "#/routes/dashboard/clients";
 
 /* -------------------------------------------------------------------------------------------------
  * Constants
@@ -201,45 +204,80 @@ function PortsCell({ ports }: { ports: string[] }) {
 /* -------------------------------------------------------------------------------------------------
  * ClientsTable
  * -----------------------------------------------------------------------------------------------*/
+const routeApi = getRouteApi("/dashboard/clients");
+
 export function ClientsTable() {
-  const [search, setSearch] = useState("");
+  // Filters, search, and sorting live in the URL; column visibility in
+  // localStorage; pagination and selection are ephemeral component state.
+  const searchParams = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
+
+  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "createdAt",
-    direction: "descending",
-  });
-  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
-  const [autonomyFilter, setAutonomyFilter] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Selection>(
-    new Set(ALL_COLUMNS),
+  const [storedColumns, setStoredColumns] = useLocalStorage<string[]>(
+    "azali:clients-columns",
+    [...ALL_COLUMNS],
   );
 
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const statusFilter = useMemo(
+    () => new Set<string>(searchParams.status ?? []),
+    [searchParams.status],
+  );
+  const autonomyFilter = useMemo(
+    () => new Set<string>(searchParams.autonomy ?? []),
+    [searchParams.autonomy],
+  );
+  const sortDescriptor: SortDescriptor = {
+    column: searchParams.sortBy ?? "createdAt",
+    direction: searchParams.sortDir === "asc" ? "ascending" : "descending",
+  };
 
+  const updateSearch = useCallback(
+    (patch: Partial<ClientsSearch>) => {
+      navigate({
+        search: (prev) => ({ ...prev, ...patch }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  // Keep the input in sync with the URL (back/forward, shared links).
   useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedSearch(search),
-      SEARCH_DEBOUNCE_MS,
-    );
+    setSearchInput(searchParams.q ?? "");
+  }, [searchParams.q]);
+
+  // Debounce typing into the URL.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((searchParams.q ?? "") !== searchInput) {
+        updateSearch({ q: searchInput || undefined });
+      }
+    }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [searchInput, searchParams.q, updateSearch]);
+
+  // Any change to the URL-driven query state starts back at page 1 (covers
+  // both in-app updates and browser back/forward).
+  const filterFingerprint = JSON.stringify(searchParams);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint stands in for every search param
+  useEffect(() => {
+    setPage(1);
+  }, [filterFingerprint]);
 
   const queryClient = useQueryClient();
   const removeClient = useClientsControllerRemove();
 
   const params: ClientsControllerFindAllParams = {
-    search: debouncedSearch || undefined,
-    status: statusFilter.size
-      ? ([...statusFilter] as ClientStatus[])
-      : undefined,
-    autonomy: autonomyFilter.size
-      ? ([...autonomyFilter] as ClientAutonomy[])
-      : undefined,
-    sortBy: (sortDescriptor.column as ClientSortColumn) ?? "createdAt",
-    sortDir: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+    search: searchParams.q,
+    status: searchParams.status,
+    autonomy: searchParams.autonomy,
+    sortBy: searchParams.sortBy ?? "createdAt",
+    sortDir: searchParams.sortDir ?? "desc",
     limit: rowsPerPage,
     offset: (page - 1) * rowsPerPage,
   };
@@ -255,11 +293,9 @@ export function ClientsTable() {
   const autonomyActive = autonomyFilter.size > 0;
 
   const clearFilters = useCallback(() => {
-    setSearch("");
-    setAutonomyFilter(new Set());
-    setStatusFilter(new Set());
-    setPage(1);
-  }, []);
+    setSearchInput("");
+    updateSearch({ q: undefined, status: undefined, autonomy: undefined });
+  }, [updateSearch]);
 
   const handleDelete = useCallback(
     async (ids: string[]) => {
@@ -275,11 +311,10 @@ export function ClientsTable() {
   const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
 
-  const visibleColumnSet = useMemo(() => {
-    if (visibleColumns === "all") return new Set<string>(ALL_COLUMNS);
-
-    return visibleColumns as Set<string>;
-  }, [visibleColumns]);
+  const visibleColumnSet = useMemo(
+    () => new Set<string>([...storedColumns, "actions"]),
+    [storedColumns],
+  );
 
   const columns = useMemo<DataGridColumn<ApiClient>[]>(() => {
     const allCols: DataGridColumn<ApiClient>[] = [
@@ -406,8 +441,7 @@ export function ClientsTable() {
   }, [visibleColumnSet, handleDelete]);
 
   const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
+    setSearchInput(value);
   }, []);
 
   const selectionCount =
@@ -468,7 +502,7 @@ export function ClientsTable() {
       <div className="flex items-center gap-3">
         <SearchField
           aria-label="Search clients"
-          value={search}
+          value={searchInput}
           onChange={handleSearchChange}
         >
           <SearchField.Group>
@@ -492,12 +526,12 @@ export function ClientsTable() {
               selectedKeys={autonomyFilter}
               selectionMode="multiple"
               onSelectionChange={(keys) => {
-                setAutonomyFilter(
+                const next =
                   keys === "all"
-                    ? new Set(autonomyModes)
-                    : new Set([...keys].map(String)),
-                );
-                setPage(1);
+                    ? autonomyModes
+                    : ([...keys].map(String) as ClientAutonomy[]);
+
+                updateSearch({ autonomy: next.length ? next : undefined });
               }}
             >
               {autonomyModes.map((mode) => (
@@ -527,12 +561,12 @@ export function ClientsTable() {
               selectedKeys={statusFilter}
               selectionMode="multiple"
               onSelectionChange={(keys) => {
-                setStatusFilter(
+                const next =
                   keys === "all"
-                    ? new Set(statuses)
-                    : new Set([...keys].map(String)),
-                );
-                setPage(1);
+                    ? statuses
+                    : ([...keys].map(String) as ClientStatus[]);
+
+                updateSearch({ status: next.length ? next : undefined });
               }}
             >
               {statuses.map((status) => (
@@ -563,16 +597,16 @@ export function ClientsTable() {
               }
               selectionMode="single"
               onSelectionChange={(keys) => {
-                const key = [...keys][0] as string | undefined;
+                const key = [...keys][0] as ClientSortColumn | undefined;
 
                 if (!key) return;
-                setSortDescriptor({
-                  column: key,
-                  direction:
+                updateSearch({
+                  sortBy: key,
+                  sortDir:
                     sortDescriptor.column === key &&
                     sortDescriptor.direction === "ascending"
-                      ? "descending"
-                      : "ascending",
+                      ? "desc"
+                      : "asc",
                 });
               }}
             >
@@ -599,9 +633,15 @@ export function ClientsTable() {
           <Dropdown.Popover>
             <Dropdown.Menu
               disallowEmptySelection
-              selectedKeys={visibleColumns}
+              selectedKeys={visibleColumnSet}
               selectionMode="multiple"
-              onSelectionChange={setVisibleColumns}
+              onSelectionChange={(keys) => {
+                setStoredColumns(
+                  keys === "all"
+                    ? [...ALL_COLUMNS]
+                    : [...keys].map(String),
+                );
+              }}
             >
               {COLUMN_LABELS.map((column) => (
                 <Dropdown.Item
@@ -619,18 +659,18 @@ export function ClientsTable() {
       </div>
 
       {/* Active filters */}
-      {!!(search || autonomyActive || statusActive) && (
+      {!!(searchParams.q || autonomyActive || statusActive) && (
         <div className="flex flex-wrap items-center gap-2">
-          {!!search && (
+          {!!searchParams.q && (
             <Chip size="sm" variant="secondary">
-              <Chip.Label>Search: {search}</Chip.Label>
+              <Chip.Label>Search: {searchParams.q}</Chip.Label>
               <button
                 aria-label="Clear search"
                 className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                 type="button"
                 onClick={() => {
-                  setSearch("");
-                  setPage(1);
+                  setSearchInput("");
+                  updateSearch({ q: undefined });
                 }}
               >
                 <Xmark className="size-3" />
@@ -646,11 +686,13 @@ export function ClientsTable() {
                     className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                     type="button"
                     onClick={() => {
-                      const next = new Set(autonomyFilter);
+                      const next = [...autonomyFilter].filter(
+                        (m) => m !== mode,
+                      ) as ClientAutonomy[];
 
-                      next.delete(mode);
-                      setAutonomyFilter(next);
-                      setPage(1);
+                      updateSearch({
+                        autonomy: next.length ? next : undefined,
+                      });
                     }}
                   >
                     <Xmark className="size-3" />
@@ -667,11 +709,11 @@ export function ClientsTable() {
                     className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                     type="button"
                     onClick={() => {
-                      const next = new Set(statusFilter);
+                      const next = [...statusFilter].filter(
+                        (s) => s !== status,
+                      ) as ClientStatus[];
 
-                      next.delete(status);
-                      setStatusFilter(next);
-                      setPage(1);
+                      updateSearch({ status: next.length ? next : undefined });
                     }}
                   >
                     <Xmark className="size-3" />
@@ -701,7 +743,12 @@ export function ClientsTable() {
           sortDescriptor={sortDescriptor}
           variant="primary"
           onSelectionChange={setSelectedKeys}
-          onSortChange={setSortDescriptor}
+          onSortChange={(descriptor) => {
+            updateSearch({
+              sortBy: descriptor.column as ClientSortColumn,
+              sortDir: descriptor.direction === "ascending" ? "asc" : "desc",
+            });
+          }}
         />
         {/* Centered over the grid instead of inside its horizontally
             scrollable content, so it stays put when scrolling */}

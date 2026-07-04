@@ -1,16 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { ClientsTable } from "#/components/clients-table";
-import { getClientsControllerFindAllQueryOptions } from "#/generated/api";
+import {
+  ClientsControllerFindAllAutonomyItem,
+  ClientsControllerFindAllSortBy,
+  ClientsControllerFindAllStatusItem,
+  getClientsControllerFindAllQueryOptions,
+} from "#/generated/api";
 import { getStoredRowsPerPage } from "#/lib/use-rows-per-page";
 
+const clientsSearchSchema = z.object({
+  q: z.string().optional().catch(undefined),
+  status: z
+    .array(z.enum(ClientsControllerFindAllStatusItem))
+    .optional()
+    .catch(undefined),
+  autonomy: z
+    .array(z.enum(ClientsControllerFindAllAutonomyItem))
+    .optional()
+    .catch(undefined),
+  sortBy: z.enum(ClientsControllerFindAllSortBy).optional().catch(undefined),
+  sortDir: z.enum(["asc", "desc"]).optional().catch(undefined),
+});
+
+export type ClientsSearch = z.infer<typeof clientsSearchSchema>;
+
 export const Route = createFileRoute("/dashboard/clients")({
-  loader: ({ context }) =>
-    // Matches the table's initial query (default sort, page 1, no filters) so
+  validateSearch: (search) => clientsSearchSchema.parse(search),
+  loaderDeps: ({ search }) => search,
+  loader: ({ context, deps }) =>
+    // Mirrors the table's page-1 query for the current URL filters so
     // hover-preloading this route warms the exact cache entry it renders from.
     context.queryClient.ensureQueryData(
       getClientsControllerFindAllQueryOptions({
-        sortBy: "createdAt",
-        sortDir: "desc",
+        search: deps.q,
+        status: deps.status,
+        autonomy: deps.autonomy,
+        sortBy: deps.sortBy ?? "createdAt",
+        sortDir: deps.sortDir ?? "desc",
         limit: getStoredRowsPerPage(),
         offset: 0,
       }),
