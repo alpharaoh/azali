@@ -30,7 +30,12 @@ async function bootstrap() {
     jsonDocumentUrl: "openapi.json",
   });
 
-  app.enableCors({ origin: true, credentials: true });
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    // @fastify/cors only allows GET,HEAD,POST by default; list everything.
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  });
   app.setGlobalPrefix("v1");
 
   const logger = app.get(Logger);

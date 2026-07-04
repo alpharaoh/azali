@@ -23,9 +23,11 @@ import {
   Dropdown,
   Label,
   ListBox,
+  Modal,
   Pagination,
   SearchField,
   Separator,
+  toast,
   Tooltip,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
@@ -53,6 +55,7 @@ import {
   getClientsControllerFindAllQueryKey,
   useClientsControllerFindAll,
   useClientsControllerRemove,
+  useClientsControllerUpdate,
 } from "#/generated/api";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClientsSearch } from "#/routes/dashboard/clients";
@@ -126,6 +129,51 @@ function formatDate(dateStr: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+function csvValue(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+async function exportClientsCsv(rows: ApiClient[]) {
+  const header = [
+    "Client",
+    "IOR #",
+    "Bond #",
+    "Primary Origin",
+    "Industry",
+    "Autonomy",
+    "Status",
+    "Ports of Entry",
+    "Client Since",
+  ];
+  const lines = rows.map((client) =>
+    [
+      client.name,
+      client.iorNumber,
+      client.bondNumber,
+      countryName(client.primaryOrigin),
+      client.industry,
+      capitalize(client.autonomy),
+      capitalize(client.status),
+      client.portsOfEntry.join("; "),
+      formatDate(client.createdAt),
+    ]
+      .map(csvValue)
+      .join(","),
+  );
+  const csv = [header.map(csvValue).join(","), ...lines].join("\n");
+
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8" }),
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `clients-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+
+  return rows.length;
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -308,6 +356,73 @@ export function ClientsTable() {
     [removeClient.mutateAsync, queryClient],
   );
 
+  const updateClient = useClientsControllerUpdate();
+
+  const selectedClients = useMemo(() => {
+    if (selectedKeys === "all") return clients;
+
+    const keys = selectedKeys as Set<string | number>;
+
+    return clients.filter((client) => keys.has(client.id));
+  }, [selectedKeys, clients]);
+
+  const handlePause = useCallback(() => {
+    const targets = selectedClients.filter(
+      (client) => client.status !== "paused",
+    );
+
+    if (!targets.length) {
+      toast.info("Selected clients are already paused");
+      return;
+    }
+
+    const run = Promise.all(
+      targets.map((client) =>
+        updateClient.mutateAsync({
+          id: client.id,
+          data: { status: "paused" },
+        }),
+      ),
+    ).then(async () => {
+      setSelectedKeys(new Set());
+      await queryClient.invalidateQueries({
+        queryKey: getClientsControllerFindAllQueryKey(),
+      });
+
+      return targets.length;
+    });
+
+    toast.promise(run, {
+      error: "Failed to pause clients",
+      loading: "Pausing clients...",
+      success: (paused) =>
+        `Paused ${paused} client${paused === 1 ? "" : "s"}`,
+    });
+  }, [selectedClients, updateClient.mutateAsync, queryClient]);
+
+  const handleExport = useCallback(() => {
+    toast.promise(exportClientsCsv(selectedClients), {
+      error: "Failed to export clients",
+      loading: "Exporting clients...",
+      success: (exported) =>
+        `Exported ${exported} client${exported === 1 ? "" : "s"} to CSV`,
+    });
+  }, [selectedClients]);
+
+  const [pendingDelete, setPendingDelete] = useState<ApiClient[] | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete?.length) return;
+    setIsDeleting(true);
+    try {
+      await handleDelete(pendingDelete.map((client) => client.id));
+      setPendingDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [pendingDelete, handleDelete]);
+
   const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
 
@@ -426,7 +541,7 @@ export function ClientsTable() {
         cell: (item) => (
           <RowActions
             clientId={item.id}
-            onDelete={() => handleDelete([item.id])}
+            onDelete={() => setPendingDelete([item])}
           />
         ),
         header: "",
@@ -438,7 +553,7 @@ export function ClientsTable() {
     ];
 
     return allCols.filter((c) => visibleColumnSet.has(c.id));
-  }, [visibleColumnSet, handleDelete]);
+  }, [visibleColumnSet]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInput(value);
@@ -448,12 +563,6 @@ export function ClientsTable() {
     selectedKeys === "all"
       ? clients.length
       : (selectedKeys as Set<string | number>).size;
-
-  const selectedIds = useMemo(() => {
-    if (selectedKeys === "all") return clients.map((c) => c.id);
-
-    return [...(selectedKeys as Set<string | number>)].map(String);
-  }, [selectedKeys, clients]);
 
   const paginationPages = useMemo(() => {
     const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
@@ -882,11 +991,11 @@ export function ClientsTable() {
           </Chip>
         </ActionBar.Prefix>
         <ActionBar.Content>
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" onPress={handleExport}>
             <ArrowDownToLine />
             Export
           </Button>
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" onPress={handlePause}>
             <CirclePause />
             Pause
           </Button>
@@ -894,7 +1003,7 @@ export function ClientsTable() {
             className="text-danger"
             size="sm"
             variant="ghost"
-            onPress={() => handleDelete(selectedIds)}
+            onPress={() => setPendingDelete(selectedClients)}
           >
             <TrashBin />
             Delete
@@ -913,6 +1022,54 @@ export function ClientsTable() {
           </Button>
         </ActionBar.Suffix>
       </ActionBar>
+
+      {/* Delete confirmation */}
+      <Modal
+        isOpen={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog className="sm:max-w-[360px]">
+              <Modal.CloseTrigger />
+              <Modal.Header>
+                <Modal.Icon className="bg-danger-soft text-danger-soft-foreground">
+                  <TrashBin className="size-5" />
+                </Modal.Icon>
+                <Modal.Heading>
+                  {pendingDelete?.length === 1
+                    ? `Delete ${pendingDelete[0]?.name}?`
+                    : `Delete ${pendingDelete?.length ?? 0} clients?`}
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p>
+                  {pendingDelete?.length === 1
+                    ? "This client"
+                    : "These clients"}{" "}
+                  will be removed from your organization, along with their
+                  importer profile and bond details. This action cannot be
+                  undone.
+                </p>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button slot="close" variant="secondary">
+                  Cancel
+                </Button>
+                <Button
+                  isPending={isDeleting}
+                  variant="danger"
+                  onPress={confirmDelete}
+                >
+                  Delete
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </div>
   );
 }
