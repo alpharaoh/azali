@@ -32,6 +32,7 @@ import { ThemeSwitcher } from "#/components/theme-switcher";
 import { usePendingReviewCount } from "#/data/review-queue";
 import { authClient, signOutAndRedirect } from "#/lib/auth";
 import { toggleTheme } from "#/lib/theme";
+import { useMe } from "#/lib/use-me";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -258,9 +259,9 @@ const DashboardSidebar = ({ pathname }: { pathname: string }) => (
 
 const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
   const navigate = useNavigate();
-  const { data: session } = authClient.useSession();
-  console.log(session);
-  const user = session?.user;
+  const me = useMe();
+  const user = me?.user;
+  const organization = me?.organization;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
