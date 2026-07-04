@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -10,20 +9,12 @@ import {
   Query,
 } from "@nestjs/common";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
 import { ClientsService } from "./clients.service";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { ListClientsDto } from "./dto/list-clients.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
-
-function getActiveOrganizationId(session: UserSession<typeof auth>) {
-  const organizationId = session.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new ForbiddenException("No active organization");
-  }
-
-  return organizationId;
-}
 
 @Controller("clients")
 export class ClientsController {
