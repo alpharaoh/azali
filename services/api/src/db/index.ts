@@ -1,9 +1,7 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Client } from "@planetscale/database";
+import { drizzle } from "drizzle-orm/planetscale-serverless";
 import { env } from "@/env";
 import * as schema from "./schema";
 
-const pool = new Pool({ connectionString: env.DATABASE_URL });
-const db = drizzle({ client: pool, schema });
-
-export { db };
+const client = new Client({ url: env.DATABASE_URL });
+export const db = drizzle({ client, schema });

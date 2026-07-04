@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, RequestMethod } from "@nestjs/common";
 import { APP_PIPE } from "@nestjs/core";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
@@ -10,7 +10,13 @@ import { AppService } from "./app.service";
 import { auth } from "./lib/auth";
 
 @Module({
-  imports: [AuthModule.forRoot({ auth }), LoggerModule.forRoot(), UsersModule],
+  imports: [
+    AuthModule.forRoot({ auth }),
+    LoggerModule.forRoot({
+      forRoutes: [{ path: "*path", method: RequestMethod.ALL }],
+    }),
+    UsersModule,
+  ],
   controllers: [AppController, UsersController],
   providers: [
     AppService,
