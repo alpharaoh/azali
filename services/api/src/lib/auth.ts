@@ -19,6 +19,15 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      // Users created via email OTP have no name/image; copy them from the
+      // Google profile when the account gets linked.
+      updateUserInfoOnLink: true,
+    },
+  },
   databaseHooks: {
     session: {
       create: {
