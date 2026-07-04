@@ -61,7 +61,7 @@ function LoginPage() {
     setError(null);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: `${window.location.origin}/dashboard`,
     });
     setLoading(false);
   }
@@ -127,7 +127,7 @@ function LoginPage() {
           <span className="text-foreground text-2xl font-semibold">azali</span>
         </div>
 
-        <div className="flex w-full flex-col pt-40">
+        <div className="flex w-full flex-col justify-center h-full pb-40">
           {step === "initial" && (
             <>
               <h1 className="text-foreground mb-2 text-3xl font-semibold">
