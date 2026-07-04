@@ -1,3 +1,4 @@
+import { PersonMagnifier, Sparkles } from "@gravity-ui/icons";
 import {
   Button,
   ComboBox,
@@ -19,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as flags from "country-flag-icons/react/3x2";
 import { useMemo, useState } from "react";
 import { Collection } from "react-aria-components";
+import { PORT_GROUPS } from "#/data/ports";
 import type {
   ListClientsResponseDtoDataItem as ApiClient,
   CreateClientDto,
@@ -28,7 +30,6 @@ import {
   useClientsControllerCreate,
   useClientsControllerUpdate,
 } from "#/generated/api";
-import { PORT_GROUPS } from "#/data/ports";
 import { COUNTRY_ITEMS, countryName } from "#/lib/countries";
 
 /* -------------------------------------------------------------------------------------------------
@@ -56,12 +57,16 @@ const AUTONOMY_OPTIONS = [
     label: "Supervised",
     description:
       "Every entry is queued for a licensed broker to review and approve before it is filed with CBP.",
+    icon: PersonMagnifier,
+    iconClassName: "bg-default text-muted",
   },
   {
     value: "autopilot",
     label: "Autopilot",
     description:
       "High-confidence entries are filed automatically; only exceptions are routed for human review.",
+    icon: Sparkles,
+    iconClassName: "bg-accent-soft text-accent-soft-foreground",
   },
 ] as const;
 
@@ -84,7 +89,7 @@ export function ClientFormDrawer({
     <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
       <Drawer.Backdrop>
         <Drawer.Content placement="right">
-          <Drawer.Dialog className="sm:max-w-[440px]">
+          <Drawer.Dialog className="sm:max-w-140 w-full">
             {isOpen && (
               <ClientForm
                 key={client?.id ?? "create"}
@@ -357,10 +362,7 @@ function ClientForm({
                       </Header>
                       <Collection items={group.ports}>
                         {(item) => (
-                          <ListBox.Item
-                            id={item.id}
-                            textValue={item.id}
-                          >
+                          <ListBox.Item id={item.id} textValue={item.id}>
                             {item.id}
                           </ListBox.Item>
                         )}
@@ -376,9 +378,7 @@ function ClientForm({
             <TagGroup
               aria-label="Selected ports of entry"
               onRemove={(keys) =>
-                setPorts((current) =>
-                  current.filter((port) => !keys.has(port)),
-                )
+                setPorts((current) => current.filter((port) => !keys.has(port)))
               }
             >
               <TagGroup.List>
@@ -407,7 +407,14 @@ function ClientForm({
             <RadioButtonGroup.Item key={option.value} value={option.value}>
               <RadioButtonGroup.Indicator />
               <RadioButtonGroup.ItemContent>
-                <Label>{option.label}</Label>
+                <div className="flex items-center gap-2 pb-2">
+                  <span
+                    className={`flex size-6 shrink-0 items-center justify-center rounded-md ${option.iconClassName}`}
+                  >
+                    <option.icon className="size-3" />
+                  </span>
+                  <Label>{option.label}</Label>
+                </div>
                 <Description>{option.description}</Description>
               </RadioButtonGroup.ItemContent>
             </RadioButtonGroup.Item>
