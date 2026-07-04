@@ -282,7 +282,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
 
   return (
     <div
-      className={`bg-surface flex items-center gap-3 rounded-t-[calc(var(--radius)*2)] border-b p-4 transition-colors duration-200 ${
+      className={`bg-background-elevated flex items-center gap-3 rounded-t-[calc(var(--radius)*2)] border-b p-4 transition-colors duration-200 ${
         isScrolled ? "border-border" : "border-transparent"
       }`}
     >
