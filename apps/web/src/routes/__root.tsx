@@ -17,7 +17,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootComponent() {
   return (
     <>
-      <Toast.Provider />
+      <Toast.Provider placement="top end" />
       <Outlet />
       {/* <TanStackDevtools */}
       {/* 	config={{ */}

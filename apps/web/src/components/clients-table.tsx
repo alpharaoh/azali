@@ -3,6 +3,7 @@ import {
   Calendar,
   CircleFill,
   CirclePause,
+  CirclePlay,
   Copy,
   CopyCheck,
   EllipsisVertical,
@@ -366,39 +367,42 @@ export function ClientsTable() {
     return clients.filter((client) => keys.has(client.id));
   }, [selectedKeys, clients]);
 
-  const handlePause = useCallback(() => {
-    const targets = selectedClients.filter(
-      (client) => client.status !== "paused",
-    );
+  const pausedSelection = useMemo(
+    () => selectedClients.filter((client) => client.status === "paused"),
+    [selectedClients],
+  );
+  const activeSelection = useMemo(
+    () => selectedClients.filter((client) => client.status === "active"),
+    [selectedClients],
+  );
 
-    if (!targets.length) {
-      toast.info("Selected clients are already paused");
-      return;
-    }
+  const handleSetStatus = useCallback(
+    (targets: ApiClient[], status: ClientStatus) => {
+      if (!targets.length) return;
 
-    const run = Promise.all(
-      targets.map((client) =>
-        updateClient.mutateAsync({
-          id: client.id,
-          data: { status: "paused" },
-        }),
-      ),
-    ).then(async () => {
-      setSelectedKeys(new Set());
-      await queryClient.invalidateQueries({
-        queryKey: getClientsControllerFindAllQueryKey(),
+      const verb = status === "paused" ? "Paus" : "Resum";
+      const run = Promise.all(
+        targets.map((client) =>
+          updateClient.mutateAsync({ id: client.id, data: { status } }),
+        ),
+      ).then(async () => {
+        setSelectedKeys(new Set());
+        await queryClient.invalidateQueries({
+          queryKey: getClientsControllerFindAllQueryKey(),
+        });
+
+        return targets.length;
       });
 
-      return targets.length;
-    });
-
-    toast.promise(run, {
-      error: "Failed to pause clients",
-      loading: "Pausing clients...",
-      success: (paused) =>
-        `Paused ${paused} client${paused === 1 ? "" : "s"}`,
-    });
-  }, [selectedClients, updateClient.mutateAsync, queryClient]);
+      toast.promise(run, {
+        error: `Failed to ${verb.toLowerCase()}e clients`,
+        loading: `${verb}ing clients...`,
+        success: (changed) =>
+          `${verb}ed ${changed} client${changed === 1 ? "" : "s"}`,
+      });
+    },
+    [updateClient.mutateAsync, queryClient],
+  );
 
   const handleExport = useCallback(() => {
     toast.promise(exportClientsCsv(selectedClients), {
@@ -995,10 +999,26 @@ export function ClientsTable() {
             <ArrowDownToLine />
             Export
           </Button>
-          <Button size="sm" variant="ghost" onPress={handlePause}>
-            <CirclePause />
-            Pause
-          </Button>
+          {activeSelection.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() => handleSetStatus(activeSelection, "paused")}
+            >
+              <CirclePause />
+              Pause
+            </Button>
+          )}
+          {pausedSelection.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() => handleSetStatus(pausedSelection, "active")}
+            >
+              <CirclePlay />
+              Resume
+            </Button>
+          )}
           <Button
             className="text-danger"
             size="sm"
