@@ -12,3 +12,6 @@
 **/.vinxi
 **/__unconfig*
 todos.json
+.git
+.vscode
+.claude
