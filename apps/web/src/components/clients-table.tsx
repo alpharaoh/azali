@@ -35,221 +35,85 @@ import {
   EmptyState,
   InlineSelect,
 } from "@heroui-pro/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { clientLogos } from "#/data/client-logos";
-
+import type {
+  ApiClient,
+  ClientAutonomy,
+  ClientSortColumn,
+  ClientStatus,
+} from "#/lib/api/clients";
+import { deleteClient, listClients } from "#/lib/api/clients";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
-
-/* -------------------------------------------------------------------------------------------------
- * Types & Data
- * -----------------------------------------------------------------------------------------------*/
-type StatusOption = "Active" | "Onboarding" | "Paused";
-type AutonomyMode = "Autopilot" | "Supervised";
-type PortName =
-  | "LA/Long Beach"
-  | "NY/NJ"
-  | "Laredo"
-  | "Chicago"
-  | "Savannah"
-  | "Houston"
-  | "Miami"
-  | "Seattle";
-
-interface Country {
-  name: string;
-  code: string;
-}
-
-interface Client {
-  id: number;
-  iorNumber: string;
-  bondNumber: string;
-  name: string;
-  logo?: string;
-  origin: Country;
-  industry: string;
-  autonomy: AutonomyMode;
-  status: StatusOption;
-  entriesYtd: number;
-  clientSince: string;
-  ports: PortName[];
-}
-
-const companyNames = [
-  "Pacific Rim Imports",
-  "Bluewave Electronics",
-  "Cascade Apparel Group",
-  "Harbor Foods Co.",
-  "Meridian Auto Parts",
-  "Sunbelt Furnishings",
-  "Northstar Medical Supply",
-  "Coastal Toys & Games",
-  "Ironclad Industrial",
-  "Vela Cosmetics",
-  "Summit Footwear",
-  "Redwood Home Goods",
-  "Atlas Machinery Corp.",
-  "Lotus Textiles",
-  "Golden Gate Trading",
-  "Evergreen Produce Partners",
-  "Titan Tools USA",
-  "Aurora Lighting Co.",
-  "Crestline Sporting Goods",
-  "Marina Seafood Imports",
-  "Pinnacle Components",
-  "Silverline Packaging",
-  "Oakmont Furniture Works",
-  "Zenith Bike Supply",
-  "Solstice Apparel",
-  "Ridgeline Outdoor Gear",
-  "Bayview Kitchenware",
-  "Falcon Aerospace Parts",
-  "Juniper Beauty Labs",
-  "Stonebridge Hardware",
-  "Vermilion Ceramics",
-  "Halcyon Pet Supply",
-  "Copperfield Instruments",
-  "Windward Marine Group",
-  "Larkspur Stationery",
-  "Granite Peak Fitness",
-  "Amber Valley Foods",
-  "Cobalt Optics",
-  "Fernwood Garden Supply",
-  "Trailhead Luggage Co.",
-  "Beacon Electrical Imports",
-  "Saffron Spice Traders",
-];
-
-const industries = [
-  "Apparel & Textiles",
-  "Consumer Electronics",
-  "Automotive Parts",
-  "Food & Beverage",
-  "Furniture & Home",
-  "Toys & Games",
-  "Industrial Equipment",
-  "Cosmetics & Beauty",
-  "Footwear",
-  "Medical Devices",
-  "Sporting Goods",
-  "Hardware & Tools",
-];
-
-const origins: Country[] = [
-  { code: "cn", name: "China" },
-  { code: "vn", name: "Vietnam" },
-  { code: "mx", name: "Mexico" },
-  { code: "in", name: "India" },
-  { code: "de", name: "Germany" },
-  { code: "jp", name: "Japan" },
-  { code: "kr", name: "South Korea" },
-  { code: "tw", name: "Taiwan" },
-  { code: "it", name: "Italy" },
-  { code: "th", name: "Thailand" },
-  { code: "ca", name: "Canada" },
-  { code: "br", name: "Brazil" },
-];
-
-const allPorts: PortName[] = [
-  "LA/Long Beach",
-  "NY/NJ",
-  "Laredo",
-  "Chicago",
-  "Savannah",
-  "Houston",
-  "Miami",
-  "Seattle",
-];
-const statuses: StatusOption[] = ["Active", "Onboarding", "Paused"];
-const autonomyModes: AutonomyMode[] = ["Autopilot", "Supervised"];
-
-function seededRandom(seed: number) {
-  const x = Math.sin(seed) * 10000;
-
-  return x - Math.floor(x);
-}
-
-function randomDate(seed: number): string {
-  const base = new Date(2023, 0, 1).getTime();
-  const range = 900 * 24 * 60 * 60 * 1000;
-
-  return new Date(base + seededRandom(seed) * range).toISOString().slice(0, 10);
-}
-
-function pickSeeded<T>(items: readonly T[], random: number): T {
-  return items[Math.floor(random * items.length)] as T;
-}
-
-function randomPorts(seed: number): PortName[] {
-  const count = Math.floor(seededRandom(seed) * 4) + 1;
-  const shuffled = [...allPorts].sort(() => seededRandom(seed + 99) - 0.5);
-
-  return shuffled.slice(0, count);
-}
-
-function randomIorNumber(seed: number): string {
-  const prefix = Math.floor(seededRandom(seed) * 90) + 10;
-  const suffix = Math.floor(seededRandom(seed + 1) * 9000000) + 1000000;
-
-  return `${prefix}-${suffix}`;
-}
-
-function randomBondNumber(seed: number): string {
-  const num = Math.floor(seededRandom(seed) * 900000000) + 100000000;
-
-  return `99${num}`.slice(0, 9);
-}
-
-function pickStatus(random: number): StatusOption {
-  if (random < 0.03) return "Onboarding";
-  if (random < 0.1) return "Paused";
-  return "Active";
-}
-
-const clients: Client[] = companyNames.map((name, i) => {
-  const r = (offset: number) => seededRandom(i * 7 + offset);
-
-  return {
-    autonomy: pickSeeded(autonomyModes, r(4)),
-    bondNumber: randomBondNumber(i * 17 + 5),
-    clientSince: randomDate(i * 13 + 7),
-    entriesYtd: Math.floor(r(6) * 4800) + 40,
-    id: i + 1,
-    industry: pickSeeded(industries, r(2)),
-    iorNumber: randomIorNumber(i * 13 + 1),
-    logo: clientLogos[name],
-    name,
-    origin: pickSeeded(origins, r(3)),
-    ports: randomPorts(i * 11 + 3),
-    status: pickStatus(r(5)),
-  };
-});
 
 /* -------------------------------------------------------------------------------------------------
  * Constants
  * -----------------------------------------------------------------------------------------------*/
-const statusColorMap: Record<StatusOption, "success" | "danger" | "warning"> = {
-  Active: "success",
-  Onboarding: "warning",
-  Paused: "danger",
+const statuses: ClientStatus[] = ["active", "paused"];
+const autonomyModes: ClientAutonomy[] = ["autopilot", "supervised"];
+
+const statusColorMap: Record<ClientStatus, "success" | "danger"> = {
+  active: "success",
+  paused: "danger",
+};
+
+const countryCodes: Record<string, string> = {
+  Brazil: "br",
+  Canada: "ca",
+  China: "cn",
+  Germany: "de",
+  India: "in",
+  Italy: "it",
+  Japan: "jp",
+  Mexico: "mx",
+  "South Korea": "kr",
+  Taiwan: "tw",
+  Thailand: "th",
+  Vietnam: "vn",
 };
 
 const MAX_VISIBLE_PORTS = 3;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const ALL_COLUMNS = [
   "name",
   "iorNumber",
   "bondNumber",
-  "origin",
+  "primaryOrigin",
   "industry",
   "autonomy",
   "status",
-  "entriesYtd",
-  "clientSince",
-  "ports",
+  "createdAt",
+  "portsOfEntry",
   "actions",
 ] as const;
+
+const SORT_OPTIONS: Array<{ id: ClientSortColumn; label: string }> = [
+  { id: "name", label: "Client" },
+  { id: "iorNumber", label: "IOR #" },
+  { id: "primaryOrigin", label: "Primary Origin" },
+  { id: "industry", label: "Industry" },
+  { id: "autonomy", label: "Autonomy" },
+  { id: "status", label: "Status" },
+  { id: "createdAt", label: "Client Since" },
+];
+
+const COLUMN_LABELS: Array<{ id: string; label: string }> = [
+  { id: "name", label: "Client" },
+  { id: "iorNumber", label: "IOR #" },
+  { id: "bondNumber", label: "Bond #" },
+  { id: "primaryOrigin", label: "Primary Origin" },
+  { id: "industry", label: "Industry" },
+  { id: "autonomy", label: "Autonomy" },
+  { id: "status", label: "Status" },
+  { id: "createdAt", label: "Client Since" },
+  { id: "portsOfEntry", label: "Ports of Entry" },
+];
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -298,18 +162,22 @@ function CopyText({ children }: { children: string }) {
 /* -------------------------------------------------------------------------------------------------
  * OriginCell — flag + country name
  * -----------------------------------------------------------------------------------------------*/
-function OriginCell({ country }: { country: Country }) {
+function OriginCell({ name }: { name: string }) {
+  const code = countryCodes[name];
+
   return (
     <span className="inline-flex items-center gap-2">
-      <img
-        alt={country.name}
-        className="shrink-0 rounded-sm object-cover"
-        height={14}
-        src={`https://flagcdn.com/h20/${country.code}.png`}
-        srcSet={`https://flagcdn.com/h40/${country.code}.png 2x, https://flagcdn.com/h60/${country.code}.png 3x`}
-        width={20}
-      />
-      <span className="text-sm">{country.name}</span>
+      {code && (
+        <img
+          alt={name}
+          className="shrink-0 rounded-sm object-cover"
+          height={14}
+          src={`https://flagcdn.com/h20/${code}.png`}
+          srcSet={`https://flagcdn.com/h40/${code}.png 2x, https://flagcdn.com/h60/${code}.png 3x`}
+          width={20}
+        />
+      )}
+      <span className="text-sm">{name}</span>
     </span>
   );
 }
@@ -317,7 +185,7 @@ function OriginCell({ country }: { country: Country }) {
 /* -------------------------------------------------------------------------------------------------
  * PortsCell — inline chip list with overflow count
  * -----------------------------------------------------------------------------------------------*/
-function PortsCell({ ports }: { ports: PortName[] }) {
+function PortsCell({ ports }: { ports: string[] }) {
   const visible = ports.slice(0, MAX_VISIBLE_PORTS);
   const overflow = ports.length - MAX_VISIBLE_PORTS;
 
@@ -346,14 +214,65 @@ export function ClientsTable() {
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "name",
-    direction: "ascending",
+    column: "createdAt",
+    direction: "descending",
   });
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [autonomyFilter, setAutonomyFilter] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Selection>(
     new Set(ALL_COLUMNS),
   );
+
+  const [clients, setClients] = useState<ApiClient[]>([]);
+  const [count, setCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const timer = setTimeout(
+      async () => {
+        try {
+          const result = await listClients({
+            search: search || undefined,
+            status: [...statusFilter] as ClientStatus[],
+            autonomy: [...autonomyFilter] as ClientAutonomy[],
+            sortBy: (sortDescriptor.column as ClientSortColumn) ?? "createdAt",
+            sortDir:
+              sortDescriptor.direction === "ascending" ? "asc" : "desc",
+            limit: rowsPerPage,
+            offset: (page - 1) * rowsPerPage,
+          });
+
+          if (!cancelled) {
+            setClients(result.data);
+            setCount(result.count);
+          }
+        } catch {
+          if (!cancelled) {
+            setClients([]);
+            setCount(0);
+          }
+        }
+      },
+      search ? SEARCH_DEBOUNCE_MS : 0,
+    );
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    search,
+    statusFilter,
+    autonomyFilter,
+    sortDescriptor,
+    page,
+    rowsPerPage,
+    refreshKey,
+  ]);
 
   const statusActive = statusFilter.size > 0;
   const autonomyActive = autonomyFilter.size > 0;
@@ -365,69 +284,17 @@ export function ClientsTable() {
     setPage(1);
   }, []);
 
-  const filteredClients = useMemo(() => {
-    let result = clients;
+  const handleDelete = useCallback(
+    async (ids: string[]) => {
+      await Promise.all(ids.map((id) => deleteClient(id)));
+      setSelectedKeys(new Set());
+      refresh();
+    },
+    [refresh],
+  );
 
-    if (search) {
-      const q = search.toLowerCase();
-
-      result = result.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.iorNumber.toLowerCase().includes(q) ||
-          c.bondNumber.toLowerCase().includes(q),
-      );
-    }
-    if (statusFilter.size > 0) {
-      result = result.filter((c) => statusFilter.has(c.status));
-    }
-    if (autonomyFilter.size > 0) {
-      result = result.filter((c) => autonomyFilter.has(c.autonomy));
-    }
-
-    return result;
-  }, [search, statusFilter, autonomyFilter]);
-
-  const sortedClients = useMemo(() => {
-    if (!sortDescriptor.column) return filteredClients;
-
-    return [...filteredClients].sort((a, b) => {
-      const col = sortDescriptor.column as string;
-      let cmp: number;
-
-      if (col === "entriesYtd") {
-        cmp = a.entriesYtd - b.entriesYtd;
-      } else {
-        let first: string;
-        let second: string;
-
-        if (col === "origin") {
-          first = a.origin.name;
-          second = b.origin.name;
-        } else if (col === "ports") {
-          first = a.ports.join(", ");
-          second = b.ports.join(", ");
-        } else {
-          first = String((a as unknown as Record<string, unknown>)[col] ?? "");
-          second = String((b as unknown as Record<string, unknown>)[col] ?? "");
-        }
-
-        cmp = first.localeCompare(second);
-      }
-
-      if (sortDescriptor.direction === "descending") cmp *= -1;
-
-      return cmp;
-    });
-  }, [filteredClients, sortDescriptor]);
-
-  const totalPages = Math.ceil(sortedClients.length / rowsPerPage) || 1;
+  const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
-  const paginatedClients = useMemo(() => {
-    const start = (safePage - 1) * rowsPerPage;
-
-    return sortedClients.slice(start, start + rowsPerPage);
-  }, [sortedClients, safePage, rowsPerPage]);
 
   const visibleColumnSet = useMemo(() => {
     if (visibleColumns === "all") return new Set<string>(ALL_COLUMNS);
@@ -435,15 +302,15 @@ export function ClientsTable() {
     return visibleColumns as Set<string>;
   }, [visibleColumns]);
 
-  const columns = useMemo<DataGridColumn<Client>[]>(() => {
-    const allCols: DataGridColumn<Client>[] = [
+  const columns = useMemo<DataGridColumn<ApiClient>[]>(() => {
+    const allCols: DataGridColumn<ApiClient>[] = [
       {
         accessorKey: "name",
         allowsSorting: true,
         cell: (item) => (
           <div className="flex items-center gap-3">
             <Avatar size="sm">
-              <Avatar.Image src={item.logo} />
+              <Avatar.Image src={item.image ?? clientLogos[item.name]} />
               <Avatar.Fallback>
                 {item.name
                   .split(" ")
@@ -477,11 +344,11 @@ export function ClientsTable() {
         minWidth: 130,
       },
       {
-        accessorKey: "origin",
+        accessorKey: "primaryOrigin",
         allowsSorting: true,
-        cell: (item) => <OriginCell country={item.origin} />,
+        cell: (item) => <OriginCell name={item.primaryOrigin} />,
         header: "Primary Origin",
-        id: "origin",
+        id: "primaryOrigin",
         minWidth: 140,
       },
       {
@@ -496,11 +363,11 @@ export function ClientsTable() {
         allowsSorting: true,
         cell: (item) => (
           <Chip
-            color={item.autonomy === "Autopilot" ? "accent" : "default"}
+            color={item.autonomy === "autopilot" ? "accent" : "default"}
             size="sm"
             variant="soft"
           >
-            <Chip.Label>{item.autonomy}</Chip.Label>
+            <Chip.Label>{capitalize(item.autonomy)}</Chip.Label>
           </Chip>
         ),
         header: "Autonomy",
@@ -513,7 +380,7 @@ export function ClientsTable() {
         cell: (item) => (
           <Chip color={statusColorMap[item.status]} size="sm" variant="soft">
             <CircleFill width={6} />
-            <Chip.Label>{item.status}</Chip.Label>
+            <Chip.Label>{capitalize(item.status)}</Chip.Label>
           </Chip>
         ),
         header: "Status",
@@ -521,41 +388,33 @@ export function ClientsTable() {
         minWidth: 110,
       },
       {
-        accessorKey: "entriesYtd",
-        align: "end",
-        allowsSorting: true,
-        cell: (item) => (
-          <span className="tabular-nums">
-            {item.entriesYtd.toLocaleString("en-US")}
-          </span>
-        ),
-        header: "Entries YTD",
-        id: "entriesYtd",
-        minWidth: 110,
-      },
-      {
-        accessorKey: "clientSince",
+        accessorKey: "createdAt",
         allowsSorting: true,
         cell: (item) => (
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
             <Calendar className="text-muted size-3.5" />
-            {formatDate(item.clientSince)}
+            {formatDate(item.createdAt)}
           </span>
         ),
         header: "Client Since",
-        id: "clientSince",
+        id: "createdAt",
         minWidth: 140,
       },
       {
-        accessorKey: "ports",
-        cell: (item) => <PortsCell ports={item.ports} />,
+        accessorKey: "portsOfEntry",
+        cell: (item) => <PortsCell ports={item.portsOfEntry} />,
         header: "Ports of Entry",
-        id: "ports",
+        id: "portsOfEntry",
         minWidth: 280,
       },
       {
         align: "end",
-        cell: (item) => <RowActions clientId={item.id} />,
+        cell: (item) => (
+          <RowActions
+            clientId={item.id}
+            onDelete={() => handleDelete([item.id])}
+          />
+        ),
         header: "",
         id: "actions",
         minWidth: 50,
@@ -565,7 +424,7 @@ export function ClientsTable() {
     ];
 
     return allCols.filter((c) => visibleColumnSet.has(c.id));
-  }, [visibleColumnSet]);
+  }, [visibleColumnSet, handleDelete]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -574,8 +433,14 @@ export function ClientsTable() {
 
   const selectionCount =
     selectedKeys === "all"
-      ? sortedClients.length
+      ? clients.length
       : (selectedKeys as Set<string | number>).size;
+
+  const selectedIds = useMemo(() => {
+    if (selectedKeys === "all") return clients.map((c) => c.id);
+
+    return [...(selectedKeys as Set<string | number>)].map(String);
+  }, [selectedKeys, clients]);
 
   const paginationPages = useMemo(() => {
     const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
@@ -607,7 +472,7 @@ export function ClientsTable() {
           <div className="flex items-center gap-2">
             <h1 className="text-foreground text-xl font-semibold">Clients</h1>
             <Chip size="sm" variant="soft">
-              {clients.length}
+              {count}
             </Chip>
           </div>
           <p className="text-muted text-sm">
@@ -647,22 +512,23 @@ export function ClientsTable() {
             <Dropdown.Menu
               selectedKeys={autonomyFilter}
               selectionMode="multiple"
-              onSelectionChange={(keys) =>
+              onSelectionChange={(keys) => {
                 setAutonomyFilter(
                   keys === "all"
                     ? new Set(autonomyModes)
                     : new Set([...keys].map(String)),
-                )
-              }
+                );
+                setPage(1);
+              }}
             >
               {autonomyModes.map((mode) => (
                 <Dropdown.Item key={mode} id={mode} textValue={mode}>
                   <Chip
-                    color={mode === "Autopilot" ? "accent" : "default"}
+                    color={mode === "autopilot" ? "accent" : "default"}
                     size="sm"
                     variant="soft"
                   >
-                    <Chip.Label>{mode}</Chip.Label>
+                    <Chip.Label>{capitalize(mode)}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />
                 </Dropdown.Item>
@@ -681,19 +547,20 @@ export function ClientsTable() {
             <Dropdown.Menu
               selectedKeys={statusFilter}
               selectionMode="multiple"
-              onSelectionChange={(keys) =>
+              onSelectionChange={(keys) => {
                 setStatusFilter(
                   keys === "all"
                     ? new Set(statuses)
                     : new Set([...keys].map(String)),
-                )
-              }
+                );
+                setPage(1);
+              }}
             >
               {statuses.map((status) => (
                 <Dropdown.Item key={status} id={status} textValue={status}>
                   <Chip color={statusColorMap[status]} size="sm" variant="soft">
                     <CircleFill width={6} />
-                    <Chip.Label>{status}</Chip.Label>
+                    <Chip.Label>{capitalize(status)}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />
                 </Dropdown.Item>
@@ -712,8 +579,8 @@ export function ClientsTable() {
             <Dropdown.Menu
               selectedKeys={
                 sortDescriptor.column
-                  ? new Set([sortDescriptor.column])
-                  : new Set()
+                  ? new Set([String(sortDescriptor.column)])
+                  : new Set<string>()
               }
               selectionMode="single"
               onSelectionChange={(keys) => {
@@ -730,38 +597,16 @@ export function ClientsTable() {
                 });
               }}
             >
-              <Dropdown.Item id="name" textValue="Client">
-                <Label>Client</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="iorNumber" textValue="IOR #">
-                <Label>IOR #</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="origin" textValue="Primary Origin">
-                <Label>Primary Origin</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="industry" textValue="Industry">
-                <Label>Industry</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="autonomy" textValue="Autonomy">
-                <Label>Autonomy</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="status" textValue="Status">
-                <Label>Status</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="entriesYtd" textValue="Entries YTD">
-                <Label>Entries YTD</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="clientSince" textValue="Client Since">
-                <Label>Client Since</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
+              {SORT_OPTIONS.map((option) => (
+                <Dropdown.Item
+                  key={option.id}
+                  id={option.id}
+                  textValue={option.label}
+                >
+                  <Label>{option.label}</Label>
+                  <Dropdown.ItemIndicator />
+                </Dropdown.Item>
+              ))}
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown>
@@ -779,46 +624,16 @@ export function ClientsTable() {
               selectionMode="multiple"
               onSelectionChange={setVisibleColumns}
             >
-              <Dropdown.Item id="name" textValue="Client">
-                <Label>Client</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="iorNumber" textValue="IOR #">
-                <Label>IOR #</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="bondNumber" textValue="Bond #">
-                <Label>Bond #</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="origin" textValue="Primary Origin">
-                <Label>Primary Origin</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="industry" textValue="Industry">
-                <Label>Industry</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="autonomy" textValue="Autonomy">
-                <Label>Autonomy</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="status" textValue="Status">
-                <Label>Status</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="entriesYtd" textValue="Entries YTD">
-                <Label>Entries YTD</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="clientSince" textValue="Client Since">
-                <Label>Client Since</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
-              <Dropdown.Item id="ports" textValue="Ports of Entry">
-                <Label>Ports of Entry</Label>
-                <Dropdown.ItemIndicator />
-              </Dropdown.Item>
+              {COLUMN_LABELS.map((column) => (
+                <Dropdown.Item
+                  key={column.id}
+                  id={column.id}
+                  textValue={column.label}
+                >
+                  <Label>{column.label}</Label>
+                  <Dropdown.ItemIndicator />
+                </Dropdown.Item>
+              ))}
             </Dropdown.Menu>
           </Dropdown.Popover>
         </Dropdown>
@@ -846,7 +661,7 @@ export function ClientsTable() {
           {autonomyActive
             ? [...autonomyFilter].map((mode) => (
                 <Chip key={mode} size="sm" variant="secondary">
-                  <Chip.Label>Autonomy: {mode}</Chip.Label>
+                  <Chip.Label>Autonomy: {capitalize(mode)}</Chip.Label>
                   <button
                     aria-label={`Remove ${mode} filter`}
                     className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
@@ -856,6 +671,7 @@ export function ClientsTable() {
 
                       next.delete(mode);
                       setAutonomyFilter(next);
+                      setPage(1);
                     }}
                   >
                     <Xmark className="size-3" />
@@ -866,7 +682,7 @@ export function ClientsTable() {
           {statusActive
             ? [...statusFilter].map((status) => (
                 <Chip key={status} size="sm" variant="secondary">
-                  <Chip.Label>Status: {status}</Chip.Label>
+                  <Chip.Label>Status: {capitalize(status)}</Chip.Label>
                   <button
                     aria-label={`Remove ${status} filter`}
                     className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
@@ -876,6 +692,7 @@ export function ClientsTable() {
 
                       next.delete(status);
                       setStatusFilter(next);
+                      setPage(1);
                     }}
                   >
                     <Xmark className="size-3" />
@@ -896,7 +713,7 @@ export function ClientsTable() {
         aria-label="Clients"
         columns={columns}
         contentClassName="min-w-[1500px]"
-        data={paginatedClients}
+        data={clients}
         getRowId={(item) => item.id}
         renderEmptyState={() => (
           <div className="py-6">
@@ -1003,7 +820,7 @@ export function ClientsTable() {
           </InlineSelect>
           <Separator className="!h-4" orientation="vertical" />
           <span className="text-muted">
-            {selectionCount} of {sortedClients.length} selected
+            {selectionCount} of {count} selected
           </span>
           <div className="flex gap-2">
             <Button
@@ -1042,7 +859,12 @@ export function ClientsTable() {
             <CirclePause />
             Pause
           </Button>
-          <Button className="text-danger" size="sm" variant="ghost">
+          <Button
+            className="text-danger"
+            size="sm"
+            variant="ghost"
+            onPress={() => handleDelete(selectedIds)}
+          >
             <TrashBin />
             Delete
           </Button>
@@ -1067,14 +889,23 @@ export function ClientsTable() {
 /* -------------------------------------------------------------------------------------------------
  * Row Actions
  * -----------------------------------------------------------------------------------------------*/
-function RowActions(_props: { clientId: number }) {
+function RowActions({
+  onDelete,
+}: {
+  clientId: string;
+  onDelete: () => void;
+}) {
   return (
     <Dropdown>
       <Button isIconOnly aria-label="Row actions" size="sm" variant="tertiary">
         <EllipsisVertical />
       </Button>
       <Dropdown.Popover className="min-w-[160px]">
-        <Dropdown.Menu>
+        <Dropdown.Menu
+          onAction={(key) => {
+            if (key === "delete") onDelete();
+          }}
+        >
           <Dropdown.Item id="view" textValue="View">
             <Eye />
             <Label>View</Label>

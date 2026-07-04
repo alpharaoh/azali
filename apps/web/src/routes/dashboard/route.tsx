@@ -261,7 +261,6 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
   const navigate = useNavigate();
   const me = useMe();
   const user = me?.user;
-  const organization = me?.organization;
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {

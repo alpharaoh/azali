@@ -15,11 +15,11 @@ export class ClientsService {
   }
 
   async findAll(organizationId: string, query: ListClientsDto) {
-    const { limit, offset, ...filters } = query;
+    const { limit, offset, sortBy, sortDir, search, status, autonomy } = query;
 
     return listClients(
-      { organizationId, ...filters },
-      { createdAt: "desc" },
+      { organizationId, search, statuses: status, autonomies: autonomy },
+      { [sortBy]: sortDir },
       limit,
       offset,
     );
