@@ -36,6 +36,7 @@ import {
   InlineSelect,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { clientLogos } from "#/data/client-logos";
@@ -64,20 +65,15 @@ const statusColorMap: Record<ClientStatus, "success" | "danger"> = {
   paused: "danger",
 };
 
-const countryCodes: Record<string, string> = {
-  Brazil: "br",
-  Canada: "ca",
-  China: "cn",
-  Germany: "de",
-  India: "in",
-  Italy: "it",
-  Japan: "jp",
-  Mexico: "mx",
-  "South Korea": "kr",
-  Taiwan: "tw",
-  Thailand: "th",
-  Vietnam: "vn",
-};
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+function countryName(code: string) {
+  try {
+    return regionNames.of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 const MAX_VISIBLE_PORTS = 3;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -168,22 +164,13 @@ function CopyText({ children }: { children: string }) {
 /* -------------------------------------------------------------------------------------------------
  * OriginCell — flag + country name
  * -----------------------------------------------------------------------------------------------*/
-function OriginCell({ name }: { name: string }) {
-  const code = countryCodes[name];
+function OriginCell({ code }: { code: string }) {
+  const Flag = flags[code.toUpperCase() as keyof typeof flags];
 
   return (
     <span className="inline-flex items-center gap-2">
-      {code && (
-        <img
-          alt={name}
-          className="shrink-0 rounded-sm object-cover"
-          height={14}
-          src={`https://flagcdn.com/h20/${code}.png`}
-          srcSet={`https://flagcdn.com/h40/${code}.png 2x, https://flagcdn.com/h60/${code}.png 3x`}
-          width={20}
-        />
-      )}
-      <span className="text-sm">{name}</span>
+      {Flag && <Flag className="h-3.5 w-5 shrink-0 rounded-sm" />}
+      <span className="text-sm">{countryName(code)}</span>
     </span>
   );
 }
@@ -336,7 +323,7 @@ export function ClientsTable() {
       {
         accessorKey: "primaryOrigin",
         allowsSorting: true,
-        cell: (item) => <OriginCell name={item.primaryOrigin} />,
+        cell: (item) => <OriginCell code={item.primaryOrigin} />,
         header: "Primary Origin",
         id: "primaryOrigin",
         minWidth: 140,
