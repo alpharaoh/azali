@@ -9,7 +9,7 @@ import {
   Pulse,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Avatar, Breadcrumbs } from "@heroui/react";
+import { Avatar, Breadcrumbs, Dropdown, Label } from "@heroui/react";
 import { AppLayout, Sidebar } from "@heroui-pro/react";
 import {
   createFileRoute,
@@ -249,6 +249,7 @@ const DashboardSidebar = ({ pathname }: { pathname: string }) => (
 );
 
 const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
+  const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   console.log(session);
   const user = session?.user;
@@ -285,12 +286,61 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           <span className="truncate">{sectionLabel}</span>
         </Breadcrumbs.Item>
       </Breadcrumbs>
-      <Avatar size="sm" className="ml-auto shrink-0">
-        {user?.image && <Avatar.Image alt={user.name ?? ""} src={user.image} />}
-        <Avatar.Fallback className="text-xs">
-          {getInitials(user?.name || user?.email)}
-        </Avatar.Fallback>
-      </Avatar>
+      <Dropdown>
+        <Dropdown.Trigger className="ml-auto shrink-0 rounded-full">
+          <Avatar size="sm">
+            {user?.image && (
+              <Avatar.Image alt={user.name ?? ""} src={user.image} />
+            )}
+            <Avatar.Fallback className="text-xs" delayMs={600}>
+              {getInitials(user?.name || user?.email)}
+            </Avatar.Fallback>
+          </Avatar>
+        </Dropdown.Trigger>
+        <Dropdown.Popover>
+          <div className="px-3 pt-3 pb-1">
+            <div className="flex items-center gap-2">
+              <Avatar size="sm">
+                {user?.image && (
+                  <Avatar.Image alt={user.name ?? ""} src={user.image} />
+                )}
+                <Avatar.Fallback className="text-xs" delayMs={600}>
+                  {getInitials(user?.name || user?.email)}
+                </Avatar.Fallback>
+              </Avatar>
+              <div className="flex flex-col gap-0">
+                <p className="text-sm leading-5 font-medium">{user?.name}</p>
+                <p className="text-muted text-xs leading-none">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+          </div>
+          <Dropdown.Menu
+            onAction={async (key) => {
+              if (key === "settings") {
+                navigate({ to: "/dashboard/settings" });
+              } else if (key === "logout") {
+                await authClient.signOut();
+                navigate({ to: "/login" });
+              }
+            }}
+          >
+            <Dropdown.Item id="settings" textValue="Settings">
+              <div className="flex w-full items-center justify-between gap-2">
+                <Label>Settings</Label>
+                <Gear className="text-muted size-3.5" />
+              </div>
+            </Dropdown.Item>
+            <Dropdown.Item id="logout" textValue="Logout" variant="danger">
+              <div className="flex w-full items-center justify-between gap-2">
+                <Label>Log Out</Label>
+                <ArrowRightFromSquare className="text-danger size-3.5" />
+              </div>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
     </div>
   );
 };
