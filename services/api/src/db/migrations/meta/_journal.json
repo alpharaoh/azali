@@ -15,6 +15,13 @@
       "when": 1783195298596,
       "tag": "0001_concerned_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783224329810,
+      "tag": "0002_naive_infant_terrible",
+      "breakpoints": true
     }
   ]
 }
