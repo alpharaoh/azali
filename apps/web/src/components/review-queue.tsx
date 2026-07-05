@@ -76,6 +76,8 @@ import {
 } from "#/data/review-queue";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
+  getShipmentEventsControllerFindByShipmentQueryKey,
+  useShipmentEventsControllerCreate,
   useShipmentEventsControllerFindAll,
   useShipmentEventsControllerFindByShipment,
   useShipmentsControllerFindAll,
@@ -83,6 +85,12 @@ import {
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
+import {
+  ACTIVITY_EXCLUDED_TYPES,
+  BROKER_NOTE_TYPE,
+  eventPlane,
+  FACTS_EVENT_TYPE,
+} from "#/lib/event-kinds";
 import type { ReviewSearch } from "#/lib/review-queue-loader";
 import {
   REVIEW_FILTER_GROUPS,
@@ -155,6 +163,8 @@ interface ReviewRequestPayload {
   question?: string;
   confidence?: number;
   proposal?: ReviewItem["proposal"];
+  alternates?: ReviewItem["alternates"];
+  comparison?: ReviewItem["comparison"];
 }
 
 const mockByReference = new Map(
@@ -176,12 +186,12 @@ function toReviewItem(
     : (base?.shipment.arrivesInHours ?? 0);
 
   return {
-    alternates: base?.alternates,
+    alternates: payload.alternates ?? base?.alternates,
     approveLabel: base?.approveLabel ?? "Approve",
     canRequestInfo: base?.canRequestInfo,
     citations: base?.citations ?? [],
     client: client?.name ?? base?.client ?? "Unknown client",
-    comparison: base?.comparison,
+    comparison: payload.comparison ?? base?.comparison,
     confidence: payload.confidence ?? base?.confidence ?? 0.8,
     deadlineHoursFromNow: shipment.reviewDeadlineAt
       ? (new Date(shipment.reviewDeadlineAt).getTime() - Date.now()) / 3_600_000
@@ -555,8 +565,9 @@ function aiReply(item: ReviewItem, message: string): string {
 
 function ThreadTimelineItem({
   message,
+  time = "just now",
   ...rest
-}: { message: ThreadMessage } & TimelineItemPassthrough) {
+}: { message: ThreadMessage; time?: string } & TimelineItemPassthrough) {
   const isAi = message.author === "ai";
   const Icon = isAi ? Sparkles : Person;
 
@@ -575,7 +586,7 @@ function ThreadTimelineItem({
             {isAi ? "Azali AI" : "You"}
           </h3>
           <time className="text-muted shrink-0 text-xs leading-5">
-            just now
+            {time}
           </time>
         </div>
         <p className="text-muted m-0 text-xs leading-5">{message.body}</p>
@@ -875,9 +886,17 @@ function TraceSection({ item }: { item: ReviewItem }) {
 /* -------------------------------------------------------------------------------------------------
  * Detail pane — email-detail structure: toolbar · scrollable body · pinned action bar
  * -----------------------------------------------------------------------------------------------*/
+interface NoteEntry {
+  id: string;
+  body: string;
+  occurredAt: string;
+}
+
 function ReviewDetail({
   deadline,
   item,
+  notes,
+  onAddNote,
   onBack,
   onNavigate,
   onResolve,
@@ -886,6 +905,8 @@ function ReviewDetail({
 }: {
   deadline: Date;
   item: ReviewItem;
+  notes: NoteEntry[];
+  onAddNote: (body: string) => void;
   onBack: () => void;
   onNavigate: (direction: -1 | 1) => void;
   onResolve: (action: DecisionAction, alternate?: string) => void;
@@ -898,7 +919,6 @@ function ReviewDetail({
   const [isThinking, setIsThinking] = useState(false);
   const threads = useReviewThreads();
   const thread = threads.get(item.id) ?? [];
-  const notes = thread.filter((message) => message.kind === "note");
   const chat = thread.filter((message) => message.kind === "chat");
   const activity = [
     ...item.documents.map((document) => ({
@@ -920,12 +940,7 @@ function ReviewDetail({
 
     if (!body) return;
     setDraft("");
-    addThreadMessage(item.id, {
-      author: "broker",
-      body,
-      id: `msg-${Date.now()}`,
-      kind: "note",
-    });
+    onAddNote(body);
   };
 
   const handleAsk = (question?: string) => {
@@ -1126,12 +1141,20 @@ function ReviewDetail({
                     />
                   ),
                 )}
-                {notes.map((message, index) => (
+                {notes.map((note, index) => (
                   <ThreadTimelineItem
-                    key={message.id}
+                    key={note.id}
                     _index={activity.length + index}
                     _isLast={false}
-                    message={message}
+                    message={{
+                      author: "broker",
+                      body: note.body,
+                      id: note.id,
+                      kind: "note",
+                    }}
+                    time={formatDistanceToNowStrict(new Date(note.occurredAt), {
+                      addSuffix: true,
+                    })}
                   />
                 ))}
                 <Timeline.Item
@@ -1457,21 +1480,24 @@ export function ReviewQueue() {
     ? visiblePending.findIndex((item) => item.id === displayItem.id)
     : -1;
 
-  // The agent trace comes from the shipment's agent_trace events — one event
-  // per step, with phase/kind/detail/data in the payload.
-  const { data: traceEventsResponse } =
-    useShipmentEventsControllerFindByShipment(
-      displayItem?.id ?? "",
-      { limit: 200, type: ["agent_trace"] },
-      { query: { enabled: Boolean(displayItem) } },
-    );
+  // One fetch for the whole case file — split by event type at the edge.
+  const { data: eventsResponse } = useShipmentEventsControllerFindByShipment(
+    displayItem?.id ?? "",
+    { limit: 200 },
+    { query: { enabled: Boolean(displayItem) } },
+  );
 
-  const liveTrace = useMemo<TracePhase[]>(() => {
-    // API returns occurredAt desc; the trace reads oldest-first.
-    const events = [...(traceEventsResponse?.data.data ?? [])].reverse();
-    const phases: TracePhase[] = [];
+  const live = useMemo(() => {
+    // API returns occurredAt desc; the record reads oldest-first.
+    const events = [...(eventsResponse?.data.data ?? [])].reverse();
+    const now = Date.now();
+    const hoursAgo = (occurredAt: string) =>
+      (now - new Date(occurredAt).getTime()) / 3_600_000;
 
-    for (const event of events) {
+    // Agent trace — one event per step, grouped by payload.phase.
+    const trace: TracePhase[] = [];
+
+    for (const event of events.filter((e) => eventPlane(e.type) === "trace")) {
       const payload = event.payload as {
         phase?: string;
         kind?: TraceStepKind;
@@ -1487,21 +1513,130 @@ export function ReviewQueue() {
         ...(payload.data && { data: payload.data }),
         ...(payload.citationRef && { citationRef: payload.citationRef }),
       };
-      const last = phases[phases.length - 1];
+      const last = trace[trace.length - 1];
 
       if (last?.label === label) last.steps.push(step);
-      else phases.push({ label, steps: [step] });
+      else trace.push({ label, steps: [step] });
     }
 
-    return phases;
-  }, [traceEventsResponse]);
+    // Documents — payloads mirror the ReviewDocument shape.
+    const documents: ReviewDocument[] = events
+      .filter((event) => eventPlane(event.type) === "document")
+      .map(
+        (event) =>
+          ({
+            ...(event.payload as unknown as ReviewDocument),
+            receivedHoursAgo: hoursAgo(event.occurredAt),
+          }) as ReviewDocument,
+      );
+
+    // Generic activity rows for the timeline.
+    const activityEvents: ActivityEvent[] = events
+      .filter(
+        (event) =>
+          eventPlane(event.type) === "milestone" &&
+          !ACTIVITY_EXCLUDED_TYPES.has(event.type),
+      )
+      .map((event) => {
+        const payload = event.payload as {
+          detail?: string;
+          steps?: string[];
+          status?: string;
+          icon?: ActivityEvent["icon"];
+        };
+
+        return {
+          title: event.title,
+          detail: payload.detail,
+          steps: payload.steps,
+          occurredHoursAgo: hoursAgo(event.occurredAt),
+          icon: payload.icon ?? (event.actor === "ai" ? "ai" : "check"),
+          status: payload.status as ActivityEvent["status"],
+        };
+      });
+
+    // Structured shipment facts (latest extraction wins).
+    const factsEvent = events
+      .filter((event) => event.type === FACTS_EVENT_TYPE)
+      .at(-1);
+    const facts = factsEvent?.payload.facts as
+      | {
+          originCountry?: string;
+          originPort?: string | null;
+          portOfEntry?: string;
+          transportMode?: string;
+          conveyance?: string | null;
+          incoterm?: string | null;
+          entryType?: string | null;
+        }
+      | undefined;
+
+    // Broker notes — part of the audit record.
+    const notes = events
+      .filter((event) => event.type === BROKER_NOTE_TYPE)
+      .map((event) => ({
+        id: event.id,
+        body: String((event.payload as { body?: string }).body ?? event.title),
+        occurredAt: event.occurredAt,
+      }));
+
+    return { activityEvents, documents, facts, notes, trace };
+  }, [eventsResponse]);
 
   const detailItem = displayItem
     ? {
         ...displayItem,
-        trace: liveTrace.length ? liveTrace : displayItem.trace,
+        trace: live.trace.length ? live.trace : displayItem.trace,
+        documents: live.documents.length
+          ? live.documents
+          : displayItem.documents,
+        events: live.activityEvents.length
+          ? live.activityEvents
+          : displayItem.events,
+        ...(live.facts && {
+          shipment: {
+            ...displayItem.shipment,
+            origin: live.facts.originPort
+              ? `${countryName(live.facts.originCountry ?? "")} (${live.facts.originPort})`
+              : countryName(live.facts.originCountry ?? ""),
+            port: live.facts.portOfEntry ?? displayItem.shipment.port,
+            mode: live.facts.conveyance
+              ? `${capitalize(live.facts.transportMode ?? "")} · ${live.facts.conveyance}`
+              : capitalize(live.facts.transportMode ?? ""),
+            incoterm: live.facts.incoterm ?? displayItem.shipment.incoterm,
+            entryType: live.facts.entryType ?? displayItem.shipment.entryType,
+          },
+        }),
       }
     : null;
+
+  const createEvent = useShipmentEventsControllerCreate();
+
+  const handleAddNote = (body: string) => {
+    if (!displayItem) return;
+    const shipmentId = displayItem.id;
+
+    createEvent
+      .mutateAsync({
+        shipmentId,
+        data: {
+          type: BROKER_NOTE_TYPE,
+          actor: "user",
+          title: "Broker note added to the audit record",
+          payload: { body },
+        },
+      })
+      .then(() => {
+        queryClient.invalidateQueries({
+          queryKey: getShipmentEventsControllerFindByShipmentQueryKey(
+            shipmentId,
+          ),
+        });
+      })
+      .catch(() => {
+        toast.danger("Failed to save note");
+      });
+  };
 
   const handleFilterChange = (id: string) => {
     navigate({
@@ -1687,8 +1822,10 @@ export function ReviewQueue() {
             key={detailItem.id}
             deadline={deadlineFor(detailItem)}
             item={detailItem}
+            notes={live.notes}
             position={displayIndex + 1}
             total={visiblePending.length}
+            onAddNote={handleAddNote}
             onBack={() => setIsMobileDetailOpen(false)}
             onNavigate={handleNavigate}
             onResolve={handleResolve}
