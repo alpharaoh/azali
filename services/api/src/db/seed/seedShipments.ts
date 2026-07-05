@@ -12,6 +12,7 @@ import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import * as schema from "@/db/schema";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
+import { REVIEW_OVERVIEW } from "./data/reviewOverview";
 import { REVIEW_TRACES } from "./data/reviewTraces";
 
 const [organizationId, userId] = process.argv.slice(2);
@@ -562,6 +563,27 @@ for (const seed of seeds) {
   const clientId = clientIdByName.get(seed.clientName);
   if (!clientId) continue;
 
+  // Fast-changing display snapshot; history lives in the events.
+  const summary: Record<string, unknown> = {
+    flags: seed.originCountry === "CN" ? ["Section 301"] : [],
+    ...(seed.review
+      ? {
+          ...(["classification", "signoff"].includes(seed.review.type) && {
+            hts: seed.review.proposal.value,
+          }),
+          htsConfidence: seed.review.confidence,
+          nextAction: `Broker review: ${seed.review.proposal.label}`,
+        }
+      : {
+          nextAction:
+            seed.stage === ShipmentStage.Filed
+              ? "Awaiting CBP release"
+              : seed.stage === ShipmentStage.Released
+                ? "Cleared"
+                : "On autopilot",
+        }),
+  };
+
   const shipment = await insertShipment({
     organizationId,
     userId,
@@ -574,6 +596,7 @@ for (const seed of seeds) {
       ? hoursFromNow(seed.review.deadlineHours)
       : null,
     reviewType: seed.review?.type ?? null,
+    summary,
     originCountry: seed.originCountry,
     originPort: seed.originPort,
     portOfEntry: seed.portOfEntry,
@@ -586,7 +609,11 @@ for (const seed of seeds) {
     entryType: seed.entryType ?? null,
   });
 
-  for (const event of seed.events) {
+  // Review shipments get richer content below (documents + activity from the
+  // demo overview data); the handcrafted events are for flowing shipments.
+  const handcraftedEvents = seed.review ? [] : seed.events;
+
+  for (const event of handcraftedEvents) {
     await insertShipmentEvent({
       organizationId,
       userId,
@@ -599,6 +626,48 @@ for (const seed of seeds) {
     });
   }
 
+  const overview = REVIEW_OVERVIEW[seed.reference];
+
+  // Documents received — one event per document, CBP forms flagged as such.
+  for (const doc of overview?.documents ?? []) {
+    const title = doc.kind === "email" ? doc.subject : doc.name;
+    const cbpForm =
+      doc.kind !== "email" ? /CBP Form (28|29)/i.exec(doc.name) : null;
+
+    await insertShipmentEvent({
+      organizationId,
+      userId,
+      shipmentId: shipment!.id,
+      type: cbpForm ? "cbp_notice_received" : "document_received",
+      actor: cbpForm ? "cbp" : "system",
+      title,
+      occurredAt: hoursFromNow(-doc.receivedHoursAgo),
+      payload: {
+        ...doc,
+        ...(cbpForm && { form: `CF-${cbpForm[1]}`, posture: "proposed" }),
+      },
+    });
+  }
+
+  // Activity milestones (AI actions, emails sent, status changes).
+  for (const activity of overview?.events ?? []) {
+    await insertShipmentEvent({
+      organizationId,
+      userId,
+      shipmentId: shipment!.id,
+      type: "activity",
+      actor: activity.icon === "check" ? "system" : "ai",
+      title: activity.title,
+      occurredAt: hoursFromNow(-activity.occurredHoursAgo),
+      payload: {
+        ...(activity.detail && { detail: activity.detail }),
+        ...(activity.steps && { steps: activity.steps }),
+        ...(activity.status && { status: activity.status }),
+        icon: activity.icon,
+      },
+    });
+  }
+
   if (seed.review) {
     // The full agent trace, one append-only event per step, ending shortly
     // before the review request goes out.
@@ -606,6 +675,38 @@ for (const seed of seeds) {
     const steps = trace.flatMap((phase) =>
       phase.steps.map((step) => ({ phase: phase.label, ...step })),
     );
+
+    // Structured shipment facts, extracted once with their sources — the
+    // contemporaneous-record best practice.
+    await insertShipmentEvent({
+      organizationId,
+      userId,
+      shipmentId: shipment!.id,
+      type: "shipment_facts_extracted",
+      actor: "ai",
+      title: "Extracted shipment facts from entry documents",
+      occurredAt: hoursFromNow(-1.5 - (steps.length + 1) * 0.25),
+      payload: {
+        facts: {
+          originCountry: seed.originCountry,
+          originPort: seed.originPort,
+          portOfEntry: seed.portOfEntry,
+          transportMode: seed.transportMode,
+          conveyance: seed.conveyance ?? null,
+          incoterm: seed.incoterm ?? null,
+          entryType: seed.entryType ?? null,
+          valueUsd: seed.valueUsd,
+        },
+        sources: [
+          {
+            fact: "value, incoterm",
+            source: `Commercial invoice INV-${seed.reference.slice(-4)}`,
+          },
+          { fact: "route, conveyance", source: "Bill of lading" },
+          { fact: "origin", source: "Manufacturer declaration" },
+        ],
+      },
+    });
 
     for (const [index, step] of steps.entries()) {
       await insertShipmentEvent({
@@ -641,6 +742,8 @@ for (const seed of seeds) {
         confidence: seed.review.confidence,
         deadlineAt: hoursFromNow(seed.review.deadlineHours).toISOString(),
         proposal: seed.review.proposal,
+        ...(overview?.alternates && { alternates: overview.alternates }),
+        ...(overview?.comparison && { comparison: overview.comparison }),
       },
     });
   }

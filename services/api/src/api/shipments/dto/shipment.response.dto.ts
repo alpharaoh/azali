@@ -16,6 +16,7 @@ export const shipmentSchema = z.object({
   status: z.enum(ShipmentStatus),
   reviewDeadlineAt: z.iso.datetime().nullable(),
   reviewType: z.string().nullable(),
+  summary: z.record(z.string(), z.unknown()),
   originCountry: z.string(),
   originPort: z.string().nullable(),
   portOfEntry: z.string(),

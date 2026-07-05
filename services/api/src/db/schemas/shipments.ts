@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   pgEnum,
@@ -9,6 +10,7 @@ import {
 import { clients } from "@/db/schemas/clients";
 import { getDefaultColumns } from "@/db/utils/getDefaultColumns";
 import { getDefaultOwnershipColumns } from "@/db/utils/getDefaultOwnershipColumns";
+import { jsonbObject } from "@/db/utils/jsonbObject";
 
 export enum ShipmentStage {
   Intake = "intake",
@@ -47,6 +49,9 @@ export const shipments = pgTable(
     // can sort/filter without digging into event payloads.
     reviewDeadlineAt: timestamp("review_deadline_at", { withTimezone: true }),
     reviewType: text("review_type"),
+    // Fast-changing display snapshot (current HTS + confidence, duty rate,
+    // description, flags, next action) — the history lives in shipment_events.
+    summary: jsonbObject("summary").notNull().default(sql`'{}'::jsonb`),
     originCountry: text("origin_country").notNull(),
     originPort: text("origin_port"),
     portOfEntry: text("port_of_entry").notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE "shipments" ADD COLUMN "summary" jsonb DEFAULT '{}'::jsonb NOT NULL;
