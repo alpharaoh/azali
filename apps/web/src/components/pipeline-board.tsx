@@ -588,7 +588,12 @@ export function PipelineBoard() {
             <Button
               size="sm"
               variant="tertiary"
-              onPress={() => navigate({ to: "/dashboard/review" })}
+              onPress={() =>
+                navigate({
+                  params: { itemId: row.id },
+                  to: "/dashboard/review/$itemId",
+                })
+              }
             >
               <Eye />
               Review

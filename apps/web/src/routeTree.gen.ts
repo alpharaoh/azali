@@ -15,12 +15,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardTariffRadarRouteImport } from './routes/dashboard/tariff-radar'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
-import { Route as DashboardReviewRouteImport } from './routes/dashboard/review'
 import { Route as DashboardRecoveriesRouteImport } from './routes/dashboard/recoveries'
 import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
 import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
 import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
 import { Route as DashboardAutopilotRouteImport } from './routes/dashboard/autopilot'
+import { Route as DashboardReviewIndexRouteImport } from './routes/dashboard/review/index'
+import { Route as DashboardReviewItemIdRouteImport } from './routes/dashboard/review/$itemId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -52,11 +53,6 @@ const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardReviewRoute = DashboardReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 const DashboardRecoveriesRoute = DashboardRecoveriesRouteImport.update({
   id: '/recoveries',
   path: '/recoveries',
@@ -83,6 +79,16 @@ const DashboardAutopilotRoute = DashboardAutopilotRouteImport.update({
   path: '/autopilot',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardReviewIndexRoute = DashboardReviewIndexRouteImport.update({
+  id: '/review/',
+  path: '/review/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardReviewItemIdRoute = DashboardReviewItemIdRouteImport.update({
+  id: '/review/$itemId',
+  path: '/review/$itemId',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -93,10 +99,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
-  '/dashboard/review': typeof DashboardReviewRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/review/': typeof DashboardReviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,10 +113,11 @@ export interface FileRoutesByTo {
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
-  '/dashboard/review': typeof DashboardReviewRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/review': typeof DashboardReviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -121,10 +129,11 @@ export interface FileRoutesById {
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
   '/dashboard/recoveries': typeof DashboardRecoveriesRoute
-  '/dashboard/review': typeof DashboardReviewRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/review/': typeof DashboardReviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,10 +146,11 @@ export interface FileRouteTypes {
     | '/dashboard/clients'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
-    | '/dashboard/review'
     | '/dashboard/settings'
     | '/dashboard/tariff-radar'
     | '/dashboard/'
+    | '/dashboard/review/$itemId'
+    | '/dashboard/review/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,10 +160,11 @@ export interface FileRouteTypes {
     | '/dashboard/clients'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
-    | '/dashboard/review'
     | '/dashboard/settings'
     | '/dashboard/tariff-radar'
     | '/dashboard'
+    | '/dashboard/review/$itemId'
+    | '/dashboard/review'
   id:
     | '__root__'
     | '/'
@@ -164,10 +175,11 @@ export interface FileRouteTypes {
     | '/dashboard/clients'
     | '/dashboard/pipeline'
     | '/dashboard/recoveries'
-    | '/dashboard/review'
     | '/dashboard/settings'
     | '/dashboard/tariff-radar'
     | '/dashboard/'
+    | '/dashboard/review/$itemId'
+    | '/dashboard/review/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -220,13 +232,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/review': {
-      id: '/dashboard/review'
-      path: '/review'
-      fullPath: '/dashboard/review'
-      preLoaderRoute: typeof DashboardReviewRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/dashboard/recoveries': {
       id: '/dashboard/recoveries'
       path: '/recoveries'
@@ -262,6 +267,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAutopilotRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/review/': {
+      id: '/dashboard/review/'
+      path: '/review'
+      fullPath: '/dashboard/review/'
+      preLoaderRoute: typeof DashboardReviewIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/review/$itemId': {
+      id: '/dashboard/review/$itemId'
+      path: '/review/$itemId'
+      fullPath: '/dashboard/review/$itemId'
+      preLoaderRoute: typeof DashboardReviewItemIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
   }
 }
 
@@ -271,10 +290,11 @@ interface DashboardRouteRouteChildren {
   DashboardClientsRoute: typeof DashboardClientsRoute
   DashboardPipelineRoute: typeof DashboardPipelineRoute
   DashboardRecoveriesRoute: typeof DashboardRecoveriesRoute
-  DashboardReviewRoute: typeof DashboardReviewRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardTariffRadarRoute: typeof DashboardTariffRadarRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardReviewItemIdRoute: typeof DashboardReviewItemIdRoute
+  DashboardReviewIndexRoute: typeof DashboardReviewIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
@@ -283,10 +303,11 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardClientsRoute: DashboardClientsRoute,
   DashboardPipelineRoute: DashboardPipelineRoute,
   DashboardRecoveriesRoute: DashboardRecoveriesRoute,
-  DashboardReviewRoute: DashboardReviewRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardTariffRadarRoute: DashboardTariffRadarRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardReviewItemIdRoute: DashboardReviewItemIdRoute,
+  DashboardReviewIndexRoute: DashboardReviewIndexRoute,
 }
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(

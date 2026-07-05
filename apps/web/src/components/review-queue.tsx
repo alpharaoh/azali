@@ -44,6 +44,7 @@ import {
   Widget,
 } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   addHours,
   differenceInHours,
@@ -1384,10 +1385,27 @@ export function ReviewQueue() {
   const queryClient = useQueryClient();
   const { deadlines, items } = useLiveReviewItems();
   const resolveReviewMutation = useShipmentsControllerResolveReview();
+  const params = useParams({ strict: false });
+  const navigate = useNavigate();
   const [filterId, setFilterId] = useState("all");
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+  // Selection lives in the path (/dashboard/review/<shipmentId>) so queue
+  // items are deep-linkable from the pipeline board and shareable.
+  const selectedId = params.itemId ?? null;
+  const setSelectedId = (id: string | null) => {
+    if (id) {
+      navigate({
+        params: { itemId: id },
+        replace: true,
+        to: "/dashboard/review/$itemId",
+      });
+    } else {
+      navigate({ replace: true, to: "/dashboard/review" });
+    }
+  };
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(() =>
+    Boolean(params.itemId),
+  );
   // Session log of what got resolved, so the "Resolved today" section keeps
   // its history after the server drops the items from the pending list.
   const [resolved, setResolved] = useState<
