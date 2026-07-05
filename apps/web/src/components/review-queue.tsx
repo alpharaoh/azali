@@ -112,6 +112,7 @@ const filters: ReviewFilter[] = [
     label: "Classification",
     match: (type) => type === "classification",
   },
+  { id: "signoff", label: "Sign-off", match: (type) => type === "signoff" },
   { id: "document", label: "Documents", match: (type) => type === "document" },
   {
     id: "compliance",
@@ -119,7 +120,6 @@ const filters: ReviewFilter[] = [
     match: (type) =>
       type === "enforcement" || type === "pga" || type === "valuation",
   },
-  { id: "signoff", label: "Sign-off", match: (type) => type === "signoff" },
 ];
 
 function formatCurrency(value: number) {
@@ -199,8 +199,7 @@ function toReviewItem(
     comparison: base?.comparison,
     confidence: payload.confidence ?? base?.confidence ?? 0.8,
     deadlineHoursFromNow: shipment.reviewDeadlineAt
-      ? (new Date(shipment.reviewDeadlineAt).getTime() - Date.now()) /
-        3_600_000
+      ? (new Date(shipment.reviewDeadlineAt).getTime() - Date.now()) / 3_600_000
       : (base?.deadlineHoursFromNow ?? 24),
     documents: base?.documents ?? [],
     events: base?.events,
@@ -1479,7 +1478,10 @@ export function ReviewQueue() {
 
     // Info requests keep the shipment in the queue server-side.
     if (action !== "info-requested") {
-      setResolved((current) => [...current, { decision: { action, alternate }, item }]);
+      setResolved((current) => [
+        ...current,
+        { decision: { action, alternate }, item },
+      ]);
       setSelectedId(next?.id ?? null);
       if (!next) setIsMobileDetailOpen(false);
     }
