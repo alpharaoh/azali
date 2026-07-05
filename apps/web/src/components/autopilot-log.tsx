@@ -26,22 +26,46 @@ import {
   DataGrid,
   InlineSelect,
   PieChart,
-  TrendChip,
   Widget,
 } from "@heroui-pro/react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { format, formatDistanceToNowStrict, subDays, subHours } from "date-fns";
+import {
+  differenceInCalendarDays,
+  format,
+  formatDistanceToNowStrict,
+  subDays,
+} from "date-fns";
 import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
-import type { AutopilotAction, AutopilotActionType } from "#/data/autopilot";
-import { autopilotActions, dailyActionTotals } from "#/data/autopilot";
+import {
+  useShipmentEventsControllerFindAll,
+  useShipmentsControllerFindAll,
+} from "#/generated/api";
+import { useClientsById } from "#/lib/use-clients-by-id";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
  * -----------------------------------------------------------------------------------------------*/
+type AutopilotActionType =
+  | "classification"
+  | "extraction"
+  | "filing"
+  | "reconciliation";
+
+interface Row {
+  id: string;
+  type: AutopilotActionType;
+  title: string;
+  client: string;
+  reference: string;
+  confidence?: number;
+  occurredAt: Date;
+}
+
 const typeMeta: Record<
   AutopilotActionType,
   {
@@ -66,57 +90,22 @@ const typeMeta: Record<
 
 const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
 
-const overviewStats = [
-  {
-    change: "+18%",
-    title: "Actions Today",
-    trend: "up" as const,
-    value: "342",
-  },
-  {
-    change: "+0.8%",
-    info: "Share of all work completed without a human touch. The rest landed in the Review Queue.",
-    title: "Auto-Handled Rate",
-    trend: "up" as const,
-    value: "96.4%",
-  },
-  {
-    change: "+6",
-    title: "Entries Filed",
-    trend: "neutral" as const,
-    value: "28",
-  },
-  {
-    change: "+0.3%",
-    info: "Accuracy of autopilot decisions your team spot-checked. This number is what justifies raising the autonomy threshold in Settings.",
-    title: "Spot-Check Accuracy",
-    trend: "up" as const,
-    value: "99.2%",
-  },
-];
+/** Bucket the open-ended event type strings into the four action families. */
+function bucketFor(eventType: string): AutopilotActionType {
+  if (/extract|scan|ocr|compare/.test(eventType)) return "extraction";
+  if (/fil|draft|response/.test(eventType)) return "filing";
+  if (/reconcil|duty|totals/.test(eventType)) return "reconciliation";
+  return "classification";
+}
 
-// Trailing seven days ending today, so the chart never goes stale.
-const dailyActions = dailyActionTotals.map((totals, index) => ({
-  ...totals,
-  day: format(subDays(new Date(), dailyActionTotals.length - 1 - index), "EEE"),
-}));
-
-const weeklyByType = typeIds.map((type) => ({
-  color: typeMeta[type].color,
-  name: typeMeta[type].label,
-  value: dailyActionTotals.reduce((sum, day) => sum + day[type], 0),
-}));
-
-function occurredAgo(hoursAgo: number) {
-  return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
-    addSuffix: true,
-  });
+function occurredAgo(date: Date) {
+  return formatDistanceToNowStrict(date, { addSuffix: true });
 }
 
 /* -------------------------------------------------------------------------------------------------
  * Actions table
  * -----------------------------------------------------------------------------------------------*/
-const actionColumns: DataGridColumn<AutopilotAction>[] = [
+const actionColumns: DataGridColumn<Row>[] = [
   {
     accessorKey: "title",
     cell: (action) => {
@@ -125,12 +114,9 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
       return (
         <div className="flex min-w-0 items-start gap-2.5">
           <Icon className="text-muted mt-0.5 size-4 shrink-0" />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-foreground truncate text-sm font-medium">
-              {action.title}
-            </span>
-            <span className="text-muted truncate text-xs">{action.detail}</span>
-          </div>
+          <span className="text-foreground truncate text-sm font-medium">
+            {action.title}
+          </span>
         </div>
       );
     },
@@ -175,27 +161,30 @@ const actionColumns: DataGridColumn<AutopilotAction>[] = [
   {
     accessorKey: "confidence",
     allowsSorting: true,
-    cell: (action) => (
-      <Chip
-        color={action.confidence >= 0.95 ? "success" : "warning"}
-        size="sm"
-        variant="soft"
-      >
-        <Chip.Label className="tabular-nums">
-          {Math.round(action.confidence * 100)}%
-        </Chip.Label>
-      </Chip>
-    ),
+    cell: (action) =>
+      action.confidence === undefined ? (
+        <span className="text-muted text-sm">—</span>
+      ) : (
+        <Chip
+          color={action.confidence >= 0.95 ? "success" : "warning"}
+          size="sm"
+          variant="soft"
+        >
+          <Chip.Label className="tabular-nums">
+            {Math.round(action.confidence * 100)}%
+          </Chip.Label>
+        </Chip>
+      ),
     header: "Confidence",
     id: "confidence",
     minWidth: 110,
   },
   {
-    accessorKey: "occurredHoursAgo",
+    accessorKey: "occurredAt",
     allowsSorting: true,
     cell: (action) => (
       <span className="text-muted whitespace-nowrap text-sm">
-        {occurredAgo(action.occurredHoursAgo)}
+        {occurredAgo(action.occurredAt)}
       </span>
     ),
     header: "When",
@@ -259,9 +248,123 @@ export function AutopilotLog() {
     direction: "ascending",
   });
 
+  const { data: eventsResponse } = useShipmentEventsControllerFindAll(
+    { actor: ["ai"], limit: 200 },
+    { query: { placeholderData: keepPreviousData } },
+  );
+  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
+    { limit: 100 },
+    { query: { placeholderData: keepPreviousData } },
+  );
+  const clientsById = useClientsById();
+
+  const shipmentById = useMemo(() => {
+    const map = new Map<string, { clientId: string; reference: string }>();
+
+    for (const shipment of shipmentsResponse?.data.data ?? []) {
+      map.set(shipment.id, {
+        clientId: shipment.clientId,
+        reference: shipment.reference,
+      });
+    }
+
+    return map;
+  }, [shipmentsResponse]);
+
+  const actions = useMemo<Row[]>(() => {
+    return (eventsResponse?.data.data ?? []).map((event) => {
+      const shipment = shipmentById.get(event.shipmentId);
+      const client = shipment ? clientsById.get(shipment.clientId) : undefined;
+      const confidence = (event.payload as { confidence?: number }).confidence;
+
+      return {
+        id: event.id,
+        type: bucketFor(event.type),
+        title: event.title,
+        client: client?.name ?? "Unknown client",
+        reference: shipment?.reference ?? "—",
+        confidence,
+        occurredAt: new Date(event.occurredAt),
+      };
+    });
+  }, [eventsResponse, shipmentById, clientsById]);
+
+  const overviewStats = useMemo(() => {
+    const now = Date.now();
+    const today = actions.filter(
+      (action) => now - action.occurredAt.getTime() < 24 * 3_600_000,
+    ).length;
+    const filed = actions.filter((action) => action.type === "filing").length;
+    const withConfidence = actions.filter(
+      (action) => action.confidence !== undefined,
+    );
+    const avgConfidence = withConfidence.length
+      ? withConfidence.reduce(
+          (sum, action) => sum + (action.confidence ?? 0),
+          0,
+        ) / withConfidence.length
+      : 0;
+
+    const shipments = shipmentsResponse?.data.data ?? [];
+    const autoRate = shipments.length
+      ? 1 -
+        shipments.filter((shipment) => shipment.status === "needs_review")
+          .length /
+          shipments.length
+      : 0;
+
+    return [
+      { title: "Actions (24h)", value: String(today) },
+      {
+        info: "Share of shipments moving without a human touch. The rest are in the Review Queue.",
+        title: "Auto-Handled Rate",
+        value: `${(autoRate * 100).toFixed(1)}%`,
+      },
+      { title: "Filing Actions", value: String(filed) },
+      {
+        info: "Average model confidence across autonomous actions that report one.",
+        title: "Avg Confidence",
+        value: `${(avgConfidence * 100).toFixed(1)}%`,
+      },
+    ];
+  }, [actions, shipmentsResponse]);
+
+  const dailyActions = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = subDays(new Date(), 6 - index);
+
+      return {
+        classification: 0,
+        day: format(date, "EEE"),
+        extraction: 0,
+        filing: 0,
+        offset: 6 - index,
+        reconciliation: 0,
+      };
+    });
+
+    for (const action of actions) {
+      const offset = differenceInCalendarDays(new Date(), action.occurredAt);
+      const bucket = days.find((day) => day.offset === offset);
+      if (bucket) bucket[action.type] += 1;
+    }
+
+    return days;
+  }, [actions]);
+
+  const weeklyByType = useMemo(
+    () =>
+      typeIds.map((type) => ({
+        color: typeMeta[type].color,
+        name: typeMeta[type].label,
+        value: actions.filter((action) => action.type === type).length,
+      })),
+    [actions],
+  );
+
   const visibleActions = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const result = autopilotActions.filter(
+    const result = actions.filter(
       (action) =>
         (typeFilter.size === 0 || typeFilter.has(action.type)) &&
         (query.length === 0 ||
@@ -275,9 +378,9 @@ export function AutopilotLog() {
       let cmp: number;
 
       if (col === "when") {
-        cmp = a.occurredHoursAgo - b.occurredHoursAgo;
+        cmp = b.occurredAt.getTime() - a.occurredAt.getTime();
       } else if (col === "confidence") {
-        cmp = a.confidence - b.confidence;
+        cmp = (a.confidence ?? 0) - (b.confidence ?? 0);
       } else if (col === "type") {
         cmp = a.type.localeCompare(b.type);
       } else {
@@ -288,7 +391,7 @@ export function AutopilotLog() {
 
       return cmp;
     });
-  }, [search, typeFilter, sortDescriptor]);
+  }, [actions, search, typeFilter, sortDescriptor]);
 
   const totalPages = Math.ceil(visibleActions.length / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
@@ -361,14 +464,9 @@ export function AutopilotLog() {
                   </Tooltip>
                 ) : null}
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-foreground text-2xl font-semibold tabular-nums tracking-tight">
-                  {stat.value}
-                </span>
-                <TrendChip trend={stat.trend} variant="soft">
-                  {stat.change}
-                </TrendChip>
-              </div>
+              <span className="text-foreground text-2xl font-semibold tabular-nums tracking-tight">
+                {stat.value}
+              </span>
             </div>
           ))}
         </Widget.Content>

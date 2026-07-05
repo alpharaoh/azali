@@ -1,7 +1,31 @@
-import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  customType,
+  index,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { shipments } from "@/db/schemas/shipments";
 import { getDefaultColumns } from "@/db/utils/getDefaultColumns";
 import { getDefaultOwnershipColumns } from "@/db/utils/getDefaultOwnershipColumns";
+
+// Drizzle's built-in jsonb double-serializes with the bun-sql driver (drizzle
+// stringifies, then Bun.SQL encodes that string again → stored as a jsonb
+// *string*). Pass the raw object through and let Bun.SQL serialize it once.
+const jsonbObject = customType<{ data: Record<string, unknown> }>({
+  dataType() {
+    return "jsonb";
+  },
+  toDriver(value) {
+    return value;
+  },
+  fromDriver(value) {
+    return (
+      typeof value === "string" ? JSON.parse(value) : value
+    ) as Record<string, unknown>;
+  },
+});
 
 /**
  * Append-only timeline of everything that happens to a shipment — the audit
@@ -26,7 +50,7 @@ export const shipmentEvents = pgTable(
     occurredAt: timestamp("occurred_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    payload: jsonb("payload").notNull().default({}),
+    payload: jsonbObject("payload").notNull().default(sql`'{}'::jsonb`),
   },
   (table) => [
     index("shipment_events_shipment_occurred_idx").on(

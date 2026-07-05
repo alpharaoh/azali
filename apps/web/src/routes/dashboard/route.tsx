@@ -29,9 +29,9 @@ import type { ComponentType, SVGProps } from "react";
 import { Fragment, useEffect, useState } from "react";
 
 import { ThemeSwitcher } from "#/components/theme-switcher";
-import { usePendingReviewCount } from "#/data/review-queue";
 import {
   getUsersControllerGetProfileQueryOptions,
+  useShipmentsControllerFindAll,
   useUsersControllerGetProfile,
 } from "#/generated/api";
 import { sessionQueryOptions, signOutAndRedirect } from "#/lib/auth";
@@ -155,7 +155,11 @@ const SidebarBrand = () => (
 );
 
 const ReviewCountChip = () => {
-  const count = usePendingReviewCount();
+  const { data } = useShipmentsControllerFindAll({
+    status: ["needs_review"],
+    limit: 1,
+  });
+  const count = data?.data.count ?? 0;
 
   if (count === 0) return null;
 

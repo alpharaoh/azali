@@ -22,15 +22,27 @@ import {
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, InlineSelect, Widget } from "@heroui-pro/react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import { useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 
-import type { PipelineStage, Shipment } from "#/data/pipeline";
-import { pipelineStages, shipments } from "#/data/pipeline";
-import { reviewItems, useReviewDecisions } from "#/data/review-queue";
+import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
+import { useShipmentsControllerFindAll } from "#/generated/api";
+import { countryName } from "#/lib/countries";
+import { useClientsById } from "#/lib/use-clients-by-id";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+
+type PipelineStage = ApiShipment["stage"];
+
+export const pipelineStages = [
+  { id: "intake", label: "Intake" },
+  { id: "classification", label: "Classification" },
+  { id: "compliance", label: "Compliance" },
+  { id: "entry", label: "Entry Prep" },
+  { id: "filed", label: "Filed" },
+] as const;
 
 function ShipIcon({ className }: { className?: string }) {
   return (
@@ -57,18 +69,36 @@ function ShipIcon({ className }: { className?: string }) {
 }
 
 /* -------------------------------------------------------------------------------------------------
- * Derivation — a shipment's live state comes from the Review Queue store
+ * Derivation — a shipment's live state comes straight from the API
  * -----------------------------------------------------------------------------------------------*/
 type ShipmentStatus = "autopilot" | "awaiting" | "blocked" | "released";
 
+const statusFromApi: Record<ApiShipment["status"], ShipmentStatus> = {
+  autopilot: "autopilot",
+  awaiting_cbp: "awaiting",
+  needs_review: "blocked",
+  released: "released",
+};
+
 type Priority = 1 | 2 | 3 | 4;
 
-type Row = Shipment & {
-  effectiveStage: PipelineStage;
+interface Row {
+  id: string;
+  reference: string;
+  client: string;
+  logo?: string;
+  origin: string;
+  port: string;
+  isAir: boolean;
+  conveyance: string | null;
+  stage: PipelineStage;
+  status: ShipmentStatus;
+  arrivesInHours: number;
+  value: number;
+  duty: number;
   /** Null when nothing is actionable (filed / awaiting CBP / released). */
   priority: Priority | null;
-  status: ShipmentStatus;
-};
+}
 
 const stageOrder: PipelineStage[] = [
   "intake",
@@ -78,12 +108,6 @@ const stageOrder: PipelineStage[] = [
   "filed",
   "released",
 ];
-
-function advanceStage(stage: PipelineStage): PipelineStage {
-  const index = stageOrder.indexOf(stage);
-
-  return stageOrder[Math.min(index + 1, stageOrder.length - 1)] ?? stage;
-}
 
 /**
  * Priority derives from how much work remains vs. how soon the cargo lands,
@@ -145,10 +169,6 @@ const statusOptions: Array<{ id: ShipmentStatus; label: string }> = [
   { id: "awaiting", label: "Awaiting CBP" },
   { id: "released", label: "Released" },
 ];
-
-const maxShipmentValue =
-  Math.ceil(Math.max(...shipments.map((shipment) => shipment.value)) / 50000) *
-  50000;
 
 function compactCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -234,21 +254,12 @@ function StageTracker({
  * -----------------------------------------------------------------------------------------------*/
 export function PipelineBoard() {
   const navigate = useNavigate();
-  const decisions = useReviewDecisions();
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState<Set<string>>(new Set());
   const [clientQuery, setClientQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
-  const [valueRange, setValueRange] = useState<[number, number]>([
-    0,
-    maxShipmentValue,
-  ]);
-  const valueActive = valueRange[0] > 0 || valueRange[1] < maxShipmentValue;
+  const [valueRange, setValueRange] = useState<[number, number] | null>(null);
 
-  const allClients = useMemo(
-    () => [...new Set(shipments.map((shipment) => shipment.client))].sort(),
-    [],
-  );
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "priority",
     direction: "ascending",
@@ -256,44 +267,58 @@ export function PipelineBoard() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
-  const pendingRefs = useMemo(() => {
-    return new Set(
-      reviewItems
-        .filter((item) => !decisions.has(item.id))
-        .map((item) => item.reference),
-    );
-  }, [decisions]);
+  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
+    { limit: 100 },
+    { query: { placeholderData: keepPreviousData } },
+  );
+  const clientsById = useClientsById();
 
   const rows = useMemo<Row[]>(() => {
+    const shipments = shipmentsResponse?.data.data ?? [];
+
     return shipments.map((shipment) => {
-      const isBlocked = shipment.fromReview
-        ? pendingRefs.has(shipment.reference)
-        : false;
-      const effectiveStage =
-        shipment.fromReview && !isBlocked
-          ? advanceStage(shipment.stage)
-          : shipment.stage;
-      const status: ShipmentStatus = isBlocked
-        ? "blocked"
-        : effectiveStage === "released"
-          ? "released"
-          : effectiveStage === "filed"
-            ? "awaiting"
-            : "autopilot";
+      const clientRef = clientsById.get(shipment.clientId);
+      const status = statusFromApi[shipment.status];
+      const arrivesInHours = shipment.etaAt
+        ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
+        : 0;
+      const value = shipment.valueCents / 100;
 
       return {
-        ...shipment,
-        effectiveStage,
-        priority: priorityFor(
-          effectiveStage,
-          status,
-          shipment.arrivesInHours,
-          shipment.value,
-        ),
+        id: shipment.id,
+        reference: shipment.reference,
+        client: clientRef?.name ?? "Unknown client",
+        logo: clientRef?.logo,
+        origin: shipment.originPort ?? countryName(shipment.originCountry),
+        port: shipment.portOfEntry,
+        isAir: shipment.transportMode === "air",
+        conveyance: shipment.conveyance,
+        stage: shipment.stage,
         status,
+        arrivesInHours,
+        value,
+        duty: shipment.dutyCents / 100,
+        priority: priorityFor(shipment.stage, status, arrivesInHours, value),
       };
     });
-  }, [pendingRefs]);
+  }, [shipmentsResponse, clientsById]);
+
+  const maxShipmentValue = useMemo(
+    () =>
+      Math.max(
+        50000,
+        Math.ceil(Math.max(0, ...rows.map((row) => row.value)) / 50000) * 50000,
+      ),
+    [rows],
+  );
+  const effectiveRange: [number, number] = valueRange ?? [0, maxShipmentValue];
+  const valueActive =
+    effectiveRange[0] > 0 || effectiveRange[1] < maxShipmentValue;
+
+  const allClients = useMemo(
+    () => [...new Set(rows.map((row) => row.client))].sort(),
+    [rows],
+  );
 
   const stats = useMemo(() => {
     const active = rows.filter((row) => row.status !== "released");
@@ -326,9 +351,10 @@ export function PipelineBoard() {
     if (statusFilter.size > 0) {
       result = result.filter((row) => statusFilter.has(row.status));
     }
-    if (valueRange[0] > 0 || valueRange[1] < maxShipmentValue) {
+    if (valueActive) {
       result = result.filter(
-        (row) => row.value >= valueRange[0] && row.value <= valueRange[1],
+        (row) =>
+          row.value >= effectiveRange[0] && row.value <= effectiveRange[1],
       );
     }
     if (!sortDescriptor.column) return result;
@@ -353,7 +379,15 @@ export function PipelineBoard() {
 
       return cmp;
     });
-  }, [rows, search, clientFilter, statusFilter, valueRange, sortDescriptor]);
+  }, [
+    rows,
+    search,
+    clientFilter,
+    statusFilter,
+    valueActive,
+    effectiveRange,
+    sortDescriptor,
+  ]);
 
   const statusActive = statusFilter.size > 0;
 
@@ -398,7 +432,7 @@ export function PipelineBoard() {
     setClientFilter(new Set());
     setClientQuery("");
     setStatusFilter(new Set());
-    setValueRange([0, maxShipmentValue]);
+    setValueRange(null);
   };
 
   const filteredClients = clientQuery
@@ -436,11 +470,8 @@ export function PipelineBoard() {
       },
       {
         cell: (row) => {
-          const isAir = row.mode.startsWith("Air");
-          const ModeIcon = isAir ? Plane : ShipIcon;
-          const description = row.mode.includes("·")
-            ? row.mode.split("·").slice(1).join("·").trim()
-            : null;
+          const ModeIcon = row.isAir ? Plane : ShipIcon;
+          const description = row.conveyance;
           return (
             <div className="flex items-start gap-2">
               <ModeIcon className="text-muted mt-0.5 size-4 shrink-0" />
@@ -465,7 +496,7 @@ export function PipelineBoard() {
       },
       {
         cell: (row) => (
-          <StageTracker stage={row.effectiveStage} status={row.status} />
+          <StageTracker stage={row.stage} status={row.status} />
         ),
         header: "Stage",
         id: "stage",
@@ -746,8 +777,8 @@ export function PipelineBoard() {
                   Shipment value
                 </span>
                 <span className="text-foreground text-xs font-medium tabular-nums">
-                  {compactCurrency(valueRange[0])} –{" "}
-                  {compactCurrency(valueRange[1])}
+                  {compactCurrency(effectiveRange[0])} –{" "}
+                  {compactCurrency(effectiveRange[1])}
                 </span>
               </div>
               <Slider
@@ -755,7 +786,7 @@ export function PipelineBoard() {
                 maxValue={maxShipmentValue}
                 minValue={0}
                 step={5000}
-                value={valueRange}
+                value={effectiveRange}
                 onChange={(value) => {
                   if (Array.isArray(value) && value.length === 2) {
                     setValueRange(value as [number, number]);
@@ -773,7 +804,7 @@ export function PipelineBoard() {
                 isDisabled={!valueActive}
                 size="sm"
                 variant="outline"
-                onPress={() => setValueRange([0, maxShipmentValue])}
+                onPress={() => setValueRange(null)}
               >
                 Reset
               </Button>
@@ -834,14 +865,14 @@ export function PipelineBoard() {
           {valueActive ? (
             <Chip size="sm" variant="secondary">
               <Chip.Label>
-                Value: {compactCurrency(valueRange[0])} –{" "}
-                {compactCurrency(valueRange[1])}
+                Value: {compactCurrency(effectiveRange[0])} –{" "}
+                {compactCurrency(effectiveRange[1])}
               </Chip.Label>
               <button
                 aria-label="Remove value filter"
                 className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                 type="button"
-                onClick={() => setValueRange([0, maxShipmentValue])}
+                onClick={() => setValueRange(null)}
               >
                 <Xmark className="size-3" />
               </button>

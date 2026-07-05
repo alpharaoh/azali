@@ -1,136 +1,115 @@
 import {
-  ArrowDownToLine,
-  ArrowLeft,
   ArrowRight,
-  ArrowRotateLeft,
-  ArrowUp,
-  ArrowUpRightFromSquare,
-  ChevronLeft,
-  ChevronRight,
-  CircleCheck,
+  Check,
   CircleDollar,
-  Envelope,
+  Clock,
   FileCheck,
   FileText,
-  Funnel,
-  PaperPlane,
-  Pencil,
+  Gear,
   Person,
-  ShieldCheck,
+  Plane,
+  ScalesBalanced,
+  Shield,
   ShieldExclamation,
   Sparkles,
   Tag,
+  Xmark,
 } from "@gravity-ui/icons";
 import {
   Avatar,
   Button,
-  Card,
   Chip,
-  Dropdown,
+  Input,
   Label,
-  ScrollShadow,
-  SearchField,
-  Separator,
+  Popover,
+  TextField,
+  toast,
 } from "@heroui/react";
-import {
-  ChainOfThought,
-  ChatLoader,
-  ChatMessage,
-  ChatSource,
-  ChatSources,
-  HoverCard,
-  PromptInput,
-  PromptSuggestion,
-  Segment,
-  TextShimmer,
-  Timeline,
-  Widget,
-} from "@heroui-pro/react";
-import {
-  addHours,
-  differenceInHours,
-  formatDistanceToNowStrict,
-  subHours,
-} from "date-fns";
-import type { ComponentProps, ComponentType, SVGProps } from "react";
+import { EmptyState, Widget } from "@heroui-pro/react";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { formatDistanceToNowStrict } from "date-fns";
+import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
 
 import type {
-  ActivityEvent,
-  Citation,
-  CitationKind,
-  Decision,
-  DecisionAction,
-  DocumentLine,
-  ReviewDocument,
-  ReviewItem,
-  ReviewItemType,
-  ThreadMessage,
-} from "#/data/review-queue";
+  ListShipmentEventsResponseDtoDataItem as ApiEvent,
+  ListShipmentsResponseDtoDataItem as ApiShipment,
+} from "#/generated/api";
 import {
-  addThreadMessage,
-  docSlug,
-  resolveReviewItem,
-  reviewItems,
-  undoReviewItem,
-  useReviewDecisions,
-  useReviewThreads,
-} from "#/data/review-queue";
+  getShipmentEventsControllerFindAllQueryKey,
+  getShipmentsControllerFindAllQueryKey,
+  useShipmentEventsControllerFindAll,
+  useShipmentsControllerFindAll,
+  useShipmentsControllerResolveReview,
+} from "#/generated/api";
+import { countryName } from "#/lib/countries";
+import type { ClientRef } from "#/lib/use-clients-by-id";
+import { useClientsById } from "#/lib/use-clients-by-id";
 
 /* -------------------------------------------------------------------------------------------------
- * Meta
+ * Review payload — carried by the review_requested event
  * -----------------------------------------------------------------------------------------------*/
-const typeMeta: Record<
-  ReviewItemType,
-  { label: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
-> = {
+interface ReviewPayload {
+  reviewType?: string;
+  question?: string;
+  confidence?: number;
+  deadlineAt?: string;
+  proposal?: { label: string; value: string; detail: string };
+}
+
+interface ReviewEntry {
+  shipment: ApiShipment;
+  client: ClientRef | undefined;
+  review: ReviewPayload;
+}
+
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+const typeMeta: Record<string, { icon: IconComponent; label: string }> = {
   classification: { icon: Tag, label: "Classification" },
   document: { icon: FileText, label: "Document" },
-  enforcement: { icon: ShieldCheck, label: "Enforcement" },
+  enforcement: { icon: ScalesBalanced, label: "Enforcement" },
   pga: { icon: ShieldExclamation, label: "PGA" },
   signoff: { icon: FileCheck, label: "Sign-off" },
   valuation: { icon: CircleDollar, label: "Valuation" },
 };
 
-type ReviewFilter = {
-  id: string;
-  label: string;
-  match: (type: ReviewItemType) => boolean;
-};
-
-const allFilter: ReviewFilter = { id: "all", label: "All", match: () => true };
-
-const filters: ReviewFilter[] = [
-  allFilter,
-  {
-    id: "classification",
-    label: "Classification",
-    match: (type) => type === "classification",
-  },
-  { id: "document", label: "Documents", match: (type) => type === "document" },
+const filterGroups = [
+  { id: "all", label: "All", types: null },
+  { id: "classification", label: "Classification", types: ["classification"] },
+  { id: "document", label: "Documents", types: ["document"] },
   {
     id: "compliance",
     label: "Compliance",
-    match: (type) =>
-      type === "enforcement" || type === "pga" || type === "valuation",
+    types: ["enforcement", "pga", "valuation"],
   },
-  { id: "signoff", label: "Sign-off", match: (type) => type === "signoff" },
-];
+  { id: "signoff", label: "Sign-off", types: ["signoff"] },
+] as const;
 
-function formatCurrency(value: number) {
+type FilterId = (typeof filterGroups)[number]["id"];
+
+const actorMeta: Record<string, { icon: IconComponent; label: string }> = {
+  ai: { icon: Sparkles, label: "AI" },
+  cbp: { icon: Shield, label: "CBP" },
+  system: { icon: Gear, label: "System" },
+  user: { icon: Person, label: "Broker" },
+};
+
+function deadlineTone(deadlineAt: string | null | undefined) {
+  if (!deadlineAt) return "default" as const;
+  const hours = (new Date(deadlineAt).getTime() - Date.now()) / 3_600_000;
+
+  if (hours <= 4) return "danger" as const;
+  if (hours <= 24) return "warning" as const;
+  return "default" as const;
+}
+
+function formatCurrency(cents: number) {
   return new Intl.NumberFormat("en-US", {
     currency: "USD",
     maximumFractionDigits: 0,
     style: "currency",
-  }).format(value);
-}
-
-function decisionLabel(decision: Decision) {
-  if (decision.action === "corrected")
-    return `Corrected → ${decision.alternate}`;
-  if (decision.action === "info-requested") return "Info requested";
-
-  return "Approved";
+  }).format(cents / 100);
 }
 
 function getInitials(name: string) {
@@ -141,1358 +120,398 @@ function getInitials(name: string) {
     .join("");
 }
 
-type DeadlineTone = "danger" | "default" | "warning";
-
-function deadlineTone(deadline: Date): DeadlineTone {
-  const hoursLeft = differenceInHours(deadline, new Date());
-
-  return hoursLeft <= 4 ? "danger" : hoursLeft <= 24 ? "warning" : "default";
-}
-
-const deadlineTextClass: Record<DeadlineTone, string> = {
-  danger: "text-danger font-medium",
-  default: "text-muted",
-  warning: "text-warning",
-};
-
-/* -------------------------------------------------------------------------------------------------
- * Queue row — email-list-item structure: avatar · sender/time · subject · preview
- * -----------------------------------------------------------------------------------------------*/
-function QueueRow({
-  deadline,
-  isActive,
-  item,
-  onSelect,
-}: {
-  deadline: Date;
-  isActive: boolean;
-  item: ReviewItem;
-  onSelect: () => void;
-}) {
-  const tone = deadlineTone(deadline);
-  const TypeIcon = typeMeta[item.type].icon;
-
-  return (
-    <li>
-      <button
-        aria-current={isActive ? "true" : undefined}
-        className={`relative flex w-full cursor-pointer items-start gap-3 rounded-2xl p-3 text-left transition-colors ${
-          isActive ? "bg-default/60" : "hover:bg-default/40"
-        }`}
-        type="button"
-        onClick={onSelect}
-      >
-        <Avatar className="size-9 shrink-0">
-          <Avatar.Image src={item.logo} />
-          <Avatar.Fallback>{getInitials(item.client)}</Avatar.Fallback>
-        </Avatar>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-foreground truncate text-sm font-medium leading-tight">
-              {item.client}
-            </span>
-            <div className="flex shrink-0 items-center gap-2">
-              <span
-                className={`whitespace-nowrap text-xs leading-tight ${deadlineTextClass[tone]}`}
-              >
-                {formatDistanceToNowStrict(deadline)}
-              </span>
-              {tone === "danger" ? (
-                <span
-                  aria-hidden
-                  className="bg-danger size-1.5 shrink-0 rounded-full"
-                />
-              ) : null}
-            </div>
-          </div>
-
-          <span className="text-foreground truncate text-xs font-medium leading-tight">
-            {item.question}
-          </span>
-
-          <span className="text-muted truncate text-xs leading-tight">
-            {item.proposal.value} — {item.proposal.detail}
-          </span>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <Chip size="sm" variant="soft">
-              <TypeIcon className="size-3" />
-              <Chip.Label>{typeMeta[item.type].label}</Chip.Label>
-            </Chip>
-            <Chip size="sm" variant="soft">
-              <Chip.Label className="tabular-nums">{item.reference}</Chip.Label>
-            </Chip>
-          </div>
-        </div>
-      </button>
-    </li>
-  );
-}
-
-/* -------------------------------------------------------------------------------------------------
- * Shipment fact + document previews
- * -----------------------------------------------------------------------------------------------*/
-function receivedAgo(hoursAgo: number) {
-  return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
-    addSuffix: true,
-  });
-}
-
-function ShipmentFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-muted text-xs">{label}</span>
-      <span className="text-foreground truncate text-sm font-medium">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function DocumentLineRow({ line }: { line: DocumentLine }) {
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-4 rounded px-1.5 py-0.5 ${
-        line.highlight ? "bg-warning/15" : ""
-      }`}
-    >
-      <span className="text-muted shrink-0">{line.label}</span>
-      <span
-        className={`text-right ${
-          line.highlight ? "text-foreground font-semibold" : "text-foreground"
-        }`}
-      >
-        {line.value}
-      </span>
-    </div>
-  );
-}
-
-/**
- * Timeline injects `_index`/`_isLast` into its direct children — forward them
- * so the connector line stops at the last node.
- */
-type TimelineItemPassthrough = Partial<ComponentProps<typeof Timeline.Item>>;
-
-const eventIconMap: Record<
-  ActivityEvent["icon"],
-  ComponentType<SVGProps<SVGSVGElement>>
-> = {
-  ai: Sparkles,
-  check: CircleCheck,
-  mail: PaperPlane,
-};
-
-const citationMeta: Record<
-  CitationKind,
-  { chip: "accent" | "default" | "success" | "warning"; label: string }
-> = {
-  catalog: { chip: "success", label: "Catalog" },
-  evidence: { chip: "warning", label: "Evidence" },
-  regulation: { chip: "default", label: "Regulation" },
-  ruling: { chip: "accent", label: "CROSS Ruling" },
-};
-
-function faviconFor(href: string) {
-  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(href)}&sz=64`;
-}
-
-/** The hover body shared by both pill variants — kind, reference, exact passage. */
-function CitationQuote({ citation }: { citation: Citation }) {
-  const meta = citationMeta[citation.kind];
-
-  return (
-    <div className="flex max-w-72 flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <Chip color={meta.chip} size="sm" variant="soft">
-          <Chip.Label>{meta.label}</Chip.Label>
-        </Chip>
-        <span className="text-foreground font-mono text-xs font-semibold">
-          {citation.ref}
-        </span>
-      </div>
-      <p className="text-muted m-0 text-xs leading-relaxed">
-        “{citation.quote}”
-      </p>
-    </div>
-  );
-}
-
-/**
- * The top half of the cited document inside the hover card — the real scan for
- * scans, a reconstructed sheet for PDFs. Hovering fades in "View full document",
- * which opens the file in a new tab.
- */
-function DocPeek({ document: doc }: { document: ReviewDocument }) {
-  if (doc.kind === "email") return null;
-
-  const href = doc.kind === "scan" ? doc.src : `/docs/${docSlug(doc.name)}.pdf`;
-
-  return (
-    <a
-      className="group relative block h-28 overflow-hidden border-b"
-      href={href}
-      rel="noreferrer"
-      target="_blank"
-    >
-      {doc.kind === "scan" ? (
-        <img
-          alt={doc.name}
-          className="h-full w-full object-cover object-top"
-          src={doc.src}
-        />
-      ) : (
-        <div className="bg-surface flex h-full flex-col gap-1 px-3.5 py-3">
-          <span className="text-foreground text-[11px] font-semibold leading-tight">
-            {doc.name}
-          </span>
-          <span className="text-muted text-[9px]">{doc.meta}</span>
-          <div className="bg-separator my-0.5 h-px" />
-          {doc.lines.slice(0, 4).map((line) => (
-            <div
-              key={line.label}
-              className="flex items-baseline justify-between gap-3"
-            >
-              <span className="text-muted shrink-0 text-[9px]">
-                {line.label}
-              </span>
-              <span className="text-foreground truncate text-[9px] font-medium">
-                {line.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-      <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
-        <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-          <ArrowUpRightFromSquare className="size-3.5" />
-          View full document
-        </span>
-      </span>
-    </a>
-  );
-}
-
-/** Resolve the document a citation points at, for the hover preview. */
-function findCitedDocument(item: ReviewItem, citation: Citation) {
-  if (!citation.documentName) return undefined;
-
-  return item.documents.find(
-    (doc) => doc.kind !== "email" && doc.name === citation.documentName,
-  );
-}
-
-/**
- * Compact source pill — hover reveals the exact passage the agent relied on.
- * External sources (rulings, eCFR, HTSUS) get a favicon and open the real page;
- * internal evidence renders as a document pill with a peek at the document.
- */
-function CitationPill({
-  citation,
-  document,
-}: {
-  citation: Citation;
-  document?: ReviewDocument;
-}) {
-  if (citation.href) {
-    return (
-      <ChatSource enablePreview className="self-start" href={citation.href}>
-        <ChatSource.Trigger>
-          <ChatSource.Icon faviconUrl={faviconFor(citation.href)} />
-          <ChatSource.Title>{citation.ref}</ChatSource.Title>
-        </ChatSource.Trigger>
-        <ChatSource.Preview className="p-3">
-          <CitationQuote citation={citation} />
-        </ChatSource.Preview>
-      </ChatSource>
-    );
-  }
-
-  return (
-    <HoverCard closeDelay={100} openDelay={150}>
-      <HoverCard.Trigger className="inline-flex w-fit max-w-full self-start">
-        <ChatSource sourceType="document" title={citation.ref} />
-      </HoverCard.Trigger>
-      <HoverCard.Content
-        className={document ? "w-72 overflow-hidden p-0" : "p-3"}
-        placement="top"
-      >
-        {document ? <DocPeek document={document} /> : null}
-        <div className={document ? "p-3" : undefined}>
-          <CitationQuote citation={citation} />
-        </div>
-      </HoverCard.Content>
-    </HoverCard>
-  );
-}
-
-/** Deterministic mock "thinking time" so every trace feels like real agent work. */
-function traceDuration(item: ReviewItem) {
-  const steps = item.trace.reduce((sum, phase) => sum + phase.steps.length, 0);
-  const seconds = steps * 19 + item.citations.length * 11;
-
-  return seconds >= 60
-    ? `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    : `${seconds}s`;
-}
-
-/** Canned AI reply for the item thread — cites the top source for questions. */
-function aiReply(item: ReviewItem, message: string): string {
-  const citation = item.citations[0];
-  const kind = typeMeta[item.type].label.toLowerCase();
-
-  if (message.trim().endsWith("?") && citation) {
-    return `Good question — my proposal leans on ${citation.ref}: “${citation.quote}” If you read it differently, correct me and I'll apply your preference to future ${item.client} ${kind} decisions.`;
-  }
-
-  return `Noted — I've added this to ${item.reference}'s audit record and will factor it into future ${kind} decisions for ${item.client}.`;
-}
-
-function ThreadTimelineItem({
-  message,
-  ...rest
-}: { message: ThreadMessage } & TimelineItemPassthrough) {
-  const isAi = message.author === "ai";
-  const Icon = isAi ? Sparkles : Person;
-
-  return (
-    <Timeline.Item
-      align="start"
-      status={isAi ? "current" : "default"}
-      {...rest}
-    >
-      <Timeline.Marker aria-hidden="true" className="size-6">
-        <Icon className="size-3.5" />
-      </Timeline.Marker>
-      <Timeline.Content className="gap-0.5">
-        <div className="flex min-w-0 items-center justify-between gap-4">
-          <h3 className="text-foreground m-0 text-xs font-medium leading-5">
-            {isAi ? "Azali AI" : "You"}
-          </h3>
-          <time className="text-muted shrink-0 text-xs leading-5">
-            just now
-          </time>
-        </div>
-        <p className="text-muted m-0 text-xs leading-5">{message.body}</p>
-      </Timeline.Content>
-    </Timeline.Item>
-  );
-}
-
-function EventTimelineItem({
-  event,
-  onViewTrace,
-  ...rest
-}: {
-  event: ActivityEvent;
-  onViewTrace?: () => void;
-} & TimelineItemPassthrough) {
-  const Icon = eventIconMap[event.icon];
-
-  return (
-    <Timeline.Item align="start" status={event.status ?? "default"} {...rest}>
-      <Timeline.Marker aria-hidden="true" className="size-6">
-        <Icon className="size-3.5" />
-      </Timeline.Marker>
-      <Timeline.Content className="gap-0.5">
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
-            {event.title}
-          </h3>
-          <time className="text-muted shrink-0 text-xs leading-5">
-            {receivedAgo(event.occurredHoursAgo)}
-          </time>
-        </div>
-        {event.detail ? (
-          <p className="text-muted m-0 text-xs leading-5">{event.detail}</p>
-        ) : null}
-        {event.steps && onViewTrace ? (
-          <button
-            className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
-            type="button"
-            onClick={onViewTrace}
-          >
-            <Sparkles className="size-3" />
-            View agent trace
-            <ChevronRight className="size-3" />
-          </button>
-        ) : null}
-      </Timeline.Content>
-    </Timeline.Item>
-  );
-}
-
-function DocumentTimelineItem({
-  document,
-  ...rest
-}: { document: ReviewDocument } & TimelineItemPassthrough) {
-  const Icon = document.kind === "email" ? Envelope : FileText;
-  const title = document.kind === "email" ? document.subject : document.name;
-  const meta =
-    document.kind === "email" ? `From ${document.from}` : document.meta;
-  const action =
-    document.kind === "email"
-      ? { icon: ArrowUpRightFromSquare, label: "Open" }
-      : document.kind === "scan"
-        ? {
-            icon: ArrowUpRightFromSquare,
-            label: "Open Scan",
-            onPress: () => window.open(document.src, "_blank"),
-          }
-        : { icon: ArrowDownToLine, label: "Download" };
-  const ActionIcon = action.icon;
-
-  return (
-    <Timeline.Item align="start" status="default" {...rest}>
-      <Timeline.Marker aria-hidden="true" className="size-6">
-        <Icon className="text-muted size-3.5" />
-      </Timeline.Marker>
-      <Timeline.Content className="gap-2">
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
-            {title}
-          </h3>
-          <div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
-            <span>{meta}</span>
-            <time>{receivedAgo(document.receivedHoursAgo)}</time>
-            <Button
-              isIconOnly
-              aria-label={action.label}
-              className="size-6 min-h-6 min-w-6"
-              size="sm"
-              variant="tertiary"
-              onPress={action.onPress}
-            >
-              <ActionIcon className="size-3.5" />
-            </Button>
-          </div>
-        </div>
-        <Card>
-          <Card.Content className="flex flex-col gap-2">
-            {document.kind === "email" ? (
-              <>
-                <span className="text-muted text-xs">
-                  From: {document.from} · {document.meta}
-                </span>
-                <p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
-                  {document.body}
-                </p>
-              </>
-            ) : (
-              <>
-                {document.kind === "scan" ? (
-                  <>
-                    <a
-                      className="block"
-                      href={document.src}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <img
-                        alt={document.name}
-                        className="max-h-80 w-full rounded-lg border bg-white object-contain"
-                        src={document.src}
-                      />
-                    </a>
-                    <span className="text-muted text-xs font-medium">
-                      AI-extracted fields
-                    </span>
-                  </>
-                ) : null}
-                <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-                  {(document.kind === "scan"
-                    ? document.extracted
-                    : document.lines
-                  ).map((line) => (
-                    <DocumentLineRow key={line.label} line={line} />
-                  ))}
-                </div>
-                {document.note ? (
-                  <span className="text-muted inline-flex items-start gap-1.5 text-xs">
-                    <Sparkles className="mt-0.5 size-3 shrink-0" />
-                    {document.note}
-                  </span>
-                ) : null}
-              </>
-            )}
-          </Card.Content>
-        </Card>
-      </Timeline.Content>
-    </Timeline.Item>
-  );
-}
-
-/** One input, two jobs — notes on the Overview, questions in the Agent Trace. */
-function Composer({
-  onSubmit,
-  onValueChange,
-  placeholder,
-  value,
-}: {
-  onSubmit: () => void;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  value: string;
-}) {
-  return (
-    <PromptInput
-      value={value}
-      onSubmit={onSubmit}
-      onValueChange={onValueChange}
-    >
-      <PromptInput.Shell>
-        <PromptInput.Content>
-          <PromptInput.TextArea placeholder={placeholder} />
-        </PromptInput.Content>
-        <PromptInput.Toolbar>
-          <PromptInput.ToolbarEnd>
-            <PromptInput.Send>
-              <ArrowUp className="size-4" />
-            </PromptInput.Send>
-          </PromptInput.ToolbarEnd>
-        </PromptInput.Toolbar>
-      </PromptInput.Shell>
-    </PromptInput>
-  );
-}
-
-/** The full phased reasoning transcript with inline citations — the Agent Trace tab. */
-function TraceSection({ item }: { item: ReviewItem }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5">
-        <Sparkles className="text-muted size-3.5" />
-        <span className="text-muted text-sm">
-          Thought for {traceDuration(item)} ·{" "}
-          {item.trace.reduce((sum, phase) => sum + phase.steps.length, 0)} steps
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        {item.trace.map((phase) => (
-          <ChainOfThought key={phase.label} defaultExpanded>
-            <ChainOfThought.Trigger>
-              <span className="text-foreground font-medium">{phase.label}</span>
-              <span className="text-muted text-xs">
-                {phase.steps.length}{" "}
-                {phase.steps.length === 1 ? "step" : "steps"}
-              </span>
-            </ChainOfThought.Trigger>
-            <ChainOfThought.Content>
-              <ChainOfThought.Steps>
-                {phase.steps.map((step) => {
-                  const citation = step.citationRef
-                    ? item.citations.find(
-                        (entry) => entry.ref === step.citationRef,
-                      )
-                    : undefined;
-
-                  return (
-                    <ChainOfThought.Step
-                      key={step.title}
-                      label={
-                        <span
-                          className={
-                            step.kind === "flag"
-                              ? "text-warning font-medium"
-                              : step.kind === "decision"
-                                ? "text-accent font-medium"
-                                : "text-foreground font-medium"
-                          }
-                        >
-                          {step.title}
-                        </span>
-                      }
-                    >
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-muted text-xs leading-relaxed">
-                          {step.detail}
-                        </span>
-                        {step.data ? (
-                          <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
-                            {step.data.map((line) => (
-                              <span key={line}>{line}</span>
-                            ))}
-                          </div>
-                        ) : null}
-                        {citation ? (
-                          <CitationPill
-                            citation={citation}
-                            document={findCitedDocument(item, citation)}
-                          />
-                        ) : null}
-                      </div>
-                    </ChainOfThought.Step>
-                  );
-                })}
-              </ChainOfThought.Steps>
-            </ChainOfThought.Content>
-          </ChainOfThought>
-        ))}
-        <ChatSources defaultExpanded className="pt-3">
-          <ChatSources.Trigger>
-            <span className="inline-flex -space-x-1.5">
-              {item.citations
-                .filter((citation) => citation.href)
-                .slice(0, 3)
-                .map((citation) => (
-                  <img
-                    key={citation.ref}
-                    alt=""
-                    className="border-background size-5 rounded-full border object-cover"
-                    src={faviconFor(citation.href ?? "")}
-                  />
-                ))}
-            </span>
-            <span>
-              {item.citations.length}{" "}
-              {item.citations.length === 1
-                ? "source in total"
-                : "sources in total"}
-            </span>
-          </ChatSources.Trigger>
-          <ChatSources.Content>
-            <ChatSources.List>
-              {item.citations.map((citation) => (
-                <CitationPill
-                  key={citation.ref}
-                  citation={citation}
-                  document={findCitedDocument(item, citation)}
-                />
-              ))}
-            </ChatSources.List>
-          </ChatSources.Content>
-        </ChatSources>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------------------------------
- * Detail pane — email-detail structure: toolbar · scrollable body · pinned action bar
- * -----------------------------------------------------------------------------------------------*/
-function ReviewDetail({
-  deadline,
-  item,
-  onBack,
-  onNavigate,
-  onResolve,
-  position,
-  total,
-}: {
-  deadline: Date;
-  item: ReviewItem;
-  onBack: () => void;
-  onNavigate: (direction: -1 | 1) => void;
-  onResolve: (action: DecisionAction, alternate?: string) => void;
-  position: number;
-  total: number;
-}) {
-  const [alternate, setAlternate] = useState<string | null>(null);
-  const [view, setView] = useState<"overview" | "trace">("overview");
-  const [draft, setDraft] = useState("");
-  const [isThinking, setIsThinking] = useState(false);
-  const threads = useReviewThreads();
-  const thread = threads.get(item.id) ?? [];
-  const notes = thread.filter((message) => message.kind === "note");
-  const chat = thread.filter((message) => message.kind === "chat");
-  const activity = [
-    ...item.documents.map((document) => ({
-      document,
-      hoursAgo: document.receivedHoursAgo,
-      kind: "document" as const,
-    })),
-    ...(item.events ?? []).map((event) => ({
-      event,
-      hoursAgo: event.occurredHoursAgo,
-      kind: "event" as const,
-    })),
-  ].sort((a, b) => b.hoursAgo - a.hoursAgo);
-  const TypeIcon = typeMeta[item.type].icon;
-  const tone = deadlineTone(deadline);
-
-  const handleAddNote = () => {
-    const body = draft.trim();
-
-    if (!body) return;
-    setDraft("");
-    addThreadMessage(item.id, {
-      author: "broker",
-      body,
-      id: `msg-${Date.now()}`,
-      kind: "note",
-    });
-  };
-
-  const handleAsk = (question?: string) => {
-    const body = (question ?? draft).trim();
-
-    if (!body || isThinking) return;
-    setDraft("");
-    addThreadMessage(item.id, {
-      author: "broker",
-      body,
-      id: `msg-${Date.now()}`,
-      kind: "chat",
-    });
-    setIsThinking(true);
-    setTimeout(() => {
-      addThreadMessage(item.id, {
-        author: "ai",
-        body: aiReply(item, body),
-        citationRef:
-          body.endsWith("?") && item.citations[0]
-            ? item.citations[0].ref
-            : undefined,
-        id: `msg-${Date.now()}-ai`,
-        kind: "chat",
-      });
-      setIsThinking(false);
-    }, 1100);
-  };
-
-  return (
-    <div className="bg-background/40 flex max-h-full min-h-0 flex-1 flex-col gap-4 overflow-clip rounded-2xl border p-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            aria-label="Back to queue"
-            className="border-border text-muted hover:text-foreground inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors lg:hidden"
-            type="button"
-            onClick={onBack}
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-          <Chip size="sm" variant="soft">
-            <TypeIcon className="size-3" />
-            <Chip.Label>{typeMeta[item.type].label}</Chip.Label>
-          </Chip>
-          <Chip
-            color={tone === "default" ? "default" : tone}
-            size="sm"
-            variant="soft"
-          >
-            <Chip.Label>
-              {formatDistanceToNowStrict(deadline, { addSuffix: true })}
-            </Chip.Label>
-          </Chip>
-        </div>
-
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-muted whitespace-nowrap text-xs tabular-nums">
-            {position} of {total}
-          </span>
-          <div className="flex items-center">
-            <Button
-              isIconOnly
-              aria-label="Previous item"
-              className="text-muted hover:text-foreground"
-              isDisabled={position <= 1}
-              size="sm"
-              variant="ghost"
-              onPress={() => onNavigate(-1)}
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-            <Button
-              isIconOnly
-              aria-label="Next item"
-              className="text-muted hover:text-foreground"
-              isDisabled={position >= total}
-              size="sm"
-              variant="ghost"
-              onPress={() => onNavigate(1)}
-            >
-              <ArrowRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Title + view switch */}
-      <div className="flex flex-col gap-3 lg:px-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-foreground text-base font-semibold leading-normal">
-            {item.question}
-          </h1>
-          <span className="text-muted text-xs">
-            {item.client} · {item.reference} ·{" "}
-            {formatCurrency(item.shipmentValue)} shipment
-          </span>
-        </div>
-        <Segment
-          className="self-start w-80"
-          selectedKey={view}
-          onSelectionChange={(key) =>
-            setView(key === "trace" ? "trace" : "overview")
-          }
-        >
-          <Segment.Item id="overview">Overview</Segment.Item>
-          <Segment.Item id="trace">
-            <Sparkles className="size-3.5" />
-            Agent Trace
-          </Segment.Item>
-        </Segment>
-      </div>
-
-      {/* Body */}
-      <ScrollShadow
-        hideScrollBar
-        className="min-h-0 flex-1 overflow-y-auto lg:px-4"
-      >
-        {view === "overview" ? (
-          <div className="flex select-text flex-col gap-4 pb-4">
-            {/* Proposal */}
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>{item.proposal.label}</Widget.Title>
-              </Widget.Header>
-              <Widget.Content className="flex flex-col gap-1">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
-                    {item.proposal.value}
-                  </span>
-                  <Chip
-                    color={item.confidence >= 0.9 ? "success" : "warning"}
-                    size="md"
-                    variant="soft"
-                  >
-                    <Chip.Label>
-                      {Math.round(item.confidence * 100)}% confident
-                    </Chip.Label>
-                  </Chip>
-                </div>
-                <span className="text-muted text-sm">
-                  {item.proposal.detail}
-                </span>
-              </Widget.Content>
-            </Widget>
-
-            {/* Shipment */}
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>Shipment</Widget.Title>
-              </Widget.Header>
-              <Widget.Content className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-                <ShipmentFact label="Origin" value={item.shipment.origin} />
-                <ShipmentFact
-                  label="Port of entry"
-                  value={item.shipment.port}
-                />
-                <ShipmentFact
-                  label="Arrives"
-                  value={formatDistanceToNowStrict(
-                    addHours(new Date(), item.shipment.arrivesInHours),
-                    { addSuffix: true },
-                  )}
-                />
-                <ShipmentFact label="Mode" value={item.shipment.mode} />
-                <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
-                <ShipmentFact
-                  label="Entry type"
-                  value={item.shipment.entryType}
-                />
-              </Widget.Content>
-            </Widget>
-
-            {/* Activity — documents, events, and your notes to the AI, oldest first */}
-            <div className="flex flex-col gap-2">
-              <span className="text-muted text-xs font-medium">Activity</span>
-              <Timeline density="compact" size="sm">
-                {activity.map((entry, index) =>
-                  entry.kind === "document" ? (
-                    <DocumentTimelineItem
-                      key={
-                        entry.document.kind === "email"
-                          ? entry.document.subject
-                          : entry.document.name
-                      }
-                      _index={index}
-                      _isLast={false}
-                      document={entry.document}
-                    />
-                  ) : (
-                    <EventTimelineItem
-                      key={entry.event.title}
-                      _index={index}
-                      _isLast={false}
-                      event={entry.event}
-                      onViewTrace={() => setView("trace")}
-                    />
-                  ),
-                )}
-                {notes.map((message, index) => (
-                  <ThreadTimelineItem
-                    key={message.id}
-                    _index={activity.length + index}
-                    _isLast={false}
-                    message={message}
-                  />
-                ))}
-                <Timeline.Item
-                  _index={activity.length + notes.length}
-                  _isLast
-                  align="start"
-                  status="default"
-                >
-                  <Timeline.Marker aria-hidden="true" className="size-6">
-                    <Pencil className="size-3.5" />
-                  </Timeline.Marker>
-                  <Timeline.Content className="gap-2">
-                    <Composer
-                      placeholder="Add a note to the audit record…"
-                      value={draft}
-                      onSubmit={handleAddNote}
-                      onValueChange={setDraft}
-                    />
-                  </Timeline.Content>
-                </Timeline.Item>
-              </Timeline>
-            </div>
-
-            {/* Comparison — when two documents disagree */}
-            {item.comparison ? (
-              <Widget>
-                <Widget.Header>
-                  <Widget.Title>What differs between them</Widget.Title>
-                </Widget.Header>
-                <Widget.Content>
-                  <div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] overflow-hidden rounded-lg border text-xs">
-                    <div className="bg-default/40 p-2.5" />
-                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                      {item.comparison.docA}
-                    </div>
-                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                      {item.comparison.docB}
-                    </div>
-                    {item.comparison.rows.map((row) => (
-                      <div key={row.label} className="contents">
-                        <div className="text-muted border-t p-2.5">
-                          {row.label}
-                        </div>
-                        <div className="text-foreground border-t p-2.5">
-                          {row.a}
-                        </div>
-                        <div className="text-foreground border-t p-2.5">
-                          {row.b}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Widget.Content>
-              </Widget>
-            ) : null}
-
-            {/* Alternates */}
-            {item.alternates && item.alternates.length > 0 ? (
-              <>
-                <Separator />
-                <div className="flex flex-col gap-2">
-                  <span className="text-muted text-xs font-medium">
-                    Alternate classifications
-                  </span>
-                  {item.alternates.map((alt) => {
-                    const isSelected = alternate === alt.value;
-
-                    return (
-                      <button
-                        key={alt.value}
-                        className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
-                          isSelected
-                            ? "border-accent ring-accent/40 ring-1"
-                            : "hover:border-foreground/25"
-                        }`}
-                        type="button"
-                        onClick={() =>
-                          setAlternate(isSelected ? null : alt.value)
-                        }
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-foreground text-sm font-semibold tabular-nums">
-                            {alt.value}
-                          </span>
-                          <span className="text-muted text-xs">
-                            {alt.detail}
-                          </span>
-                        </div>
-                        <span className="text-muted text-xs tabular-nums">
-                          {Math.round(alt.confidence * 100)}%
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : null}
-          </div>
-        ) : (
-          <div className="flex select-text flex-col gap-5 pb-4">
-            <TraceSection item={item} />
-
-            {/* Conversation — interrogate the agent; answers join the audit record */}
-            <div className="flex flex-col gap-3">
-              <span className="text-muted text-xs font-medium">
-                Ask the agent
-              </span>
-              {chat.length === 0 && !isThinking ? (
-                <PromptSuggestion>
-                  <PromptSuggestion.Items>
-                    <PromptSuggestion.Item
-                      onPress={() =>
-                        handleAsk("Why are you confident in this?")
-                      }
-                    >
-                      Why are you confident in this?
-                    </PromptSuggestion.Item>
-                    <PromptSuggestion.Item
-                      onPress={() =>
-                        handleAsk("What would change your recommendation?")
-                      }
-                    >
-                      What would change your recommendation?
-                    </PromptSuggestion.Item>
-                  </PromptSuggestion.Items>
-                </PromptSuggestion>
-              ) : null}
-              {chat.map((message) =>
-                message.author === "broker" ? (
-                  <ChatMessage.User key={message.id}>
-                    <ChatMessage.Bubble>
-                      <p className="m-0 text-sm">{message.body}</p>
-                    </ChatMessage.Bubble>
-                  </ChatMessage.User>
-                ) : (
-                  <ChatMessage.Assistant key={message.id}>
-                    <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
-                    <ChatMessage.Body>
-                      <ChatMessage.Content>{message.body}</ChatMessage.Content>
-                      {(() => {
-                        const cited = message.citationRef
-                          ? item.citations.find(
-                              (entry) => entry.ref === message.citationRef,
-                            )
-                          : undefined;
-
-                        return cited ? (
-                          <CitationPill
-                            citation={cited}
-                            document={findCitedDocument(item, cited)}
-                          />
-                        ) : null;
-                      })()}
-                    </ChatMessage.Body>
-                  </ChatMessage.Assistant>
-                ),
-              )}
-              {isThinking ? (
-                <ChatMessage.Assistant>
-                  <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
-                  <ChatMessage.Body>
-                    <div className="flex items-center gap-2 py-1.5">
-                      <ChatLoader.Dots size="sm" />
-                      <TextShimmer className="text-xs">
-                        Azali AI is thinking…
-                      </TextShimmer>
-                    </div>
-                  </ChatMessage.Body>
-                </ChatMessage.Assistant>
-              ) : null}
-              <Composer
-                placeholder="Ask the agent — answers cite sources and join the audit record…"
-                value={draft}
-                onSubmit={() => handleAsk()}
-                onValueChange={setDraft}
-              />
-            </div>
-          </div>
-        )}
-      </ScrollShadow>
-
-      {/* Actions — pinned below the scroll area */}
-      <div className="flex items-center justify-end gap-2 border-t pt-4">
-        {item.canRequestInfo ? (
-          <Button variant="ghost" onPress={() => onResolve("info-requested")}>
-            Request Info
-          </Button>
-        ) : null}
-        <Button
-          variant="primary"
-          onPress={() =>
-            onResolve(
-              alternate ? "corrected" : "approved",
-              alternate ?? undefined,
-            )
-          }
-        >
-          <CircleCheck />
-          {alternate ? `Approve ${alternate}` : item.approveLabel}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------------------------------
- * Empty pane — email empty-state structure: icon tile · title · description
- * -----------------------------------------------------------------------------------------------*/
-function EmptyPane({ isQueueClear }: { isQueueClear: boolean }) {
-  return (
-    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border px-6 py-16 text-center">
-      <div className="bg-default/60 flex size-12 items-center justify-center rounded-2xl">
-        <CircleCheck className="text-muted size-5" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <h2 className="text-foreground text-base font-semibold">
-          {isQueueClear ? "Queue clear" : "Nothing selected"}
-        </h2>
-        <p className="text-muted max-w-[320px] text-sm">
-          {isQueueClear
-            ? "Autopilot is handling everything else. New exceptions will appear here."
-            : "Pick an item from the queue to review it here."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 /* -------------------------------------------------------------------------------------------------
  * ReviewQueue
  * -----------------------------------------------------------------------------------------------*/
 export function ReviewQueue() {
-  const decisions = useReviewDecisions();
-  const [filterId, setFilterId] = useState("all");
-  const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(
-    reviewItems[0]?.id ?? null,
+  const queryClient = useQueryClient();
+  const clientsById = useClientsById();
+  const [filter, setFilter] = useState<FilterId>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [alternate, setAlternate] = useState("");
+
+  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
+    {
+      status: ["needs_review"],
+      sortBy: "reviewDeadlineAt",
+      sortDir: "asc",
+      limit: 100,
+    },
+    { query: { placeholderData: keepPreviousData } },
   );
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
-  const deadlines = useMemo(() => {
-    const now = new Date();
+  const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll(
+    { type: ["review_requested"], limit: 200 },
+    { query: { placeholderData: keepPreviousData } },
+  );
 
-    return new Map(
-      reviewItems.map((item) => [
-        item.id,
-        addHours(now, item.deadlineHoursFromNow),
-      ]),
+  const entries = useMemo<ReviewEntry[]>(() => {
+    const shipments = shipmentsResponse?.data.data ?? [];
+    const reviewEvents = reviewEventsResponse?.data.data ?? [];
+
+    // Events arrive occurredAt desc, so the first match is the latest request.
+    const latestReview = new Map<string, ReviewPayload>();
+
+    for (const event of reviewEvents) {
+      if (!latestReview.has(event.shipmentId)) {
+        latestReview.set(event.shipmentId, event.payload as ReviewPayload);
+      }
+    }
+
+    return shipments.map((shipment) => ({
+      shipment,
+      client: clientsById.get(shipment.clientId),
+      review: latestReview.get(shipment.id) ?? {},
+    }));
+  }, [shipmentsResponse, reviewEventsResponse, clientsById]);
+
+  const countFor = (types: readonly string[] | null) =>
+    types
+      ? entries.filter((entry) =>
+          types.includes(entry.review.reviewType ?? ""),
+        ).length
+      : entries.length;
+
+  const visible = useMemo(() => {
+    const group = filterGroups.find((g) => g.id === filter);
+    if (!group?.types) return entries;
+
+    const types: readonly string[] = group.types;
+
+    return entries.filter((entry) =>
+      types.includes(entry.review.reviewType ?? ""),
     );
-  }, []);
+  }, [entries, filter]);
 
-  const deadlineFor = (item: ReviewItem) =>
-    deadlines.get(item.id) ?? new Date();
+  const selected =
+    visible.find((entry) => entry.shipment.id === selectedId) ?? visible[0];
 
-  const activeFilter =
-    filters.find((filter) => filter.id === filterId) ?? allFilter;
-
-  const pending = reviewItems
-    .filter((item) => !decisions.has(item.id))
-    .sort((a, b) => a.deadlineHoursFromNow - b.deadlineHoursFromNow);
-  const query = search.trim().toLowerCase();
-  const visiblePending = pending.filter(
-    (item) =>
-      activeFilter.match(item.type) &&
-      (query.length === 0 ||
-        item.question.toLowerCase().includes(query) ||
-        item.client.toLowerCase().includes(query) ||
-        item.reference.toLowerCase().includes(query)),
+  const { data: timelineResponse } = useShipmentEventsControllerFindAll(
+    { shipmentId: selected?.shipment.id, limit: 100 },
+    { query: { enabled: Boolean(selected) } },
   );
-  const resolved = reviewItems.flatMap((item) => {
-    const decision = decisions.get(item.id);
+  const timeline = selected ? (timelineResponse?.data.data ?? []) : [];
 
-    return decision ? [{ decision, item }] : [];
-  });
+  const resolveReview = useShipmentsControllerResolveReview();
 
-  const displayItem =
-    visiblePending.find((item) => item.id === selectedId) ??
-    visiblePending[0] ??
-    null;
-  const displayIndex = displayItem
-    ? visiblePending.findIndex((item) => item.id === displayItem.id)
-    : -1;
+  const handleResolve = (
+    action: "approved" | "corrected" | "info_requested",
+    alternateValue?: string,
+  ) => {
+    if (!selected) return;
 
-  const handleFilterChange = (id: string) => {
-    setFilterId(id);
-  };
+    const reference = selected.shipment.reference;
+    const run = resolveReview
+      .mutateAsync({
+        id: selected.shipment.id,
+        data: {
+          action,
+          ...(alternateValue && { alternate: alternateValue }),
+        },
+      })
+      .then(async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: getShipmentsControllerFindAllQueryKey(),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: getShipmentEventsControllerFindAllQueryKey(),
+          }),
+        ]);
+        setAlternate("");
+        setSelectedId(null);
+      });
 
-  const handleSelect = (id: string) => {
-    setSelectedId(id);
-    setIsMobileDetailOpen(true);
-  };
-
-  const handleNavigate = (direction: -1 | 1) => {
-    const next = visiblePending[displayIndex + direction];
-
-    if (next) setSelectedId(next.id);
-  };
-
-  const handleResolve = (action: DecisionAction, alternate?: string) => {
-    if (!displayItem) return;
-    const next =
-      visiblePending[displayIndex + 1] ??
-      visiblePending[displayIndex - 1] ??
-      null;
-
-    resolveReviewItem(displayItem.id, { action, alternate });
-    setSelectedId(next?.id ?? null);
-    if (!next) setIsMobileDetailOpen(false);
-  };
-
-  const handleUndo = (id: string) => {
-    undoReviewItem(id);
-    if (!selectedId) setSelectedId(id);
+    toast.promise(run, {
+      error: "Failed to resolve review",
+      loading: "Resolving review...",
+      success:
+        action === "approved"
+          ? `Approved ${reference}`
+          : action === "corrected"
+            ? `Corrected ${reference} → ${alternateValue}`
+            : `Requested more info for ${reference}`,
+    });
   };
 
   return (
-    <div className="flex h-[calc(100dvh-72px)] min-h-[480px] w-full flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-4">
-      {/* Queue list */}
-      <div
-        className={`min-h-0 overflow-hidden ${
-          isMobileDetailOpen
-            ? "hidden lg:flex lg:flex-col"
-            : "flex flex-1 flex-col"
-        }`}
-      >
-        <div className="flex h-full min-h-0 flex-col gap-3 overflow-clip pb-2">
+    <div className="flex w-full flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
           <div className="flex items-center gap-2">
-            <SearchField
-              aria-label="Search review items"
-              className="flex-1"
-              value={search}
-              onChange={setSearch}
-            >
-              <SearchField.Group>
-                <SearchField.SearchIcon />
-                <SearchField.Input placeholder="Search the queue..." />
-                <SearchField.ClearButton />
-              </SearchField.Group>
-            </SearchField>
-            <Dropdown>
-              <Button size="sm" variant="secondary">
-                <Funnel />
-                {activeFilter.label}
-              </Button>
-              <Dropdown.Popover>
-                <Dropdown.Menu
-                  selectedKeys={new Set([filterId])}
-                  selectionMode="single"
-                  onSelectionChange={(keys) => {
-                    const key = [...keys][0];
-
-                    handleFilterChange(key ? String(key) : "all");
-                  }}
-                >
-                  {filters.map((filter) => {
-                    const count = pending.filter((item) =>
-                      filter.match(item.type),
-                    ).length;
-
-                    return (
-                      <Dropdown.Item
-                        key={filter.id}
-                        id={filter.id}
-                        textValue={filter.label}
-                      >
-                        <Label>
-                          {filter.label} ({count})
-                        </Label>
-                        <Dropdown.ItemIndicator />
-                      </Dropdown.Item>
-                    );
-                  })}
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
+            <h1 className="text-foreground text-xl font-semibold">
+              Review Queue
+            </h1>
+            <Chip size="sm" variant="soft">
+              {entries.length}
+            </Chip>
           </div>
-
-          <ScrollShadow
-            hideScrollBar
-            className="min-h-0 flex-1 overflow-y-auto"
-          >
-            {visiblePending.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-                <p className="text-foreground text-sm font-medium">
-                  No pending items here
-                </p>
-                <p className="text-muted max-w-[220px] text-xs">
-                  Exceptions matching this view will show up here.
-                </p>
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-0.5">
-                {visiblePending.map((item) => (
-                  <QueueRow
-                    key={item.id}
-                    deadline={deadlineFor(item)}
-                    isActive={item.id === displayItem?.id}
-                    item={item}
-                    onSelect={() => handleSelect(item.id)}
-                  />
-                ))}
-              </ul>
-            )}
-
-            {/* Resolved today */}
-            {resolved.length > 0 ? (
-              <div className="mt-4 flex flex-col gap-0.5">
-                <span className="text-muted px-3 pb-1 text-xs font-medium">
-                  Resolved today ({resolved.length})
-                </span>
-                {resolved.map(({ decision, item }) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-2 rounded-2xl px-3 py-2"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <CircleCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                      <div className="flex min-w-0 flex-col">
-                        <span className="text-muted truncate text-xs">
-                          {item.question}
-                        </span>
-                        <span className="text-muted/70 text-xs">
-                          {decisionLabel(decision)}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onPress={() => handleUndo(item.id)}
-                    >
-                      <ArrowRotateLeft />
-                      Undo
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </ScrollShadow>
+          <p className="text-muted mt-1 max-w-2xl text-sm">
+            Every decision the AI wasn't confident enough to make alone —
+            resolve one and the shipment moves forward in the pipeline.
+          </p>
         </div>
       </div>
 
-      {/* Detail */}
-      <div
-        className={`min-h-0 overflow-hidden ${
-          isMobileDetailOpen
-            ? "flex flex-1 flex-col"
-            : "hidden lg:flex lg:flex-col"
-        }`}
-      >
-        {displayItem ? (
-          <ReviewDetail
-            key={displayItem.id}
-            deadline={deadlineFor(displayItem)}
-            item={displayItem}
-            position={displayIndex + 1}
-            total={visiblePending.length}
-            onBack={() => setIsMobileDetailOpen(false)}
-            onNavigate={handleNavigate}
-            onResolve={handleResolve}
-          />
-        ) : (
-          <EmptyPane isQueueClear={pending.length === 0} />
-        )}
+      {/* Type filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        {filterGroups.map((group) => {
+          const count = countFor(group.types);
+
+          return (
+            <Button
+              key={group.id}
+              size="sm"
+              variant={filter === group.id ? "primary" : "secondary"}
+              onPress={() => setFilter(group.id)}
+            >
+              {group.label}
+              {count > 0 && (
+                <Chip size="sm" variant="soft">
+                  {count}
+                </Chip>
+              )}
+            </Button>
+          );
+        })}
       </div>
+
+      {entries.length === 0 ? (
+        <div className="py-16">
+          <EmptyState size="sm">
+            <EmptyState.Header>
+              <EmptyState.Media className="border" variant="icon">
+                <Check />
+              </EmptyState.Media>
+              <EmptyState.Title>Queue Clear</EmptyState.Title>
+              <EmptyState.Description>
+                Nothing needs review right now — the pipeline is running on
+                autopilot.
+              </EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(320px,380px)_1fr]">
+          {/* Pending list */}
+          <div className="flex flex-col gap-2">
+            {visible.map((entry) => {
+              const meta =
+                typeMeta[entry.review.reviewType ?? ""] ??
+                typeMeta.classification;
+              const isSelected = selected?.shipment.id === entry.shipment.id;
+              const tone = deadlineTone(entry.shipment.reviewDeadlineAt);
+              const TypeIcon = meta?.icon ?? Tag;
+
+              return (
+                <button
+                  key={entry.shipment.id}
+                  className={`flex cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors ${
+                    isSelected
+                      ? "border-accent bg-accent-soft/30"
+                      : "border-border bg-surface hover:bg-surface-secondary"
+                  }`}
+                  type="button"
+                  onClick={() => setSelectedId(entry.shipment.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Avatar className="size-6">
+                      <Avatar.Image src={entry.client?.logo} />
+                      <Avatar.Fallback className="text-[10px]">
+                        {getInitials(entry.client?.name ?? "?")}
+                      </Avatar.Fallback>
+                    </Avatar>
+                    <span className="text-muted truncate text-xs">
+                      {entry.client?.name} · {entry.shipment.reference}
+                    </span>
+                  </div>
+                  <span className="text-foreground line-clamp-2 text-sm font-medium">
+                    {entry.review.question ?? "Review required"}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Chip size="sm" variant="soft">
+                      <TypeIcon className="size-3" />
+                      <Chip.Label>{meta?.label}</Chip.Label>
+                    </Chip>
+                    {entry.review.confidence !== undefined && (
+                      <Chip
+                        color={
+                          entry.review.confidence >= 0.9 ? "success" : "warning"
+                        }
+                        size="sm"
+                        variant="soft"
+                      >
+                        {Math.round(entry.review.confidence * 100)}%
+                      </Chip>
+                    )}
+                    {entry.shipment.reviewDeadlineAt && (
+                      <Chip
+                        color={tone === "default" ? undefined : tone}
+                        size="sm"
+                        variant="soft"
+                      >
+                        <Clock className="size-3" />
+                        <Chip.Label>
+                          {formatDistanceToNowStrict(
+                            new Date(entry.shipment.reviewDeadlineAt),
+                            { addSuffix: true },
+                          )}
+                        </Chip.Label>
+                      </Chip>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Detail */}
+          {selected ? (
+            <div className="flex min-w-0 flex-col gap-4">
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>
+                    {selected.review.question ?? "Review required"}
+                  </Widget.Title>
+                </Widget.Header>
+                <Widget.Content className="flex flex-col gap-4">
+                  {/* Shipment facts */}
+                  <div className="text-muted flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <span className="flex items-center gap-1.5">
+                      {selected.shipment.transportMode === "air" ? (
+                        <Plane className="size-3.5" />
+                      ) : null}
+                      {selected.shipment.originPort ??
+                        countryName(selected.shipment.originCountry)}
+                      <ArrowRight className="size-3" />
+                      {selected.shipment.portOfEntry}
+                    </span>
+                    {selected.shipment.conveyance && (
+                      <span>{selected.shipment.conveyance}</span>
+                    )}
+                    <span>
+                      Value {formatCurrency(selected.shipment.valueCents)} ·
+                      duty {formatCurrency(selected.shipment.dutyCents)}
+                    </span>
+                    {selected.shipment.incoterm && (
+                      <span>{selected.shipment.incoterm}</span>
+                    )}
+                    {selected.shipment.entryType && (
+                      <span>{selected.shipment.entryType}</span>
+                    )}
+                  </div>
+
+                  {/* Proposal */}
+                  {selected.review.proposal && (
+                    <div className="border-accent bg-accent-soft/20 flex flex-col gap-1 rounded-xl border p-4">
+                      <span className="text-muted text-xs font-medium uppercase tracking-wide">
+                        AI Proposal — {selected.review.proposal.label}
+                      </span>
+                      <span className="text-foreground text-lg font-semibold">
+                        {selected.review.proposal.value}
+                      </span>
+                      <span className="text-muted text-sm">
+                        {selected.review.proposal.detail}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      isPending={resolveReview.isPending}
+                      variant="primary"
+                      onPress={() => handleResolve("approved")}
+                    >
+                      <Check />
+                      Approve
+                    </Button>
+                    <Popover>
+                      <Button variant="secondary">Correct</Button>
+                      <Popover.Content className="w-80">
+                        <Popover.Dialog className="flex flex-col gap-3">
+                          <TextField
+                            fullWidth
+                            value={alternate}
+                            onChange={setAlternate}
+                          >
+                            <Label>Corrected value</Label>
+                            <Input placeholder="e.g. 8517.61.00" />
+                          </TextField>
+                          <Button
+                            isDisabled={!alternate.trim()}
+                            slot="close"
+                            variant="primary"
+                            onPress={() =>
+                              handleResolve("corrected", alternate.trim())
+                            }
+                          >
+                            Confirm correction
+                          </Button>
+                        </Popover.Dialog>
+                      </Popover.Content>
+                    </Popover>
+                    <Button
+                      variant="ghost"
+                      onPress={() => handleResolve("info_requested")}
+                    >
+                      Request info
+                    </Button>
+                  </div>
+                </Widget.Content>
+              </Widget>
+
+              {/* Timeline */}
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>Timeline</Widget.Title>
+                </Widget.Header>
+                <Widget.Content className="flex flex-col gap-3">
+                  {timeline.length === 0 ? (
+                    <span className="text-muted text-sm">No events yet.</span>
+                  ) : (
+                    timeline.map((event: ApiEvent) => {
+                      const actor = actorMeta[event.actor] ?? actorMeta.system;
+                      const ActorIcon = actor?.icon ?? Gear;
+                      const confidence = (
+                        event.payload as { confidence?: number }
+                      ).confidence;
+
+                      return (
+                        <div key={event.id} className="flex items-start gap-3">
+                          <span className="bg-default text-muted mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full">
+                            <ActorIcon className="size-3" />
+                          </span>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="text-foreground text-sm">
+                              {event.title}
+                            </span>
+                            <span className="text-muted text-xs">
+                              {actor?.label} ·{" "}
+                              {formatDistanceToNowStrict(
+                                new Date(event.occurredAt),
+                                { addSuffix: true },
+                              )}
+                              {confidence !== undefined &&
+                                ` · ${Math.round(confidence * 100)}% confidence`}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </Widget.Content>
+              </Widget>
+            </div>
+          ) : (
+            <div className="text-muted flex items-center justify-center py-16 text-sm">
+              <Xmark className="mr-2 size-4" />
+              No items match this filter.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
