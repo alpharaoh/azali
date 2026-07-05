@@ -65,6 +65,8 @@ import type {
   ReviewItem,
   ReviewItemType,
   ThreadMessage,
+  TracePhase,
+  TraceStepKind,
 } from "#/data/review-queue";
 import {
   addThreadMessage,
@@ -1456,6 +1458,50 @@ export function ReviewQueue() {
     ? visiblePending.findIndex((item) => item.id === displayItem.id)
     : -1;
 
+  // The agent trace comes from the shipment's agent_trace events — one event
+  // per step, with phase/kind/detail/data in the payload.
+  const { data: traceEventsResponse } = useShipmentEventsControllerFindAll(
+    { limit: 200, shipmentId: displayItem?.id, type: ["agent_trace"] },
+    { query: { enabled: Boolean(displayItem) } },
+  );
+
+  const liveTrace = useMemo<TracePhase[]>(() => {
+    // API returns occurredAt desc; the trace reads oldest-first.
+    const events = [...(traceEventsResponse?.data.data ?? [])].reverse();
+    const phases: TracePhase[] = [];
+
+    for (const event of events) {
+      const payload = event.payload as {
+        phase?: string;
+        kind?: TraceStepKind;
+        detail?: string;
+        data?: string[];
+        citationRef?: string;
+      };
+      const label = payload.phase ?? "Trace";
+      const step = {
+        kind: payload.kind ?? "read",
+        title: event.title,
+        detail: payload.detail ?? "",
+        ...(payload.data && { data: payload.data }),
+        ...(payload.citationRef && { citationRef: payload.citationRef }),
+      };
+      const last = phases[phases.length - 1];
+
+      if (last?.label === label) last.steps.push(step);
+      else phases.push({ label, steps: [step] });
+    }
+
+    return phases;
+  }, [traceEventsResponse]);
+
+  const detailItem = displayItem
+    ? {
+        ...displayItem,
+        trace: liveTrace.length ? liveTrace : displayItem.trace,
+      }
+    : null;
+
   const handleFilterChange = (id: string) => {
     navigate({
       replace: true,
@@ -1637,11 +1683,11 @@ export function ReviewQueue() {
             : "hidden lg:flex lg:flex-col"
         }`}
       >
-        {displayItem ? (
+        {detailItem ? (
           <ReviewDetail
-            key={displayItem.id}
-            deadline={deadlineFor(displayItem)}
-            item={displayItem}
+            key={detailItem.id}
+            deadline={deadlineFor(detailItem)}
+            item={detailItem}
             position={displayIndex + 1}
             total={visiblePending.length}
             onBack={() => setIsMobileDetailOpen(false)}

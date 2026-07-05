@@ -98,6 +98,29 @@ function bucketFor(eventType: string): AutopilotActionType {
   return "classification";
 }
 
+/** agent_trace events carry their step kind in the payload. */
+const TRACE_KIND_BUCKET: Record<string, AutopilotActionType> = {
+  calc: "reconciliation",
+  check: "classification",
+  decision: "filing",
+  flag: "classification",
+  lookup: "classification",
+  read: "extraction",
+};
+
+function bucketForEvent(
+  eventType: string,
+  payload: Record<string, unknown>,
+): AutopilotActionType {
+  if (eventType === "agent_trace") {
+    const kind = typeof payload.kind === "string" ? payload.kind : "";
+
+    return TRACE_KIND_BUCKET[kind] ?? "classification";
+  }
+
+  return bucketFor(eventType);
+}
+
 function occurredAgo(date: Date) {
   return formatDistanceToNowStrict(date, { addSuffix: true });
 }
@@ -279,7 +302,7 @@ export function AutopilotLog() {
 
       return {
         id: event.id,
-        type: bucketFor(event.type),
+        type: bucketForEvent(event.type, event.payload),
         title: event.title,
         client: client?.name ?? "Unknown client",
         reference: shipment?.reference ?? "—",
