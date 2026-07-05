@@ -381,6 +381,8 @@ export interface ShipmentResponseDto {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   reviewDeadlineAt: string | null;
+  /** @nullable */
+  reviewType: string | null;
   originCountry: string;
   /** @nullable */
   originPort: string | null;
@@ -458,6 +460,8 @@ export type ListShipmentsResponseDtoDataItem = {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   reviewDeadlineAt: string | null;
+  /** @nullable */
+  reviewType: string | null;
   originCountry: string;
   /** @nullable */
   originPort: string | null;
@@ -493,6 +497,41 @@ export interface ListShipmentsResponseDto {
    * @maximum 9007199254740991
    */
   count: number;
+}
+
+export type ShipmentStatsResponseDtoByStatus = {
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  autopilot: number;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  needs_review: number;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  awaiting_cbp: number;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  released: number;
+};
+
+export type ShipmentStatsResponseDtoByReviewType = {[key: string]: number};
+
+export interface ShipmentStatsResponseDto {
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  total: number;
+  byStatus: ShipmentStatsResponseDtoByStatus;
+  byReviewType: ShipmentStatsResponseDtoByReviewType;
 }
 
 export type UpdateShipmentDtoStage = typeof UpdateShipmentDtoStage[keyof typeof UpdateShipmentDtoStage];
@@ -749,7 +788,18 @@ export type ShipmentsControllerFindAllParams = {
 search?: string;
 stage?: ShipmentsControllerFindAllStageItem[];
 status?: ShipmentsControllerFindAllStatusItem[];
-clientId?: string;
+clientId?: string[];
+reviewType?: string[];
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+valueMin?: number;
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+valueMax?: number;
 sortBy?: ShipmentsControllerFindAllSortBy;
 sortDir?: ShipmentsControllerFindAllSortDir;
 /**
@@ -1674,6 +1724,111 @@ export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getShipmentsControllerFindAllQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+export type shipmentsControllerStatsResponse200 = {
+  data: ShipmentStatsResponseDto
+  status: 200
+}
+
+export type shipmentsControllerStatsResponseSuccess = (shipmentsControllerStatsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type shipmentsControllerStatsResponse = (shipmentsControllerStatsResponseSuccess)
+
+export const getShipmentsControllerStatsUrl = () => {
+
+
+  
+
+  return `/v1/shipments/stats`
+}
+
+export const shipmentsControllerStats = async ( options?: RequestInit): Promise<shipmentsControllerStatsResponse> => {
+  
+  return axios<shipmentsControllerStatsResponse>(getShipmentsControllerStatsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentsControllerStatsQueryKey = () => {
+    return [
+    `/v1/shipments/stats`
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerStatsQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerStatsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerStats>>> = ({ signal }) => shipmentsControllerStats({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerStatsQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerStats>>>
+export type ShipmentsControllerStatsQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerStats>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerStats>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getShipmentsControllerStatsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

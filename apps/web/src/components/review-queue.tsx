@@ -43,8 +43,8 @@ import {
   Timeline,
   Widget,
 } from "@heroui-pro/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   addHours,
   differenceInHours,
@@ -52,7 +52,7 @@ import {
   subHours,
 } from "date-fns";
 import type { ComponentProps, ComponentType, SVGProps } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   ActivityEvent,
@@ -79,8 +79,14 @@ import {
   useShipmentEventsControllerFindAll,
   useShipmentsControllerFindAll,
   useShipmentsControllerResolveReview,
+  useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
+import type { ReviewSearch } from "#/lib/review-queue-loader";
+import {
+  REVIEW_FILTER_GROUPS,
+  reviewListParams,
+} from "#/lib/review-queue-loader";
 import { useClientsById } from "#/lib/use-clients-by-id";
 
 /* -------------------------------------------------------------------------------------------------
@@ -98,30 +104,7 @@ const typeMeta: Record<
   valuation: { icon: CircleDollar, label: "Valuation" },
 };
 
-type ReviewFilter = {
-  id: string;
-  label: string;
-  match: (type: ReviewItemType) => boolean;
-};
-
-const allFilter: ReviewFilter = { id: "all", label: "All", match: () => true };
-
-const filters: ReviewFilter[] = [
-  allFilter,
-  {
-    id: "classification",
-    label: "Classification",
-    match: (type) => type === "classification",
-  },
-  { id: "signoff", label: "Sign-off", match: (type) => type === "signoff" },
-  { id: "document", label: "Documents", match: (type) => type === "document" },
-  {
-    id: "compliance",
-    label: "Compliance",
-    match: (type) =>
-      type === "enforcement" || type === "pga" || type === "valuation",
-  },
-];
+const SEARCH_DEBOUNCE_MS = 300;
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -230,15 +213,13 @@ function toReviewItem(
   };
 }
 
-function useLiveReviewItems() {
+function useLiveReviewItems(search: ReviewSearch) {
   const clientsById = useClientsById();
 
-  const { data: shipmentsResponse } = useShipmentsControllerFindAll({
-    limit: 100,
-    sortBy: "reviewDeadlineAt",
-    sortDir: "asc",
-    status: ["needs_review"],
-  });
+  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
+    reviewListParams(search),
+    { query: { placeholderData: keepPreviousData } },
+  );
   const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll({
     limit: 200,
     type: ["review_requested"],
@@ -1383,12 +1364,15 @@ function EmptyPane({ isQueueClear }: { isQueueClear: boolean }) {
  * -----------------------------------------------------------------------------------------------*/
 export function ReviewQueue() {
   const queryClient = useQueryClient();
-  const { deadlines, items } = useLiveReviewItems();
-  const resolveReviewMutation = useShipmentsControllerResolveReview();
   const params = useParams({ strict: false });
+  const searchParams = useSearch({ strict: false }) as ReviewSearch;
   const navigate = useNavigate();
-  const [filterId, setFilterId] = useState("all");
-  const [search, setSearch] = useState("");
+  // Filter + search live in the URL and drive the server-side query.
+  const filterId = searchParams.type ?? "all";
+  const { deadlines, items } = useLiveReviewItems(searchParams);
+  const { data: statsResponse } = useShipmentsControllerStats();
+  const resolveReviewMutation = useShipmentsControllerResolveReview();
+  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   // Selection lives in the path (/dashboard/review/<shipmentId>) so queue
   // items are deep-linkable from the pipeline board and shareable.
   const selectedId = params.itemId ?? null;
@@ -1397,10 +1381,15 @@ export function ReviewQueue() {
       navigate({
         params: { itemId: id },
         replace: true,
+        search: (prev) => prev,
         to: "/dashboard/review/$itemId",
       });
     } else {
-      navigate({ replace: true, to: "/dashboard/review" });
+      navigate({
+        replace: true,
+        search: (prev) => prev,
+        to: "/dashboard/review",
+      });
     }
   };
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(() =>
@@ -1412,26 +1401,52 @@ export function ReviewQueue() {
     Array<{ decision: Decision; item: ReviewItem }>
   >([]);
 
+  // Keep the input in sync with the URL (back/forward, shared links).
+  useEffect(() => {
+    setSearchInput(searchParams.q ?? "");
+  }, [searchParams.q]);
+
+  // Debounce typing into the URL; the server does the searching.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((searchParams.q ?? "") !== searchInput) {
+        navigate({
+          replace: true,
+          search: (prev: ReviewSearch) => ({
+            ...prev,
+            q: searchInput || undefined,
+          }),
+          to: ".",
+        });
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: navigate identity is unstable
+  }, [searchInput, searchParams.q]);
+
   const deadlineFor = (item: ReviewItem) =>
     deadlines.get(item.id) ?? addHours(new Date(), item.deadlineHoursFromNow);
-
-  const activeFilter =
-    filters.find((filter) => filter.id === filterId) ?? allFilter;
 
   const resolvedIds = useMemo(
     () => new Set(resolved.map((entry) => entry.item.id)),
     [resolved],
   );
-  const pending = items.filter((item) => !resolvedIds.has(item.id));
-  const query = search.trim().toLowerCase();
-  const visiblePending = pending.filter(
-    (item) =>
-      activeFilter.match(item.type) &&
-      (query.length === 0 ||
-        item.question.toLowerCase().includes(query) ||
-        item.client.toLowerCase().includes(query) ||
-        item.reference.toLowerCase().includes(query)),
-  );
+  // The server already applied filter + search; only hide items resolved in
+  // this session while the refetch is in flight.
+  const visiblePending = items.filter((item) => !resolvedIds.has(item.id));
+  const pending = visiblePending;
+
+  const countFor = (types: readonly string[] | null) => {
+    const stats = statsResponse?.data;
+    if (!stats) return 0;
+    if (!types) return stats.byStatus.needs_review;
+
+    return types.reduce(
+      (sum, type) => sum + (stats.byReviewType[type] ?? 0),
+      0,
+    );
+  };
 
   const displayItem =
     visiblePending.find((item) => item.id === selectedId) ??
@@ -1442,7 +1457,14 @@ export function ReviewQueue() {
     : -1;
 
   const handleFilterChange = (id: string) => {
-    setFilterId(id);
+    navigate({
+      replace: true,
+      search: (prev: ReviewSearch) => ({
+        ...prev,
+        type: id === "all" ? undefined : (id as ReviewSearch["type"]),
+      }),
+      to: ".",
+    });
   };
 
   const handleSelect = (id: string) => {
@@ -1518,8 +1540,8 @@ export function ReviewQueue() {
         <div className="flex h-full min-h-0 flex-col gap-3 overflow-clip pb-2">
           <SearchField
             aria-label="Search review items"
-            value={search}
-            onChange={setSearch}
+            value={searchInput}
+            onChange={setSearchInput}
           >
             <SearchField.Group>
               <SearchField.SearchIcon />
@@ -1529,19 +1551,17 @@ export function ReviewQueue() {
           </SearchField>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {filters.map((filter) => {
-              const count = pending.filter((item) =>
-                filter.match(item.type),
-              ).length;
+            {REVIEW_FILTER_GROUPS.map((group) => {
+              const count = countFor(group.types);
 
               return (
                 <Button
-                  key={filter.id}
+                  key={group.id}
                   size="sm"
-                  variant={filterId === filter.id ? "primary" : "secondary"}
-                  onPress={() => handleFilterChange(filter.id)}
+                  variant={filterId === group.id ? "primary" : "secondary"}
+                  onPress={() => handleFilterChange(group.id)}
                 >
-                  {filter.label}
+                  {group.label}
                   {count > 0 && (
                     <Chip size="sm" variant="soft">
                       {count}

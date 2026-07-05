@@ -46,6 +46,7 @@ export const shipments = pgTable(
     // Denormalized from the open review_requested event so the review queue
     // can sort/filter without digging into event payloads.
     reviewDeadlineAt: timestamp("review_deadline_at", { withTimezone: true }),
+    reviewType: text("review_type"),
     originCountry: text("origin_country").notNull(),
     originPort: text("origin_port"),
     portOfEntry: text("port_of_entry").notNull(),

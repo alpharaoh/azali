@@ -15,6 +15,7 @@ export const shipmentSchema = z.object({
   stage: z.enum(ShipmentStage),
   status: z.enum(ShipmentStatus),
   reviewDeadlineAt: z.iso.datetime().nullable(),
+  reviewType: z.string().nullable(),
   originCountry: z.string(),
   originPort: z.string().nullable(),
   portOfEntry: z.string(),
@@ -33,5 +34,18 @@ export class ListShipmentsResponseDto extends createZodDto(
   z.object({
     data: z.array(shipmentSchema),
     count: z.number().int(),
+  }),
+) {}
+
+export class ShipmentStatsResponseDto extends createZodDto(
+  z.object({
+    total: z.number().int(),
+    byStatus: z.object({
+      autopilot: z.number().int(),
+      needs_review: z.number().int(),
+      awaiting_cbp: z.number().int(),
+      released: z.number().int(),
+    }),
+    byReviewType: z.record(z.string(), z.number().int()),
   }),
 ) {}

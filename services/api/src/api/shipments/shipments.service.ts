@@ -6,6 +6,7 @@ import {
 import { deleteShipment } from "@/db/queries/delete/deleteShipment";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
+import { aggregateShipmentStats } from "@/db/queries/select/many/aggregateShipmentStats";
 import { listShipments } from "@/db/queries/select/many/listShipments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import { updateShipment } from "@/db/queries/update/updateShipment";
@@ -58,15 +59,58 @@ export class ShipmentsService {
   }
 
   async findAll(organizationId: string, query: ListShipmentsDto) {
-    const { limit, offset, sortBy, sortDir, search, stage, status, clientId } =
-      query;
+    const {
+      limit,
+      offset,
+      sortBy,
+      sortDir,
+      search,
+      stage,
+      status,
+      clientId,
+      reviewType,
+      valueMin,
+      valueMax,
+    } = query;
 
     return listShipments(
-      { organizationId, clientId, search, stages: stage, statuses: status },
+      {
+        organizationId,
+        search,
+        stages: stage,
+        statuses: status,
+        clientIds: clientId,
+        reviewTypes: reviewType,
+        valueMinCents: valueMin,
+        valueMaxCents: valueMax,
+      },
       { [sortBy]: sortDir },
       limit,
       offset,
     );
+  }
+
+  async stats(organizationId: string) {
+    const rows = await aggregateShipmentStats(organizationId);
+    const byStatus: Record<ShipmentStatus, number> = {
+      [ShipmentStatus.Autopilot]: 0,
+      [ShipmentStatus.NeedsReview]: 0,
+      [ShipmentStatus.AwaitingCbp]: 0,
+      [ShipmentStatus.Released]: 0,
+    };
+    const byReviewType: Record<string, number> = {};
+    let total = 0;
+
+    for (const row of rows) {
+      total += row.count;
+      byStatus[row.status] += row.count;
+      if (row.reviewType) {
+        byReviewType[row.reviewType] =
+          (byReviewType[row.reviewType] ?? 0) + row.count;
+      }
+    }
+
+    return { byReviewType, byStatus, total };
   }
 
   async findOne(organizationId: string, id: string) {
@@ -145,6 +189,7 @@ export class ShipmentsService {
       stage: nextStage,
       status: statusForStage(nextStage),
       reviewDeadlineAt: null,
+      reviewType: null,
     });
 
     return updated ?? shipment;

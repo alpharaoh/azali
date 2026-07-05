@@ -37,10 +37,15 @@ export class ShipmentEventsService {
         typeof dto.payload.deadlineAt === "string"
           ? new Date(dto.payload.deadlineAt)
           : null;
+      const reviewType =
+        typeof dto.payload.reviewType === "string"
+          ? dto.payload.reviewType
+          : null;
 
       await updateShipment(shipment.id, organizationId, {
         status: ShipmentStatus.NeedsReview,
         reviewDeadlineAt: deadlineAt,
+        reviewType,
       });
     }
 

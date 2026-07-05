@@ -23,7 +23,11 @@ export const listShipmentsSchema = z.object({
   search: z.string().optional(),
   stage: csv(z.enum(ShipmentStage)).optional(),
   status: csv(z.enum(ShipmentStatus)).optional(),
-  clientId: z.string().optional(),
+  clientId: csv(z.string().min(1)).optional(),
+  reviewType: csv(z.string().min(1)).optional(),
+  /** Inclusive shipment value bounds, in cents. */
+  valueMin: z.coerce.number().int().min(0).optional(),
+  valueMax: z.coerce.number().int().min(0).optional(),
   sortBy: z.enum(sortableShipmentColumns).default("createdAt"),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
   limit: z.coerce.number().int().min(1).max(100).default(50),

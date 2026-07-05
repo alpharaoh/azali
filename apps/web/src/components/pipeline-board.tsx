@@ -23,16 +23,25 @@ import {
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, InlineSelect, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useMemo, useState } from "react";
-import type { Selection, SortDescriptor } from "react-aria-components";
+import { useEffect, useMemo, useState } from "react";
+import type { SortDescriptor } from "react-aria-components";
 
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
-import { useShipmentsControllerFindAll } from "#/generated/api";
+import {
+  useShipmentsControllerFindAll,
+  useShipmentsControllerStats,
+} from "#/generated/api";
 import { countryName } from "#/lib/countries";
 import { useClientsById } from "#/lib/use-clients-by-id";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+import type { PipelineSearch } from "#/routes/dashboard/pipeline";
+import { pipelineListParams } from "#/routes/dashboard/pipeline";
+
+const SEARCH_DEBOUNCE_MS = 300;
+/** Slider ceiling in dollars — fixed so the range control is stable. */
+const MAX_SHIPMENT_VALUE = 500_000;
 
 type PipelineStage = ApiShipment["stage"];
 
@@ -163,10 +172,12 @@ const statusMeta: Record<
   released: { chip: "success", label: "Released" },
 };
 
-const statusOptions: Array<{ id: ShipmentStatus; label: string }> = [
+// Filter options carry the API status values (they live in the URL and are
+// sent to the server); display maps through statusFromApi/statusMeta.
+const statusOptions: Array<{ id: ApiShipment["status"]; label: string }> = [
   { id: "autopilot", label: "On Autopilot" },
-  { id: "blocked", label: "Needs Review" },
-  { id: "awaiting", label: "Awaiting CBP" },
+  { id: "needs_review", label: "Needs Review" },
+  { id: "awaiting_cbp", label: "Awaiting CBP" },
   { id: "released", label: "Released" },
 ];
 
@@ -177,10 +188,6 @@ function compactCurrency(value: number) {
     notation: "compact",
     style: "currency",
   }).format(value);
-}
-
-function toStringSet(keys: Selection, all: string[]) {
-  return keys === "all" ? new Set(all) : new Set([...keys].map(String));
 }
 
 function without<T>(set: Set<T>, value: T) {
@@ -252,25 +259,104 @@ function StageTracker({
 /* -------------------------------------------------------------------------------------------------
  * PipelineBoard
  * -----------------------------------------------------------------------------------------------*/
+const routeApi = getRouteApi("/dashboard/pipeline");
+
 export function PipelineBoard() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [clientFilter, setClientFilter] = useState<Set<string>>(new Set());
+  const searchParams = routeApi.useSearch();
+  const routeNavigate = routeApi.useNavigate();
+  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   const [clientQuery, setClientQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
-  const [valueRange, setValueRange] = useState<[number, number] | null>(null);
-
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "priority",
-    direction: "ascending",
-  });
+  // Slider position while dragging; committed to the URL on release.
+  const [pendingRange, setPendingRange] = useState<[number, number] | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
+  const updateSearch = (patch: Partial<PipelineSearch>) => {
+    routeNavigate({
+      replace: true,
+      search: (prev) => ({ ...prev, ...patch }),
+    });
+  };
+
+  // Keep the input in sync with the URL (back/forward, shared links).
+  useEffect(() => {
+    setSearchInput(searchParams.q ?? "");
+  }, [searchParams.q]);
+
+  // Debounce typing into the URL.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((searchParams.q ?? "") !== searchInput) {
+        updateSearch({ q: searchInput || undefined });
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: updateSearch is stable enough for this effect
+  }, [searchInput, searchParams.q]);
+
+  // Any change to the URL-driven query state starts back at page 1.
+  const filterFingerprint = JSON.stringify(searchParams);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint stands in for every search param
+  useEffect(() => {
+    setPage(1);
+  }, [filterFingerprint]);
+
+  const clientFilter = useMemo(
+    () => new Set<string>(searchParams.client ?? []),
+    [searchParams.client],
+  );
+  const statusFilter = useMemo(
+    () => new Set<string>(searchParams.status ?? []),
+    [searchParams.status],
+  );
+  const effectiveRange: [number, number] = pendingRange ?? [
+    searchParams.valueMin ?? 0,
+    searchParams.valueMax ?? MAX_SHIPMENT_VALUE,
+  ];
+  const valueActive =
+    searchParams.valueMin !== undefined || searchParams.valueMax !== undefined;
+
+  const sortDescriptor: SortDescriptor = {
+    column:
+      (searchParams.sortBy ?? "etaAt") === "etaAt"
+        ? "arrives"
+        : searchParams.sortBy === "valueCents"
+          ? "value"
+          : (searchParams.sortBy ?? "arrives"),
+    direction:
+      (searchParams.sortDir ?? "asc") === "asc" ? "ascending" : "descending",
+  };
+
+  const handleSortChange = (descriptor: SortDescriptor) => {
+    const column = String(descriptor.column);
+
+    updateSearch({
+      sortBy:
+        column === "arrives"
+          ? "etaAt"
+          : column === "value"
+            ? "valueCents"
+            : "etaAt",
+      sortDir: descriptor.direction === "ascending" ? "asc" : "desc",
+    });
+  };
+
+  // Server-side list — filters, search, sorting, and pagination all in the
+  // query; the page renders exactly what the API returns.
+  const listParams = {
+    ...pipelineListParams(searchParams, rowsPerPage),
+    offset: (page - 1) * rowsPerPage,
+  };
   const { data: shipmentsResponse } = useShipmentsControllerFindAll(
-    { limit: 100 },
+    listParams,
     { query: { placeholderData: keepPreviousData } },
   );
+  const { data: statsResponse } = useShipmentsControllerStats();
   const clientsById = useClientsById();
 
   const rows = useMemo<Row[]>(() => {
@@ -303,101 +389,33 @@ export function PipelineBoard() {
     });
   }, [shipmentsResponse, clientsById]);
 
-  const maxShipmentValue = useMemo(
-    () =>
-      Math.max(
-        50000,
-        Math.ceil(Math.max(0, ...rows.map((row) => row.value)) / 50000) * 50000,
-      ),
-    [rows],
-  );
-  const effectiveRange: [number, number] = valueRange ?? [0, maxShipmentValue];
-  const valueActive =
-    effectiveRange[0] > 0 || effectiveRange[1] < maxShipmentValue;
+  const totalCount = shipmentsResponse?.data.count ?? 0;
 
   const allClients = useMemo(
-    () => [...new Set(rows.map((row) => row.client))].sort(),
-    [rows],
+    () => [...clientsById.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    [clientsById],
   );
 
   const stats = useMemo(() => {
-    const active = rows.filter((row) => row.status !== "released");
+    const byStatus = statsResponse?.data.byStatus;
+
+    if (!byStatus) {
+      return { active: 0, autopilot: 0, blocked: 0, released: 0 };
+    }
 
     return {
-      active: active.length,
-      autopilot: active.filter(
-        (row) => row.status === "autopilot" || row.status === "awaiting",
-      ).length,
-      blocked: rows.filter((row) => row.status === "blocked").length,
-      released: rows.filter((row) => row.status === "released").length,
+      active: byStatus.autopilot + byStatus.needs_review + byStatus.awaiting_cbp,
+      autopilot: byStatus.autopilot + byStatus.awaiting_cbp,
+      blocked: byStatus.needs_review,
+      released: byStatus.released,
     };
-  }, [rows]);
-
-  const visibleRows = useMemo(() => {
-    let result = rows;
-
-    if (search) {
-      const q = search.toLowerCase();
-
-      result = result.filter(
-        (row) =>
-          row.client.toLowerCase().includes(q) ||
-          row.reference.toLowerCase().includes(q),
-      );
-    }
-    if (clientFilter.size > 0) {
-      result = result.filter((row) => clientFilter.has(row.client));
-    }
-    if (statusFilter.size > 0) {
-      result = result.filter((row) => statusFilter.has(row.status));
-    }
-    if (valueActive) {
-      result = result.filter(
-        (row) =>
-          row.value >= effectiveRange[0] && row.value <= effectiveRange[1],
-      );
-    }
-    if (!sortDescriptor.column) return result;
-
-    return [...result].sort((a, b) => {
-      const col = sortDescriptor.column as string;
-      let cmp: number;
-
-      if (col === "priority") {
-        cmp =
-          (a.priority ?? 5) - (b.priority ?? 5) ||
-          a.arrivesInHours - b.arrivesInHours;
-      } else if (col === "arrives") {
-        cmp = a.arrivesInHours - b.arrivesInHours;
-      } else if (col === "value") {
-        cmp = a.value - b.value;
-      } else {
-        cmp = a.client.localeCompare(b.client);
-      }
-
-      if (sortDescriptor.direction === "descending") cmp *= -1;
-
-      return cmp;
-    });
-  }, [
-    rows,
-    search,
-    clientFilter,
-    statusFilter,
-    valueActive,
-    effectiveRange,
-    sortDescriptor,
-  ]);
+  }, [statsResponse]);
 
   const statusActive = statusFilter.size > 0;
 
-  const totalPages = Math.ceil(visibleRows.length / rowsPerPage) || 1;
+  const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
-  const paginatedRows = useMemo(() => {
-    const start = (safePage - 1) * rowsPerPage;
-
-    return visibleRows.slice(start, start + rowsPerPage);
-  }, [visibleRows, safePage, rowsPerPage]);
+  const paginatedRows = rows;
 
   const paginationPages = useMemo(() => {
     const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
@@ -422,22 +440,30 @@ export function PipelineBoard() {
   }, [totalPages, safePage]);
 
   const rangeStart = (safePage - 1) * rowsPerPage + 1;
-  const rangeEnd = Math.min(safePage * rowsPerPage, visibleRows.length);
+  const rangeEnd = Math.min(safePage * rowsPerPage, totalCount);
 
   const hasActiveFilters =
-    search.length > 0 || clientFilter.size > 0 || statusActive || valueActive;
+    Boolean(searchParams.q) ||
+    clientFilter.size > 0 ||
+    statusActive ||
+    valueActive;
 
   const clearFilters = () => {
-    setSearch("");
-    setClientFilter(new Set());
+    setSearchInput("");
     setClientQuery("");
-    setStatusFilter(new Set());
-    setValueRange(null);
+    setPendingRange(null);
+    updateSearch({
+      client: undefined,
+      q: undefined,
+      status: undefined,
+      valueMax: undefined,
+      valueMin: undefined,
+    });
   };
 
   const filteredClients = clientQuery
     ? allClients.filter((client) =>
-        client.toLowerCase().includes(clientQuery.toLowerCase()),
+        client.name.toLowerCase().includes(clientQuery.toLowerCase()),
       )
     : allClients;
 
@@ -445,7 +471,6 @@ export function PipelineBoard() {
     () => [
       {
         accessorKey: "client",
-        allowsSorting: true,
         cell: (row) => (
           <div className="flex min-w-0 items-center gap-3">
             <Avatar size="sm">
@@ -515,7 +540,6 @@ export function PipelineBoard() {
       },
       {
         accessorKey: "priority",
-        allowsSorting: true,
         cell: (row) =>
           row.priority === null ? (
             <span className="text-muted text-sm">—</span>
@@ -652,8 +676,8 @@ export function PipelineBoard() {
       <div className="flex flex-wrap items-center gap-2">
         <SearchField
           aria-label="Search shipments"
-          value={search}
-          onChange={setSearch}
+          value={searchInput}
+          onChange={setSearchInput}
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
@@ -688,42 +712,36 @@ export function PipelineBoard() {
               className="max-h-96 overflow-y-auto"
               selectedKeys={clientFilter}
               selectionMode="multiple"
-              onSelectionChange={(keys) =>
-                setClientFilter(toStringSet(keys, allClients))
-              }
+              onSelectionChange={(keys) => {
+                const ids =
+                  keys === "all"
+                    ? allClients.map((client) => client.id)
+                    : [...keys].map(String);
+
+                updateSearch({ client: ids.length ? ids : undefined });
+              }}
             >
               {filteredClients.length === 0 ? (
                 <Dropdown.Item id="__no-match" isDisabled textValue="No match">
                   <Label>No clients match</Label>
                 </Dropdown.Item>
               ) : (
-                filteredClients.map((client) => {
-                  const count = rows.filter(
-                    (row) => row.client === client,
-                  ).length;
-
-                  return (
-                    <Dropdown.Item key={client} id={client} textValue={client}>
-                      <Avatar className="size-6 shrink-0">
-                        <Avatar.Image
-                          src={rows.find((r) => r.client === client)?.logo}
-                        />
-                        <Avatar.Fallback className="text-[10px]">
-                          {getInitials(client)}
-                        </Avatar.Fallback>
-                      </Avatar>
-                      <Label>
-                        {client}{" "}
-                        {count > 1 && (
-                          <Chip size="sm" className="ml-1">
-                            {count}
-                          </Chip>
-                        )}
-                      </Label>
-                      <Dropdown.ItemIndicator />
-                    </Dropdown.Item>
-                  );
-                })
+                filteredClients.map((client) => (
+                  <Dropdown.Item
+                    key={client.id}
+                    id={client.id}
+                    textValue={client.name}
+                  >
+                    <Avatar className="size-6 shrink-0">
+                      <Avatar.Image src={client.logo} />
+                      <Avatar.Fallback className="text-[10px]">
+                        {getInitials(client.name)}
+                      </Avatar.Fallback>
+                    </Avatar>
+                    <Label>{client.name}</Label>
+                    <Dropdown.ItemIndicator />
+                  </Dropdown.Item>
+                ))
               )}
             </Dropdown.Menu>
           </Dropdown.Popover>
@@ -739,14 +757,14 @@ export function PipelineBoard() {
             <Dropdown.Menu
               selectedKeys={statusFilter}
               selectionMode="multiple"
-              onSelectionChange={(keys) =>
-                setStatusFilter(
-                  toStringSet(
-                    keys,
-                    statusOptions.map((option) => option.id),
-                  ),
-                )
-              }
+              onSelectionChange={(keys) => {
+                const values =
+                  keys === "all"
+                    ? statusOptions.map((option) => option.id)
+                    : ([...keys].map(String) as Array<ApiShipment["status"]>);
+
+                updateSearch({ status: values.length ? values : undefined });
+              }}
             >
               {statusOptions.map((option) => (
                 <Dropdown.Item
@@ -755,7 +773,7 @@ export function PipelineBoard() {
                   textValue={option.label}
                 >
                   <Chip
-                    color={statusMeta[option.id].chip}
+                    color={statusMeta[statusFromApi[option.id]].chip}
                     size="sm"
                     variant="soft"
                   >
@@ -788,13 +806,23 @@ export function PipelineBoard() {
               </div>
               <Slider
                 aria-label="Shipment value range"
-                maxValue={maxShipmentValue}
+                maxValue={MAX_SHIPMENT_VALUE}
                 minValue={0}
                 step={5000}
                 value={effectiveRange}
                 onChange={(value) => {
                   if (Array.isArray(value) && value.length === 2) {
-                    setValueRange(value as [number, number]);
+                    setPendingRange(value as [number, number]);
+                  }
+                }}
+                onChangeEnd={(value) => {
+                  if (Array.isArray(value) && value.length === 2) {
+                    setPendingRange(null);
+                    updateSearch({
+                      valueMin: value[0] > 0 ? value[0] : undefined,
+                      valueMax:
+                        value[1] < MAX_SHIPMENT_VALUE ? value[1] : undefined,
+                    });
                   }
                 }}
               >
@@ -809,7 +837,10 @@ export function PipelineBoard() {
                 isDisabled={!valueActive}
                 size="sm"
                 variant="outline"
-                onPress={() => setValueRange(null)}
+                onPress={() => {
+                  setPendingRange(null);
+                  updateSearch({ valueMax: undefined, valueMin: undefined });
+                }}
               >
                 Reset
               </Button>
@@ -821,27 +852,36 @@ export function PipelineBoard() {
       {/* Active filters */}
       {hasActiveFilters ? (
         <div className="flex flex-wrap items-center gap-2">
-          {search ? (
+          {searchParams.q ? (
             <Chip size="sm" variant="secondary">
-              <Chip.Label>Search: {search}</Chip.Label>
+              <Chip.Label>Search: {searchParams.q}</Chip.Label>
               <button
                 aria-label="Clear search"
                 className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearchInput("");
+                  updateSearch({ q: undefined });
+                }}
               >
                 <Xmark className="size-3" />
               </button>
             </Chip>
           ) : null}
-          {[...clientFilter].map((client) => (
-            <Chip key={client} size="sm" variant="secondary">
-              <Chip.Label>{client}</Chip.Label>
+          {[...clientFilter].map((clientId) => (
+            <Chip key={clientId} size="sm" variant="secondary">
+              <Chip.Label>
+                {clientsById.get(clientId)?.name ?? clientId}
+              </Chip.Label>
               <button
-                aria-label={`Remove ${client} filter`}
+                aria-label="Remove client filter"
                 className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                 type="button"
-                onClick={() => setClientFilter(without(clientFilter, client))}
+                onClick={() => {
+                  const next = [...without(clientFilter, clientId)];
+
+                  updateSearch({ client: next.length ? next : undefined });
+                }}
               >
                 <Xmark className="size-3" />
               </button>
@@ -858,9 +898,13 @@ export function PipelineBoard() {
                     aria-label={`Remove ${status} filter`}
                     className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                     type="button"
-                    onClick={() =>
-                      setStatusFilter(without(statusFilter, status))
-                    }
+                    onClick={() => {
+                      const next = [...without(statusFilter, status)] as Array<
+                        ApiShipment["status"]
+                      >;
+
+                      updateSearch({ status: next.length ? next : undefined });
+                    }}
                   >
                     <Xmark className="size-3" />
                   </button>
@@ -877,7 +921,9 @@ export function PipelineBoard() {
                 aria-label="Remove value filter"
                 className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                 type="button"
-                onClick={() => setValueRange(null)}
+                onClick={() =>
+                  updateSearch({ valueMax: undefined, valueMin: undefined })
+                }
               >
                 <Xmark className="size-3" />
               </button>
@@ -903,7 +949,7 @@ export function PipelineBoard() {
         )}
         sortDescriptor={sortDescriptor}
         variant="primary"
-        onSortChange={setSortDescriptor}
+        onSortChange={handleSortChange}
       />
 
       {/* Pagination footer */}
@@ -978,9 +1024,9 @@ export function PipelineBoard() {
           </InlineSelect>
           <Separator className="!h-4" orientation="vertical" />
           <span className="text-muted tabular-nums">
-            {visibleRows.length === 0
+            {totalCount === 0
               ? "0 shipments"
-              : `${rangeStart}–${rangeEnd} of ${visibleRows.length}`}
+              : `${rangeStart}–${rangeEnd} of ${totalCount}`}
           </span>
           <div className="flex gap-2">
             <Button

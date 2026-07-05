@@ -18,6 +18,7 @@ import { ResolveReviewDto } from "./dto/resolve-review.dto";
 import {
   ListShipmentsResponseDto,
   ShipmentResponseDto,
+  ShipmentStatsResponseDto,
 } from "./dto/shipment.response.dto";
 import { UpdateShipmentDto } from "./dto/update-shipment.dto";
 import { ShipmentsService } from "./shipments.service";
@@ -49,6 +50,13 @@ export class ShipmentsController {
       getActiveOrganizationId(session),
       query,
     );
+  }
+
+  // Must precede :id so "stats" isn't captured as an id.
+  @Get("stats")
+  @ApiOkResponse({ type: ShipmentStatsResponseDto })
+  stats(@Session() session: UserSession<typeof auth>) {
+    return this.shipmentsService.stats(getActiveOrganizationId(session));
   }
 
   @Get(":id")

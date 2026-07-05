@@ -12,6 +12,7 @@ import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import * as schema from "@/db/schema";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
+import { REVIEW_TRACES } from "./data/reviewTraces";
 
 const [organizationId, userId] = process.argv.slice(2);
 
@@ -572,6 +573,7 @@ for (const seed of seeds) {
     reviewDeadlineAt: seed.review
       ? hoursFromNow(seed.review.deadlineHours)
       : null,
+    reviewType: seed.review?.type ?? null,
     originCountry: seed.originCountry,
     originPort: seed.originPort,
     portOfEntry: seed.portOfEntry,
