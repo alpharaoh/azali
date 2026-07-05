@@ -600,6 +600,33 @@ for (const seed of seeds) {
   }
 
   if (seed.review) {
+    // The full agent trace, one append-only event per step, ending shortly
+    // before the review request goes out.
+    const trace = REVIEW_TRACES[seed.reference] ?? [];
+    const steps = trace.flatMap((phase) =>
+      phase.steps.map((step) => ({ phase: phase.label, ...step })),
+    );
+
+    for (const [index, step] of steps.entries()) {
+      await insertShipmentEvent({
+        organizationId,
+        userId,
+        shipmentId: shipment!.id,
+        type: "agent_trace",
+        actor: "ai",
+        title: step.title,
+        occurredAt: hoursFromNow(-1.25 - (steps.length - index) * 0.25),
+        payload: {
+          phase: step.phase,
+          kind: step.kind,
+          detail: step.detail,
+          ...(step.data && { data: step.data }),
+          ...(step.citationRef && { citationRef: step.citationRef }),
+          step: index,
+        },
+      });
+    }
+
     await insertShipmentEvent({
       organizationId,
       userId,
