@@ -76,9 +76,8 @@ import {
 } from "#/data/review-queue";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
-  getShipmentEventsControllerFindAllQueryKey,
-  getShipmentsControllerFindAllQueryKey,
   useShipmentEventsControllerFindAll,
+  useShipmentEventsControllerFindByShipment,
   useShipmentsControllerFindAll,
   useShipmentsControllerResolveReview,
   useShipmentsControllerStats,
@@ -1460,10 +1459,12 @@ export function ReviewQueue() {
 
   // The agent trace comes from the shipment's agent_trace events — one event
   // per step, with phase/kind/detail/data in the payload.
-  const { data: traceEventsResponse } = useShipmentEventsControllerFindAll(
-    { limit: 200, shipmentId: displayItem?.id, type: ["agent_trace"] },
-    { query: { enabled: Boolean(displayItem) } },
-  );
+  const { data: traceEventsResponse } =
+    useShipmentEventsControllerFindByShipment(
+      displayItem?.id ?? "",
+      { limit: 200, type: ["agent_trace"] },
+      { query: { enabled: Boolean(displayItem) } },
+    );
 
   const liveTrace = useMemo<TracePhase[]>(() => {
     // API returns occurredAt desc; the trace reads oldest-first.
@@ -1541,14 +1542,12 @@ export function ReviewQueue() {
         id: item.id,
       })
       .then(async () => {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: getShipmentsControllerFindAllQueryKey(),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: getShipmentEventsControllerFindAllQueryKey(),
-          }),
-        ]);
+        // Everything shipment-shaped: the list, stats, the global event feed,
+        // and per-shipment timelines all live under /v1/shipments.
+        await queryClient.invalidateQueries({
+          predicate: (query) =>
+            String(query.queryKey[0]).startsWith("/v1/shipments"),
+        });
       });
 
     toast.promise(run, {

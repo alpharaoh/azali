@@ -10,7 +10,6 @@ const csv = <S extends z.ZodType>(schema: S) =>
   );
 
 export const listShipmentEventsSchema = z.object({
-  shipmentId: z.string().optional(),
   type: csv(z.string().min(1)).optional(),
   actor: csv(z.enum(eventActors)).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),

@@ -640,6 +640,42 @@ export interface ResolveReviewDto {
   note?: string;
 }
 
+export type ListShipmentEventsResponseDtoDataItemPayload = {[key: string]: unknown};
+
+export type ListShipmentEventsResponseDtoDataItem = {
+  id: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
+  /**
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
+  updatedAt: string | null;
+  /**
+   * @nullable
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
+  deletedAt: string | null;
+  organizationId: string;
+  userId: string;
+  shipmentId: string;
+  type: string;
+  actor: string;
+  title: string;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  occurredAt: string;
+  payload: ListShipmentEventsResponseDtoDataItemPayload;
+};
+
+export interface ListShipmentEventsResponseDto {
+  data: ListShipmentEventsResponseDtoDataItem[];
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  count: number;
+}
+
 export type CreateShipmentEventDtoActor = typeof CreateShipmentEventDtoActor[keyof typeof CreateShipmentEventDtoActor];
 
 
@@ -653,8 +689,6 @@ export const CreateShipmentEventDtoActor = {
 export type CreateShipmentEventDtoPayload = {[key: string]: unknown};
 
 export interface CreateShipmentEventDto {
-  /** @minLength 1 */
-  shipmentId: string;
   /** @minLength 1 */
   type: string;
   actor?: CreateShipmentEventDtoActor;
@@ -690,42 +724,6 @@ export interface ShipmentEventResponseDto {
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
   occurredAt: string;
   payload: ShipmentEventResponseDtoPayload;
-}
-
-export type ListShipmentEventsResponseDtoDataItemPayload = {[key: string]: unknown};
-
-export type ListShipmentEventsResponseDtoDataItem = {
-  id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
-  createdAt: string;
-  /**
-   * @nullable
-   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-   */
-  updatedAt: string | null;
-  /**
-   * @nullable
-   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-   */
-  deletedAt: string | null;
-  organizationId: string;
-  userId: string;
-  shipmentId: string;
-  type: string;
-  actor: string;
-  title: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
-  occurredAt: string;
-  payload: ListShipmentEventsResponseDtoDataItemPayload;
-};
-
-export interface ListShipmentEventsResponseDto {
-  data: ListShipmentEventsResponseDtoDataItem[];
-  /**
-   * @minimum -9007199254740991
-   * @maximum 9007199254740991
-   */
-  count: number;
 }
 
 export type ClientsControllerFindAllParams = {
@@ -858,7 +856,6 @@ export const ShipmentsControllerFindAllSortDir = {
 } as const;
 
 export type ShipmentEventsControllerFindAllParams = {
-shipmentId?: string;
 type?: string[];
 actor?: ShipmentEventsControllerFindAllActorItem[];
 /**
@@ -877,6 +874,31 @@ export type ShipmentEventsControllerFindAllActorItem = typeof ShipmentEventsCont
 
 
 export const ShipmentEventsControllerFindAllActorItem = {
+  ai: 'ai',
+  user: 'user',
+  system: 'system',
+  cbp: 'cbp',
+} as const;
+
+export type ShipmentEventsControllerFindByShipmentParams = {
+type?: string[];
+actor?: ShipmentEventsControllerFindByShipmentActorItem[];
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
+};
+
+export type ShipmentEventsControllerFindByShipmentActorItem = typeof ShipmentEventsControllerFindByShipmentActorItem[keyof typeof ShipmentEventsControllerFindByShipmentActorItem];
+
+
+export const ShipmentEventsControllerFindByShipmentActorItem = {
   ai: 'ai',
   user: 'user',
   system: 'system',
@@ -2176,83 +2198,6 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentsControllerResolveReviewMutationOptions(options), queryClient);
     }
     
-export type shipmentEventsControllerCreateResponse201 = {
-  data: ShipmentEventResponseDto
-  status: 201
-}
-
-export type shipmentEventsControllerCreateResponseSuccess = (shipmentEventsControllerCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type shipmentEventsControllerCreateResponse = (shipmentEventsControllerCreateResponseSuccess)
-
-export const getShipmentEventsControllerCreateUrl = () => {
-
-
-  
-
-  return `/v1/shipment-events`
-}
-
-export const shipmentEventsControllerCreate = async (createShipmentEventDto: CreateShipmentEventDto, options?: RequestInit): Promise<shipmentEventsControllerCreateResponse> => {
-  
-  return axios<shipmentEventsControllerCreateResponse>(getShipmentEventsControllerCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      createShipmentEventDto,)
-  }
-);}
-  
-
-
-
-export const getShipmentEventsControllerCreateMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
-): UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{data: CreateShipmentEventDto}, TContext> => {
-
-const mutationKey = ['shipmentEventsControllerCreate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, {data: CreateShipmentEventDto}> = (props) => {
-          const {data} = props ?? {};
-
-          return  shipmentEventsControllerCreate(data,requestOptions)
-        }
-
-
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ShipmentEventsControllerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>>
-    export type ShipmentEventsControllerCreateMutationBody = CreateShipmentEventDto
-    export type ShipmentEventsControllerCreateMutationError = ErrorType<unknown>
-
-    export const useShipmentEventsControllerCreate = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-        TError,
-        {data: CreateShipmentEventDto},
-        TContext
-      > => {
-      return useMutation(getShipmentEventsControllerCreateMutationOptions(options), queryClient);
-    }
-    
 export type shipmentEventsControllerFindAllResponse200 = {
   data: ListShipmentEventsResponseDto
   status: 200
@@ -2277,7 +2222,7 @@ export const getShipmentEventsControllerFindAllUrl = (params?: ShipmentEventsCon
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/v1/shipment-events?${stringifiedParams}` : `/v1/shipment-events`
+  return stringifiedParams.length > 0 ? `/v1/shipments/events?${stringifiedParams}` : `/v1/shipments/events`
 }
 
 export const shipmentEventsControllerFindAll = async (params?: ShipmentEventsControllerFindAllParams, options?: RequestInit): Promise<shipmentEventsControllerFindAllResponse> => {
@@ -2297,7 +2242,7 @@ export const shipmentEventsControllerFindAll = async (params?: ShipmentEventsCon
 
 export const getShipmentEventsControllerFindAllQueryKey = (params?: ShipmentEventsControllerFindAllParams,) => {
     return [
-    `/v1/shipment-events`, ...(params ? [params] : [])
+    `/v1/shipments/events`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -2360,3 +2305,205 @@ export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<ty
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
+
+export type shipmentEventsControllerFindByShipmentResponse200 = {
+  data: ListShipmentEventsResponseDto
+  status: 200
+}
+
+export type shipmentEventsControllerFindByShipmentResponseSuccess = (shipmentEventsControllerFindByShipmentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type shipmentEventsControllerFindByShipmentResponse = (shipmentEventsControllerFindByShipmentResponseSuccess)
+
+export const getShipmentEventsControllerFindByShipmentUrl = (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/shipments/${shipmentId}/events?${stringifiedParams}` : `/v1/shipments/${shipmentId}/events`
+}
+
+export const shipmentEventsControllerFindByShipment = async (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: RequestInit): Promise<shipmentEventsControllerFindByShipmentResponse> => {
+  
+  return axios<shipmentEventsControllerFindByShipmentResponse>(getShipmentEventsControllerFindByShipmentUrl(shipmentId,params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentEventsControllerFindByShipmentQueryKey = (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams,) => {
+    return [
+    `/v1/shipments/${shipmentId}/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getShipmentEventsControllerFindByShipmentQueryOptions = <TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShipmentEventsControllerFindByShipmentQueryKey(shipmentId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>> = ({ signal }) => shipmentEventsControllerFindByShipment(shipmentId,params, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(shipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentEventsControllerFindByShipmentQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>>
+export type ShipmentEventsControllerFindByShipmentQueryError = ErrorType<unknown>
+
+
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params: undefined |  ShipmentEventsControllerFindByShipmentParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getShipmentEventsControllerFindByShipmentQueryOptions(shipmentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+export type shipmentEventsControllerCreateResponse201 = {
+  data: ShipmentEventResponseDto
+  status: 201
+}
+
+export type shipmentEventsControllerCreateResponseSuccess = (shipmentEventsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type shipmentEventsControllerCreateResponse = (shipmentEventsControllerCreateResponseSuccess)
+
+export const getShipmentEventsControllerCreateUrl = (shipmentId: string,) => {
+
+
+  
+
+  return `/v1/shipments/${shipmentId}/events`
+}
+
+export const shipmentEventsControllerCreate = async (shipmentId: string,
+    createShipmentEventDto: CreateShipmentEventDto, options?: RequestInit): Promise<shipmentEventsControllerCreateResponse> => {
+  
+  return axios<shipmentEventsControllerCreateResponse>(getShipmentEventsControllerCreateUrl(shipmentId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createShipmentEventDto,)
+  }
+);}
+  
+
+
+
+export const getShipmentEventsControllerCreateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext> => {
+
+const mutationKey = ['shipmentEventsControllerCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, {shipmentId: string;data: CreateShipmentEventDto}> = (props) => {
+          const {shipmentId,data} = props ?? {};
+
+          return  shipmentEventsControllerCreate(shipmentId,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentEventsControllerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>>
+    export type ShipmentEventsControllerCreateMutationBody = CreateShipmentEventDto
+    export type ShipmentEventsControllerCreateMutationError = ErrorType<unknown>
+
+    export const useShipmentEventsControllerCreate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
+        TError,
+        {shipmentId: string;data: CreateShipmentEventDto},
+        TContext
+      > => {
+      return useMutation(getShipmentEventsControllerCreateMutationOptions(options), queryClient);
+    }

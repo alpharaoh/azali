@@ -12,17 +12,18 @@ export class ShipmentEventsService {
   async create(
     organizationId: string,
     userId: string,
+    shipmentId: string,
     dto: CreateShipmentEventDto,
   ) {
-    const shipment = await selectShipment(dto.shipmentId, organizationId);
+    const shipment = await selectShipment(shipmentId, organizationId);
     if (!shipment) {
-      throw new NotFoundException(`Shipment "${dto.shipmentId}" not found`);
+      throw new NotFoundException(`Shipment "${shipmentId}" not found`);
     }
 
     const event = await insertShipmentEvent({
       organizationId,
       userId,
-      shipmentId: dto.shipmentId,
+      shipmentId,
       type: dto.type,
       actor: dto.actor,
       title: dto.title,
@@ -53,7 +54,22 @@ export class ShipmentEventsService {
   }
 
   async findAll(organizationId: string, query: ListShipmentEventsDto) {
-    const { limit, offset, shipmentId, type, actor } = query;
+    const { limit, offset, type, actor } = query;
+
+    return listShipmentEvents(
+      { organizationId, types: type, actors: actor },
+      { occurredAt: "desc" },
+      limit,
+      offset,
+    );
+  }
+
+  async findByShipment(
+    organizationId: string,
+    shipmentId: string,
+    query: ListShipmentEventsDto,
+  ) {
+    const { limit, offset, type, actor } = query;
 
     return listShipmentEvents(
       { organizationId, shipmentId, types: type, actors: actor },
