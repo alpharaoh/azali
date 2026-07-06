@@ -1,6 +1,8 @@
 import { Button, Chip, Modal, toast } from "@heroui/react";
 import { DropZone, Stepper } from "@heroui-pro/react";
-import { useState } from "react";
+import { motion } from "motion/react";
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DropItem, FileDropItem } from "react-aria-components";
 
 import type { IngestDocumentsDtoFilesItemCategory as DocumentCategory } from "#/generated/api";
@@ -89,6 +91,49 @@ function formatBytes(size: number) {
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
 
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Animates its own height to match the measured content, so step changes
+ * (and file list growth) glide instead of snapping the modal size around.
+ */
+function AnimatedHeight({
+  children,
+  className,
+  contentClassName,
+}: {
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver(() => {
+      setHeight(element.offsetHeight);
+    });
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <motion.div
+      animate={height === null ? undefined : { height }}
+      className={`overflow-hidden ${className ?? ""}`}
+      initial={false}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      <div ref={contentRef} className={contentClassName}>
+        {children}
+      </div>
+    </motion.div>
+  );
 }
 
 function emptyFileMap(): Record<DocumentCategory, File[]> {
@@ -272,7 +317,10 @@ export function ShipmentIntakeModal({
                 </Stepper>
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-8">
+              <AnimatedHeight
+                className="min-w-0 flex-1"
+                contentClassName="flex flex-col gap-8"
+              >
                 {activeDocStep ? (
                   <>
                     <div className="flex flex-col gap-1 h-14">
@@ -403,14 +451,14 @@ export function ShipmentIntakeModal({
                     </div>
                     {missingRequired.length > 0 && totalFiles > 0 && (
                       <p className="text-muted text-xs">
-                        Missing documents won't block intake — Azali flags the
+                        Missing documents won't block intake. Azali flags the
                         gaps and drafts chase emails for whatever hasn't arrived
                         yet.
                       </p>
                     )}
                   </>
                 )}
-              </div>
+              </AnimatedHeight>
             </Modal.Body>
             <Modal.Footer>
               <Button
