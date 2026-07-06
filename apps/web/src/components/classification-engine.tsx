@@ -541,7 +541,7 @@ export function ClassificationEngine() {
         <h1 className="text-foreground text-xl font-semibold">
           Classification Engine
         </h1>
-        <p className="text-muted mt-1 max-w-2xl text-sm">
+        <p className="text-muted mt-1 max-w-3xl text-sm">
           Every code your team has ever approved, reusable forever. Corrections
           in the Review Queue land here automatically.
         </p>

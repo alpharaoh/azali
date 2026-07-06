@@ -454,7 +454,7 @@ export function AutopilotLog() {
       {/* Header */}
       <div>
         <h1 className="text-foreground text-xl font-semibold">Autopilot Log</h1>
-        <p className="text-muted mt-1 max-w-2xl text-sm">
+        <p className="text-muted mt-1 max-w-3xl text-sm">
           Everything the AI did without human intervention — spot-check it,
           build trust, and use the accuracy to raise the autonomy threshold.
         </p>

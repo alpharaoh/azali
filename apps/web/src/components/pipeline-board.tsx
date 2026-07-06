@@ -392,7 +392,8 @@ export function PipelineBoard() {
   const totalCount = shipmentsResponse?.data.count ?? 0;
 
   const allClients = useMemo(
-    () => [...clientsById.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    () =>
+      [...clientsById.values()].sort((a, b) => a.name.localeCompare(b.name)),
     [clientsById],
   );
 
@@ -404,7 +405,8 @@ export function PipelineBoard() {
     }
 
     return {
-      active: byStatus.autopilot + byStatus.needs_review + byStatus.awaiting_cbp,
+      active:
+        byStatus.autopilot + byStatus.needs_review + byStatus.awaiting_cbp,
       autopilot: byStatus.autopilot + byStatus.awaiting_cbp,
       blocked: byStatus.needs_review,
       released: byStatus.released,
@@ -520,9 +522,7 @@ export function PipelineBoard() {
         minWidth: 220,
       },
       {
-        cell: (row) => (
-          <StageTracker stage={row.stage} status={row.status} />
-        ),
+        cell: (row) => <StageTracker stage={row.stage} status={row.status} />,
         header: "Stage",
         id: "stage",
         minWidth: 190,
@@ -642,7 +642,7 @@ export function PipelineBoard() {
       {/* Header */}
       <div>
         <h1 className="text-foreground text-xl font-semibold">Pipeline</h1>
-        <p className="text-muted mt-1 max-w-2xl text-sm">
+        <p className="text-muted mt-1 max-w-3xl text-sm">
           Every shipment as a live status stream. Green flows through untouched
           — anything blocked pops to the Review Queue.
         </p>

@@ -13,6 +13,9 @@ function slugify(name: string) {
     name
       .toLowerCase()
       .normalize("NFKD")
+      // Apostrophes and quotes disappear ("Akaam's" → "akaams"), and stray
+      // combining marks from NFKD go with them.
+      .replace(/['’‘"“”̀-ͯ]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || "org"
   );

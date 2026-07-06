@@ -30,17 +30,6 @@ export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
 });
 
-/** Mirrors the server's slug derivation, for the live preview. */
-function slugify(name: string) {
-  return (
-    name
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "org"
-  );
-}
-
 function SettingsPage() {
   const { data } = useOrganizationControllerGetCurrent();
   const organization = data?.data;
@@ -134,17 +123,6 @@ function OrganizationForm({
           <Input placeholder="Your organization" />
           <FieldError />
         </TextField>
-      </SettingsRow>
-
-      <Separator />
-
-      <SettingsRow
-        description="Derived automatically from the organization name — not directly editable."
-        label="URL Slug"
-      >
-        <div className="bg-surface-secondary text-muted flex h-10 items-center rounded-lg px-3 font-mono text-sm">
-          {slugify(name)}
-        </div>
       </SettingsRow>
 
       <Separator />
