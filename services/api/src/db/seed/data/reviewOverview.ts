@@ -22,7 +22,18 @@ export interface SeedActivityEvent {
   status?: string;
 }
 
+export interface SeedCitation {
+  kind: string;
+  ref: string;
+  quote: string;
+  href?: string;
+  documentName?: string;
+}
+
 export interface SeedOverview {
+  citations: SeedCitation[];
+  approveLabel: string;
+  canRequestInfo: boolean;
   documents: SeedDocument[];
   events: SeedActivityEvent[];
   alternates: Array<{ value: string; detail: string; confidence: number }> | null;
@@ -115,7 +126,51 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "kind": "catalog",
+        "quote": "All 24 lines matched classifications previously approved by your team.",
+        "ref": "Classification Engine · 24 entries"
+      },
+      {
+        "href": "https://www.ecfr.gov/current/title-19/section-142.2",
+        "kind": "regulation",
+        "quote": "Entry documentation must be filed within 15 calendar days of arrival; filing before arrival avoids storage charges.",
+        "ref": "19 CFR §142.2"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Invoice, packing list, and bill of lading agree on quantity, weight, consignee, and value — 72 of 72 field comparisons, Σ line values $186,400.00.",
+        "documentName": "Commercial Invoice PRI-3301",
+        "ref": "Docs · PRI-3301 / PL / B-L"
+      },
+      {
+        "href": "https://hts.usitc.gov/",
+        "kind": "regulation",
+        "quote": "Column 1 general rates for the declared subheadings: Ch. 85 0–2.6% · Ch. 94 3.9% · Ch. 39 various.",
+        "ref": "HTSUS Column 1 rates"
+      },
+      {
+        "href": "https://access.trade.gov/adcvd",
+        "kind": "regulation",
+        "quote": "No active anti-dumping or countervailing duty orders for the declared HTS/origin pairs.",
+        "ref": "AD/CVD case registry"
+      },
+      {
+        "href": "https://hts.usitc.gov/search?query=9903.88.15",
+        "kind": "regulation",
+        "quote": "Articles the product of China, as provided for in U.S. note 20(r) to this subchapter — additional duty of 7.5% (9903.88.15).",
+        "ref": "USTR Section 301 · List 4A"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Trailing 12-month effective duty rate for this product mix: 6.5%.",
+        "ref": "Entry history · Pacific Rim"
+      }
+    ],
+    "approveLabel": "Approve & File",
+    "canRequestInfo": false
   },
   "SHP-2209": {
     "documents": [
@@ -170,7 +225,33 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://www.ecfr.gov/current/title-19/section-141.86",
+        "kind": "regulation",
+        "quote": "Each invoice shall set forth an accurate and itemized statement of the purchase price of each item.",
+        "ref": "19 CFR §141.86(a)"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Packing list quantities and unit prices agree with the 12 line items, not the printed total.",
+        "ref": "Packing list PL-88231"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Printed TOTAL (page 2): $48,250.00 · Σ line items 1–12: $45,780.00 — the document disagrees with itself.",
+        "documentName": "Commercial Invoice INV-88231",
+        "ref": "Invoice INV-88231"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Please clear before the weekend if possible, we have a DC appointment Monday morning.",
+        "ref": "Email · ops@harborfoods.com"
+      }
+    ],
+    "approveLabel": "Approve Correction",
+    "canRequestInfo": false
   },
   "SHP-2214": {
     "documents": [
@@ -244,7 +325,46 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         "value": "8517.69.0000"
       }
     ],
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://rulings.cbp.gov/ruling/N324089",
+        "kind": "ruling",
+        "quote": "A mesh Wi-Fi system comprising a router and satellite units is classified under subheading 8517.62.00, free of duty.",
+        "ref": "CROSS NY N324089"
+      },
+      {
+        "href": "https://hts.usitc.gov/search?query=8517",
+        "kind": "regulation",
+        "quote": "Heading 8517 covers machines for the reception, conversion and transmission of voice, images or other data.",
+        "ref": "HTSUS Heading 8517"
+      },
+      {
+        "kind": "catalog",
+        "quote": "Mesh extender EX-3 approved under 8517.62.0090 for Bluewave in March — same principal function.",
+        "ref": "Catalog · BW-EXT-003"
+      },
+      {
+        "kind": "evidence",
+        "quote": "AX5400 tri-band wireless mesh Wi-Fi 6 router, 2-pack, model RBK762 — $128,000 · origin Taiwan.",
+        "documentName": "Commercial Invoice BW-5540",
+        "ref": "Invoice BW-5540 · line 3"
+      },
+      {
+        "href": "https://hts.usitc.gov/",
+        "kind": "regulation",
+        "quote": "Goods put up in sets for retail sale shall be classified by the component which gives them their essential character.",
+        "ref": "GRI 3(b)"
+      },
+      {
+        "href": "https://hts.usitc.gov/search?query=9903.88",
+        "kind": "regulation",
+        "quote": "Section 301 additional duties apply to products of China — Taiwan-origin goods fall outside the lists.",
+        "ref": "HTSUS Ch. 99, Subch. III"
+      }
+    ],
+    "approveLabel": "Approve",
+    "canRequestInfo": false
   },
   "SHP-2218": {
     "documents": [
@@ -353,7 +473,34 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           "label": "Belongs to this entry"
         }
       ]
-    }
+    },
+    "citations": [
+      {
+        "href": "https://www.ecfr.gov/current/title-19/section-4.61",
+        "kind": "regulation",
+        "quote": "Vessel entrance and clearance statements are made on CBP Form 1300.",
+        "ref": "19 CFR §4.61"
+      },
+      {
+        "kind": "evidence",
+        "quote": "The CBP stamp reads MAY 01 2022 and voyage particulars list April 2022 calls — contradicting the handwritten 2020.",
+        "documentName": "Vessel Entrance or Clearance Statement",
+        "ref": "Scan · CBP Form 1300"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Vessel “Harmonie”, Simpson Bay → Culebra, agent Karen Smith — matches the CBP 1300 particulars line for line.",
+        "ref": "Booking · SHP-2218"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Traveler “Armstrong, Nel A.”, countries visited Germany/Kuwait/Qatar/UK, stamped March 2010 — no overlap with this transaction.",
+        "documentName": "Customs Declaration (6059B)",
+        "ref": "Scan · CBP Form 6059B"
+      }
+    ],
+    "approveLabel": "Accept CBP 1300",
+    "canRequestInfo": true
   },
   "SHP-2216": {
     "documents": [
@@ -414,7 +561,40 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         "value": "6204.33.5010"
       }
     ],
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://hts.usitc.gov/search?query=6204",
+        "kind": "regulation",
+        "quote": "Garments are classified by the fabric of the outer shell; the chief-weight fibre of the shell governs.",
+        "ref": "HTSUS Ch. 62, Subheading Note 2"
+      },
+      {
+        "href": "https://rulings.cbp.gov/ruling/960950",
+        "kind": "ruling",
+        "quote": "A woven blazer of 55% wool and 45% polyester is classifiable under subheading 6204.31.",
+        "ref": "CROSS HQ 960950"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Shell: 55% wool / 45% polyester · Lining: 100% polyester · 3,800 units.",
+        "documentName": "Spec Sheet — Style SA-2241",
+        "ref": "Spec sheet SA-2241"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Confirming shell composition is 55/45 wool-poly per the mill certificate. The final commercial invoice will match the spec sheet.",
+        "ref": "Email · merch@solsticeapparel.com"
+      },
+      {
+        "href": "https://hts.usitc.gov/search?query=6204.31",
+        "kind": "regulation",
+        "quote": "6204.31 (of wool): 17.5% ad valorem · 6204.33 (of synthetic fibres): 26.9% ad valorem.",
+        "ref": "HTSUS 6204 rate lines"
+      }
+    ],
+    "approveLabel": "Approve",
+    "canRequestInfo": false
   },
   "SHP-2220": {
     "documents": [
@@ -462,7 +642,34 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://www.ecfr.gov/current/title-21/section-878.4810",
+        "kind": "regulation",
+        "quote": "Light-based devices intended for medical purposes are Class II devices requiring premarket notification.",
+        "ref": "21 CFR §878.4810"
+      },
+      {
+        "href": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/general-wellness-policy-low-risk-devices",
+        "kind": "regulation",
+        "quote": "Products with claims limited to general wellness and low safety risk are not regulated as medical devices.",
+        "ref": "FDA General Wellness Guidance"
+      },
+      {
+        "kind": "evidence",
+        "quote": "“LED light therapy facial mask — red & blue light modes for skin rejuvenation” — the claim language on the listing.",
+        "documentName": "Product Listing — JB-LED-01",
+        "ref": "Listing · JB-LED-01"
+      },
+      {
+        "kind": "evidence",
+        "quote": "There are no medical claims on the retail box, only 'wellness' language.",
+        "ref": "Email · ops@juniperbeautylabs.com"
+      }
+    ],
+    "approveLabel": "Approve FDA Filing",
+    "canRequestInfo": true
   },
   "SHP-2225": {
     "documents": [
@@ -531,7 +738,35 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://www.law.cornell.edu/uscode/text/19/1401a",
+        "kind": "regulation",
+        "quote": "Transaction value between related persons is acceptable where circumstances of sale indicate the relationship did not influence the price.",
+        "ref": "19 USC §1401a(b)(2)(B)"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Prior related-party entries for this part ran $8.35–8.55/unit and were accepted at liquidation.",
+        "documentName": "12-Month Price Comparison",
+        "ref": "Entry history · RW-4471"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Seller: Meridian GmbH (parent company) · $8.40/unit × 11,000 units = $92,400.",
+        "documentName": "Commercial Invoice INV-4471",
+        "ref": "Invoice INV-4471"
+      },
+      {
+        "href": "https://www.law.cornell.edu/uscode/text/19/1592",
+        "kind": "regulation",
+        "quote": "Penalties for entry of merchandise by fraud, gross negligence, or negligence — exposure reaches prior entries at the same price.",
+        "ref": "19 USC §1592"
+      }
+    ],
+    "approveLabel": "Accept Transaction Value",
+    "canRequestInfo": true
   },
   "SHP-2230": {
     "documents": [
@@ -589,7 +824,28 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://hts.usitc.gov/search?query=6404.11",
+        "kind": "regulation",
+        "quote": "Subheading 6404.11.90 is subdivided according to the constituent material of the upper.",
+        "ref": "USITC HTS Rev. (mid-year)"
+      },
+      {
+        "kind": "catalog",
+        "quote": "129 sibling SKUs were reassigned automatically under the new subdivision.",
+        "ref": "Catalog · Summit Footwear"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Upper: 78% textile mesh / 22% synthetic overlays (by surface area) · rubber sole.",
+        "documentName": "Spec — TR-9 Trail Runner",
+        "ref": "Spec · TR-9"
+      }
+    ],
+    "approveLabel": "Approve",
+    "canRequestInfo": false
   },
   "SHP-2233": {
     "documents": [
@@ -651,7 +907,35 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://www.ecfr.gov/current/title-19/section-134.11",
+        "kind": "regulation",
+        "quote": "Every article of foreign origin imported into the United States shall be marked to indicate the country of origin.",
+        "ref": "19 CFR §134.11"
+      },
+      {
+        "kind": "evidence",
+        "quote": "14 prior entries for part RW-2205, all declared origin DE and accepted.",
+        "documentName": "Entry History — Part RW-2205",
+        "ref": "Entry history · RW-2205"
+      },
+      {
+        "kind": "evidence",
+        "quote": "Seller: Rheinwerk Präzision GmbH, Stuttgart · country-of-origin field blank · port of lading Hamburg.",
+        "documentName": "Commercial Invoice INV-7702",
+        "ref": "Invoice INV-7702"
+      },
+      {
+        "href": "https://hts.usitc.gov/search?query=8483.10",
+        "kind": "regulation",
+        "quote": "8483.10.3050: Free (column 1 general) — no Section 232/301 action for German origin.",
+        "ref": "HTSUS 8483.10.3050"
+      }
+    ],
+    "approveLabel": "Approve Origin",
+    "canRequestInfo": false
   },
   "ENT-3979": {
     "documents": [
@@ -729,6 +1013,33 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       }
     ],
     "alternates": null,
-    "comparison": null
+    "comparison": null,
+    "citations": [
+      {
+        "href": "https://www.law.cornell.edu/uscode/text/19/1509",
+        "kind": "regulation",
+        "quote": "CBP may examine records and request information to ascertain the correctness of any entry.",
+        "ref": "19 USC §1509"
+      },
+      {
+        "href": "https://rulings.cbp.gov/ruling/N302876",
+        "kind": "ruling",
+        "quote": "Cordless impact drivers with self-contained electric motor are classified in subheading 8467.21.",
+        "ref": "CROSS NY N302876"
+      },
+      {
+        "kind": "evidence",
+        "quote": "9 prior entries for this SKU under 8467.21.0030 — all liquidated as entered, no prior CBP action.",
+        "ref": "Entry history · Titan Tools"
+      },
+      {
+        "documentName": "CBP Form 28 — Request for Information",
+        "kind": "evidence",
+        "quote": "Provide the basis for classification under 8467.21.0030, including product literature and supporting documentation.",
+        "ref": "CBP Form 28 · ENT-3979"
+      }
+    ],
+    "approveLabel": "Approve Response",
+    "canRequestInfo": false
   }
 };

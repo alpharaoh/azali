@@ -7,7 +7,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { docSlug, reviewItems } from "../src/data/review-queue";
+import { REVIEW_OVERVIEW } from "../../../services/api/src/db/seed/data/reviewOverview";
+import { docSlug } from "../src/lib/review-types";
 
 /** Helvetica is WinAnsi — transliterate the demo data's typography to ASCII. */
 function toAscii(text: string) {
@@ -149,7 +150,7 @@ mkdirSync(outDir, { recursive: true });
 
 let count = 0;
 
-for (const item of reviewItems) {
+for (const item of Object.values(REVIEW_OVERVIEW)) {
 	for (const document of item.documents) {
 		if (document.kind !== "pdf") continue;
 		const path = join(outDir, `${docSlug(document.name)}.pdf`);

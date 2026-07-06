@@ -7,4 +7,9 @@ import * as schema from "./schema";
 const url = new URL(env.DATABASE_URL);
 url.searchParams.delete("sslrootcert");
 
-export const db = drizzle({ connection: url.toString(), schema });
+export const db = drizzle({
+  // PlanetScale Postgres has a small connection limit; Bun.SQL's default pool
+  // of 10 per process (dev server + every seed/script) exhausts it fast.
+  connection: { max: 3, url: url.toString() },
+  schema,
+});

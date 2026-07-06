@@ -54,26 +54,6 @@ import {
 import type { ComponentProps, ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import type {
-  ActivityEvent,
-  Citation,
-  CitationKind,
-  Decision,
-  DecisionAction,
-  DocumentLine,
-  ReviewDocument,
-  ReviewItem,
-  ReviewItemType,
-  ThreadMessage,
-  TracePhase,
-  TraceStepKind,
-} from "#/data/review-queue";
-import {
-  addThreadMessage,
-  docSlug,
-  reviewItems as mockReviewItems,
-  useReviewThreads,
-} from "#/data/review-queue";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   getShipmentEventsControllerFindByShipmentQueryKey,
@@ -91,11 +71,27 @@ import {
   eventPlane,
   FACTS_EVENT_TYPE,
 } from "#/lib/event-kinds";
+import type { ThreadMessage } from "#/lib/review-chat";
+import { addThreadMessage, useReviewThreads } from "#/lib/review-chat";
 import type { ReviewSearch } from "#/lib/review-queue-loader";
 import {
   REVIEW_FILTER_GROUPS,
   reviewListParams,
 } from "#/lib/review-queue-loader";
+import type {
+  ActivityEvent,
+  Citation,
+  CitationKind,
+  Decision,
+  DecisionAction,
+  DocumentLine,
+  ReviewDocument,
+  ReviewItem,
+  ReviewItemType,
+  TracePhase,
+  TraceStepKind,
+} from "#/lib/review-types";
+import { docSlug } from "#/lib/review-types";
 import { useClientsById } from "#/lib/use-clients-by-id";
 
 /* -------------------------------------------------------------------------------------------------
@@ -154,9 +150,8 @@ const deadlineTextClass: Record<DeadlineTone, string> = {
 };
 
 /* -------------------------------------------------------------------------------------------------
- * Live data — real shipments in needs_review, enriched with the mock items'
- * demo content (trace, citations, documents) matched by reference until the
- * product produces those artifacts for real.
+ * Live data — shipments in needs_review; everything the detail renders comes
+ * from the review_requested payload and the shipment's event stream.
  * -----------------------------------------------------------------------------------------------*/
 interface ReviewRequestPayload {
   reviewType?: ReviewItemType;
@@ -165,11 +160,10 @@ interface ReviewRequestPayload {
   proposal?: ReviewItem["proposal"];
   alternates?: ReviewItem["alternates"];
   comparison?: ReviewItem["comparison"];
+  citations?: Citation[];
+  approveLabel?: string;
+  canRequestInfo?: boolean;
 }
-
-const mockByReference = new Map(
-  mockReviewItems.map((item) => [item.reference, item]),
-);
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -180,36 +174,34 @@ function toReviewItem(
   payload: ReviewRequestPayload,
   client: { name: string; logo?: string } | undefined,
 ): ReviewItem {
-  const base = mockByReference.get(shipment.reference);
   const arrivesInHours = shipment.etaAt
     ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
-    : (base?.shipment.arrivesInHours ?? 0);
+    : 0;
 
   return {
-    alternates: payload.alternates ?? base?.alternates,
-    approveLabel: base?.approveLabel ?? "Approve",
-    canRequestInfo: base?.canRequestInfo,
-    citations: base?.citations ?? [],
-    client: client?.name ?? base?.client ?? "Unknown client",
-    comparison: payload.comparison ?? base?.comparison,
-    confidence: payload.confidence ?? base?.confidence ?? 0.8,
+    alternates: payload.alternates,
+    approveLabel: payload.approveLabel ?? "Approve",
+    canRequestInfo: payload.canRequestInfo,
+    citations: payload.citations ?? [],
+    client: client?.name ?? "Unknown client",
+    comparison: payload.comparison,
+    confidence: payload.confidence ?? 0.8,
     deadlineHoursFromNow: shipment.reviewDeadlineAt
       ? (new Date(shipment.reviewDeadlineAt).getTime() - Date.now()) / 3_600_000
-      : (base?.deadlineHoursFromNow ?? 24),
-    documents: base?.documents ?? [],
-    events: base?.events,
+      : 24,
+    // Documents, activity, and trace come from the shipment's event stream —
+    // filled in for the selected item in ReviewQueue.
+    documents: [],
+    events: [],
     id: shipment.id,
-    logo: client?.logo ?? base?.logo,
-    postEntry: base?.postEntry,
-    proposal: payload.proposal ??
-      base?.proposal ?? { detail: "", label: "Proposal", value: "—" },
-    question: payload.question ?? base?.question ?? "Review required",
+    logo: client?.logo,
+    proposal: payload.proposal ?? { detail: "", label: "Proposal", value: "—" },
+    question: payload.question ?? "Review required",
     reference: shipment.reference,
     shipment: {
       arrivesInHours,
-      entryType:
-        shipment.entryType ?? base?.shipment.entryType ?? "01 — Consumption",
-      incoterm: shipment.incoterm ?? base?.shipment.incoterm ?? "FOB",
+      entryType: shipment.entryType ?? "—",
+      incoterm: shipment.incoterm ?? "—",
       mode: shipment.conveyance
         ? `${capitalize(shipment.transportMode)} · ${shipment.conveyance}`
         : capitalize(shipment.transportMode),
@@ -219,8 +211,8 @@ function toReviewItem(
       port: shipment.portOfEntry,
     },
     shipmentValue: shipment.valueCents / 100,
-    trace: base?.trace ?? [],
-    type: payload.reviewType ?? base?.type ?? "classification",
+    trace: [],
+    type: payload.reviewType ?? "classification",
   };
 }
 
@@ -585,9 +577,7 @@ function ThreadTimelineItem({
           <h3 className="text-foreground m-0 text-xs font-medium leading-5">
             {isAi ? "Azali AI" : "You"}
           </h3>
-          <time className="text-muted shrink-0 text-xs leading-5">
-            {time}
-          </time>
+          <time className="text-muted shrink-0 text-xs leading-5">{time}</time>
         </div>
         <p className="text-muted m-0 text-xs leading-5">{message.body}</p>
       </Timeline.Content>
@@ -1586,13 +1576,9 @@ export function ReviewQueue() {
   const detailItem = displayItem
     ? {
         ...displayItem,
-        trace: live.trace.length ? live.trace : displayItem.trace,
-        documents: live.documents.length
-          ? live.documents
-          : displayItem.documents,
-        events: live.activityEvents.length
-          ? live.activityEvents
-          : displayItem.events,
+        trace: live.trace,
+        documents: live.documents,
+        events: live.activityEvents,
         ...(live.facts && {
           shipment: {
             ...displayItem.shipment,
@@ -1628,9 +1614,8 @@ export function ReviewQueue() {
       })
       .then(() => {
         queryClient.invalidateQueries({
-          queryKey: getShipmentEventsControllerFindByShipmentQueryKey(
-            shipmentId,
-          ),
+          queryKey:
+            getShipmentEventsControllerFindByShipmentQueryKey(shipmentId),
         });
       })
       .catch(() => {

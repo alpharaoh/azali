@@ -48,12 +48,10 @@ import type {
 import {
   catalogEntries,
   catalogGrowthTotals,
-  reviewLearnedMeta,
   sandboxFallback,
   sandboxRules,
   topChapters,
 } from "#/data/classification-engine";
-import { reviewItems, useReviewDecisions } from "#/data/review-queue";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
@@ -298,7 +296,6 @@ function EngineSandbox() {
  * ClassificationEngine
  * -----------------------------------------------------------------------------------------------*/
 export function ClassificationEngine() {
-  const decisions = useReviewDecisions();
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState<Set<string>>(new Set());
   const [clientQuery, setClientQuery] = useState("");
@@ -310,37 +307,7 @@ export function ClassificationEngine() {
     direction: "descending",
   });
 
-  // Entries learned live from Review Queue classification decisions.
-  const learnedEntries = useMemo<CatalogRow[]>(() => {
-    return reviewItems
-      .filter(
-        (item) => item.type === "classification" && decisions.has(item.id),
-      )
-      .map((item) => {
-        const decision = decisions.get(item.id);
-        const meta = reviewLearnedMeta[item.id];
-
-        return {
-          client: item.client,
-          confidence: item.confidence,
-          dutyRate: "—",
-          hts: decision?.alternate ?? item.proposal.value,
-          htsDescription: item.proposal.detail,
-          id: `learned-${item.id}`,
-          lastUsedDaysAgo: 0,
-          learnedNow: true,
-          product: meta?.product ?? item.question,
-          sku: meta?.sku ?? item.reference,
-          source: decision?.action === "corrected" ? "corrected" : "approved",
-          uses: 1,
-        } satisfies CatalogRow;
-      });
-  }, [decisions]);
-
-  const allEntries = useMemo<CatalogRow[]>(
-    () => [...learnedEntries, ...catalogEntries],
-    [learnedEntries],
-  );
+  const allEntries = useMemo<CatalogRow[]>(() => catalogEntries, []);
 
   const allClients = useMemo(
     () => [...new Set(allEntries.map((entry) => entry.client))].sort(),
