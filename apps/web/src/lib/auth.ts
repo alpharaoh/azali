@@ -10,13 +10,21 @@ export const authClient = createAuthClient({
 
 // Session lookup shared between route guards, cached in react-query so
 // navigating between dashboard pages doesn't refetch /get-session every time.
+// A signed-out user is data: null (200); errors/timeouts throw so guards hit
+// the router error boundary instead of silently bouncing to /login.
 export const sessionQueryOptions = {
   queryKey: ["session"] as const,
   queryFn: async () => {
-    const { data } = await authClient.getSession();
+    const { data, error } = await authClient.getSession({
+      fetchOptions: { signal: AbortSignal.timeout(10_000) },
+    });
+    if (error) {
+      throw new Error(error.message ?? "Failed to load session");
+    }
     return data;
   },
   staleTime: 5 * 60 * 1000,
+  retry: 1,
 };
 
 // Call after a sign-in completes client-side (e.g. email OTP) so the cached

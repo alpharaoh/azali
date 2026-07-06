@@ -39,6 +39,11 @@ import {
   InlineSelect,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+
+import {
+  TableFetchingState,
+  TableSkeleton,
+} from "#/components/table-loading";
 import { getRouteApi } from "@tanstack/react-router";
 import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -332,7 +337,11 @@ export function ClientsTable() {
     offset: (page - 1) * rowsPerPage,
   };
 
-  const { data: response } = useClientsControllerFindAll(params, {
+  const {
+    data: response,
+    isFetching,
+    isPending,
+  } = useClientsControllerFindAll(params, {
     query: { placeholderData: keepPreviousData },
   });
 
@@ -856,7 +865,11 @@ export function ClientsTable() {
       )}
 
       {/* Table */}
+      {isPending ? (
+        <TableSkeleton rows={8} />
+      ) : (
       <div className="relative">
+        <TableFetchingState isFetching={isFetching}>
         <DataGrid
           allowsColumnResize
           showSelectionCheckboxes
@@ -878,9 +891,10 @@ export function ClientsTable() {
             });
           }}
         />
+        </TableFetchingState>
         {/* Centered over the grid instead of inside its horizontally
             scrollable content, so it stays put when scrolling */}
-        {clients.length === 0 && (
+        {clients.length === 0 && !isFetching && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <EmptyState className="pointer-events-auto" size="sm">
               <EmptyState.Header>
@@ -906,6 +920,7 @@ export function ClientsTable() {
           </div>
         )}
       </div>
+      )}
 
       {/* Pagination footer */}
       <div className="flex items-center justify-between whitespace-nowrap text-xs">

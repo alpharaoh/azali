@@ -10,6 +10,14 @@ url.searchParams.delete("sslrootcert");
 export const db = drizzle({
   // PlanetScale Postgres has a small connection limit; Bun.SQL's default pool
   // of 10 per process (dev server + every seed/script) exhausts it fast.
-  connection: { max: 3, url: url.toString() },
+  // Without connectionTimeout a starved pool waits forever — requests (e.g.
+  // get-session) hang instead of erroring. Idle/lifetime caps hand slots back.
+  connection: {
+    max: 3,
+    url: url.toString(),
+    connectionTimeout: 10,
+    idleTimeout: 30,
+    maxLifetime: 30 * 60,
+  },
   schema,
 });

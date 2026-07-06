@@ -7,21 +7,21 @@ import {
 } from "#/generated/api";
 
 export const Route = createFileRoute("/dashboard/autopilot")({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(
-        getShipmentEventsControllerFindAllQueryOptions({
-          actor: ["ai"],
-          limit: 200,
-        }),
-      ),
-      context.queryClient.prefetchQuery(
-        getShipmentsControllerFindAllQueryOptions({ limit: 100 }),
-      ),
-      context.queryClient.prefetchQuery(
-        getClientsControllerFindAllQueryOptions({ limit: 100 }),
-      ),
-    ]),
+  // Fire-and-forget cache warming; the log renders its own loading states.
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(
+      getShipmentEventsControllerFindAllQueryOptions({
+        actor: ["ai"],
+        limit: 200,
+      }),
+    );
+    void context.queryClient.prefetchQuery(
+      getShipmentsControllerFindAllQueryOptions({ limit: 100 }),
+    );
+    void context.queryClient.prefetchQuery(
+      getClientsControllerFindAllQueryOptions({ limit: 100 }),
+    );
+  },
   component: AutopilotPage,
 });
 

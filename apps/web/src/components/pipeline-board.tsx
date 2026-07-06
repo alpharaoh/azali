@@ -30,6 +30,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { ShipmentIntakeModal } from "#/components/shipment-intake-modal";
+import {
+  TableFetchingState,
+  TableSkeleton,
+} from "#/components/table-loading";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   useShipmentsControllerFindAll,
@@ -356,10 +360,13 @@ export function PipelineBoard() {
     ...pipelineListParams(searchParams, rowsPerPage),
     offset: (page - 1) * rowsPerPage,
   };
-  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
-    listParams,
-    { query: { placeholderData: keepPreviousData } },
-  );
+  const {
+    data: shipmentsResponse,
+    isFetching,
+    isPending,
+  } = useShipmentsControllerFindAll(listParams, {
+    query: { placeholderData: keepPreviousData },
+  });
   const { data: statsResponse } = useShipmentsControllerStats();
   const clientsById = useClientsById();
 
@@ -950,21 +957,27 @@ export function PipelineBoard() {
       ) : null}
 
       {/* Run list */}
-      <DataGrid
-        aria-label="Shipment pipeline"
-        columns={columns}
-        contentClassName="min-w-[1200px]"
-        data={paginatedRows}
-        getRowId={(row) => row.id}
-        renderEmptyState={() => (
-          <div className="text-muted py-8 text-center text-sm">
-            No shipments match your filters.
-          </div>
-        )}
-        sortDescriptor={sortDescriptor}
-        variant="primary"
-        onSortChange={handleSortChange}
-      />
+      {isPending ? (
+        <TableSkeleton rows={8} />
+      ) : (
+        <TableFetchingState isFetching={isFetching}>
+          <DataGrid
+            aria-label="Shipment pipeline"
+            columns={columns}
+            contentClassName="min-w-[1200px]"
+            data={paginatedRows}
+            getRowId={(row) => row.id}
+            renderEmptyState={() => (
+              <div className="text-muted py-8 text-center text-sm">
+                No shipments match your filters.
+              </div>
+            )}
+            sortDescriptor={sortDescriptor}
+            variant="primary"
+            onSortChange={handleSortChange}
+          />
+        </TableFetchingState>
+      )}
 
       {/* Pagination footer */}
       <div className="flex items-center justify-between whitespace-nowrap text-xs">

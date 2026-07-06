@@ -1,9 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { authClient } from "#/lib/auth";
+import { sessionQueryOptions } from "#/lib/auth";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const { data: session } = await authClient.getSession();
+  beforeLoad: async ({ context }) => {
+    // Shares the react-query cache with the dashboard/login guards, so a hard
+    // refresh resolves the session once instead of per-route.
+    const session =
+      await context.queryClient.ensureQueryData(sessionQueryOptions);
     throw redirect({ to: session ? "/dashboard" : "/login" });
   },
 });

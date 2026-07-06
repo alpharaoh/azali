@@ -28,10 +28,11 @@ export type ClientsSearch = z.infer<typeof clientsSearchSchema>;
 export const Route = createFileRoute("/dashboard/clients")({
   validateSearch: (search) => clientsSearchSchema.parse(search),
   loaderDeps: ({ search }) => search,
-  loader: ({ context, deps }) =>
+  loader: ({ context, deps }) => {
     // Mirrors the table's page-1 query for the current URL filters so
     // hover-preloading this route warms the exact cache entry it renders from.
-    context.queryClient.ensureQueryData(
+    // Fire-and-forget: the table renders its own loading states.
+    void context.queryClient.ensureQueryData(
       getClientsControllerFindAllQueryOptions({
         search: deps.q,
         status: deps.status,
@@ -41,7 +42,8 @@ export const Route = createFileRoute("/dashboard/clients")({
         limit: getStoredRowsPerPage(),
         offset: 0,
       }),
-    ),
+    );
+  },
   component: Clients,
 });
 

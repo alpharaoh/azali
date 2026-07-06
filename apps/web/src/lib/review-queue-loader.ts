@@ -50,24 +50,26 @@ export function reviewListParams(
   };
 }
 
-/** Shared by /dashboard/review and /dashboard/review/$itemId. */
+/**
+ * Shared by /dashboard/review and /dashboard/review/$itemId.
+ * Fire-and-forget cache warming — never blocks navigation (a blocking loader
+ * would put the router's full-page pending screen over filter changes).
+ */
 export function prefetchReviewQueue(
   queryClient: QueryClient,
   search: ReviewSearch,
 ) {
-  return Promise.all([
-    queryClient.ensureQueryData(
-      getShipmentsControllerFindAllQueryOptions(reviewListParams(search)),
-    ),
-    queryClient.prefetchQuery(
-      getShipmentEventsControllerFindAllQueryOptions({
-        limit: 200,
-        type: ["review_requested"],
-      }),
-    ),
-    queryClient.prefetchQuery(getShipmentsControllerStatsQueryOptions()),
-    queryClient.prefetchQuery(
-      getClientsControllerFindAllQueryOptions({ limit: 100 }),
-    ),
-  ]);
+  void queryClient.ensureQueryData(
+    getShipmentsControllerFindAllQueryOptions(reviewListParams(search)),
+  );
+  void queryClient.prefetchQuery(
+    getShipmentEventsControllerFindAllQueryOptions({
+      limit: 200,
+      type: ["review_requested"],
+    }),
+  );
+  void queryClient.prefetchQuery(getShipmentsControllerStatsQueryOptions());
+  void queryClient.prefetchQuery(
+    getClientsControllerFindAllQueryOptions({ limit: 100 }),
+  );
 }

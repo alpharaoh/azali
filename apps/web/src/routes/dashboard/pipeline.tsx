@@ -46,20 +46,21 @@ export function pipelineListParams(search: PipelineSearch, limit: number) {
 export const Route = createFileRoute("/dashboard/pipeline")({
   validateSearch: (search) => pipelineSearchSchema.parse(search),
   loaderDeps: ({ search }) => search,
-  loader: ({ context, deps }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(
-        getShipmentsControllerFindAllQueryOptions(
-          pipelineListParams(deps, getStoredRowsPerPage()),
-        ),
+  // Warm the cache without blocking navigation — the board renders its own
+  // loading states (skeleton on first load, dimmed table while refetching).
+  loader: ({ context, deps }) => {
+    void context.queryClient.ensureQueryData(
+      getShipmentsControllerFindAllQueryOptions(
+        pipelineListParams(deps, getStoredRowsPerPage()),
       ),
-      context.queryClient.prefetchQuery(
-        getShipmentsControllerStatsQueryOptions(),
-      ),
-      context.queryClient.prefetchQuery(
-        getClientsControllerFindAllQueryOptions({ limit: 100 }),
-      ),
-    ]),
+    );
+    void context.queryClient.prefetchQuery(
+      getShipmentsControllerStatsQueryOptions(),
+    );
+    void context.queryClient.prefetchQuery(
+      getClientsControllerFindAllQueryOptions({ limit: 100 }),
+    );
+  },
   component: PipelinePage,
 });
 

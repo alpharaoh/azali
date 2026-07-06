@@ -23,10 +23,11 @@ import {
 } from "#/generated/api";
 
 export const Route = createFileRoute("/dashboard/settings")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(
       getOrganizationControllerGetCurrentQueryOptions(),
-    ),
+    );
+  },
   component: SettingsPage,
 });
 

@@ -19,6 +19,15 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  session: {
+    // Serve get-session from a short-lived signed cookie instead of a DB
+    // roundtrip on every request — the DB is only consulted when the cookie
+    // expires (or the session changes, which rewrites it).
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   account: {
     accountLinking: {
       enabled: true,

@@ -13,12 +13,18 @@ import {
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import loginImage from "#/assets/login.jpeg";
-import { authClient, clearAuthCache, isSigningOut } from "#/lib/auth";
+import {
+  authClient,
+  clearAuthCache,
+  isSigningOut,
+  sessionQueryOptions,
+} from "#/lib/auth";
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
     if (isSigningOut()) return;
-    const { data: session } = await authClient.getSession();
+    const session =
+      await context.queryClient.ensureQueryData(sessionQueryOptions);
     if (session) {
       throw redirect({ to: "/dashboard" });
     }
