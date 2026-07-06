@@ -251,7 +251,7 @@ export function ShipmentIntakeModal({
           entries.length === 1
             ? "Uploading document..."
             : `Uploading ${entries.length} documents...`,
-        success: "Documents uploaded — intake started",
+        success: "Documents uploaded. Shipment process started.",
       },
     );
 
