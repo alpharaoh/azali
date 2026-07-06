@@ -704,7 +704,7 @@ export function PipelineBoard() {
   return (
     <div className="flex w-full flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-foreground text-xl font-semibold">Pipeline</h1>
           <p className="text-muted mt-1 max-w-3xl text-sm">
