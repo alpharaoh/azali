@@ -18,6 +18,9 @@
     "services/*",
     "packages/*"
   ],
+  "trustedDependencies": [
+    "inngest-cli"
+  ],
   "devDependencies": {
     "turbo": "^2.10.3"
   }

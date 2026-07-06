@@ -3,6 +3,7 @@ import {
   ChevronRight,
   CircleFill,
   Eye,
+  FileArrowUp,
   Funnel,
   Plane,
   Xmark,
@@ -19,17 +20,20 @@ import {
   SearchField,
   Separator,
   Slider,
+  toast,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, InlineSelect, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
+  useShipmentDocumentsControllerCreateUploadUrls,
+  useShipmentDocumentsControllerIngest,
   useShipmentsControllerFindAll,
   useShipmentsControllerStats,
 } from "#/generated/api";
@@ -273,6 +277,66 @@ export function PipelineBoard() {
   );
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
+
+  const createUploadUrls = useShipmentDocumentsControllerCreateUploadUrls();
+  const ingestDocuments = useShipmentDocumentsControllerIngest();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []);
+    if (files.length === 0) return;
+
+    const run = (async () => {
+      const { data } = await createUploadUrls.mutateAsync({
+        data: {
+          files: files.map((file) => ({
+            fileName: file.name,
+            contentType: file.type || "application/octet-stream",
+            size: file.size,
+          })),
+        },
+      });
+
+      // Presigned PUTs go straight to S3, so plain fetch — not the API client.
+      await Promise.all(
+        data.uploads.map(async (upload, index) => {
+          const response = await fetch(upload.url, {
+            method: "PUT",
+            headers: { "Content-Type": upload.contentType },
+            body: files[index],
+          });
+          if (!response.ok) {
+            throw new Error(`Upload failed for ${upload.fileName}`);
+          }
+        }),
+      );
+
+      await ingestDocuments.mutateAsync({
+        data: {
+          files: data.uploads.map((upload, index) => ({
+            key: upload.key,
+            fileName: upload.fileName,
+            contentType: upload.contentType,
+            size: files[index].size,
+          })),
+        },
+      });
+    })();
+
+    setIsUploading(true);
+    toast.promise(
+      run.finally(() => setIsUploading(false)),
+      {
+        error: "Document upload failed",
+        loading:
+          files.length === 1
+            ? "Uploading document..."
+            : `Uploading ${files.length} documents...`,
+        success: "Documents uploaded — ingestion started",
+      },
+    );
+  };
 
   const updateSearch = (patch: Partial<PipelineSearch>) => {
     routeNavigate({
@@ -640,12 +704,34 @@ export function PipelineBoard() {
   return (
     <div className="flex w-full flex-col gap-4">
       {/* Header */}
-      <div>
-        <h1 className="text-foreground text-xl font-semibold">Pipeline</h1>
-        <p className="text-muted mt-1 max-w-3xl text-sm">
-          Every shipment as a live status stream. Green flows through untouched
-          — anything blocked pops to the Review Queue.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-foreground text-xl font-semibold">Pipeline</h1>
+          <p className="text-muted mt-1 max-w-3xl text-sm">
+            Every shipment as a live status stream. Green flows through
+            untouched — anything blocked pops to the Review Queue.
+          </p>
+        </div>
+        <Button
+          isPending={isUploading}
+          size="sm"
+          variant="primary"
+          onPress={() => fileInputRef.current?.click()}
+        >
+          <FileArrowUp />
+          Create shipment
+        </Button>
+        <input
+          ref={fileInputRef}
+          hidden
+          multiple
+          accept=".pdf,.png,.jpg,.jpeg,.tiff,.csv,.xls,.xlsx,.doc,.docx,.txt,.eml"
+          type="file"
+          onChange={(event) => {
+            handleUpload(event.target.files);
+            event.target.value = "";
+          }}
+        />
       </div>
 
       {/* Overview */}

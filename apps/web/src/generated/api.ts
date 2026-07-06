@@ -786,6 +786,78 @@ export interface ShipmentEventResponseDto {
   payload: ShipmentEventResponseDtoPayload;
 }
 
+export type CreateUploadUrlsDtoFilesItem = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  fileName: string;
+  /**
+   * @minLength 1
+   * @maxLength 120
+   */
+  contentType: string;
+  /**
+   * @minimum 1
+   * @maximum 52428800
+   */
+  size: number;
+};
+
+export interface CreateUploadUrlsDto {
+  /**
+   * @minItems 1
+   * @maxItems 10
+   */
+  files: CreateUploadUrlsDtoFilesItem[];
+}
+
+export type UploadUrlsResponseDtoUploadsItem = {
+  key: string;
+  url: string;
+  fileName: string;
+  contentType: string;
+};
+
+export interface UploadUrlsResponseDto {
+  uploads: UploadUrlsResponseDtoUploadsItem[];
+}
+
+export type IngestDocumentsDtoFilesItem = {
+  /**
+   * @minLength 1
+   * @maxLength 500
+   */
+  key: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  fileName: string;
+  /**
+   * @minLength 1
+   * @maxLength 120
+   */
+  contentType: string;
+  /**
+   * @minimum 1
+   * @maximum 52428800
+   */
+  size: number;
+};
+
+export interface IngestDocumentsDto {
+  /**
+   * @minItems 1
+   * @maxItems 10
+   */
+  files: IngestDocumentsDtoFilesItem[];
+}
+
+export interface IngestDocumentsResponseDto {
+  eventIds: string[];
+}
+
 export type ClientsControllerFindAllParams = {
 search?: string;
 status?: ClientsControllerFindAllStatusItem[];
@@ -2748,4 +2820,158 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getShipmentEventsControllerCreateMutationOptions(options), queryClient);
+    }
+    
+export type shipmentDocumentsControllerCreateUploadUrlsResponse201 = {
+  data: UploadUrlsResponseDto
+  status: 201
+}
+
+export type shipmentDocumentsControllerCreateUploadUrlsResponseSuccess = (shipmentDocumentsControllerCreateUploadUrlsResponse201) & {
+  headers: Headers;
+};
+;
+
+export type shipmentDocumentsControllerCreateUploadUrlsResponse = (shipmentDocumentsControllerCreateUploadUrlsResponseSuccess)
+
+export const getShipmentDocumentsControllerCreateUploadUrlsUrl = () => {
+
+
+  
+
+  return `/v1/shipments/documents/upload-urls`
+}
+
+export const shipmentDocumentsControllerCreateUploadUrls = async (createUploadUrlsDto: CreateUploadUrlsDto, options?: RequestInit): Promise<shipmentDocumentsControllerCreateUploadUrlsResponse> => {
+  
+  return axios<shipmentDocumentsControllerCreateUploadUrlsResponse>(getShipmentDocumentsControllerCreateUploadUrlsUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createUploadUrlsDto,)
+  }
+);}
+  
+
+
+
+export const getShipmentDocumentsControllerCreateUploadUrlsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>, TError,{data: CreateUploadUrlsDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>, TError,{data: CreateUploadUrlsDto}, TContext> => {
+
+const mutationKey = ['shipmentDocumentsControllerCreateUploadUrls'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>, {data: CreateUploadUrlsDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  shipmentDocumentsControllerCreateUploadUrls(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentDocumentsControllerCreateUploadUrlsMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>>
+    export type ShipmentDocumentsControllerCreateUploadUrlsMutationBody = CreateUploadUrlsDto
+    export type ShipmentDocumentsControllerCreateUploadUrlsMutationError = ErrorType<unknown>
+
+    export const useShipmentDocumentsControllerCreateUploadUrls = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>, TError,{data: CreateUploadUrlsDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentDocumentsControllerCreateUploadUrls>>,
+        TError,
+        {data: CreateUploadUrlsDto},
+        TContext
+      > => {
+      return useMutation(getShipmentDocumentsControllerCreateUploadUrlsMutationOptions(options), queryClient);
+    }
+    
+export type shipmentDocumentsControllerIngestResponse201 = {
+  data: IngestDocumentsResponseDto
+  status: 201
+}
+
+export type shipmentDocumentsControllerIngestResponseSuccess = (shipmentDocumentsControllerIngestResponse201) & {
+  headers: Headers;
+};
+;
+
+export type shipmentDocumentsControllerIngestResponse = (shipmentDocumentsControllerIngestResponseSuccess)
+
+export const getShipmentDocumentsControllerIngestUrl = () => {
+
+
+  
+
+  return `/v1/shipments/documents`
+}
+
+export const shipmentDocumentsControllerIngest = async (ingestDocumentsDto: IngestDocumentsDto, options?: RequestInit): Promise<shipmentDocumentsControllerIngestResponse> => {
+  
+  return axios<shipmentDocumentsControllerIngestResponse>(getShipmentDocumentsControllerIngestUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      ingestDocumentsDto,)
+  }
+);}
+  
+
+
+
+export const getShipmentDocumentsControllerIngestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext> => {
+
+const mutationKey = ['shipmentDocumentsControllerIngest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, {data: IngestDocumentsDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  shipmentDocumentsControllerIngest(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentDocumentsControllerIngestMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>>
+    export type ShipmentDocumentsControllerIngestMutationBody = IngestDocumentsDto
+    export type ShipmentDocumentsControllerIngestMutationError = ErrorType<unknown>
+
+    export const useShipmentDocumentsControllerIngest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
+        TError,
+        {data: IngestDocumentsDto},
+        TContext
+      > => {
+      return useMutation(getShipmentDocumentsControllerIngestMutationOptions(options), queryClient);
     }

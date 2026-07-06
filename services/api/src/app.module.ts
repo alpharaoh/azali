@@ -5,6 +5,7 @@ import { LoggerModule } from "nestjs-pino";
 import { ZodValidationPipe } from "nestjs-zod";
 import { ClientsModule } from "./api/clients/clients.module";
 import { OrganizationModule } from "./api/organization/organization.module";
+import { ShipmentDocumentsModule } from "./api/shipment-documents/shipment-documents.module";
 import { ShipmentEventsModule } from "./api/shipment-events/shipment-events.module";
 import { ShipmentsModule } from "./api/shipments/shipments.module";
 import { UsersController } from "./api/users/users.controller";
@@ -24,6 +25,7 @@ import { auth } from "./lib/auth";
     OrganizationModule,
     ShipmentsModule,
     ShipmentEventsModule,
+    ShipmentDocumentsModule,
   ],
   controllers: [AppController, UsersController],
   providers: [

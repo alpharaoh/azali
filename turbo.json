@@ -17,6 +17,15 @@
       "cache": false,
       "persistent": true
     },
+    "dev:inngest": {
+      "cache": false,
+      "persistent": true
+    },
+    "@azali/api#dev": {
+      "cache": false,
+      "persistent": true,
+      "with": ["@azali/api#dev:inngest"]
+    },
     "start:dev": {
       "cache": false,
       "persistent": true
