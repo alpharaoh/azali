@@ -47,12 +47,6 @@ function SettingsPage() {
 
   return (
     <div className="p-4 pt-0">
-      <div className="mb-4">
-        <h1 className="text-foreground text-xl font-semibold">Settings</h1>
-        <p className="text-muted mt-1 text-sm">
-          Manage your organization profile and preferences.
-        </p>
-      </div>
       {organization && (
         <OrganizationForm
           key={`${organization.id}-${organization.name}`}
