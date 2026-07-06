@@ -19,6 +19,10 @@ export const meResponseSchema = z.object({
       logo: z.string().nullable(),
       createdAt: z.iso.datetime(),
       metadata: z.string().nullable(),
+      description: z.string().nullable(),
+      website: z.string().nullable(),
+      contactEmail: z.string().nullable(),
+      filerCode: z.string().nullable(),
     })
     .nullable(),
   member: z

@@ -36,6 +36,13 @@
       "when": 1783271448640,
       "tag": "0004_great_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783303151153,
+      "tag": "0005_peaceful_devos",
+      "breakpoints": true
     }
   ]
 }

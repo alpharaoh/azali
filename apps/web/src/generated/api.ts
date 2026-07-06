@@ -52,6 +52,14 @@ export type MeResponseDtoOrganization = {
   createdAt: string;
   /** @nullable */
   metadata: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /** @nullable */
+  filerCode: string | null;
 } | null;
 
 /**
@@ -241,6 +249,52 @@ export interface UpdateClientDto {
   autonomy?: UpdateClientDtoAutonomy;
   status?: UpdateClientDtoStatus;
   portsOfEntry?: string[];
+}
+
+export interface OrganizationResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  logo: string | null;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  createdAt: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /** @nullable */
+  filerCode: string | null;
+}
+
+export interface UpdateOrganizationDto {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /**
+   * @maxLength 240
+   * @nullable
+   */
+  description?: string | null;
+  /**
+   * @maxLength 200
+   * @nullable
+   */
+  website?: string | null;
+  /**
+   * @nullable
+   * @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+   */
+  contactEmail?: string | null;
+  /**
+   * @nullable
+   * @pattern ^[A-Za-z0-9]{3}$
+   */
+  filerCode?: string | null;
 }
 
 export type CreateShipmentDtoStage = typeof CreateShipmentDtoStage[keyof typeof CreateShipmentDtoStage];
@@ -1571,6 +1625,188 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getClientsControllerRemoveMutationOptions(options), queryClient);
+    }
+    
+export type organizationControllerGetCurrentResponse200 = {
+  data: OrganizationResponseDto
+  status: 200
+}
+
+export type organizationControllerGetCurrentResponseSuccess = (organizationControllerGetCurrentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationControllerGetCurrentResponse = (organizationControllerGetCurrentResponseSuccess)
+
+export const getOrganizationControllerGetCurrentUrl = () => {
+
+
+  
+
+  return `/v1/organization`
+}
+
+export const organizationControllerGetCurrent = async ( options?: RequestInit): Promise<organizationControllerGetCurrentResponse> => {
+  
+  return axios<organizationControllerGetCurrentResponse>(getOrganizationControllerGetCurrentUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getOrganizationControllerGetCurrentQueryKey = () => {
+    return [
+    `/v1/organization`
+    ] as const;
+    }
+
+    
+export const getOrganizationControllerGetCurrentQueryOptions = <TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOrganizationControllerGetCurrentQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof organizationControllerGetCurrent>>> = ({ signal }) => organizationControllerGetCurrent({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OrganizationControllerGetCurrentQueryResult = NonNullable<Awaited<ReturnType<typeof organizationControllerGetCurrent>>>
+export type OrganizationControllerGetCurrentQueryError = ErrorType<unknown>
+
+
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
+          TError,
+          Awaited<ReturnType<typeof organizationControllerGetCurrent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
+          TError,
+          Awaited<ReturnType<typeof organizationControllerGetCurrent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOrganizationControllerGetCurrentQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+export type organizationControllerUpdateResponse200 = {
+  data: OrganizationResponseDto
+  status: 200
+}
+
+export type organizationControllerUpdateResponseSuccess = (organizationControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationControllerUpdateResponse = (organizationControllerUpdateResponseSuccess)
+
+export const getOrganizationControllerUpdateUrl = () => {
+
+
+  
+
+  return `/v1/organization`
+}
+
+export const organizationControllerUpdate = async (updateOrganizationDto: UpdateOrganizationDto, options?: RequestInit): Promise<organizationControllerUpdateResponse> => {
+  
+  return axios<organizationControllerUpdateResponse>(getOrganizationControllerUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateOrganizationDto,)
+  }
+);}
+  
+
+
+
+export const getOrganizationControllerUpdateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext> => {
+
+const mutationKey = ['organizationControllerUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof organizationControllerUpdate>>, {data: UpdateOrganizationDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  organizationControllerUpdate(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrganizationControllerUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof organizationControllerUpdate>>>
+    export type OrganizationControllerUpdateMutationBody = UpdateOrganizationDto
+    export type OrganizationControllerUpdateMutationError = ErrorType<unknown>
+
+    export const useOrganizationControllerUpdate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof organizationControllerUpdate>>,
+        TError,
+        {data: UpdateOrganizationDto},
+        TContext
+      > => {
+      return useMutation(getOrganizationControllerUpdateMutationOptions(options), queryClient);
     }
     
 export type shipmentsControllerCreateResponse201 = {

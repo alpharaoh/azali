@@ -91,6 +91,12 @@ export const organization = pgTable(
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    // Brokerage profile fields — managed by our API, not better-auth.
+    description: text("description"),
+    website: text("website"),
+    contactEmail: text("contact_email"),
+    /** CBP broker filer code (3 characters) — appears on entries and rulings. */
+    filerCode: text("filer_code"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

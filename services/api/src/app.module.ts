@@ -4,6 +4,7 @@ import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
 import { ZodValidationPipe } from "nestjs-zod";
 import { ClientsModule } from "./api/clients/clients.module";
+import { OrganizationModule } from "./api/organization/organization.module";
 import { ShipmentEventsModule } from "./api/shipment-events/shipment-events.module";
 import { ShipmentsModule } from "./api/shipments/shipments.module";
 import { UsersController } from "./api/users/users.controller";
@@ -20,6 +21,7 @@ import { auth } from "./lib/auth";
     }),
     UsersModule,
     ClientsModule,
+    OrganizationModule,
     ShipmentsModule,
     ShipmentEventsModule,
   ],
