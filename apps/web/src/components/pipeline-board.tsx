@@ -652,11 +652,7 @@ export function PipelineBoard() {
             untouched — anything blocked pops to the Review Queue.
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="primary"
-          onPress={() => setIntakeOpen(true)}
-        >
+        <Button size="sm" variant="primary" onPress={() => setIntakeOpen(true)}>
           <FileArrowUp />
           Create shipment
         </Button>

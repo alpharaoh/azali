@@ -227,7 +227,8 @@ export function ShipmentIntakeModal({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Backdrop>
         <Modal.Container>
-          <Modal.Dialog className="sm:max-w-3xl">
+          {/* Fixed width so the dialog doesn't resize between steps. */}
+          <Modal.Dialog className="max-w-full sm:w-3xl">
             <Modal.CloseTrigger />
             {/* The heading lives in the left rail so it shares a top line
                 with the step title in the content pane. */}
@@ -280,7 +281,7 @@ export function ShipmentIntakeModal({
                           {activeDocStep.title}
                         </h3>
                         {!activeDocStep.required && (
-                          <Chip size="sm" variant="soft">
+                          <Chip size="sm" variant="soft" color="accent">
                             Optional
                           </Chip>
                         )}
@@ -309,25 +310,38 @@ export function ShipmentIntakeModal({
                           }
                         />
                       </DropZone.Area>
-                      <DropZone.FileList>
+                      {/* Compact one-row items, capped height with a bottom
+                          fade once the list scrolls — the modal stays put. */}
+                      <DropZone.FileList
+                        className={`max-h-40 gap-1 overflow-y-auto ${
+                          filesByCategory[activeDocStep.id].length > 4
+                            ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)]"
+                            : ""
+                        }`}
+                      >
                         {filesByCategory[activeDocStep.id].map(
                           (file, index) => (
-                            <DropZone.FileItem key={`${file.name}-${index}`}>
+                            <DropZone.FileItem
+                              key={`${file.name}-${index}`}
+                              className="items-center gap-2 p-1.5"
+                            >
                               <DropZone.FileFormatIcon
+                                className="h-7 w-[22px]"
                                 color={
                                   FORMAT_COLORS[fileFormat(file.name)] ?? "gray"
                                 }
                                 format={fileFormat(file.name)}
                               />
-                              <DropZone.FileInfo>
-                                <DropZone.FileName>
+                              <DropZone.FileInfo className="flex-row items-baseline gap-1.5">
+                                <DropZone.FileName className="text-xs">
                                   {file.name}
                                 </DropZone.FileName>
-                                <DropZone.FileMeta>
+                                <DropZone.FileMeta className="shrink-0">
                                   {formatBytes(file.size)}
                                 </DropZone.FileMeta>
                               </DropZone.FileInfo>
                               <DropZone.FileRemoveTrigger
+                                className="[&_svg]:size-3.5"
                                 onPress={() =>
                                   removeFile(activeDocStep.id, file)
                                 }
@@ -350,43 +364,39 @@ export function ShipmentIntakeModal({
                           : `${totalFiles} document${totalFiles === 1 ? "" : "s"} ready. Azali will classify, extract, and match them to a client and shipment.`}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       {DOCUMENT_STEPS.map((docStep) => {
                         const files = filesByCategory[docStep.id];
 
                         return (
                           <div
                             key={docStep.id}
-                            className="border-border flex items-start justify-between gap-4 rounded-lg border p-3"
+                            className="border-border flex flex-col gap-1 rounded-lg border p-3"
                           >
-                            <div className="flex min-w-0 flex-col gap-0.5">
-                              <span className="text-foreground text-sm font-medium">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-foreground truncate text-sm font-medium">
                                 {docStep.title}
                               </span>
                               {files.length > 0 ? (
-                                <span className="text-muted truncate text-xs">
-                                  {files.map((file) => file.name).join(", ")}
-                                </span>
+                                <Chip color="success" size="sm" variant="soft">
+                                  {files.length}{" "}
+                                  {files.length === 1 ? "file" : "files"}
+                                </Chip>
+                              ) : docStep.required ? (
+                                <Chip color="warning" size="sm" variant="soft">
+                                  Missing
+                                </Chip>
                               ) : (
-                                <span className="text-muted text-xs">
-                                  Nothing uploaded
-                                </span>
+                                <Chip size="sm" variant="soft">
+                                  Optional
+                                </Chip>
                               )}
                             </div>
-                            {files.length > 0 ? (
-                              <Chip color="success" size="sm" variant="soft">
-                                {files.length}{" "}
-                                {files.length === 1 ? "file" : "files"}
-                              </Chip>
-                            ) : docStep.required ? (
-                              <Chip color="warning" size="sm" variant="soft">
-                                Missing
-                              </Chip>
-                            ) : (
-                              <Chip size="sm" variant="soft">
-                                Optional
-                              </Chip>
-                            )}
+                            <span className="text-muted truncate text-xs">
+                              {files.length > 0
+                                ? files.map((file) => file.name).join(", ")
+                                : "Nothing uploaded"}
+                            </span>
                           </div>
                         );
                       })}
