@@ -20,18 +20,56 @@ export const sortableShipmentColumns = [
 ] as const;
 
 export const listShipmentsSchema = z.object({
-  search: z.string().optional(),
-  stage: csv(z.enum(ShipmentStage)).optional(),
-  status: csv(z.enum(ShipmentStatus)).optional(),
-  clientId: csv(z.string().min(1)).optional(),
-  reviewType: csv(z.string().min(1)).optional(),
-  /** Inclusive shipment value bounds, in cents. */
-  valueMin: z.coerce.number().int().min(0).optional(),
-  valueMax: z.coerce.number().int().min(0).optional(),
-  sortBy: z.enum(sortableShipmentColumns).default("createdAt"),
-  sortDir: z.enum(["asc", "desc"]).default("desc"),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+  search: z
+    .string()
+    .optional()
+    .describe(
+      "Free-text search across reference, entry number, and client name.",
+    ),
+  stage: csv(z.enum(ShipmentStage))
+    .optional()
+    .describe("Filter by pipeline stage; comma-separated for multiple values."),
+  status: csv(z.enum(ShipmentStatus))
+    .optional()
+    .describe("Filter by status; comma-separated for multiple values."),
+  clientId: csv(z.string().min(1))
+    .optional()
+    .describe("Filter by client id; comma-separated for multiple values."),
+  reviewType: csv(z.string().min(1))
+    .optional()
+    .describe(
+      "Filter by pending review type (e.g. classification, signoff); comma-separated.",
+    ),
+  valueMin: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Inclusive lower bound on shipment value, in US cents."),
+  valueMax: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Inclusive upper bound on shipment value, in US cents."),
+  sortBy: z
+    .enum(sortableShipmentColumns)
+    .default("createdAt")
+    .describe("Column to sort by."),
+  sortDir: z.enum(["asc", "desc"]).default("desc").describe("Sort direction."),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(50)
+    .describe("Page size (1–100)."),
+  offset: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(0)
+    .describe("Rows to skip before the page starts."),
 });
 
 export class ListShipmentsDto extends createZodDto(listShipmentsSchema) {}

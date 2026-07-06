@@ -26,60 +26,117 @@ import type {
 
 import { axios } from '../lib/axios';
 import type { ErrorType } from '../lib/axios';
+/**
+ * The signed-in user.
+ */
 export type MeResponseDtoUser = {
+  /** User id. */
   id: string;
+  /** Display name. */
   name: string;
+  /** Email address. */
   email: string;
+  /** Whether the email is verified. */
   emailVerified: boolean;
-  /** @nullable */
+  /**
+   * Avatar URL, if any.
+   * @nullable
+   */
   image?: string | null;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the account was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the account was last updated.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   updatedAt: string;
 };
 
 /**
+ * The session's active organization; null when none is active.
  * @nullable
  */
 export type MeResponseDtoOrganization = {
+  /** Organization id. */
   id: string;
+  /** Organization display name. */
   name: string;
+  /** URL-safe identifier derived from the name. */
   slug: string;
-  /** @nullable */
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
   logo: string | null;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the organization was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
-  /** @nullable */
+  /**
+   * Additional organization metadata, if any.
+   * @nullable
+   */
   metadata: string | null;
-  /** @nullable */
+  /**
+   * Short description of the brokerage.
+   * @nullable
+   */
   description: string | null;
-  /** @nullable */
+  /**
+   * Company website URL.
+   * @nullable
+   */
   website: string | null;
-  /** @nullable */
+  /**
+   * Contact email.
+   * @nullable
+   */
   contactEmail: string | null;
-  /** @nullable */
+  /**
+   * CBP broker filer code (3 alphanumeric characters).
+   * @nullable
+   */
   filerCode: string | null;
 } | null;
 
 /**
+ * The user's membership in the active organization.
  * @nullable
  */
 export type MeResponseDtoMember = {
+  /** Membership id. */
   id: string;
+  /** Role in the organization: owner, admin, or member. */
   role: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the user joined.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
 } | null;
 
 export interface MeResponseDto {
+  /** The signed-in user. */
   user: MeResponseDtoUser;
-  /** @nullable */
+  /**
+   * The session's active organization; null when none is active.
+   * @nullable
+   */
   organization: MeResponseDtoOrganization;
-  /** @nullable */
+  /**
+   * The user's membership in the active organization.
+   * @nullable
+   */
   member: MeResponseDtoMember;
 }
 
+/**
+ * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
+ */
 export type CreateClientDtoAutonomy = typeof CreateClientDtoAutonomy[keyof typeof CreateClientDtoAutonomy];
 
 
@@ -88,6 +145,9 @@ export const CreateClientDtoAutonomy = {
   autopilot: 'autopilot',
 } as const;
 
+/**
+ * Whether automation is active or paused for this client.
+ */
 export type CreateClientDtoStatus = typeof CreateClientDtoStatus[keyof typeof CreateClientDtoStatus];
 
 
@@ -97,26 +157,48 @@ export const CreateClientDtoStatus = {
 } as const;
 
 export interface CreateClientDto {
-  /** @minLength 1 */
+  /**
+   * Client display name.
+   * @minLength 1
+   */
   name: string;
   /**
+   * Logo URL.
    * @minLength 1
    * @nullable
    */
   image?: string | null;
-  /** @minLength 1 */
+  /**
+   * Importer of Record number used on customs entries.
+   * @minLength 1
+   */
   iorNumber: string;
-  /** @minLength 1 */
+  /**
+   * Continuous customs bond number.
+   * @minLength 1
+   */
   bondNumber: string;
-  /** @minLength 1 */
+  /**
+   * Primary country of origin (ISO 3166-1 alpha-2).
+   * @minLength 1
+   */
   primaryOrigin: string;
-  /** @minLength 1 */
+  /**
+   * Industry, aligned with CBP Centers of Excellence & Expertise.
+   * @minLength 1
+   */
   industry: string;
+  /** Automation level: supervised (broker reviews) or autopilot (confident work flows through). */
   autonomy?: CreateClientDtoAutonomy;
+  /** Whether automation is active or paused for this client. */
   status?: CreateClientDtoStatus;
+  /** Ports of entry this client typically clears through. */
   portsOfEntry?: string[];
 }
 
+/**
+ * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
+ */
 export type ClientResponseDtoAutonomy = typeof ClientResponseDtoAutonomy[keyof typeof ClientResponseDtoAutonomy];
 
 
@@ -125,6 +207,9 @@ export const ClientResponseDtoAutonomy = {
   autopilot: 'autopilot',
 } as const;
 
+/**
+ * Whether automation is active or paused for this client.
+ */
 export type ClientResponseDtoStatus = typeof ClientResponseDtoStatus[keyof typeof ClientResponseDtoStatus];
 
 
@@ -134,33 +219,55 @@ export const ClientResponseDtoStatus = {
 } as const;
 
 export interface ClientResponseDto {
+  /** Client id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the client was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * When the client was last updated; null if never.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * When the client was deleted; null for active clients.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who created the client. */
   userId: string;
+  /** Client display name. */
   name: string;
-  /** @nullable */
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
   image: string | null;
+  /** Importer of Record number used on customs entries. */
   iorNumber: string;
+  /** Continuous customs bond number. */
   bondNumber: string;
+  /** Primary country of origin (ISO 3166-1 alpha-2). */
   primaryOrigin: string;
+  /** Industry, aligned with CBP Centers of Excellence & Expertise. */
   industry: string;
+  /** Automation level: supervised (broker reviews) or autopilot (confident work flows through). */
   autonomy: ClientResponseDtoAutonomy;
+  /** Whether automation is active or paused for this client. */
   status: ClientResponseDtoStatus;
+  /** Ports of entry this client typically clears through. */
   portsOfEntry: string[];
 }
 
+/**
+ * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
+ */
 export type ListClientsResponseDtoDataItemAutonomy = typeof ListClientsResponseDtoDataItemAutonomy[keyof typeof ListClientsResponseDtoDataItemAutonomy];
 
 
@@ -169,6 +276,9 @@ export const ListClientsResponseDtoDataItemAutonomy = {
   autopilot: 'autopilot',
 } as const;
 
+/**
+ * Whether automation is active or paused for this client.
+ */
 export type ListClientsResponseDtoDataItemStatus = typeof ListClientsResponseDtoDataItemStatus[keyof typeof ListClientsResponseDtoDataItemStatus];
 
 
@@ -178,42 +288,66 @@ export const ListClientsResponseDtoDataItemStatus = {
 } as const;
 
 export type ListClientsResponseDtoDataItem = {
+  /** Client id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the client was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * When the client was last updated; null if never.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * When the client was deleted; null for active clients.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who created the client. */
   userId: string;
+  /** Client display name. */
   name: string;
-  /** @nullable */
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
   image: string | null;
+  /** Importer of Record number used on customs entries. */
   iorNumber: string;
+  /** Continuous customs bond number. */
   bondNumber: string;
+  /** Primary country of origin (ISO 3166-1 alpha-2). */
   primaryOrigin: string;
+  /** Industry, aligned with CBP Centers of Excellence & Expertise. */
   industry: string;
+  /** Automation level: supervised (broker reviews) or autopilot (confident work flows through). */
   autonomy: ListClientsResponseDtoDataItemAutonomy;
+  /** Whether automation is active or paused for this client. */
   status: ListClientsResponseDtoDataItemStatus;
+  /** Ports of entry this client typically clears through. */
   portsOfEntry: string[];
 };
 
 export interface ListClientsResponseDto {
+  /** The page of clients. */
   data: ListClientsResponseDtoDataItem[];
   /**
+   * Total clients matching the filters, ignoring pagination.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   count: number;
 }
 
+/**
+ * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
+ */
 export type UpdateClientDtoAutonomy = typeof UpdateClientDtoAutonomy[keyof typeof UpdateClientDtoAutonomy];
 
 
@@ -222,6 +356,9 @@ export const UpdateClientDtoAutonomy = {
   autopilot: 'autopilot',
 } as const;
 
+/**
+ * Whether automation is active or paused for this client.
+ */
 export type UpdateClientDtoStatus = typeof UpdateClientDtoStatus[keyof typeof UpdateClientDtoStatus];
 
 
@@ -231,72 +368,120 @@ export const UpdateClientDtoStatus = {
 } as const;
 
 export interface UpdateClientDto {
-  /** @minLength 1 */
+  /**
+   * Client display name.
+   * @minLength 1
+   */
   name?: string;
   /**
+   * Logo URL.
    * @minLength 1
    * @nullable
    */
   image?: string | null;
-  /** @minLength 1 */
+  /**
+   * Importer of Record number used on customs entries.
+   * @minLength 1
+   */
   iorNumber?: string;
-  /** @minLength 1 */
+  /**
+   * Continuous customs bond number.
+   * @minLength 1
+   */
   bondNumber?: string;
-  /** @minLength 1 */
+  /**
+   * Primary country of origin (ISO 3166-1 alpha-2).
+   * @minLength 1
+   */
   primaryOrigin?: string;
-  /** @minLength 1 */
+  /**
+   * Industry, aligned with CBP Centers of Excellence & Expertise.
+   * @minLength 1
+   */
   industry?: string;
+  /** Automation level: supervised (broker reviews) or autopilot (confident work flows through). */
   autonomy?: UpdateClientDtoAutonomy;
+  /** Whether automation is active or paused for this client. */
   status?: UpdateClientDtoStatus;
+  /** Ports of entry this client typically clears through. */
   portsOfEntry?: string[];
 }
 
 export interface OrganizationResponseDto {
+  /** Organization id. */
   id: string;
+  /** Organization display name. */
   name: string;
+  /** URL-safe identifier derived from the name; not user-editable. */
   slug: string;
-  /** @nullable */
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
   logo: string | null;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the organization was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
-  /** @nullable */
+  /**
+   * Short description of the brokerage.
+   * @nullable
+   */
   description: string | null;
-  /** @nullable */
+  /**
+   * Company website URL.
+   * @nullable
+   */
   website: string | null;
-  /** @nullable */
+  /**
+   * Contact email shown to clients and used for CBP correspondence.
+   * @nullable
+   */
   contactEmail: string | null;
-  /** @nullable */
+  /**
+   * CBP broker filer code (3 alphanumeric characters, uppercase).
+   * @nullable
+   */
   filerCode: string | null;
 }
 
 export interface UpdateOrganizationDto {
   /**
+   * Organization display name; the slug is re-derived from it.
    * @minLength 1
    * @maxLength 100
    */
   name: string;
   /**
+   * Short description of the brokerage (max 240 characters).
    * @maxLength 240
    * @nullable
    */
   description?: string | null;
   /**
+   * Company website URL.
    * @maxLength 200
    * @nullable
    */
   website?: string | null;
   /**
+   * Contact email shown to clients and used for CBP correspondence.
    * @nullable
    * @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
    */
   contactEmail?: string | null;
   /**
+   * CBP broker filer code — exactly 3 alphanumeric characters; stored uppercase.
    * @nullable
    * @pattern ^[A-Za-z0-9]{3}$
    */
   filerCode?: string | null;
 }
 
+/**
+ * Pipeline stage: intake → classification → compliance → entry → filed → released.
+ */
 export type CreateShipmentDtoStage = typeof CreateShipmentDtoStage[keyof typeof CreateShipmentDtoStage];
 
 
@@ -309,6 +494,9 @@ export const CreateShipmentDtoStage = {
   released: 'released',
 } as const;
 
+/**
+ * Operational status: autopilot, needs_review, awaiting_cbp, or released.
+ */
 export type CreateShipmentDtoStatus = typeof CreateShipmentDtoStatus[keyof typeof CreateShipmentDtoStatus];
 
 
@@ -319,6 +507,9 @@ export const CreateShipmentDtoStatus = {
   released: 'released',
 } as const;
 
+/**
+ * How the cargo moves: ocean, air, truck, or rail.
+ */
 export type CreateShipmentDtoTransportMode = typeof CreateShipmentDtoTransportMode[keyof typeof CreateShipmentDtoTransportMode];
 
 
@@ -330,62 +521,86 @@ export const CreateShipmentDtoTransportMode = {
 } as const;
 
 export interface CreateShipmentDto {
-  /** @minLength 1 */
+  /**
+   * Id of the client this shipment belongs to.
+   * @minLength 1
+   */
   clientId: string;
-  /** @minLength 1 */
+  /**
+   * Internal shipment reference; unique within the organization.
+   * @minLength 1
+   */
   reference: string;
   /**
+   * CBP entry number once the entry is filed.
    * @minLength 1
    * @nullable
    */
   entryNumber?: string | null;
+  /** Pipeline stage: intake → classification → compliance → entry → filed → released. */
   stage?: CreateShipmentDtoStage;
+  /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status?: CreateShipmentDtoStatus;
   /**
+   * Country of export (ISO 3166-1 alpha-2).
    * @minLength 2
    * @maxLength 2
    */
   originCountry: string;
   /**
+   * Port of lading overseas.
    * @minLength 1
    * @nullable
    */
   originPort?: string | null;
-  /** @minLength 1 */
+  /**
+   * US port of entry.
+   * @minLength 1
+   */
   portOfEntry: string;
+  /** How the cargo moves: ocean, air, truck, or rail. */
   transportMode: CreateShipmentDtoTransportMode;
   /**
+   * Vessel name or flight/trip number.
    * @minLength 1
    * @nullable
    */
   conveyance?: string | null;
   /**
+   * Estimated arrival time.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   etaAt?: string | null;
   /**
+   * Declared shipment value in US cents.
    * @minimum 0
    * @maximum 9007199254740991
    */
   valueCents: number;
   /**
+   * Estimated or computed duty in US cents.
    * @minimum 0
    * @maximum 9007199254740991
    */
   dutyCents?: number;
   /**
+   * Incoterm on the commercial invoice (e.g. FOB, CIF).
    * @minLength 1
    * @nullable
    */
   incoterm?: string | null;
   /**
+   * CBP entry type code (e.g. "01" consumption).
    * @minLength 1
    * @nullable
    */
   entryType?: string | null;
 }
 
+/**
+ * Pipeline stage: intake → classification → compliance → entry → filed → released.
+ */
 export type ShipmentResponseDtoStage = typeof ShipmentResponseDtoStage[keyof typeof ShipmentResponseDtoStage];
 
 
@@ -398,6 +613,9 @@ export const ShipmentResponseDtoStage = {
   released: 'released',
 } as const;
 
+/**
+ * Operational status: autopilot, needs_review, awaiting_cbp, or released.
+ */
 export type ShipmentResponseDtoStatus = typeof ShipmentResponseDtoStatus[keyof typeof ShipmentResponseDtoStatus];
 
 
@@ -408,66 +626,110 @@ export const ShipmentResponseDtoStatus = {
   released: 'released',
 } as const;
 
+/**
+ * Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action.
+ */
 export type ShipmentResponseDtoSummary = {[key: string]: unknown};
 
 export interface ShipmentResponseDto {
+  /** Shipment id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the shipment was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * When the shipment was last updated; null if never.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * When the shipment was deleted; null for active shipments.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who created the shipment. */
   userId: string;
+  /** Id of the client this shipment belongs to. */
   clientId: string;
+  /** Internal shipment reference; unique within the organization. */
   reference: string;
-  /** @nullable */
+  /**
+   * CBP entry number once the entry is filed.
+   * @nullable
+   */
   entryNumber: string | null;
+  /** Pipeline stage: intake → classification → compliance → entry → filed → released. */
   stage: ShipmentResponseDtoStage;
+  /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ShipmentResponseDtoStatus;
   /**
+   * Deadline of the pending review; null when nothing is pending.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   reviewDeadlineAt: string | null;
-  /** @nullable */
+  /**
+   * Kind of pending review (e.g. classification, signoff); null when nothing is pending.
+   * @nullable
+   */
   reviewType: string | null;
+  /** Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action. */
   summary: ShipmentResponseDtoSummary;
+  /** Country of export (ISO 3166-1 alpha-2). */
   originCountry: string;
-  /** @nullable */
+  /**
+   * Port of lading overseas.
+   * @nullable
+   */
   originPort: string | null;
+  /** US port of entry. */
   portOfEntry: string;
+  /** How the cargo moves: ocean, air, truck, or rail. */
   transportMode: string;
-  /** @nullable */
+  /**
+   * Vessel name or flight/trip number.
+   * @nullable
+   */
   conveyance: string | null;
   /**
+   * Estimated arrival time.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   etaAt: string | null;
   /**
+   * Declared shipment value in US cents.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   valueCents: number;
   /**
+   * Estimated or computed duty in US cents.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   dutyCents: number;
-  /** @nullable */
+  /**
+   * Incoterm on the commercial invoice (e.g. FOB, CIF).
+   * @nullable
+   */
   incoterm: string | null;
-  /** @nullable */
+  /**
+   * CBP entry type code (e.g. "01" consumption).
+   * @nullable
+   */
   entryType: string | null;
 }
 
+/**
+ * Pipeline stage: intake → classification → compliance → entry → filed → released.
+ */
 export type ListShipmentsResponseDtoDataItemStage = typeof ListShipmentsResponseDtoDataItemStage[keyof typeof ListShipmentsResponseDtoDataItemStage];
 
 
@@ -480,6 +742,9 @@ export const ListShipmentsResponseDtoDataItemStage = {
   released: 'released',
 } as const;
 
+/**
+ * Operational status: autopilot, needs_review, awaiting_cbp, or released.
+ */
 export type ListShipmentsResponseDtoDataItemStatus = typeof ListShipmentsResponseDtoDataItemStatus[keyof typeof ListShipmentsResponseDtoDataItemStatus];
 
 
@@ -490,75 +755,121 @@ export const ListShipmentsResponseDtoDataItemStatus = {
   released: 'released',
 } as const;
 
+/**
+ * Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action.
+ */
 export type ListShipmentsResponseDtoDataItemSummary = {[key: string]: unknown};
 
 export type ListShipmentsResponseDtoDataItem = {
+  /** Shipment id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the shipment was created.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * When the shipment was last updated; null if never.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * When the shipment was deleted; null for active shipments.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who created the shipment. */
   userId: string;
+  /** Id of the client this shipment belongs to. */
   clientId: string;
+  /** Internal shipment reference; unique within the organization. */
   reference: string;
-  /** @nullable */
+  /**
+   * CBP entry number once the entry is filed.
+   * @nullable
+   */
   entryNumber: string | null;
+  /** Pipeline stage: intake → classification → compliance → entry → filed → released. */
   stage: ListShipmentsResponseDtoDataItemStage;
+  /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ListShipmentsResponseDtoDataItemStatus;
   /**
+   * Deadline of the pending review; null when nothing is pending.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   reviewDeadlineAt: string | null;
-  /** @nullable */
+  /**
+   * Kind of pending review (e.g. classification, signoff); null when nothing is pending.
+   * @nullable
+   */
   reviewType: string | null;
+  /** Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action. */
   summary: ListShipmentsResponseDtoDataItemSummary;
+  /** Country of export (ISO 3166-1 alpha-2). */
   originCountry: string;
-  /** @nullable */
+  /**
+   * Port of lading overseas.
+   * @nullable
+   */
   originPort: string | null;
+  /** US port of entry. */
   portOfEntry: string;
+  /** How the cargo moves: ocean, air, truck, or rail. */
   transportMode: string;
-  /** @nullable */
+  /**
+   * Vessel name or flight/trip number.
+   * @nullable
+   */
   conveyance: string | null;
   /**
+   * Estimated arrival time.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   etaAt: string | null;
   /**
+   * Declared shipment value in US cents.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   valueCents: number;
   /**
+   * Estimated or computed duty in US cents.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   dutyCents: number;
-  /** @nullable */
+  /**
+   * Incoterm on the commercial invoice (e.g. FOB, CIF).
+   * @nullable
+   */
   incoterm: string | null;
-  /** @nullable */
+  /**
+   * CBP entry type code (e.g. "01" consumption).
+   * @nullable
+   */
   entryType: string | null;
 };
 
 export interface ListShipmentsResponseDto {
+  /** The page of shipments. */
   data: ListShipmentsResponseDtoDataItem[];
   /**
+   * Total shipments matching the filters, ignoring pagination.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   count: number;
 }
 
+/**
+ * Shipment counts per operational status.
+ */
 export type ShipmentStatsResponseDtoByStatus = {
   /**
    * @minimum -9007199254740991
@@ -582,18 +893,27 @@ export type ShipmentStatsResponseDtoByStatus = {
   released: number;
 };
 
+/**
+ * Pending-review counts keyed by review type.
+ */
 export type ShipmentStatsResponseDtoByReviewType = {[key: string]: number};
 
 export interface ShipmentStatsResponseDto {
   /**
+   * Total live shipments.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   total: number;
+  /** Shipment counts per operational status. */
   byStatus: ShipmentStatsResponseDtoByStatus;
+  /** Pending-review counts keyed by review type. */
   byReviewType: ShipmentStatsResponseDtoByReviewType;
 }
 
+/**
+ * Pipeline stage: intake → classification → compliance → entry → filed → released.
+ */
 export type UpdateShipmentDtoStage = typeof UpdateShipmentDtoStage[keyof typeof UpdateShipmentDtoStage];
 
 
@@ -606,6 +926,9 @@ export const UpdateShipmentDtoStage = {
   released: 'released',
 } as const;
 
+/**
+ * Operational status: autopilot, needs_review, awaiting_cbp, or released.
+ */
 export type UpdateShipmentDtoStatus = typeof UpdateShipmentDtoStatus[keyof typeof UpdateShipmentDtoStatus];
 
 
@@ -616,6 +939,9 @@ export const UpdateShipmentDtoStatus = {
   released: 'released',
 } as const;
 
+/**
+ * How the cargo moves: ocean, air, truck, or rail.
+ */
 export type UpdateShipmentDtoTransportMode = typeof UpdateShipmentDtoTransportMode[keyof typeof UpdateShipmentDtoTransportMode];
 
 
@@ -627,62 +953,86 @@ export const UpdateShipmentDtoTransportMode = {
 } as const;
 
 export interface UpdateShipmentDto {
-  /** @minLength 1 */
+  /**
+   * Id of the client this shipment belongs to.
+   * @minLength 1
+   */
   clientId?: string;
-  /** @minLength 1 */
+  /**
+   * Internal shipment reference; unique within the organization.
+   * @minLength 1
+   */
   reference?: string;
   /**
+   * CBP entry number once the entry is filed.
    * @minLength 1
    * @nullable
    */
   entryNumber?: string | null;
+  /** Pipeline stage: intake → classification → compliance → entry → filed → released. */
   stage?: UpdateShipmentDtoStage;
+  /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status?: UpdateShipmentDtoStatus;
   /**
+   * Country of export (ISO 3166-1 alpha-2).
    * @minLength 2
    * @maxLength 2
    */
   originCountry?: string;
   /**
+   * Port of lading overseas.
    * @minLength 1
    * @nullable
    */
   originPort?: string | null;
-  /** @minLength 1 */
+  /**
+   * US port of entry.
+   * @minLength 1
+   */
   portOfEntry?: string;
+  /** How the cargo moves: ocean, air, truck, or rail. */
   transportMode?: UpdateShipmentDtoTransportMode;
   /**
+   * Vessel name or flight/trip number.
    * @minLength 1
    * @nullable
    */
   conveyance?: string | null;
   /**
+   * Estimated arrival time.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   etaAt?: string | null;
   /**
+   * Declared shipment value in US cents.
    * @minimum 0
    * @maximum 9007199254740991
    */
   valueCents?: number;
   /**
+   * Estimated or computed duty in US cents.
    * @minimum 0
    * @maximum 9007199254740991
    */
   dutyCents?: number;
   /**
+   * Incoterm on the commercial invoice (e.g. FOB, CIF).
    * @minLength 1
    * @nullable
    */
   incoterm?: string | null;
   /**
+   * CBP entry type code (e.g. "01" consumption).
    * @minLength 1
    * @nullable
    */
   entryType?: string | null;
 }
 
+/**
+ * approved accepts the AI proposal; corrected substitutes the broker's answer; info_requested keeps the shipment in the review queue pending more information.
+ */
 export type ResolveReviewDtoAction = typeof ResolveReviewDtoAction[keyof typeof ResolveReviewDtoAction];
 
 
@@ -693,49 +1043,80 @@ export const ResolveReviewDtoAction = {
 } as const;
 
 export interface ResolveReviewDto {
+  /** approved accepts the AI proposal; corrected substitutes the broker's answer; info_requested keeps the shipment in the review queue pending more information. */
   action: ResolveReviewDtoAction;
-  /** @minLength 1 */
+  /**
+   * The value the broker chose instead, when action is "corrected".
+   * @minLength 1
+   */
   alternate?: string;
-  /** @minLength 1 */
+  /**
+   * Broker note recorded on the review_resolved event.
+   * @minLength 1
+   */
   note?: string;
 }
 
+/**
+ * Type-specific structured data.
+ */
 export type ListShipmentEventsResponseDtoDataItemPayload = {[key: string]: unknown};
 
 export type ListShipmentEventsResponseDtoDataItem = {
+  /** Event id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the event was recorded.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * Always null — events cannot be modified.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * Always null — events cannot be removed.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who recorded the event. */
   userId: string;
+  /** Shipment this event belongs to. */
   shipmentId: string;
+  /** Open event type, e.g. document_received, agent_trace, review_requested, broker_note. */
   type: string;
+  /** Who produced the event: ai, user, system, or cbp. */
   actor: string;
+  /** Human-readable one-line summary. */
   title: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the event happened.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   occurredAt: string;
+  /** Type-specific structured data. */
   payload: ListShipmentEventsResponseDtoDataItemPayload;
 };
 
 export interface ListShipmentEventsResponseDto {
+  /** The page of events. */
   data: ListShipmentEventsResponseDtoDataItem[];
   /**
+   * Total events matching the filters, ignoring pagination.
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
   count: number;
 }
 
+/**
+ * Who produced the event: ai, user, system, or cbp.
+ */
 export type CreateShipmentEventDtoActor = typeof CreateShipmentEventDtoActor[keyof typeof CreateShipmentEventDtoActor];
 
 
@@ -746,58 +1127,94 @@ export const CreateShipmentEventDtoActor = {
   cbp: 'cbp',
 } as const;
 
+/**
+ * Type-specific structured data.
+ */
 export type CreateShipmentEventDtoPayload = {[key: string]: unknown};
 
 export interface CreateShipmentEventDto {
-  /** @minLength 1 */
+  /**
+   * Event type, e.g. document_received, agent_trace, review_requested, broker_note.
+   * @minLength 1
+   */
   type: string;
+  /** Who produced the event: ai, user, system, or cbp. */
   actor?: CreateShipmentEventDtoActor;
-  /** @minLength 1 */
+  /**
+   * Human-readable one-line summary.
+   * @minLength 1
+   */
   title: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the event happened; defaults to now.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   occurredAt?: string;
+  /** Type-specific structured data. */
   payload?: CreateShipmentEventDtoPayload;
 }
 
+/**
+ * Type-specific structured data.
+ */
 export type ShipmentEventResponseDtoPayload = {[key: string]: unknown};
 
 export interface ShipmentEventResponseDto {
+  /** Event id. */
   id: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the event was recorded.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   createdAt: string;
   /**
+   * Always null — events cannot be modified.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   updatedAt: string | null;
   /**
+   * Always null — events cannot be removed.
    * @nullable
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   deletedAt: string | null;
+  /** Owning organization id. */
   organizationId: string;
+  /** Id of the user who recorded the event. */
   userId: string;
+  /** Shipment this event belongs to. */
   shipmentId: string;
+  /** Open event type, e.g. document_received, agent_trace, review_requested, broker_note. */
   type: string;
+  /** Who produced the event: ai, user, system, or cbp. */
   actor: string;
+  /** Human-readable one-line summary. */
   title: string;
-  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  /**
+   * When the event happened.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
   occurredAt: string;
+  /** Type-specific structured data. */
   payload: ShipmentEventResponseDtoPayload;
 }
 
 export type UploadDocumentsDtoFilesItem = {
   /**
+   * Original file name.
    * @minLength 1
    * @maxLength 200
    */
   fileName: string;
   /**
+   * MIME type of the file; the upload PUT must use the same Content-Type.
    * @minLength 1
    * @maxLength 120
    */
   contentType: string;
   /**
+   * File size in bytes (max 50 MB).
    * @minimum 1
    * @maximum 52428800
    */
@@ -806,6 +1223,7 @@ export type UploadDocumentsDtoFilesItem = {
 
 export interface UploadDocumentsDto {
   /**
+   * The files to upload (max 25 per request).
    * @minItems 1
    * @maxItems 25
    */
@@ -813,16 +1231,24 @@ export interface UploadDocumentsDto {
 }
 
 export type UploadDocumentsResponseDtoUploadsItem = {
+  /** File key identifying the upload; pass it back when ingesting. */
   key: string;
+  /** Presigned upload URL — PUT the raw file body here before it expires (5 minutes). */
   url: string;
+  /** Original file name, echoed back. */
   fileName: string;
+  /** MIME type the upload PUT must use as its Content-Type. */
   contentType: string;
 };
 
 export interface UploadDocumentsResponseDto {
+  /** One upload target per requested file, in request order. */
   uploads: UploadDocumentsResponseDtoUploadsItem[];
 }
 
+/**
+ * Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other.
+ */
 export type IngestDocumentsDtoFilesItemCategory = typeof IngestDocumentsDtoFilesItemCategory[keyof typeof IngestDocumentsDtoFilesItemCategory];
 
 
@@ -836,30 +1262,36 @@ export const IngestDocumentsDtoFilesItemCategory = {
 
 export type IngestDocumentsDtoFilesItem = {
   /**
+   * File key returned by POST /shipments/documents/upload.
    * @minLength 1
    * @maxLength 500
    */
   key: string;
   /**
+   * Original file name.
    * @minLength 1
    * @maxLength 200
    */
   fileName: string;
   /**
+   * MIME type of the file.
    * @minLength 1
    * @maxLength 120
    */
   contentType: string;
   /**
+   * File size in bytes.
    * @minimum 1
    * @maximum 52428800
    */
   size: number;
+  /** Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other. */
   category?: IngestDocumentsDtoFilesItemCategory;
 };
 
 export interface IngestDocumentsDto {
   /**
+   * The uploaded files to ingest (max 25 per request).
    * @minItems 1
    * @maxItems 25
    */
@@ -867,21 +1299,39 @@ export interface IngestDocumentsDto {
 }
 
 export interface IngestDocumentsResponseDto {
+  /** Ids of the ingestion runs started for this batch. */
   eventIds: string[];
 }
 
 export type ClientsControllerFindAllParams = {
+/**
+ * Free-text search on the client name (case-insensitive).
+ */
 search?: string;
+/**
+ * Filter by status; comma-separated for multiple values.
+ */
 status?: ClientsControllerFindAllStatusItem[];
+/**
+ * Filter by autonomy; comma-separated for multiple values.
+ */
 autonomy?: ClientsControllerFindAllAutonomyItem[];
+/**
+ * Column to sort by.
+ */
 sortBy?: ClientsControllerFindAllSortBy;
+/**
+ * Sort direction.
+ */
 sortDir?: ClientsControllerFindAllSortDir;
 /**
+ * Page size (1–100).
  * @minimum 1
  * @maximum 100
  */
 limit?: number;
 /**
+ * Rows to skip before the page starts.
  * @minimum 0
  * @maximum 9007199254740991
  */
@@ -927,29 +1377,54 @@ export const ClientsControllerFindAllSortDir = {
 } as const;
 
 export type ShipmentsControllerFindAllParams = {
+/**
+ * Free-text search across reference, entry number, and client name.
+ */
 search?: string;
+/**
+ * Filter by pipeline stage; comma-separated for multiple values.
+ */
 stage?: ShipmentsControllerFindAllStageItem[];
+/**
+ * Filter by status; comma-separated for multiple values.
+ */
 status?: ShipmentsControllerFindAllStatusItem[];
+/**
+ * Filter by client id; comma-separated for multiple values.
+ */
 clientId?: string[];
+/**
+ * Filter by pending review type (e.g. classification, signoff); comma-separated.
+ */
 reviewType?: string[];
 /**
+ * Inclusive lower bound on shipment value, in US cents.
  * @minimum 0
  * @maximum 9007199254740991
  */
 valueMin?: number;
 /**
+ * Inclusive upper bound on shipment value, in US cents.
  * @minimum 0
  * @maximum 9007199254740991
  */
 valueMax?: number;
+/**
+ * Column to sort by.
+ */
 sortBy?: ShipmentsControllerFindAllSortBy;
+/**
+ * Sort direction.
+ */
 sortDir?: ShipmentsControllerFindAllSortDir;
 /**
+ * Page size (1–100).
  * @minimum 1
  * @maximum 100
  */
 limit?: number;
 /**
+ * Rows to skip before the page starts.
  * @minimum 0
  * @maximum 9007199254740991
  */
@@ -1000,14 +1475,22 @@ export const ShipmentsControllerFindAllSortDir = {
 } as const;
 
 export type ShipmentEventsControllerFindAllParams = {
+/**
+ * Filter by event type; comma-separated for multiple values.
+ */
 type?: string[];
+/**
+ * Filter by actor; comma-separated for multiple values.
+ */
 actor?: ShipmentEventsControllerFindAllActorItem[];
 /**
+ * Page size (1–200).
  * @minimum 1
  * @maximum 200
  */
 limit?: number;
 /**
+ * Rows to skip before the page starts.
  * @minimum 0
  * @maximum 9007199254740991
  */
@@ -1025,14 +1508,22 @@ export const ShipmentEventsControllerFindAllActorItem = {
 } as const;
 
 export type ShipmentEventsControllerFindByShipmentParams = {
+/**
+ * Filter by event type; comma-separated for multiple values.
+ */
 type?: string[];
+/**
+ * Filter by actor; comma-separated for multiple values.
+ */
 actor?: ShipmentEventsControllerFindByShipmentActorItem[];
 /**
+ * Page size (1–200).
  * @minimum 1
  * @maximum 200
  */
 limit?: number;
 /**
+ * Rows to skip before the page starts.
  * @minimum 0
  * @maximum 9007199254740991
  */
@@ -1053,8 +1544,12 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
+/**
+ * Unauthenticated liveness probe. Returns a static greeting when the API is up.
+ * @summary Health check
+ */
 export type appControllerGetHelloResponse200 = {
-  data: void
+  data: string
   status: 200
 }
 
@@ -1141,6 +1636,9 @@ export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appCo
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Health check
+ */
 
 export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -1158,6 +1656,10 @@ export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appCo
 
 
 
+/**
+ * Returns the signed-in user together with their active organization and membership (role, joined date). Organization and member are null when the session has no active organization.
+ * @summary Get the current user
+ */
 export type usersControllerGetProfileResponse200 = {
   data: MeResponseDto
   status: 200
@@ -1246,6 +1748,9 @@ export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof u
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get the current user
+ */
 
 export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -1263,6 +1768,10 @@ export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof u
 
 
 
+/**
+ * Creates an importer client in the active organization. The client owns shipments and carries the customs identity used on entries: IOR number, continuous bond, primary origin country, and preferred ports of entry.
+ * @summary Create a client
+ */
 export type clientsControllerCreateResponse201 = {
   data: ClientResponseDto
   status: 201
@@ -1329,7 +1838,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClientsControllerCreateMutationBody = CreateClientDto
     export type ClientsControllerCreateMutationError = ErrorType<unknown>
 
-    export const useClientsControllerCreate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Create a client
+ */
+export const useClientsControllerCreate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerCreate>>, TError,{data: CreateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsControllerCreate>>,
@@ -1340,6 +1852,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getClientsControllerCreateMutationOptions(options), queryClient);
     }
     
+/**
+ * Returns the organization's clients with optional filtering by autonomy and status, free-text search on the name, sorting, and offset pagination. The response includes the total row count for the current filters.
+ * @summary List clients
+ */
 export type clientsControllerFindAllResponse200 = {
   data: ListClientsResponseDto
   status: 200
@@ -1435,6 +1951,9 @@ export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof cl
  params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List clients
+ */
 
 export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(
  params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -1452,6 +1971,10 @@ export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof cl
 
 
 
+/**
+ * Fetches one client by id, scoped to the active organization.
+ * @summary Get a client
+ */
 export type clientsControllerFindOneResponse200 = {
   data: ClientResponseDto
   status: 200
@@ -1540,6 +2063,9 @@ export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof cl
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a client
+ */
 
 export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -1557,6 +2083,10 @@ export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof cl
 
 
 
+/**
+ * Partially updates a client — only the provided fields change. Use this to pause/resume automation (status), adjust autonomy, or correct customs identifiers.
+ * @summary Update a client
+ */
 export type clientsControllerUpdateResponse200 = {
   data: ClientResponseDto
   status: 200
@@ -1624,7 +2154,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClientsControllerUpdateMutationBody = UpdateClientDto
     export type ClientsControllerUpdateMutationError = ErrorType<unknown>
 
-    export const useClientsControllerUpdate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Update a client
+ */
+export const useClientsControllerUpdate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerUpdate>>, TError,{id: string;data: UpdateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsControllerUpdate>>,
@@ -1635,6 +2168,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getClientsControllerUpdateMutationOptions(options), queryClient);
     }
     
+/**
+ * Deletes a client. Deleted clients no longer appear in lists or lookups; their history is preserved for the record.
+ * @summary Delete a client
+ */
 export type clientsControllerRemoveResponse200 = {
   data: ClientResponseDto
   status: 200
@@ -1700,7 +2237,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     
     export type ClientsControllerRemoveMutationError = ErrorType<unknown>
 
-    export const useClientsControllerRemove = <TError = ErrorType<unknown>,
+    /**
+ * @summary Delete a client
+ */
+export const useClientsControllerRemove = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsControllerRemove>>,
@@ -1711,6 +2251,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getClientsControllerRemoveMutationOptions(options), queryClient);
     }
     
+/**
+ * Returns the profile of the session's active organization: name, derived slug, description, website, contact email, and CBP filer code.
+ * @summary Get the active organization
+ */
 export type organizationControllerGetCurrentResponse200 = {
   data: OrganizationResponseDto
   status: 200
@@ -1799,6 +2343,9 @@ export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<t
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get the active organization
+ */
 
 export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -1816,6 +2363,10 @@ export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<t
 
 
 
+/**
+ * Updates the organization profile. Only owners and admins may call this. The slug is derived from the name server-side (with a suffix on collision) and cannot be set directly; the filer code is uppercased.
+ * @summary Update the active organization
+ */
 export type organizationControllerUpdateResponse200 = {
   data: OrganizationResponseDto
   status: 200
@@ -1882,7 +2433,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type OrganizationControllerUpdateMutationBody = UpdateOrganizationDto
     export type OrganizationControllerUpdateMutationError = ErrorType<unknown>
 
-    export const useOrganizationControllerUpdate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Update the active organization
+ */
+export const useOrganizationControllerUpdate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof organizationControllerUpdate>>,
@@ -1893,6 +2447,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getOrganizationControllerUpdateMutationOptions(options), queryClient);
     }
     
+/**
+ * Creates a shipment for one of the organization's clients. The reference must be unique within the organization; stage and status default to the start of the pipeline (intake, on autopilot).
+ * @summary Create a shipment
+ */
 export type shipmentsControllerCreateResponse201 = {
   data: ShipmentResponseDto
   status: 201
@@ -1959,7 +2517,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentsControllerCreateMutationBody = CreateShipmentDto
     export type ShipmentsControllerCreateMutationError = ErrorType<unknown>
 
-    export const useShipmentsControllerCreate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Create a shipment
+ */
+export const useShipmentsControllerCreate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerCreate>>, TError,{data: CreateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentsControllerCreate>>,
@@ -1970,6 +2531,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentsControllerCreateMutationOptions(options), queryClient);
     }
     
+/**
+ * Returns the organization's shipments with the full pipeline filter set: stage, status, client, review type, value bounds (cents), and free-text search across reference, entry number, and client name. Supports sorting and offset pagination; the response includes the total count for the current filters.
+ * @summary List shipments
+ */
 export type shipmentsControllerFindAllResponse200 = {
   data: ListShipmentsResponseDto
   status: 200
@@ -2065,6 +2630,9 @@ export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof 
  params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List shipments
+ */
 
 export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(
  params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -2082,6 +2650,10 @@ export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof 
 
 
 
+/**
+ * Returns aggregate shipment counts for the organization, grouped by status and review type — suitable for dashboard overviews and queue filters.
+ * @summary Get shipment stats
+ */
 export type shipmentsControllerStatsResponse200 = {
   data: ShipmentStatsResponseDto
   status: 200
@@ -2170,6 +2742,9 @@ export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof sh
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get shipment stats
+ */
 
 export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -2187,6 +2762,10 @@ export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof sh
 
 
 
+/**
+ * Fetches one shipment by id, scoped to the active organization. Includes any pending review details and the summary snapshot.
+ * @summary Get a shipment
+ */
 export type shipmentsControllerFindOneResponse200 = {
   data: ShipmentResponseDto
   status: 200
@@ -2275,6 +2854,9 @@ export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof 
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a shipment
+ */
 
 export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -2292,6 +2874,10 @@ export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof 
 
 
 
+/**
+ * Partially updates a shipment — only the provided fields change. Prefer appending shipment events for anything that belongs in the audit record; this endpoint is for correcting current-state fields.
+ * @summary Update a shipment
+ */
 export type shipmentsControllerUpdateResponse200 = {
   data: ShipmentResponseDto
   status: 200
@@ -2359,7 +2945,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentsControllerUpdateMutationBody = UpdateShipmentDto
     export type ShipmentsControllerUpdateMutationError = ErrorType<unknown>
 
-    export const useShipmentsControllerUpdate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Update a shipment
+ */
+export const useShipmentsControllerUpdate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerUpdate>>, TError,{id: string;data: UpdateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
@@ -2370,6 +2959,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentsControllerUpdateMutationOptions(options), queryClient);
     }
     
+/**
+ * Deletes a shipment. Its event history is preserved in the audit record.
+ * @summary Delete a shipment
+ */
 export type shipmentsControllerRemoveResponse200 = {
   data: ShipmentResponseDto
   status: 200
@@ -2435,7 +3028,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     
     export type ShipmentsControllerRemoveMutationError = ErrorType<unknown>
 
-    export const useShipmentsControllerRemove = <TError = ErrorType<unknown>,
+    /**
+ * @summary Delete a shipment
+ */
+export const useShipmentsControllerRemove = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentsControllerRemove>>,
@@ -2446,6 +3042,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentsControllerRemoveMutationOptions(options), queryClient);
     }
     
+/**
+ * Resolves the shipment's pending review with one of three actions: approved (accept the AI proposal), corrected (broker supplied a different answer), or info_requested (more information needed — the shipment stays in the review queue). Approval and correction append a review_resolved event, advance the stage, and clear the review fields. Returns 409 when there is no pending review.
+ * @summary Resolve a review
+ */
 export type shipmentsControllerResolveResponse200 = {
   data: ShipmentResponseDto
   status: 200
@@ -2513,7 +3113,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentsControllerResolveMutationBody = ResolveReviewDto
     export type ShipmentsControllerResolveMutationError = ErrorType<unknown>
 
-    export const useShipmentsControllerResolve = <TError = ErrorType<unknown>,
+    /**
+ * @summary Resolve a review
+ */
+export const useShipmentsControllerResolve = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerResolve>>, TError,{id: string;data: ResolveReviewDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentsControllerResolve>>,
@@ -2524,6 +3127,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentsControllerResolveMutationOptions(options), queryClient);
     }
     
+/**
+ * Returns the organization-wide event feed across every shipment, newest first — a complete audit trail of automated and manual activity. Filterable by type and actor; paginated with limit/offset.
+ * @summary List events across all shipments
+ */
 export type shipmentEventsControllerFindAllResponse200 = {
   data: ListShipmentEventsResponseDto
   status: 200
@@ -2619,6 +3226,9 @@ export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<ty
  params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List events across all shipments
+ */
 
 export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(
  params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
@@ -2636,6 +3246,10 @@ export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<ty
 
 
 
+/**
+ * Returns one shipment's timeline — documents received, extracted facts, agent trace steps, milestones, broker notes — oldest first. This is the contemporaneous record used to reconstruct any decision later (e.g. answering a CF-28).
+ * @summary List a shipment's events
+ */
 export type shipmentEventsControllerFindByShipmentResponse200 = {
   data: ListShipmentEventsResponseDto
   status: 200
@@ -2738,6 +3352,9 @@ export function useShipmentEventsControllerFindByShipment<TData = Awaited<Return
     params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List a shipment's events
+ */
 
 export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
  shipmentId: string,
@@ -2756,6 +3373,10 @@ export function useShipmentEventsControllerFindByShipment<TData = Awaited<Return
 
 
 
+/**
+ * Appends an event to the shipment's timeline. Events are immutable — there is no update or delete. Appending a review_requested event also flips the shipment to needs_review and sets its review deadline and type.
+ * @summary Append a shipment event
+ */
 export type shipmentEventsControllerCreateResponse201 = {
   data: ShipmentEventResponseDto
   status: 201
@@ -2823,7 +3444,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentEventsControllerCreateMutationBody = CreateShipmentEventDto
     export type ShipmentEventsControllerCreateMutationError = ErrorType<unknown>
 
-    export const useShipmentEventsControllerCreate = <TError = ErrorType<unknown>,
+    /**
+ * @summary Append a shipment event
+ */
+export const useShipmentEventsControllerCreate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
@@ -2834,6 +3458,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentEventsControllerCreateMutationOptions(options), queryClient);
     }
     
+/**
+ * Step 1 of intake: returns a presigned upload URL per file. Upload each file body directly to its URL with an HTTP PUT (the Content-Type must match), then confirm the batch via POST /shipments/documents. File keys are assigned by the server; upload URLs expire after 5 minutes.
+ * @summary Get document upload URLs
+ */
 export type shipmentDocumentsControllerUploadResponse201 = {
   data: UploadDocumentsResponseDto
   status: 201
@@ -2900,7 +3528,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentDocumentsControllerUploadMutationBody = UploadDocumentsDto
     export type ShipmentDocumentsControllerUploadMutationError = ErrorType<unknown>
 
-    export const useShipmentDocumentsControllerUpload = <TError = ErrorType<unknown>,
+    /**
+ * @summary Get document upload URLs
+ */
+export const useShipmentDocumentsControllerUpload = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>, TError,{data: UploadDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
@@ -2911,6 +3542,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getShipmentDocumentsControllerUploadMutationOptions(options), queryClient);
     }
     
+/**
+ * Step 2 of intake: confirms a batch of uploaded documents and kickstarts the asynchronous shipment process (classification, extraction, matching). Each file carries its intake category (commercial invoice, packing list, bill of lading, arrival notice, other). Keys must belong to the active organization.
+ * @summary Ingest uploaded documents
+ */
 export type shipmentDocumentsControllerIngestResponse201 = {
   data: IngestDocumentsResponseDto
   status: 201
@@ -2977,7 +3612,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ShipmentDocumentsControllerIngestMutationBody = IngestDocumentsDto
     export type ShipmentDocumentsControllerIngestMutationError = ErrorType<unknown>
 
-    export const useShipmentDocumentsControllerIngest = <TError = ErrorType<unknown>,
+    /**
+ * @summary Ingest uploaded documents
+ */
+export const useShipmentDocumentsControllerIngest = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,

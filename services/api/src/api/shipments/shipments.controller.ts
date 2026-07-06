@@ -8,7 +8,13 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from "@nestjs/swagger";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
@@ -23,12 +29,22 @@ import {
 import { UpdateShipmentDto } from "./dto/update-shipment.dto";
 import { ShipmentsService } from "./shipments.service";
 
+@ApiTags("Shipments")
 @Controller("shipments")
 export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
 
+  /** Create a shipment for a client in the active organization. */
   @Post()
-  @ApiCreatedResponse({ type: ShipmentResponseDto })
+  @ApiOperation({
+    summary: "Create a shipment",
+    description:
+      "Creates a shipment for one of the organization's clients. The reference must be unique within the organization; stage and status default to the start of the pipeline (intake, on autopilot).",
+  })
+  @ApiCreatedResponse({
+    type: ShipmentResponseDto,
+    description: "The newly created shipment.",
+  })
   create(
     @Session() session: UserSession<typeof auth>,
     @Body() dto: CreateShipmentDto,
@@ -40,8 +56,17 @@ export class ShipmentsController {
     );
   }
 
+  /** List shipments with the pipeline/review-queue filter set. */
   @Get()
-  @ApiOkResponse({ type: ListShipmentsResponseDto })
+  @ApiOperation({
+    summary: "List shipments",
+    description:
+      "Returns the organization's shipments with the full pipeline filter set: stage, status, client, review type, value bounds (cents), and free-text search across reference, entry number, and client name. Supports sorting and offset pagination; the response includes the total count for the current filters.",
+  })
+  @ApiOkResponse({
+    type: ListShipmentsResponseDto,
+    description: "A page of shipments plus the total count.",
+  })
   findAll(
     @Session() session: UserSession<typeof auth>,
     @Query() query: ListShipmentsDto,
@@ -52,15 +77,31 @@ export class ShipmentsController {
     );
   }
 
+  /** Aggregate counts by status and review type. */
   // Must precede :id so "stats" isn't captured as an id.
   @Get("stats")
-  @ApiOkResponse({ type: ShipmentStatsResponseDto })
+  @ApiOperation({
+    summary: "Get shipment stats",
+    description:
+      "Returns aggregate shipment counts for the organization, grouped by status and review type — suitable for dashboard overviews and queue filters.",
+  })
+  @ApiOkResponse({
+    type: ShipmentStatsResponseDto,
+    description: "Counts grouped by status and review type.",
+  })
   stats(@Session() session: UserSession<typeof auth>) {
     return this.shipmentsService.stats(getActiveOrganizationId(session));
   }
 
+  /** Fetch a single shipment by id. */
   @Get(":id")
-  @ApiOkResponse({ type: ShipmentResponseDto })
+  @ApiOperation({
+    summary: "Get a shipment",
+    description:
+      "Fetches one shipment by id, scoped to the active organization. Includes any pending review details and the summary snapshot.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({ type: ShipmentResponseDto, description: "The shipment." })
   findOne(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
@@ -68,8 +109,18 @@ export class ShipmentsController {
     return this.shipmentsService.findOne(getActiveOrganizationId(session), id);
   }
 
+  /** Partially update a shipment. */
   @Patch(":id")
-  @ApiOkResponse({ type: ShipmentResponseDto })
+  @ApiOperation({
+    summary: "Update a shipment",
+    description:
+      "Partially updates a shipment — only the provided fields change. Prefer appending shipment events for anything that belongs in the audit record; this endpoint is for correcting current-state fields.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({
+    type: ShipmentResponseDto,
+    description: "The updated shipment.",
+  })
   update(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
@@ -82,8 +133,18 @@ export class ShipmentsController {
     );
   }
 
+  /** Delete a shipment. */
   @Delete(":id")
-  @ApiOkResponse({ type: ShipmentResponseDto })
+  @ApiOperation({
+    summary: "Delete a shipment",
+    description:
+      "Deletes a shipment. Its event history is preserved in the audit record.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({
+    type: ShipmentResponseDto,
+    description: "The deleted shipment.",
+  })
   remove(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
@@ -91,8 +152,18 @@ export class ShipmentsController {
     return this.shipmentsService.remove(getActiveOrganizationId(session), id);
   }
 
+  /** Resolve the shipment's open review. */
   @Post(":id/resolve")
-  @ApiOkResponse({ type: ShipmentResponseDto })
+  @ApiOperation({
+    summary: "Resolve a review",
+    description:
+      "Resolves the shipment's pending review with one of three actions: approved (accept the AI proposal), corrected (broker supplied a different answer), or info_requested (more information needed — the shipment stays in the review queue). Approval and correction append a review_resolved event, advance the stage, and clear the review fields. Returns 409 when there is no pending review.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({
+    type: ShipmentResponseDto,
+    description: "The shipment after resolution.",
+  })
   resolve(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,

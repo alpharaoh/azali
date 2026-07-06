@@ -3,50 +3,105 @@ import { z } from "zod";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 
 export const shipmentSchema = z.object({
-  id: z.string(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime().nullable(),
-  deletedAt: z.iso.datetime().nullable(),
-  organizationId: z.string(),
-  userId: z.string(),
-  clientId: z.string(),
-  reference: z.string(),
-  entryNumber: z.string().nullable(),
-  stage: z.enum(ShipmentStage),
-  status: z.enum(ShipmentStatus),
-  reviewDeadlineAt: z.iso.datetime().nullable(),
-  reviewType: z.string().nullable(),
-  summary: z.record(z.string(), z.unknown()),
-  originCountry: z.string(),
-  originPort: z.string().nullable(),
-  portOfEntry: z.string(),
-  transportMode: z.string(),
-  conveyance: z.string().nullable(),
-  etaAt: z.iso.datetime().nullable(),
-  valueCents: z.number().int(),
-  dutyCents: z.number().int(),
-  incoterm: z.string().nullable(),
-  entryType: z.string().nullable(),
+  id: z.string().describe("Shipment id."),
+  createdAt: z.iso.datetime().describe("When the shipment was created."),
+  updatedAt: z.iso
+    .datetime()
+    .nullable()
+    .describe("When the shipment was last updated; null if never."),
+  deletedAt: z.iso
+    .datetime()
+    .nullable()
+    .describe("When the shipment was deleted; null for active shipments."),
+  organizationId: z.string().describe("Owning organization id."),
+  userId: z.string().describe("Id of the user who created the shipment."),
+  clientId: z.string().describe("Id of the client this shipment belongs to."),
+  reference: z
+    .string()
+    .describe("Internal shipment reference; unique within the organization."),
+  entryNumber: z
+    .string()
+    .nullable()
+    .describe("CBP entry number once the entry is filed."),
+  stage: z
+    .enum(ShipmentStage)
+    .describe(
+      "Pipeline stage: intake → classification → compliance → entry → filed → released.",
+    ),
+  status: z
+    .enum(ShipmentStatus)
+    .describe(
+      "Operational status: autopilot, needs_review, awaiting_cbp, or released.",
+    ),
+  reviewDeadlineAt: z.iso
+    .datetime()
+    .nullable()
+    .describe("Deadline of the pending review; null when nothing is pending."),
+  reviewType: z
+    .string()
+    .nullable()
+    .describe(
+      "Kind of pending review (e.g. classification, signoff); null when nothing is pending.",
+    ),
+  summary: z
+    .record(z.string(), z.unknown())
+    .describe(
+      "Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action.",
+    ),
+  originCountry: z.string().describe("Country of export (ISO 3166-1 alpha-2)."),
+  originPort: z.string().nullable().describe("Port of lading overseas."),
+  portOfEntry: z.string().describe("US port of entry."),
+  transportMode: z
+    .string()
+    .describe("How the cargo moves: ocean, air, truck, or rail."),
+  conveyance: z
+    .string()
+    .nullable()
+    .describe("Vessel name or flight/trip number."),
+  etaAt: z.iso.datetime().nullable().describe("Estimated arrival time."),
+  valueCents: z
+    .number()
+    .int()
+    .describe("Declared shipment value in US cents."),
+  dutyCents: z
+    .number()
+    .int()
+    .describe("Estimated or computed duty in US cents."),
+  incoterm: z
+    .string()
+    .nullable()
+    .describe("Incoterm on the commercial invoice (e.g. FOB, CIF)."),
+  entryType: z
+    .string()
+    .nullable()
+    .describe('CBP entry type code (e.g. "01" consumption).'),
 });
 
 export class ShipmentResponseDto extends createZodDto(shipmentSchema) {}
 
 export class ListShipmentsResponseDto extends createZodDto(
   z.object({
-    data: z.array(shipmentSchema),
-    count: z.number().int(),
+    data: z.array(shipmentSchema).describe("The page of shipments."),
+    count: z
+      .number()
+      .int()
+      .describe("Total shipments matching the filters, ignoring pagination."),
   }),
 ) {}
 
 export class ShipmentStatsResponseDto extends createZodDto(
   z.object({
-    total: z.number().int(),
-    byStatus: z.object({
-      autopilot: z.number().int(),
-      needs_review: z.number().int(),
-      awaiting_cbp: z.number().int(),
-      released: z.number().int(),
-    }),
-    byReviewType: z.record(z.string(), z.number().int()),
+    total: z.number().int().describe("Total live shipments."),
+    byStatus: z
+      .object({
+        autopilot: z.number().int(),
+        needs_review: z.number().int(),
+        awaiting_cbp: z.number().int(),
+        released: z.number().int(),
+      })
+      .describe("Shipment counts per operational status."),
+    byReviewType: z
+      .record(z.string(), z.number().int())
+      .describe("Pending-review counts keyed by review type."),
   }),
 ) {}

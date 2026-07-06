@@ -10,10 +10,25 @@ const csv = <S extends z.ZodType>(schema: S) =>
   );
 
 export const listShipmentEventsSchema = z.object({
-  type: csv(z.string().min(1)).optional(),
-  actor: csv(z.enum(eventActors)).optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+  type: csv(z.string().min(1))
+    .optional()
+    .describe("Filter by event type; comma-separated for multiple values."),
+  actor: csv(z.enum(eventActors))
+    .optional()
+    .describe("Filter by actor; comma-separated for multiple values."),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(200)
+    .default(50)
+    .describe("Page size (1–200)."),
+  offset: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(0)
+    .describe("Rows to skip before the page starts."),
 });
 
 export class ListShipmentEventsDto extends createZodDto(

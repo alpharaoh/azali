@@ -2,18 +2,30 @@ import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
 export const shipmentEventSchema = z.object({
-  id: z.string(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime().nullable(),
-  deletedAt: z.iso.datetime().nullable(),
-  organizationId: z.string(),
-  userId: z.string(),
-  shipmentId: z.string(),
-  type: z.string(),
-  actor: z.string(),
-  title: z.string(),
-  occurredAt: z.iso.datetime(),
-  payload: z.record(z.string(), z.unknown()),
+  id: z.string().describe("Event id."),
+  createdAt: z.iso.datetime().describe("When the event was recorded."),
+  updatedAt: z.iso
+    .datetime()
+    .nullable()
+    .describe("Always null — events cannot be modified."),
+  deletedAt: z.iso
+    .datetime()
+    .nullable()
+    .describe("Always null — events cannot be removed."),
+  organizationId: z.string().describe("Owning organization id."),
+  userId: z.string().describe("Id of the user who recorded the event."),
+  shipmentId: z.string().describe("Shipment this event belongs to."),
+  type: z
+    .string()
+    .describe(
+      "Open event type, e.g. document_received, agent_trace, review_requested, broker_note.",
+    ),
+  actor: z.string().describe("Who produced the event: ai, user, system, or cbp."),
+  title: z.string().describe("Human-readable one-line summary."),
+  occurredAt: z.iso.datetime().describe("When the event happened."),
+  payload: z
+    .record(z.string(), z.unknown())
+    .describe("Type-specific structured data."),
 });
 
 export class ShipmentEventResponseDto extends createZodDto(
@@ -22,7 +34,10 @@ export class ShipmentEventResponseDto extends createZodDto(
 
 export class ListShipmentEventsResponseDto extends createZodDto(
   z.object({
-    data: z.array(shipmentEventSchema),
-    count: z.number().int(),
+    data: z.array(shipmentEventSchema).describe("The page of events."),
+    count: z
+      .number()
+      .int()
+      .describe("Total events matching the filters, ignoring pagination."),
   }),
 ) {}
