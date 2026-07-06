@@ -320,7 +320,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           </Avatar>
         </Dropdown.Trigger>
         <Dropdown.Popover>
-          <div className="px-3 pt-3 pb-1">
+          <div className="px-3 pt-3 pb-2">
             <div className="flex items-center gap-2">
               <Avatar size="sm">
                 {user?.image && (
