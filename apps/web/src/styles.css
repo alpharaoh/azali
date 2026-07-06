@@ -51,21 +51,21 @@ body {
 [data-theme="light"],
 [data-theme="default"] {
   /* Theme Colors */
-  --background: oklch(97.02% 0.002 237.99);
-  --muted: oklch(55.17% 0.004 237.99);
-  --scrollbar: oklch(87.1% 0.002 237.99);
-  --surface-secondary: oklch(95.24% 0.003 237.99);
-  --surface-tertiary: oklch(93.73% 0.003 237.99);
-  --default: oklch(94% 0.002 237.99);
-  /* --accent: oklch(60.92% 0.1201 237.99); */
-  --accent: oklch(57.74% 0.1588 253.72);
-  --danger: oklch(66.99% 0.1583 20.89);
-  --field-border: oklch(90% 0.002 237.99);
-  --border: oklch(90% 0.002 237.99);
-  --separator: oklch(92% 0.002 237.99);
+  --background: oklch(97.02% 0.002 237.33);
+  --muted: oklch(55.17% 0.004 237.33);
+  --scrollbar: oklch(87.1% 0.002 237.33);
+  --surface-secondary: oklch(95.24% 0.003 237.33);
+  --surface-tertiary: oklch(93.73% 0.003 237.33);
+  --default: oklch(94% 0.002 237.33);
+  --accent: oklch(57.2% 0.1251 237.33);
+  --danger: oklch(56.22% 0.1952 25.34);
+  --field-border: oklch(90% 0.002 237.33);
+  --border: oklch(90% 0.002 237.33);
+  --separator: oklch(92% 0.002 237.33);
 
   /* Border Radius */
-  --field-radius: 0.5rem;
+  --radius: 0;
+  --field-radius: 0.125rem;
 
   /* Border Width */
   --border-width-field: 0.05px;
@@ -82,23 +82,22 @@ body {
 [data-theme="dark"] {
   color-scheme: dark;
   /* Theme Colors */
-  --background: oklch(12% 0.002 237.99);
-  --muted: oklch(70.5% 0.004 237.99);
-  --scrollbar: oklch(70.5% 0.002 237.99);
-  --surface: oklch(21.03% 0.004 237.99);
-  --surface-secondary: oklch(25.7% 0.003 237.99);
-  --surface-secondary-foreground: oklch(25.7% 0 237.99);
-  --surface-tertiary: oklch(27.21% 0.003 237.99);
-  --surface-tertiary-foreground: oklch(27.21% 0 237.99);
-  --overlay: oklch(21.03% 0.004 237.99);
-  --default: oklch(27.4% 0.002 237.99);
-  /* --accent: oklch(60.92% 0.1201 237.99); */
-  --accent: oklch(57.74% 0.1588 253.72);
+  --background: oklch(12% 0.002 237.33);
+  --muted: oklch(70.5% 0.004 237.33);
+  --scrollbar: oklch(70.5% 0.002 237.33);
+  --surface: oklch(21.03% 0.004 237.33);
+  --surface-secondary: oklch(25.7% 0.003 237.33);
+  --surface-secondary-foreground: oklch(25.7% 0 237.33);
+  --surface-tertiary: oklch(27.21% 0.003 237.33);
+  --surface-tertiary-foreground: oklch(27.21% 0 237.33);
+  --overlay: oklch(21.03% 0.004 237.33);
+  --default: oklch(27.4% 0.002 237.33);
+  --accent: oklch(57.2% 0.1251 237.33);
   --danger: oklch(59.4% 0.1967 24.62);
-  --field-background: oklch(21.03% 0.004 237.99);
-  --field-placeholder: oklch(70.5% 0 237.99);
-  --field-border: oklch(28% 0.002 237.99);
-  --segment: oklch(39.64% 0.002 237.99);
-  --border: oklch(28% 0.002 237.99);
-  --separator: oklch(25% 0.002 237.99);
+  --field-background: oklch(21.03% 0.004 237.33);
+  --field-placeholder: oklch(70.5% 0 237.33);
+  --field-border: oklch(28% 0.002 237.33);
+  --segment: oklch(39.64% 0.002 237.33);
+  --border: oklch(28% 0.002 237.33);
+  --separator: oklch(25% 0.002 237.33);
 }

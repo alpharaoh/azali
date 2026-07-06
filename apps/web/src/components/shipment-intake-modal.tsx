@@ -1,4 +1,3 @@
-import { FileArrowUp } from "@gravity-ui/icons";
 import { Button, Chip, Modal, toast } from "@heroui/react";
 import { DropZone, Stepper } from "@heroui-pro/react";
 import { useState } from "react";
@@ -10,7 +9,8 @@ import {
   useShipmentDocumentsControllerIngest,
 } from "#/generated/api";
 
-const ACCEPT = ".pdf,.png,.jpg,.jpeg,.tiff,.csv,.xls,.xlsx,.doc,.docx,.txt,.eml";
+const ACCEPT =
+  ".pdf,.png,.jpg,.jpeg,.tiff,.csv,.xls,.xlsx,.doc,.docx,.txt,.eml";
 
 interface DocumentStep {
   id: DocumentCategory;
@@ -229,14 +229,13 @@ export function ShipmentIntakeModal({
         <Modal.Container>
           <Modal.Dialog className="sm:max-w-3xl">
             <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Icon>
-                <FileArrowUp />
-              </Modal.Icon>
-              <Modal.Heading>New Shipment Intake</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="flex flex-col gap-6 sm:flex-row">
-              <div className="shrink-0 sm:w-56">
+            {/* The heading lives in the left rail so it shares a top line
+                with the step title in the content pane. */}
+            <Modal.Body className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              <div className="flex shrink-0 flex-col gap-5 sm:w-56">
+                <Modal.Heading className="text-base leading-6 font-semibold">
+                  New Shipment Intake
+                </Modal.Heading>
                 <Stepper
                   currentStep={step}
                   orientation="vertical"
@@ -272,10 +271,10 @@ export function ShipmentIntakeModal({
                 </Stepper>
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-8">
                 {activeDocStep ? (
                   <>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 h-14">
                       <div className="flex items-center gap-2">
                         <h3 className="text-foreground text-base font-semibold">
                           {activeDocStep.title}
@@ -313,9 +312,7 @@ export function ShipmentIntakeModal({
                       <DropZone.FileList>
                         {filesByCategory[activeDocStep.id].map(
                           (file, index) => (
-                            <DropZone.FileItem
-                              key={`${file.name}-${index}`}
-                            >
+                            <DropZone.FileItem key={`${file.name}-${index}`}>
                               <DropZone.FileFormatIcon
                                 color={
                                   FORMAT_COLORS[fileFormat(file.name)] ?? "gray"
@@ -397,8 +394,8 @@ export function ShipmentIntakeModal({
                     {missingRequired.length > 0 && totalFiles > 0 && (
                       <p className="text-muted text-xs">
                         Missing documents won't block intake — Azali flags the
-                        gaps and drafts chase emails for whatever hasn't
-                        arrived yet.
+                        gaps and drafts chase emails for whatever hasn't arrived
+                        yet.
                       </p>
                     )}
                   </>
