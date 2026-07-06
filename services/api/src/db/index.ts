@@ -11,13 +11,14 @@ export const db = drizzle({
   // PlanetScale Postgres has a small connection limit; Bun.SQL's default pool
   // of 10 per process (dev server + every seed/script) exhausts it fast.
   // Without connectionTimeout a starved pool waits forever — requests (e.g.
-  // get-session) hang instead of erroring. Idle/lifetime caps hand slots back.
+  // get-session) hang instead of erroring.
+  // Do NOT set idleTimeout/maxLifetime here: Bun's pool closes those
+  // connections abruptly and queries racing onto them fail with
+  // "Idle timeout reached after 30s".
   connection: {
     max: 3,
     url: url.toString(),
     connectionTimeout: 10,
-    idleTimeout: 30,
-    maxLifetime: 30 * 60,
   },
   schema,
 });
