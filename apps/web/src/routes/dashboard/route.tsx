@@ -39,9 +39,8 @@ import { toggleTheme } from "#/lib/theme";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.ensureQueryData(
-      sessionQueryOptions,
-    );
+    const session =
+      await context.queryClient.ensureQueryData(sessionQueryOptions);
     if (!session) {
       throw redirect({ to: "/login" });
     }
@@ -352,7 +351,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
-          <div className={cn(dropdownVariants({}).menu())}>
+          <div className={cn(dropdownVariants({}).menu(), "mx-0.5")}>
             <button
               className={cn(
                 menuItemVariants({}).item(),
