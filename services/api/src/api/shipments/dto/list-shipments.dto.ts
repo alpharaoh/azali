@@ -10,6 +10,7 @@ const csv = <S extends z.ZodType>(schema: S) =>
   );
 
 export const sortableShipmentColumns = [
+  "priority",
   "reference",
   "stage",
   "status",
@@ -55,7 +56,9 @@ export const listShipmentsSchema = z.object({
   sortBy: z
     .enum(sortableShipmentColumns)
     .default("createdAt")
-    .describe("Column to sort by."),
+    .describe(
+      "Column to sort by. priority ranks actionable shipments by urgency (1 = most urgent) from remaining work, arrival time, and value; shipments with nothing left to do sort last.",
+    ),
   sortDir: z.enum(["asc", "desc"]).default("desc").describe("Sort direction."),
   limit: z.coerce
     .number()

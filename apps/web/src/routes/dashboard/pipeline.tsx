@@ -21,7 +21,15 @@ const pipelineSearchSchema = z.object({
   valueMin: z.number().int().min(0).optional().catch(undefined),
   valueMax: z.number().int().min(0).optional().catch(undefined),
   sortBy: z
-    .enum(["etaAt", "valueCents", "createdAt", "reference"])
+    .enum([
+      "priority",
+      "etaAt",
+      "valueCents",
+      "createdAt",
+      "reference",
+      "stage",
+      "status",
+    ])
     .optional()
     .catch(undefined),
   sortDir: z.enum(["asc", "desc"]).optional().catch(undefined),
@@ -36,7 +44,8 @@ export function pipelineListParams(search: PipelineSearch, limit: number) {
     clientId: search.client,
     valueMin: search.valueMin !== undefined ? search.valueMin * 100 : undefined,
     valueMax: search.valueMax !== undefined ? search.valueMax * 100 : undefined,
-    sortBy: search.sortBy ?? "etaAt",
+    // Most urgent work first — P1s land at the top, done shipments last.
+    sortBy: search.sortBy ?? "priority",
     sortDir: search.sortDir ?? "asc",
     limit,
     offset: 0,

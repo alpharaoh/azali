@@ -7,6 +7,8 @@ import { buildWhere } from "./buildWhere";
 interface ListQueryOptions<TInsert extends Record<string, any>> {
   where?: Partial<TInsert> & { ids?: string[] };
   orderBy?: Partial<Record<keyof TInsert, "asc" | "desc">>;
+  /** Raw ORDER BY expressions for computed sorts; takes precedence over orderBy. */
+  extraOrderBy?: SQL[];
   limit?: number;
   offset?: number;
   extraConditions?: SQL[];
@@ -19,7 +21,8 @@ export async function buildListQuery<
   table: T,
   options: ListQueryOptions<TInsert> = {},
 ): Promise<{ data: T["$inferSelect"][]; count: number }> {
-  const { where, orderBy, limit, offset, extraConditions = [] } = options;
+  const { where, orderBy, extraOrderBy, limit, offset, extraConditions = [] } =
+    options;
   const { ids, ...rest } = where || {};
 
   let whereCondition = and(
@@ -36,7 +39,9 @@ export async function buildListQuery<
     .from(table as any)
     .where(whereCondition);
 
-  if (orderBy) {
+  if (extraOrderBy?.length) {
+    dataQuery.orderBy(...extraOrderBy);
+  } else if (orderBy) {
     dataQuery.orderBy(...buildOrderBy(table as any, orderBy));
   }
 

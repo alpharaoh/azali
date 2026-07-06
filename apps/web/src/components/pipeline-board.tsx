@@ -329,27 +329,36 @@ export function PipelineBoard() {
   const valueActive =
     searchParams.valueMin !== undefined || searchParams.valueMax !== undefined;
 
+  // DataGrid column ids ↔ server sort keys. The "client" column shows the
+  // reference under the client name, so it sorts by reference.
+  const sortByForColumn: Record<string, NonNullable<PipelineSearch["sortBy"]>> =
+    {
+      arrives: "etaAt",
+      client: "reference",
+      priority: "priority",
+      stage: "stage",
+      status: "status",
+      value: "valueCents",
+    };
+  const columnForSortBy: Record<string, string> = {
+    createdAt: "priority",
+    etaAt: "arrives",
+    priority: "priority",
+    reference: "client",
+    stage: "stage",
+    status: "status",
+    valueCents: "value",
+  };
+
   const sortDescriptor: SortDescriptor = {
-    column:
-      (searchParams.sortBy ?? "etaAt") === "etaAt"
-        ? "arrives"
-        : searchParams.sortBy === "valueCents"
-          ? "value"
-          : (searchParams.sortBy ?? "arrives"),
+    column: columnForSortBy[searchParams.sortBy ?? "priority"] ?? "priority",
     direction:
       (searchParams.sortDir ?? "asc") === "asc" ? "ascending" : "descending",
   };
 
   const handleSortChange = (descriptor: SortDescriptor) => {
-    const column = String(descriptor.column);
-
     updateSearch({
-      sortBy:
-        column === "arrives"
-          ? "etaAt"
-          : column === "value"
-            ? "valueCents"
-            : "etaAt",
+      sortBy: sortByForColumn[String(descriptor.column)] ?? "priority",
       sortDir: descriptor.direction === "ascending" ? "asc" : "desc",
     });
   };
@@ -484,6 +493,7 @@ export function PipelineBoard() {
     () => [
       {
         accessorKey: "client",
+        allowsSorting: true,
         cell: (row) => (
           <div className="flex min-w-0 items-center gap-3">
             <Avatar size="sm">
@@ -533,12 +543,14 @@ export function PipelineBoard() {
         minWidth: 220,
       },
       {
+        allowsSorting: true,
         cell: (row) => <StageTracker stage={row.stage} status={row.status} />,
         header: "Stage",
         id: "stage",
         minWidth: 190,
       },
       {
+        allowsSorting: true,
         cell: (row) => (
           <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
             <CircleFill width={6} />
@@ -551,6 +563,7 @@ export function PipelineBoard() {
       },
       {
         accessorKey: "priority",
+        allowsSorting: true,
         cell: (row) =>
           row.priority === null ? (
             <span className="text-muted text-sm">—</span>

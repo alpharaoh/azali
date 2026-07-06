@@ -1410,7 +1410,7 @@ valueMin?: number;
  */
 valueMax?: number;
 /**
- * Column to sort by.
+ * Column to sort by. priority ranks actionable shipments by urgency (1 = most urgent) from remaining work, arrival time, and value; shipments with nothing left to do sort last.
  */
 sortBy?: ShipmentsControllerFindAllSortBy;
 /**
@@ -1457,6 +1457,7 @@ export type ShipmentsControllerFindAllSortBy = typeof ShipmentsControllerFindAll
 
 
 export const ShipmentsControllerFindAllSortBy = {
+  priority: 'priority',
   reference: 'reference',
   stage: 'stage',
   status: 'status',
