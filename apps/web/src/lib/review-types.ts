@@ -96,7 +96,8 @@ export interface ShipmentFacts {
   origin: string;
   port: string;
   mode: string;
-  arrivesInHours: number;
+  /** Hours until ETA; negative means already arrived, null means no ETA. */
+  arrivesInHours: number | null;
   incoterm: string;
   entryType: string;
 }

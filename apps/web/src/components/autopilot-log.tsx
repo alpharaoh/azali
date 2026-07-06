@@ -44,6 +44,10 @@ import {
   useShipmentEventsControllerFindAll,
   useShipmentsControllerFindAll,
 } from "#/generated/api";
+import {
+  TableFetchingState,
+  TableSkeleton,
+} from "#/components/table-loading";
 import { useClientsById } from "#/lib/use-clients-by-id";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
@@ -271,7 +275,11 @@ export function AutopilotLog() {
     direction: "ascending",
   });
 
-  const { data: eventsResponse } = useShipmentEventsControllerFindAll(
+  const {
+    data: eventsResponse,
+    isFetching,
+    isPending,
+  } = useShipmentEventsControllerFindAll(
     { actor: ["ai"], limit: 200 },
     { query: { placeholderData: keepPreviousData } },
   );
@@ -677,20 +685,26 @@ export function AutopilotLog() {
             </Dropdown>
           </div>
         </div>
-        <DataGrid
-          aria-label="Autopilot actions"
-          columns={actionColumns}
-          data={paginatedActions}
-          getRowId={(action) => action.id}
-          renderEmptyState={() => (
-            <div className="text-muted py-8 text-center text-sm">
-              No actions match your filters.
-            </div>
-          )}
-          sortDescriptor={sortDescriptor}
-          variant="primary"
-          onSortChange={setSortDescriptor}
-        />
+        {isPending ? (
+          <TableSkeleton rows={8} />
+        ) : (
+          <TableFetchingState isFetching={isFetching}>
+            <DataGrid
+              aria-label="Autopilot actions"
+              columns={actionColumns}
+              data={paginatedActions}
+              getRowId={(action) => action.id}
+              renderEmptyState={() => (
+                <div className="text-muted py-8 text-center text-sm">
+                  No actions match your filters.
+                </div>
+              )}
+              sortDescriptor={sortDescriptor}
+              variant="primary"
+              onSortChange={setSortDescriptor}
+            />
+          </TableFetchingState>
+        )}
 
         {/* Pagination footer */}
         <div className="flex items-center justify-between whitespace-nowrap text-xs">

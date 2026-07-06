@@ -27,6 +27,7 @@ import {
   ScrollShadow,
   SearchField,
   Separator,
+  Skeleton,
   toast,
 } from "@heroui/react";
 import {
@@ -54,6 +55,7 @@ import {
 import type { ComponentProps, ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { TableFetchingState } from "#/components/table-loading";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   getShipmentEventsControllerFindByShipmentQueryKey,
@@ -176,7 +178,7 @@ function toReviewItem(
 ): ReviewItem {
   const arrivesInHours = shipment.etaAt
     ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
-    : 0;
+    : null;
 
   return {
     alternates: payload.alternates,
@@ -219,16 +221,19 @@ function toReviewItem(
 function useLiveReviewItems(search: ReviewSearch) {
   const clientsById = useClientsById();
 
-  const { data: shipmentsResponse } = useShipmentsControllerFindAll(
-    reviewListParams(search),
-    { query: { placeholderData: keepPreviousData } },
-  );
+  const {
+    data: shipmentsResponse,
+    isFetching,
+    isPending,
+  } = useShipmentsControllerFindAll(reviewListParams(search), {
+    query: { placeholderData: keepPreviousData },
+  });
   const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll({
     limit: 200,
     type: ["review_requested"],
   });
 
-  return useMemo(() => {
+  const derived = useMemo(() => {
     const shipments = shipmentsResponse?.data.data ?? [];
     const reviewEvents = reviewEventsResponse?.data.data ?? [];
 
@@ -259,6 +264,27 @@ function useLiveReviewItems(search: ReviewSearch) {
 
     return { deadlines, items };
   }, [shipmentsResponse, reviewEventsResponse, clientsById]);
+
+  return { ...derived, isFetching, isPending };
+}
+
+/** First-load placeholder mirroring the QueueRow layout. */
+function QueueSkeleton() {
+  return (
+    <ul aria-label="Loading review queue" className="flex flex-col gap-0.5">
+      {Array.from({ length: 5 }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+        <li key={index} className="flex items-start gap-3 rounded-2xl p-3">
+          <Skeleton className="size-8 shrink-0 rounded-full" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+            <Skeleton className="h-3.5 w-2/3 rounded" />
+            <Skeleton className="h-3 w-full rounded" />
+            <Skeleton className="h-3 w-1/3 rounded" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -1091,10 +1117,14 @@ function ReviewDetail({
                 />
                 <ShipmentFact
                   label="Arrives"
-                  value={formatDistanceToNowStrict(
-                    addHours(new Date(), item.shipment.arrivesInHours),
-                    { addSuffix: true },
-                  )}
+                  value={
+                    item.shipment.arrivesInHours === null
+                      ? "—"
+                      : formatDistanceToNowStrict(
+                          addHours(new Date(), item.shipment.arrivesInHours),
+                          { addSuffix: true },
+                        )
+                  }
                 />
                 <ShipmentFact label="Mode" value={item.shipment.mode} />
                 <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
@@ -1383,7 +1413,8 @@ export function ReviewQueue() {
   const navigate = useNavigate();
   // Filter + search live in the URL and drive the server-side query.
   const filterId = searchParams.type ?? "all";
-  const { deadlines, items } = useLiveReviewItems(searchParams);
+  const { deadlines, items, isFetching, isPending } =
+    useLiveReviewItems(searchParams);
   const { data: statsResponse } = useShipmentsControllerStats();
   const resolveReviewMutation = useShipmentsControllerResolve();
   const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
@@ -1741,7 +1772,9 @@ export function ReviewQueue() {
             hideScrollBar
             className="min-h-0 flex-1 overflow-y-auto"
           >
-            {visiblePending.length === 0 ? (
+            {isPending ? (
+              <QueueSkeleton />
+            ) : visiblePending.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
                 <p className="text-foreground text-sm font-medium">
                   No pending items here
@@ -1751,17 +1784,19 @@ export function ReviewQueue() {
                 </p>
               </div>
             ) : (
-              <ul className="flex flex-col gap-0.5">
-                {visiblePending.map((item) => (
-                  <QueueRow
-                    key={item.id}
-                    deadline={deadlineFor(item)}
-                    isActive={item.id === displayItem?.id}
-                    item={item}
-                    onSelect={() => handleSelect(item.id)}
-                  />
-                ))}
-              </ul>
+              <TableFetchingState isFetching={isFetching}>
+                <ul className="flex flex-col gap-0.5">
+                  {visiblePending.map((item) => (
+                    <QueueRow
+                      key={item.id}
+                      deadline={deadlineFor(item)}
+                      isActive={item.id === displayItem?.id}
+                      item={item}
+                      onSelect={() => handleSelect(item.id)}
+                    />
+                  ))}
+                </ul>
+              </TableFetchingState>
             )}
 
             {/* Resolved today */}
@@ -1815,7 +1850,7 @@ export function ReviewQueue() {
             onNavigate={handleNavigate}
             onResolve={handleResolve}
           />
-        ) : (
+        ) : isPending ? null : (
           <EmptyPane isQueueClear={pending.length === 0} />
         )}
       </div>
