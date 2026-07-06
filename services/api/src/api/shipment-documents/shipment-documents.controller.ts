@@ -3,12 +3,12 @@ import { ApiCreatedResponse } from "@nestjs/swagger";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
-import { CreateUploadUrlsDto } from "./dto/create-upload-urls.dto";
 import { IngestDocumentsDto } from "./dto/ingest-documents.dto";
 import {
   IngestDocumentsResponseDto,
-  UploadUrlsResponseDto,
+  UploadDocumentsResponseDto,
 } from "./dto/shipment-document.response.dto";
+import { UploadDocumentsDto } from "./dto/upload-documents.dto";
 import { ShipmentDocumentsService } from "./shipment-documents.service";
 
 // Documents ride under the shipments resource; the static "documents" segment
@@ -21,13 +21,13 @@ export class ShipmentDocumentsController {
   ) {}
 
   /** Presigned S3 PUT URLs — the browser uploads file bodies directly to S3. */
-  @Post("documents/upload-urls")
-  @ApiCreatedResponse({ type: UploadUrlsResponseDto })
-  createUploadUrls(
+  @Post("documents/upload")
+  @ApiCreatedResponse({ type: UploadDocumentsResponseDto })
+  upload(
     @Session() session: UserSession<typeof auth>,
-    @Body() dto: CreateUploadUrlsDto,
+    @Body() dto: UploadDocumentsDto,
   ) {
-    return this.shipmentDocumentsService.createUploadUrls(
+    return this.shipmentDocumentsService.upload(
       getActiveOrganizationId(session),
       dto,
     );

@@ -61,7 +61,7 @@ import {
   useShipmentEventsControllerFindAll,
   useShipmentEventsControllerFindByShipment,
   useShipmentsControllerFindAll,
-  useShipmentsControllerResolveReview,
+  useShipmentsControllerResolve,
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
@@ -1385,7 +1385,7 @@ export function ReviewQueue() {
   const filterId = searchParams.type ?? "all";
   const { deadlines, items } = useLiveReviewItems(searchParams);
   const { data: statsResponse } = useShipmentsControllerStats();
-  const resolveReviewMutation = useShipmentsControllerResolveReview();
+  const resolveReviewMutation = useShipmentsControllerResolve();
   const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   // Selection lives in the path (/dashboard/review/<shipmentId>) so queue
   // items are deep-linkable from the pipeline board and shareable.

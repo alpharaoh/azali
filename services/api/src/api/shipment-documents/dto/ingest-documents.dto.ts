@@ -1,7 +1,7 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from "./create-upload-urls.dto";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from "./upload-documents.dto";
 
 /** The intake document set — mirrors what arrives with a typical entry. */
 export const documentCategories = [

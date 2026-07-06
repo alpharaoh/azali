@@ -7,8 +7,8 @@ import type { DropItem, FileDropItem } from "react-aria-components";
 
 import type { IngestDocumentsDtoFilesItemCategory as DocumentCategory } from "#/generated/api";
 import {
-  useShipmentDocumentsControllerCreateUploadUrls,
   useShipmentDocumentsControllerIngest,
+  useShipmentDocumentsControllerUpload,
 } from "#/generated/api";
 
 const ACCEPT =
@@ -153,7 +153,7 @@ export function ShipmentIntakeModal({
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const createUploadUrls = useShipmentDocumentsControllerCreateUploadUrls();
+  const uploadDocuments = useShipmentDocumentsControllerUpload();
   const ingestDocuments = useShipmentDocumentsControllerIngest();
 
   const [step, setStep] = useState(0);
@@ -204,7 +204,7 @@ export function ShipmentIntakeModal({
     if (entries.length === 0) return;
 
     const run = (async () => {
-      const { data } = await createUploadUrls.mutateAsync({
+      const { data } = await uploadDocuments.mutateAsync({
         data: {
           files: entries.map(({ file }) => ({
             fileName: file.name,
@@ -484,7 +484,7 @@ export function ShipmentIntakeModal({
                   variant="primary"
                   onPress={handleSubmit}
                 >
-                  Start Intake
+                  Start intake
                 </Button>
               )}
             </Modal.Footer>

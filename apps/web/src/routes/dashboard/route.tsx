@@ -338,6 +338,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           </div>
           <Dropdown.Menu
             aria-label="Account"
+            className="pb-0"
             onAction={(key) => {
               if (key === "settings") {
                 navigate({ to: "/dashboard/settings" });
@@ -351,7 +352,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
-          <div className={cn(dropdownVariants({}).menu(), "mx-0.5")}>
+          <div className={cn(dropdownVariants({}).menu(), "mx-0.5 py-0")}>
             <button
               className={cn(
                 menuItemVariants({}).item(),
@@ -369,6 +370,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
           </div>
           <Dropdown.Menu
             aria-label="Session"
+            className="pt-0"
             onAction={(key) => {
               if (key === "logout") {
                 signOutAndRedirect(() => navigate({ to: "/login" }));

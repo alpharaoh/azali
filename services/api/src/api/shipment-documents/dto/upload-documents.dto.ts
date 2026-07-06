@@ -4,7 +4,7 @@ import { z } from "zod";
 export const MAX_UPLOAD_FILES = 25;
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
-export const createUploadUrlsSchema = z.object({
+export const uploadDocumentsSchema = z.object({
   files: z
     .array(
       z.object({
@@ -17,4 +17,4 @@ export const createUploadUrlsSchema = z.object({
     .max(MAX_UPLOAD_FILES),
 });
 
-export class CreateUploadUrlsDto extends createZodDto(createUploadUrlsSchema) {}
+export class UploadDocumentsDto extends createZodDto(uploadDocumentsSchema) {}

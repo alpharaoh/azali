@@ -7,8 +7,8 @@ import {
   type ShipmentDocumentsUploadedEvent,
 } from "@/inngest/functions/ingestShipmentDocuments";
 import { BlobStorageService } from "@/services/external/s3/service";
-import type { CreateUploadUrlsDto } from "./dto/create-upload-urls.dto";
 import type { IngestDocumentsDto } from "./dto/ingest-documents.dto";
+import type { UploadDocumentsDto } from "./dto/upload-documents.dto";
 
 function documentKeyPrefix(organizationId: string) {
   return `organizations/${organizationId}/shipment-documents/`;
@@ -16,7 +16,7 @@ function documentKeyPrefix(organizationId: string) {
 
 @Injectable()
 export class ShipmentDocumentsService {
-  async createUploadUrls(organizationId: string, dto: CreateUploadUrlsDto) {
+  async upload(organizationId: string, dto: UploadDocumentsDto) {
     const uploads = await Promise.all(
       dto.files.map(async (file) => {
         const safeName =

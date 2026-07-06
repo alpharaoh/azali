@@ -1,7 +1,7 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
-export const uploadUrlsResponseSchema = z.object({
+export const uploadDocumentsResponseSchema = z.object({
   uploads: z.array(
     z.object({
       key: z.string(),
@@ -13,8 +13,8 @@ export const uploadUrlsResponseSchema = z.object({
   ),
 });
 
-export class UploadUrlsResponseDto extends createZodDto(
-  uploadUrlsResponseSchema,
+export class UploadDocumentsResponseDto extends createZodDto(
+  uploadDocumentsResponseSchema,
 ) {}
 
 export const ingestDocumentsResponseSchema = z.object({

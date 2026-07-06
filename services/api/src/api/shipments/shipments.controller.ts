@@ -91,9 +91,9 @@ export class ShipmentsController {
     return this.shipmentsService.remove(getActiveOrganizationId(session), id);
   }
 
-  @Post(":id/resolve-review")
+  @Post(":id/resolve")
   @ApiOkResponse({ type: ShipmentResponseDto })
-  resolveReview(
+  resolve(
     @Session() session: UserSession<typeof auth>,
     @Param("id") id: string,
     @Body() dto: ResolveReviewDto,
