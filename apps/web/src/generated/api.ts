@@ -807,7 +807,7 @@ export type CreateUploadUrlsDtoFilesItem = {
 export interface CreateUploadUrlsDto {
   /**
    * @minItems 1
-   * @maxItems 10
+   * @maxItems 25
    */
   files: CreateUploadUrlsDtoFilesItem[];
 }
@@ -822,6 +822,17 @@ export type UploadUrlsResponseDtoUploadsItem = {
 export interface UploadUrlsResponseDto {
   uploads: UploadUrlsResponseDtoUploadsItem[];
 }
+
+export type IngestDocumentsDtoFilesItemCategory = typeof IngestDocumentsDtoFilesItemCategory[keyof typeof IngestDocumentsDtoFilesItemCategory];
+
+
+export const IngestDocumentsDtoFilesItemCategory = {
+  commercial_invoice: 'commercial_invoice',
+  packing_list: 'packing_list',
+  bill_of_lading: 'bill_of_lading',
+  arrival_notice: 'arrival_notice',
+  other: 'other',
+} as const;
 
 export type IngestDocumentsDtoFilesItem = {
   /**
@@ -844,12 +855,13 @@ export type IngestDocumentsDtoFilesItem = {
    * @maximum 52428800
    */
   size: number;
+  category?: IngestDocumentsDtoFilesItemCategory;
 };
 
 export interface IngestDocumentsDto {
   /**
    * @minItems 1
-   * @maxItems 10
+   * @maxItems 25
    */
   files: IngestDocumentsDtoFilesItem[];
 }

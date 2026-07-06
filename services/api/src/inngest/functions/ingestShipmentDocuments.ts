@@ -14,6 +14,12 @@ export type ShipmentDocumentsUploadedEvent = {
       fileName: string;
       contentType: string;
       size: number;
+      category:
+        | "commercial_invoice"
+        | "packing_list"
+        | "bill_of_lading"
+        | "arrival_notice"
+        | "other";
     }>;
   };
 };
@@ -40,7 +46,7 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
 
         for (const file of files) {
           dependencies.logger.log(
-            `Document received: s3://${bucket}/${file.key} (${file.fileName}, ${file.contentType}, ${file.size} bytes)`,
+            `Document received [${file.category}]: s3://${bucket}/${file.key} (${file.fileName}, ${file.contentType}, ${file.size} bytes)`,
           );
         }
 
