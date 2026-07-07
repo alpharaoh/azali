@@ -1,3 +1,16 @@
+import {
+  ArrowUturnCcwLeft,
+  ArrowUturnCwRight,
+  Bold,
+  Heading2,
+  Heading3,
+  Italic,
+  ListOl,
+  ListUl,
+  QuoteClose,
+  Strikethrough,
+  Underline,
+} from "@gravity-ui/icons";
 import { Button, Modal, toast } from "@heroui/react";
 import { RichTextEditor } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -81,7 +94,7 @@ export function ResponseDraftModal({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Backdrop>
         <Modal.Container>
-          <Modal.Dialog className="max-w-full sm:w-3xl">
+          <Modal.Dialog className="max-w-full sm:w-[60vw]">
             <Modal.CloseTrigger />
             <Modal.Header>
               <Modal.Heading>{document?.name ?? "Draft"}</Modal.Heading>
@@ -97,33 +110,103 @@ export function ResponseDraftModal({
                   <RichTextEditor.Shell>
                     <RichTextEditor.Toolbar aria-label="Formatting">
                       <RichTextEditor.ToolbarGroup>
-                        <RichTextEditor.ActionButton action="undo" />
-                        <RichTextEditor.ActionButton action="redo" />
+                        <RichTextEditor.ActionButton
+                          action="undo"
+                          tooltip="Undo"
+                        >
+                          <ArrowUturnCcwLeft className="size-3.5" />
+                        </RichTextEditor.ActionButton>
+                        <RichTextEditor.ActionButton
+                          action="redo"
+                          tooltip="Redo"
+                        >
+                          <ArrowUturnCwRight className="size-3.5" />
+                        </RichTextEditor.ActionButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
                       <RichTextEditor.ToolbarGroup>
-                        <RichTextEditor.ToggleButton command="heading-2" />
-                        <RichTextEditor.ToggleButton command="heading-3" />
+                        <RichTextEditor.ToggleButton
+                          command="heading-2"
+                          tooltip="Heading"
+                        >
+                          <Heading2 className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="heading-3"
+                          tooltip="Subheading"
+                        >
+                          <Heading3 className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
                       <RichTextEditor.ToolbarGroup>
-                        <RichTextEditor.ToggleButton command="bold" />
-                        <RichTextEditor.ToggleButton command="italic" />
-                        <RichTextEditor.ToggleButton command="underline" />
-                        <RichTextEditor.ToggleButton command="strike" />
+                        <RichTextEditor.ToggleButton
+                          command="bold"
+                          tooltip="Bold"
+                        >
+                          <Bold className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="italic"
+                          tooltip="Italic"
+                        >
+                          <Italic className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="underline"
+                          tooltip="Underline"
+                        >
+                          <Underline className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="strike"
+                          tooltip="Strikethrough"
+                        >
+                          <Strikethrough className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
                       <RichTextEditor.ToolbarGroup>
-                        <RichTextEditor.ToggleButton command="bulletList" />
-                        <RichTextEditor.ToggleButton command="orderedList" />
-                        <RichTextEditor.ToggleButton command="blockquote" />
+                        <RichTextEditor.ToggleButton
+                          command="bulletList"
+                          tooltip="Bulleted list"
+                        >
+                          <ListUl className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="orderedList"
+                          tooltip="Numbered list"
+                        >
+                          <ListOl className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
+                        <RichTextEditor.ToggleButton
+                          command="blockquote"
+                          tooltip="Blockquote"
+                        >
+                          <QuoteClose className="size-3.5" />
+                        </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                     </RichTextEditor.Toolbar>
-                    <RichTextEditor.Content className="max-h-[55dvh] overflow-y-auto" />
+                    <RichTextEditor.Content className="h-[64dvh] overflow-y-auto" />
                     <RichTextEditor.BubbleMenu>
-                      <RichTextEditor.ToggleButton command="bold" />
-                      <RichTextEditor.ToggleButton command="italic" />
-                      <RichTextEditor.ToggleButton command="underline" />
+                      <RichTextEditor.ToggleButton
+                        command="bold"
+                        tooltip="Bold"
+                      >
+                        <Bold className="size-3.5" />
+                      </RichTextEditor.ToggleButton>
+                      <RichTextEditor.ToggleButton
+                        command="italic"
+                        tooltip="Italic"
+                      >
+                        <Italic className="size-3.5" />
+                      </RichTextEditor.ToggleButton>
+                      <RichTextEditor.ToggleButton
+                        command="underline"
+                        tooltip="Underline"
+                      >
+                        <Underline className="size-3.5" />
+                      </RichTextEditor.ToggleButton>
                     </RichTextEditor.BubbleMenu>
                     <RichTextEditor.Footer>
                       <span className="text-muted text-xs">

@@ -54,8 +54,13 @@ import {
   formatDistanceToNowStrict,
   subHours,
 } from "date-fns";
-import type { ComponentProps, ComponentType, SVGProps } from "react";
-import { useEffect, useMemo, useState } from "react";
+import type {
+  ComponentProps,
+  ComponentType,
+  ReactNode,
+  SVGProps,
+} from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { TableFetchingState } from "#/components/table-loading";
@@ -745,7 +750,12 @@ function DocumentTimelineItem({
         {isOpen ? (
           <Card>
             <Card.Content className="flex flex-col gap-2">
-              {document.kind === "email" ? (
+              {document.kind === "pdf" && document.draft ? (
+                <DraftDocumentPreview
+                  document={document}
+                  onView={onEditDraft}
+                />
+              ) : document.kind === "email" ? (
                 <>
                   <span className="text-muted text-xs">
                     From: {document.from} · {document.meta}
@@ -792,6 +802,97 @@ function DocumentTimelineItem({
         ) : null}
       </Timeline.Content>
     </Timeline.Item>
+  );
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Draft letter preview — the agent-drafted response rendered as a document,
+ * capped and faded; the full text opens in the editor.
+ * -----------------------------------------------------------------------------------------------*/
+interface DraftNode {
+  type?: string;
+  text?: string;
+  marks?: Array<{ type: string }>;
+  attrs?: { level?: number };
+  content?: DraftNode[];
+}
+
+function renderDraftInline(node: DraftNode, key: number): ReactNode {
+  let element: ReactNode = node.text ?? "";
+
+  for (const mark of node.marks ?? []) {
+    if (mark.type === "bold") element = <strong>{element}</strong>;
+    else if (mark.type === "italic") element = <em>{element}</em>;
+  }
+
+  return <Fragment key={key}>{element}</Fragment>;
+}
+
+function renderDraftBlocks(nodes: DraftNode[]): ReactNode {
+  return nodes.map((node, index) => {
+    const inline = (node.content ?? []).map(renderDraftInline);
+
+    switch (node.type) {
+      case "heading":
+        return (node.attrs?.level ?? 2) <= 2 ? (
+          <h4
+            key={index}
+            className="text-foreground mt-1 text-sm font-semibold"
+          >
+            {inline}
+          </h4>
+        ) : (
+          <h5 key={index} className="text-foreground mt-1 text-xs font-semibold">
+            {inline}
+          </h5>
+        );
+      case "bulletList":
+        return (
+          <ul key={index} className="flex list-disc flex-col gap-1 pl-4">
+            {(node.content ?? []).map((item, itemIndex) => (
+              <li key={itemIndex}>
+                {(item.content?.[0]?.content ?? []).map(renderDraftInline)}
+              </li>
+            ))}
+          </ul>
+        );
+      default:
+        return <p key={index}>{inline}</p>;
+    }
+  });
+}
+
+function DraftDocumentPreview({
+  document,
+  onView,
+}: {
+  document: ReviewDocument & { kind: "pdf" };
+  onView?: () => void;
+}) {
+  const content =
+    (document.draft as { content?: DraftNode[] } | undefined)?.content ?? [];
+
+  return (
+    <div className="bg-background/40 relative max-h-80 overflow-hidden rounded-lg border">
+      <div className="text-muted flex flex-col gap-2 p-4 pb-8 text-xs leading-relaxed [mask-image:linear-gradient(to_bottom,black_calc(100%-3rem),transparent)]">
+        {renderDraftBlocks(content)}
+      </div>
+      {onView ? (
+        <button
+          aria-label="View full response"
+          className="group absolute inset-0 cursor-pointer"
+          type="button"
+          onClick={onView}
+        >
+          <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
+            <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
+              <Pencil className="size-3.5" />
+              View full response
+            </span>
+          </span>
+        </button>
+      ) : null}
+    </div>
   );
 }
 
