@@ -54,12 +54,7 @@ import {
   formatDistanceToNowStrict,
   subHours,
 } from "date-fns";
-import type {
-  ComponentProps,
-  ComponentType,
-  ReactNode,
-  SVGProps,
-} from "react";
+import type { ComponentProps, ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { ResponseDraftModal } from "#/components/response-draft-modal";
@@ -890,7 +885,10 @@ function renderDraftBlocks(nodes: DraftNode[]): ReactNode {
             {inline}
           </h4>
         ) : (
-          <h5 key={index} className="text-foreground mt-1 text-xs font-semibold">
+          <h5
+            key={index}
+            className="text-foreground mt-1 text-xs font-semibold"
+          >
             {inline}
           </h5>
         );
@@ -1667,7 +1665,7 @@ function ReviewDetail({
             {/* Activity — documents, events, and your notes to the AI, oldest first */}
             <div className="flex flex-col gap-2">
               <span className="text-muted text-xs font-medium">Activity</span>
-              <Timeline density="compact" size="sm">
+              <Timeline density="comfortable" size="sm">
                 {activity.map((entry, index) =>
                   entry.kind === "document" ? (
                     <DocumentTimelineItem
