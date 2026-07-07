@@ -640,8 +640,8 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
           "data": [
             "CBP Form 28 · Entry ENT-3979 · issued at New York/Newark (1001)",
             "Scope: 11 open entries · same SKU · liquidation pending",
-            "Ask: basis for 8518.22.0000 · alternative indicated: 8513.10.40 (lamps)",
-            "Statutory response window: 30 days"
+            "Ask: essential character under GRI 3(b) — cost, weight, consumer use",
+            "Reply due in 30 days (19 USC \u00a71509) \u00b7 Import Specialist D. Okafor, NIS Team 733"
           ],
           "detail": "Parsed the ACE notification. CBP is probing whether the lamp function makes the LUX-SP210 a lamp — a principal-function dispute, and the response clock started at issuance.",
           "kind": "read",

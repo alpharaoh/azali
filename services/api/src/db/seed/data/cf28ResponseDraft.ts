@@ -59,7 +59,7 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
       "Entry No. ENT-3979 · LUX-SP210 Portable Bluetooth Speaker with LED Lamp Ring (Invoice AZ-INV-20259-4471)",
     ),
     paragraph(
-      "Dear Import Specialist: This responds to the Form 28 dated June 30, 2026, requesting the basis for classification of the above merchandise under subheading 8518.22.0000, HTSUS. The classification is correct, for the reasons and on the evidence set out below.",
+      "Dear Import Specialist: This responds to the Form 28 dated July 4, 2026 (Import Specialist D. Okafor, NIS Team 733), requesting the basis for classification of the above merchandise under subheading 8518.22.0000, HTSUS. The classification is correct, for the reasons and on the evidence set out below.",
     ),
     heading(3, "I. The Merchandise"),
     paragraph(
@@ -76,9 +76,9 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
     ),
     heading(3, "II. Classification Analysis"),
     paragraph(
-      "The article is a composite machine. Note 3 to Section XVI, HTSUS, directs that it be classified as the machine performing its ",
+      "The Form 28 frames the question under GRI 3(b) (essential character). Because both components are machines of Section XVI, Note 3 to Section XVI governs and directs classification by ",
       bold("principal function"),
-      ". Every measure CBP customarily examines points to sound reproduction:",
+      " — though the analysis below satisfies either frame. Every measure CBP customarily examines points to sound reproduction:",
     ),
     bullets([
       [

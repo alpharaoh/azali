@@ -1077,25 +1077,36 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       {
         kind: "pdf",
         name: "CBP Form 28 — Request for Information",
-        meta: "Received via ACE · 2 pages",
+        meta: "Received via ACE · 3 pages",
         receivedHoursAgo: 50,
+        src: "/docs/cbp-form-28-request-for-information.pdf",
+        summary:
+          "Import Specialist D. Okafor (NIS Team 733 — Consumer Products & Machinery, Newark) requests the basis for 8518.22.0000 on ENT-3979 and 10 open entries: product literature, a component cost/weight breakdown, and a sample of the LUX-SP210. The officer's message leans on the invoice and retail-packaging wording; the reply must establish which component predominates — by cost, weight, and consumer use — within 30 days.",
         lines: [
-          { label: "Entries covered", value: "ENT-3979 + 10 open entries · liquidation pending" },
+          {
+            highlight: true,
+            label: "HTSUS at issue",
+            value: "8518.22.0000 entered → 8513.10.40 proposed",
+          },
           {
             highlight: true,
             label: "CBP asks",
-            value: "Basis for classification under 8518.22.0000 (loudspeakers)",
+            value: "Essential character under GRI 3(b) — which component predominates by cost, weight, consumer use",
           },
           {
-            label: "Indicated alternative",
-            value: "8513.10.40 — portable electric lamps",
+            label: "Furnish",
+            value: "B — product literature · C — component cost breakdown · D — sample (LUX-SP210)",
           },
           {
-            label: "Information requested",
-            value: "Product literature · component cost data · marketing materials",
+            label: "Officer message",
+            value: "“Invoice and retail packaging describe the article primarily as a LED table lamp…”",
           },
-          { label: "Response due", value: "30 days from issue date" },
-          { label: "Port", value: "New York/Newark (1001)" },
+          { label: "Entries covered", value: "ENT-3979 (entered 10/18) + 10 open entries" },
+          { label: "Reply window", value: "30 days from request (19 USC §1509) · via ACE" },
+          {
+            label: "From",
+            value: "Import Specialist D. Okafor · NIS Team 733 · New York/Newark (1001)",
+          },
         ],
       },
       {
@@ -1222,7 +1233,7 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         documentName: "CBP Form 28 — Request for Information",
         kind: "evidence",
         quote:
-          "Provide the basis for classification under 8518.22.0000, including product literature, component cost data, and marketing materials.",
+          "State the essential character of the LUX-SP210 and identify which component (loudspeaker vs. lamp) predominates by cost, weight, and consumer use.",
         ref: "CBP Form 28 · ENT-3979",
       },
     ],
