@@ -422,14 +422,47 @@ function DocumentLineRow({ line }: { line: DocumentLine }) {
  */
 type TimelineItemPassthrough = Partial<ComponentProps<typeof Timeline.Item>>;
 
-const eventIconMap: Record<
-  ActivityEvent["icon"],
-  ComponentType<SVGProps<SVGSVGElement>>
-> = {
-  ai: Sparkles,
-  check: CircleCheck,
-  mail: PaperPlane,
-};
+/**
+ * Colour + icon for a timeline marker, derived from what the event means:
+ * CBP correspondence is purple, classification is blue, milestones
+ * (filed/released) are green, agent work is indigo, plain mail stays neutral.
+ * Documents keep their neutral markers.
+ */
+function eventMarker(event: ActivityEvent): {
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  className: string;
+} {
+  if (/\bcbp\b|form 2[89]/i.test(event.title)) {
+    return {
+      Icon: Envelope,
+      className:
+        "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
+    };
+  }
+  if (/classif/i.test(event.title)) {
+    return {
+      Icon: Tag,
+      className:
+        "border-blue-500/40 bg-blue-500/15 text-blue-600 dark:text-blue-400",
+    };
+  }
+  if (event.icon === "check") {
+    return {
+      Icon: CircleCheck,
+      className:
+        "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  if (event.icon === "ai") {
+    return {
+      Icon: Sparkles,
+      className:
+        "border-indigo-500/40 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+    };
+  }
+
+  return { Icon: PaperPlane, className: "" };
+}
 
 const citationMeta: Record<
   CitationKind,
@@ -637,11 +670,14 @@ function EventTimelineItem({
   event: ActivityEvent;
   onViewTrace?: () => void;
 } & TimelineItemPassthrough) {
-  const Icon = eventIconMap[event.icon];
+  const { Icon, className: markerClassName } = eventMarker(event);
 
   return (
     <Timeline.Item align="start" status={event.status ?? "default"} {...rest}>
-      <Timeline.Marker aria-hidden="true" className="size-6">
+      <Timeline.Marker
+        aria-hidden="true"
+        className={`size-6 ${markerClassName}`}
+      >
         <Icon className="size-3.5" />
       </Timeline.Marker>
       <Timeline.Content className="gap-0.5">
@@ -683,6 +719,9 @@ function DocumentTimelineItem({
   // Open by default — the file carries the story; collapsing is for skimming.
   const [isOpen, setIsOpen] = useState(true);
   const Icon = document.kind === "email" ? Envelope : FileText;
+  // CBP correspondence stands out; ordinary documents keep neutral markers.
+  const isCbpForm =
+    document.kind !== "email" && /cbp form 2[89]/i.test(document.name);
   const title = document.kind === "email" ? document.subject : document.name;
   const meta =
     document.kind === "email" ? `From ${document.from}` : document.meta;
@@ -700,8 +739,15 @@ function DocumentTimelineItem({
 
   return (
     <Timeline.Item align="start" status="default" {...rest}>
-      <Timeline.Marker aria-hidden="true" className="size-6">
-        <Icon className="text-muted size-3.5" />
+      <Timeline.Marker
+        aria-hidden="true"
+        className={`size-6 ${
+          isCbpForm
+            ? "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400"
+            : ""
+        }`}
+      >
+        <Icon className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
         <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
