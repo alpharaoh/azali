@@ -1044,18 +1044,34 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       {
         kind: "pdf",
         name: "Spec Sheet — LUX-SP210",
-        meta: "Manufacturer spec · 3 pages",
+        meta: "Ningbo Lumina Acoustics · 6 pages",
         receivedHoursAgo: 2250,
+        src: "/docs/spec-sheet-lux-sp210.pdf",
+        summary:
+          "Customer-approved product specification (rev. 2) for the LUX-SP210. The BOM cost split — audio 55% · power 25% · lighting 20% — is recorded on the spec itself “for classification & valuation support,” and the “Portable Bluetooth Speaker” retail box header is a 100% inspection checkpoint. Export packing matches the packing list carton-for-carton.",
         lines: [
-          { label: "Audio", value: "3W full-range driver · Bluetooth 5.0 · tuned aluminum enclosure" },
-          { label: "Light", value: "Dimmable LED ring · 3 settings · frosted diffuser" },
-          { label: "Power", value: "5,000 mAh Li-ion · USB-C" },
+          { label: "Product", value: "LUX-SP210 · ref LSP210-BLK · PO-88231 · rev. 2" },
+          {
+            label: "Audio",
+            value: "3W full-range driver · BT 5.0 · tuned aluminium enclosure · SNR ≥ 80 dB",
+          },
+          { label: "Lighting", value: "Dimmable LED ring · 3 settings · 2700 K · frosted diffuser" },
+          {
+            label: "Power",
+            value: "5,000 mAh Li-ion · USB-C · ≥ 8 h audio / ≥ 12 h light · UN38.3",
+          },
           {
             highlight: true,
-            label: "Cost split",
-            value: "Audio 55% · power 25% · lighting 20%",
+            label: "Cost contribution",
+            value: "Audio 55% · power 25% · lighting 20% — “for classification & valuation support”",
           },
-          { label: "Retail box header", value: "“Portable Bluetooth Speaker”" },
+          {
+            highlight: true,
+            label: "Retail box header",
+            value: "“Portable Bluetooth Speaker” — 100% inspection checkpoint",
+          },
+          { label: "Export packing", value: "15/carton · 160 cartons · 2,400 pcs · gross 3,120 kg" },
+          { label: "Compliance", value: "CE · FCC 15B · RoHS · UN38.3 / UN3481 (PI 967)" },
         ],
       },
       {
