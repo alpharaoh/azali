@@ -445,8 +445,10 @@ const seeds: SeedShipment[] = [
     review: {
       type: "enforcement",
       question: "CBP Form 28 challenges a prior classification — response ready",
-      deadlineHours: 130,
-      deadlineReason: "CF-28 response due (day 25 of 30)",
+      // Hours, not days: near the wire so the CF-28 surfaces at the top of
+      // the queue (sorted by reviewDeadlineAt asc).
+      deadlineHours: 5,
+      deadlineReason: "CF-28 response due (day 30 of 30)",
       noticeForm: "CF-28",
       confidence: 0.92,
       proposal: {

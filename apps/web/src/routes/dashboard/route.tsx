@@ -394,11 +394,16 @@ function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const activeItem = ALL_ITEMS.find((item) => pathname.startsWith(item.href));
+  // The review queue is a full-height two-pane workspace — give it the
+  // navbar's vertical real estate.
+  const hideNavbar = pathname.startsWith("/dashboard/review");
 
   return (
     <AppLayout
       navbar={
-        <DashboardNavbar sectionLabel={activeItem?.label ?? "Dashboard"} />
+        hideNavbar ? undefined : (
+          <DashboardNavbar sectionLabel={activeItem?.label ?? "Dashboard"} />
+        )
       }
       navigate={(href) => navigate({ to: href })}
       sidebar={<DashboardSidebar pathname={pathname} />}

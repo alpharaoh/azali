@@ -14,7 +14,7 @@ export const Route = createFileRoute("/dashboard/review/$itemId")({
 
 function ReviewItemPage() {
   return (
-    <div className="px-4">
+    <div className="px-4 py-3">
       <ReviewQueue />
     </div>
   );

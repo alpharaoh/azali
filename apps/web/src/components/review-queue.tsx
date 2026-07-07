@@ -1812,7 +1812,7 @@ export function ReviewQueue() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-72px)] min-h-[480px] w-full flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-4">
+    <div className="flex h-[calc(100dvh-24px)] min-h-[480px] w-full flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-4">
       {/* Queue list */}
       <div
         className={`min-h-0 overflow-hidden ${
