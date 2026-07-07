@@ -1,6 +1,7 @@
 import { gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { buildListQuery } from "@/db/lib/buildListQuery";
+import { embedClients } from "@/db/lib/embedClient";
 import {
   clients,
   type InsertShipment,
@@ -101,7 +102,7 @@ export const listShipments = async (
       ]
     : undefined;
 
-  return buildListQuery(shipments, {
+  const result = await buildListQuery(shipments, {
     where: rest,
     orderBy: columnOrderBy as Partial<
       Record<keyof InsertShipment, "asc" | "desc">
@@ -111,4 +112,6 @@ export const listShipments = async (
     offset,
     extraConditions,
   });
+
+  return { ...result, data: await embedClients(result.data) };
 };

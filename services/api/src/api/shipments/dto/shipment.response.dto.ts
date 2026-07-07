@@ -16,6 +16,16 @@ export const shipmentSchema = z.object({
   organizationId: z.string().describe("Owning organization id."),
   userId: z.string().describe("Id of the user who created the shipment."),
   clientId: z.string().describe("Id of the client this shipment belongs to."),
+  client: z
+    .object({
+      id: z.string().describe("Client id."),
+      name: z.string().describe("Client display name."),
+      image: z.string().nullable().describe("Logo URL, if any."),
+    })
+    .nullable()
+    .describe(
+      "The owning client, embedded so lists can be rendered without a separate clients request.",
+    ),
   reference: z
     .string()
     .describe("Internal shipment reference; unique within the organization."),

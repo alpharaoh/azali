@@ -599,6 +599,22 @@ export interface CreateShipmentDto {
 }
 
 /**
+ * The owning client, embedded so lists can be rendered without a separate clients request.
+ * @nullable
+ */
+export type ShipmentResponseDtoClient = {
+  /** Client id. */
+  id: string;
+  /** Client display name. */
+  name: string;
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
+  image: string | null;
+} | null;
+
+/**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
 export type ShipmentResponseDtoStage = typeof ShipmentResponseDtoStage[keyof typeof ShipmentResponseDtoStage];
@@ -657,6 +673,11 @@ export interface ShipmentResponseDto {
   userId: string;
   /** Id of the client this shipment belongs to. */
   clientId: string;
+  /**
+   * The owning client, embedded so lists can be rendered without a separate clients request.
+   * @nullable
+   */
+  client: ShipmentResponseDtoClient;
   /** Internal shipment reference; unique within the organization. */
   reference: string;
   /**
@@ -728,6 +749,22 @@ export interface ShipmentResponseDto {
 }
 
 /**
+ * The owning client, embedded so lists can be rendered without a separate clients request.
+ * @nullable
+ */
+export type ListShipmentsResponseDtoDataItemClient = {
+  /** Client id. */
+  id: string;
+  /** Client display name. */
+  name: string;
+  /**
+   * Logo URL, if any.
+   * @nullable
+   */
+  image: string | null;
+} | null;
+
+/**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
 export type ListShipmentsResponseDtoDataItemStage = typeof ListShipmentsResponseDtoDataItemStage[keyof typeof ListShipmentsResponseDtoDataItemStage];
@@ -786,6 +823,11 @@ export type ListShipmentsResponseDtoDataItem = {
   userId: string;
   /** Id of the client this shipment belongs to. */
   clientId: string;
+  /**
+   * The owning client, embedded so lists can be rendered without a separate clients request.
+   * @nullable
+   */
+  client: ListShipmentsResponseDtoDataItemClient;
   /** Internal shipment reference; unique within the organization. */
   reference: string;
   /**

@@ -94,7 +94,7 @@ import type {
   TraceStepKind,
 } from "#/lib/review-types";
 import { docSlug } from "#/lib/review-types";
-import { useClientsById } from "#/lib/use-clients-by-id";
+import { clientLogos } from "#/data/client-logos";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -177,18 +177,18 @@ function capitalize(value: string) {
 function toReviewItem(
   shipment: ApiShipment,
   payload: ReviewRequestPayload,
-  client: { name: string; logo?: string } | undefined,
 ): ReviewItem {
   const arrivesInHours = shipment.etaAt
     ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
     : null;
+  const clientName = shipment.client?.name ?? "Unknown client";
 
   return {
     alternates: payload.alternates,
     approveLabel: payload.approveLabel ?? "Approve",
     canRequestInfo: payload.canRequestInfo,
     citations: payload.citations ?? [],
-    client: client?.name ?? "Unknown client",
+    client: clientName,
     comparison: payload.comparison,
     confidence: payload.confidence ?? 0.8,
     deadlineHoursFromNow: shipment.reviewDeadlineAt
@@ -202,7 +202,7 @@ function toReviewItem(
     documents: [],
     events: [],
     id: shipment.id,
-    logo: client?.logo,
+    logo: shipment.client?.image ?? clientLogos[clientName],
     proposal: payload.proposal ?? { detail: "", label: "Proposal", value: "—" },
     question: payload.question ?? "Review required",
     reference: shipment.reference,
@@ -225,8 +225,6 @@ function toReviewItem(
 }
 
 function useLiveReviewItems(search: ReviewSearch) {
-  const clientsById = useClientsById();
-
   const {
     data: shipmentsResponse,
     isFetching,
@@ -253,11 +251,7 @@ function useLiveReviewItems(search: ReviewSearch) {
     }
 
     const items = shipments.map((shipment) =>
-      toReviewItem(
-        shipment,
-        latestPayload.get(shipment.id) ?? {},
-        clientsById.get(shipment.clientId),
-      ),
+      toReviewItem(shipment, latestPayload.get(shipment.id) ?? {}),
     );
 
     const deadlines = new Map(
@@ -269,7 +263,7 @@ function useLiveReviewItems(search: ReviewSearch) {
     );
 
     return { deadlines, items };
-  }, [shipmentsResponse, reviewEventsResponse, clientsById]);
+  }, [shipmentsResponse, reviewEventsResponse]);
 
   return { ...derived, isFetching, isPending };
 }

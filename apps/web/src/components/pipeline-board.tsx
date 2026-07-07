@@ -36,11 +36,12 @@ import {
 } from "#/components/table-loading";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
+  useClientsControllerFindAll,
   useShipmentsControllerFindAll,
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
-import { useClientsById } from "#/lib/use-clients-by-id";
+import { clientLogos } from "#/data/client-logos";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { PipelineSearch } from "#/routes/dashboard/pipeline";
 import { pipelineListParams } from "#/routes/dashboard/pipeline";
@@ -377,13 +378,20 @@ export function PipelineBoard() {
     query: { placeholderData: keepPreviousData },
   });
   const { data: statsResponse } = useShipmentsControllerStats();
-  const clientsById = useClientsById();
+
+  // The client filter needs the full client list; rows don't (the API embeds
+  // the client on each shipment). Fetch it only once the filter is used.
+  const [isClientMenuOpen, setClientMenuOpen] = useState(false);
+  const { data: clientsResponse } = useClientsControllerFindAll(
+    { limit: 100, sortBy: "name", sortDir: "asc" },
+    { query: { enabled: isClientMenuOpen || clientFilter.size > 0 } },
+  );
 
   const rows = useMemo<Row[]>(() => {
     const shipments = shipmentsResponse?.data.data ?? [];
 
     return shipments.map((shipment) => {
-      const clientRef = clientsById.get(shipment.clientId);
+      const clientName = shipment.client?.name ?? "Unknown client";
       const status = statusFromApi[shipment.status];
       const arrivesInHours = shipment.etaAt
         ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
@@ -393,8 +401,8 @@ export function PipelineBoard() {
       return {
         id: shipment.id,
         reference: shipment.reference,
-        client: clientRef?.name ?? "Unknown client",
-        logo: clientRef?.logo,
+        client: clientName,
+        logo: shipment.client?.image ?? clientLogos[clientName],
         origin: shipment.originPort ?? countryName(shipment.originCountry),
         port: shipment.portOfEntry,
         isAir: shipment.transportMode === "air",
@@ -407,14 +415,18 @@ export function PipelineBoard() {
         priority: priorityFor(shipment.stage, status, arrivesInHours, value),
       };
     });
-  }, [shipmentsResponse, clientsById]);
+  }, [shipmentsResponse]);
 
   const totalCount = shipmentsResponse?.data.count ?? 0;
 
   const allClients = useMemo(
     () =>
-      [...clientsById.values()].sort((a, b) => a.name.localeCompare(b.name)),
-    [clientsById],
+      (clientsResponse?.data.data ?? []).map((client) => ({
+        id: client.id,
+        name: client.name,
+        logo: client.image ?? clientLogos[client.name],
+      })),
+    [clientsResponse],
   );
 
   const stats = useMemo(() => {
@@ -905,7 +917,8 @@ export function PipelineBoard() {
           {[...clientFilter].map((clientId) => (
             <Chip key={clientId} size="sm" variant="secondary">
               <Chip.Label>
-                {clientsById.get(clientId)?.name ?? clientId}
+                {allClients.find((client) => client.id === clientId)?.name ??
+                  clientId}
               </Chip.Label>
               <button
                 aria-label="Remove client filter"

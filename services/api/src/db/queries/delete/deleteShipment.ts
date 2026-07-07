@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
+import { embedClient } from "@/db/lib/embedClient";
 import { shipments } from "@/db/schema";
 
 export const deleteShipment = async (id: string, organizationId: string) => {
@@ -15,5 +16,5 @@ export const deleteShipment = async (id: string, organizationId: string) => {
     )
     .returning();
 
-  return entry[0];
+  return embedClient(entry[0]);
 };

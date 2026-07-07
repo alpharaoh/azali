@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
+import { embedClient } from "@/db/lib/embedClient";
 import { type InsertShipment, shipments } from "@/db/schema";
 
 export const updateShipment = async (
@@ -19,5 +20,5 @@ export const updateShipment = async (
     )
     .returning();
 
-  return entry[0];
+  return embedClient(entry[0]);
 };

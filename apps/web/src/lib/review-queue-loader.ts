@@ -2,7 +2,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import type { ShipmentsControllerFindAllParams } from "#/generated/api";
 import {
-  getClientsControllerFindAllQueryOptions,
   getShipmentEventsControllerFindAllQueryOptions,
   getShipmentsControllerFindAllQueryOptions,
   getShipmentsControllerStatsQueryOptions,
@@ -69,7 +68,4 @@ export function prefetchReviewQueue(
     }),
   );
   void queryClient.prefetchQuery(getShipmentsControllerStatsQueryOptions());
-  void queryClient.prefetchQuery(
-    getClientsControllerFindAllQueryOptions({ limit: 100 }),
-  );
 }
