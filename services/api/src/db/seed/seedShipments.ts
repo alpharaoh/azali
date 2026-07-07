@@ -61,8 +61,17 @@ interface SeedShipment {
       | "signoff";
     question: string;
     deadlineHours: number;
+    /** The legal clock behind the deadline, in broker terms. */
+    deadlineReason: string;
+    /** Set when the review answers a CBP notice — drives the red form badge. */
+    noticeForm?: "CF-28" | "CF-29";
     confidence: number;
     proposal: { label: string; value: string; detail: string };
+    /** Money consequence of the decision; alternates keyed by their value. */
+    dutyImpact?: {
+      proposed: { rate: string; amountUsd: number; breakdown: string[] };
+      alternates?: Record<string, { amountUsd: number; deltaUsd: number }>;
+    };
   };
   events: SeedEvent[];
 }
@@ -82,18 +91,32 @@ const seeds: SeedShipment[] = [
     conveyance: "COSCO Harmony 112E",
     etaHours: 14,
     valueUsd: 186400,
-    dutyUsd: 9300,
+    dutyUsd: 12430,
     incoterm: "FOB",
     entryType: "01 — Consumption",
     review: {
       type: "signoff",
       question: "Entry ready to file — needs licensed sign-off",
       deadlineHours: 1.5,
+      deadlineReason: "File before vessel arrival",
       confidence: 0.98,
       proposal: {
         label: "File entry",
         value: "ENT-4471",
-        detail: "All 14 lines classified; duty $9,300 computed and bonded.",
+        detail: "All 24 lines classified; duty $12,430 computed and bonded.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "Effective 6.7% incl. Section 301",
+          amountUsd: 12430,
+          breakdown: [
+            "Ch. 85 (14 lines) 0–2.6%: $1,890",
+            "Ch. 94 (7 lines) 3.9%: $2,387",
+            "Ch. 39 (3 lines) 5.3%: $1,214",
+            "Section 301 List 4A 7.5% (22 lines): $6,939",
+            "MPF/HMF itemized on the 7501",
+          ],
+        },
       },
     },
     events: [
@@ -120,17 +143,18 @@ const seeds: SeedShipment[] = [
       type: "document",
       question: "Invoice total conflicts with line-item sum",
       deadlineHours: 3,
+      deadlineReason: "Value must resolve before filing",
       confidence: 0.93,
       proposal: {
         label: "Use line-item sum",
         value: "$45,780.00",
-        detail: "Header shows $45,180; 22 line items sum to $45,780. Likely header typo.",
+        detail: "Printed total shows $48,250; 12 line items sum to $45,780 — the packing list supports the lines.",
       },
     },
     events: [
       { type: "email_received", actor: "system", title: "Invoice received from supplier", occurredHoursAgo: 12 },
-      { type: "document_extracted", actor: "ai", title: "Extracted invoice totals and 22 line items", occurredHoursAgo: 11, payload: { confidence: 0.96 } },
-      { type: "totals_reconciled", actor: "ai", title: "Detected $600 mismatch between header and lines", occurredHoursAgo: 10 },
+      { type: "document_extracted", actor: "ai", title: "Extracted invoice totals and 12 line items", occurredHoursAgo: 11, payload: { confidence: 0.96 } },
+      { type: "totals_reconciled", actor: "ai", title: "Detected $2,470 mismatch between header and lines", occurredHoursAgo: 10 },
     ],
   },
   {
@@ -138,24 +162,40 @@ const seeds: SeedShipment[] = [
     reference: "SHP-2214",
     stage: ShipmentStage.Classification,
     status: ShipmentStatus.NeedsReview,
-    originCountry: "CN",
-    originPort: "Shenzhen (Yantian)",
+    // The agent trace reads origin Taiwan (no Section 301) — keep them agreeing.
+    originCountry: "TW",
+    originPort: "Kaohsiung",
     portOfEntry: "LA/Long Beach",
     transportMode: "ocean",
     conveyance: "OOCL Tokyo 084E",
     etaHours: 30,
     valueUsd: 128000,
-    dutyUsd: 6400,
+    dutyUsd: 0,
     incoterm: "FOB",
     review: {
       type: "classification",
       question: "Which HTS code applies to the AX5400 mesh router?",
       deadlineHours: 6,
+      deadlineReason: "Classification blocks entry prep",
       confidence: 0.87,
       proposal: {
         label: "HTS",
         value: "8517.62.0090",
         detail: "Machines for reception/conversion/transmission of voice or data.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "Free (Column 1)",
+          amountUsd: 0,
+          breakdown: [
+            "8517.62.0090: Free → $0 duty",
+            "Origin Taiwan — no Section 301 exposure",
+            "MPF 0.3464%: $443 · HMF 0.125%: $160",
+          ],
+        },
+        alternates: {
+          "8517.69.0000": { amountUsd: 0, deltaUsd: 0 },
+        },
       },
     },
     events: [
@@ -182,6 +222,7 @@ const seeds: SeedShipment[] = [
       type: "document",
       question: "Two scanned CBP forms disagree — which one supports this entry?",
       deadlineHours: 12,
+      deadlineReason: "Entry blocked on correct 7501",
       confidence: 0.78,
       proposal: {
         label: "Use",
@@ -207,17 +248,31 @@ const seeds: SeedShipment[] = [
     conveyance: "MSC Ilona 226W",
     etaHours: 60,
     valueUsd: 64200,
-    dutyUsd: 10900,
+    dutyUsd: 11235,
     incoterm: "FOB",
     review: {
       type: "classification",
       question: "Wool or synthetic? Chief-weight call on the SA-2241 blazer",
       deadlineHours: 26,
+      deadlineReason: "Classify before Savannah filing",
       confidence: 0.82,
       proposal: {
         label: "HTS",
         value: "6204.31.20",
         detail: "Lab report shows 52% wool by weight — wool chief-weight applies.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "17.5% (wool chief weight)",
+          amountUsd: 11235,
+          breakdown: [
+            "6204.31.20 · 17.5% × $64,200: $11,235",
+            "MPF 0.3464%: $222 · HMF 0.125%: $80",
+          ],
+        },
+        alternates: {
+          "6204.33.5010": { amountUsd: 17270, deltaUsd: 6035 },
+        },
       },
     },
     events: [
@@ -243,6 +298,7 @@ const seeds: SeedShipment[] = [
       type: "pga",
       question: "Does the LED facial mask need an FDA device flag?",
       deadlineHours: 30,
+      deadlineReason: "FDA prior notice before arrival",
       confidence: 0.74,
       proposal: {
         label: "PGA flag",
@@ -267,17 +323,29 @@ const seeds: SeedShipment[] = [
     conveyance: "Hapag Hamburg Express 077W",
     etaHours: 90,
     valueUsd: 92400,
-    dutyUsd: 2300,
+    dutyUsd: 2310,
     incoterm: "FCA",
     review: {
       type: "valuation",
       question: "Related-party price is 18% below market — acceptable?",
       deadlineHours: 48,
+      deadlineReason: "Valuation before entry summary",
       confidence: 0.71,
       proposal: {
         label: "Valuation",
         value: "Transaction value OK",
         detail: "Circumstances-of-sale test supported by transfer pricing study on file.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "2.5% on transaction value",
+          amountUsd: 2310,
+          breakdown: [
+            "Base 2.5% (Ch. 84 parts) × $92,400: $2,310",
+            "MPF 0.3464%: $320 · HMF 0.125%: $116",
+            "If transaction value were rejected: +18% dutiable base → +$416 exposure",
+          ],
+        },
       },
     },
     events: [
@@ -297,17 +365,29 @@ const seeds: SeedShipment[] = [
     conveyance: "Evergreen Ever Ace 041E",
     etaHours: 110,
     valueUsd: 51600,
-    dutyUsd: 5200,
+    dutyUsd: 5184,
     incoterm: "FOB",
     review: {
       type: "classification",
       question: "Reassign trail runner TR-9 under the new 6404 split",
       deadlineHours: 72,
+      deadlineReason: "Refile under revised 6404 split",
       confidence: 0.91,
       proposal: {
         label: "HTS",
         value: "6404.11.90",
         detail: "Athletic footwear, textile upper, over $12/pair — new statistical split.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "20% (unchanged — statistical split only)",
+          amountUsd: 5184,
+          breakdown: [
+            "Base 6404.11.90 · 20% on covered lines: $4,940",
+            "MPF 0.3464%: $179 · HMF 0.125%: $65",
+            "10-digit statistical change only — $0 duty impact",
+          ],
+        },
       },
     },
     events: [
@@ -333,6 +413,7 @@ const seeds: SeedShipment[] = [
       type: "document",
       question: "Country of origin missing on the Atlas invoice",
       deadlineHours: 96,
+      deadlineReason: "Origin required for entry",
       confidence: 0.85,
       proposal: {
         label: "Origin",
@@ -365,11 +446,24 @@ const seeds: SeedShipment[] = [
       type: "enforcement",
       question: "CBP Form 28 challenges a prior classification — response ready",
       deadlineHours: 130,
+      deadlineReason: "CF-28 response due (day 25 of 30)",
+      noticeForm: "CF-28",
       confidence: 0.92,
       proposal: {
         label: "Response",
-        value: "Defend 8205.40.00",
-        detail: "Drafted CF-28 response with catalog specs and prior ruling support.",
+        value: "Defend 8467.21.0030",
+        detail: "CF-28 response drafted with CROSS N302876, the product spec, and the 9-entry liquidation history.",
+      },
+      dutyImpact: {
+        proposed: {
+          rate: "As entered — no change",
+          amountUsd: 3700,
+          breakdown: [
+            "Duty as entered (8467.21.0030): $3,700 — paid",
+            "If CBP reclassifies: +$1,865 exposure across 9 open entries",
+            "Penalty exposure (19 USC §1592, negligence): up to 2× the duty loss",
+          ],
+        },
       },
     },
     events: [
@@ -571,6 +665,7 @@ for (const seed of seeds) {
           ...(["classification", "signoff"].includes(seed.review.type) && {
             hts: seed.review.proposal.value,
           }),
+          ...(seed.review.noticeForm && { notice: seed.review.noticeForm }),
           htsConfidence: seed.review.confidence,
           nextAction: `Broker review: ${seed.review.proposal.label}`,
         }
@@ -628,18 +723,25 @@ for (const seed of seeds) {
 
   const overview = REVIEW_OVERVIEW[seed.reference];
 
-  // Documents received — one event per document, CBP forms flagged as such.
+  // Documents received — one event per document. CBP forms and agent-drafted
+  // responses get their own types so the file reads correctly.
   for (const doc of overview?.documents ?? []) {
     const title = doc.kind === "email" ? doc.subject : doc.name;
     const cbpForm =
       doc.kind !== "email" ? /CBP Form (28|29)/i.exec(doc.name) : null;
+    const isDraftResponse =
+      doc.kind !== "email" && /^draft response/i.test(doc.name);
 
     await insertShipmentEvent({
       organizationId,
       userId,
       shipmentId: shipment!.id,
-      type: cbpForm ? "cbp_notice_received" : "document_received",
-      actor: cbpForm ? "cbp" : "system",
+      type: cbpForm
+        ? "cbp_notice_received"
+        : isDraftResponse
+          ? "response_drafted"
+          : "document_received",
+      actor: cbpForm ? "cbp" : isDraftResponse ? "ai" : "system",
       title,
       occurredAt: hoursFromNow(-doc.receivedHoursAgo),
       payload: {
@@ -741,7 +843,10 @@ for (const seed of seeds) {
         question: seed.review.question,
         confidence: seed.review.confidence,
         deadlineAt: hoursFromNow(seed.review.deadlineHours).toISOString(),
+        deadlineReason: seed.review.deadlineReason,
+        ...(seed.review.noticeForm && { noticeForm: seed.review.noticeForm }),
         proposal: seed.review.proposal,
+        ...(seed.review.dutyImpact && { dutyImpact: seed.review.dutyImpact }),
         citations: overview?.citations ?? [],
         approveLabel: overview?.approveLabel ?? "Approve",
         canRequestInfo: overview?.canRequestInfo ?? false,

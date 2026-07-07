@@ -102,6 +102,12 @@ export interface ShipmentFacts {
   entryType: string;
 }
 
+/** Money consequence of the decision; alternates keyed by their value. */
+export interface DutyImpact {
+  proposed: { rate: string; amountUsd: number; breakdown: string[] };
+  alternates?: Record<string, { amountUsd: number; deltaUsd: number }>;
+}
+
 export interface ReviewItem {
   id: string;
   type: ReviewItemType;
@@ -112,6 +118,11 @@ export interface ReviewItem {
   question: string;
   /** Hours from now until the deadline, so deadlines are always in the future. */
   deadlineHoursFromNow: number;
+  /** The legal clock behind the deadline, in broker terms. */
+  deadlineReason?: string;
+  /** Set when the review answers a CBP notice — drives the red form badge. */
+  noticeForm?: "CF-28" | "CF-29";
+  dutyImpact?: DutyImpact;
   shipmentValue: number;
   confidence: number;
   proposal: { label: string; value: string; detail: string };

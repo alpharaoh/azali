@@ -159,7 +159,10 @@ interface ReviewRequestPayload {
   reviewType?: ReviewItemType;
   question?: string;
   confidence?: number;
+  deadlineReason?: string;
+  noticeForm?: ReviewItem["noticeForm"];
   proposal?: ReviewItem["proposal"];
+  dutyImpact?: ReviewItem["dutyImpact"];
   alternates?: ReviewItem["alternates"];
   comparison?: ReviewItem["comparison"];
   citations?: Citation[];
@@ -191,6 +194,9 @@ function toReviewItem(
     deadlineHoursFromNow: shipment.reviewDeadlineAt
       ? (new Date(shipment.reviewDeadlineAt).getTime() - Date.now()) / 3_600_000
       : 24,
+    deadlineReason: payload.deadlineReason,
+    noticeForm: payload.noticeForm,
+    dutyImpact: payload.dutyImpact,
     // Documents, activity, and trace come from the shipment's event stream —
     // filled in for the selected item in ReviewQueue.
     documents: [],
@@ -327,6 +333,7 @@ function QueueRow({
             <div className="flex shrink-0 items-center gap-2">
               <span
                 className={`whitespace-nowrap text-xs leading-tight ${deadlineTextClass[tone]}`}
+                title={item.deadlineReason}
               >
                 {formatDistanceToNowStrict(deadline)}
               </span>
@@ -348,6 +355,13 @@ function QueueRow({
           </span>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {item.noticeForm ? (
+              <Chip color="danger" size="sm" variant="soft">
+                <Chip.Label className="font-semibold">
+                  {item.noticeForm}
+                </Chip.Label>
+              </Chip>
+            ) : null}
             <Chip size="sm" variant="soft">
               <TypeIcon className="size-3" />
               <Chip.Label>{typeMeta[item.type].label}</Chip.Label>
@@ -950,6 +964,9 @@ function ReviewDetail({
   ].sort((a, b) => b.hoursAgo - a.hoursAgo);
   const TypeIcon = typeMeta[item.type].icon;
   const tone = deadlineTone(deadline);
+  const hasResponseDraft = item.documents.some(
+    (doc) => doc.kind !== "email" && /^draft response/i.test(doc.name),
+  );
 
   const handleAddNote = () => {
     const body = draft.trim();
@@ -1003,6 +1020,13 @@ function ReviewDetail({
             <TypeIcon className="size-3" />
             <Chip.Label>{typeMeta[item.type].label}</Chip.Label>
           </Chip>
+          {item.noticeForm ? (
+            <Chip color="danger" size="sm" variant="soft">
+              <Chip.Label className="font-semibold">
+                {item.noticeForm}
+              </Chip.Label>
+            </Chip>
+          ) : null}
           <Chip
             color={tone === "default" ? "default" : tone}
             size="sm"
@@ -1010,6 +1034,7 @@ function ReviewDetail({
           >
             <Chip.Label>
               {formatDistanceToNowStrict(deadline, { addSuffix: true })}
+              {item.deadlineReason ? ` · ${item.deadlineReason}` : null}
             </Chip.Label>
           </Chip>
         </div>
@@ -1101,6 +1126,50 @@ function ReviewDetail({
                 <span className="text-muted text-sm">
                   {item.proposal.detail}
                 </span>
+                {item.dutyImpact ? (
+                  <HoverCard closeDelay={100} openDelay={150}>
+                    <HoverCard.Trigger className="mt-1.5 inline-flex w-fit">
+                      <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
+                        <span className="text-foreground text-sm font-semibold tabular-nums">
+                          Duty{" "}
+                          {formatCurrency(item.dutyImpact.proposed.amountUsd)}
+                        </span>
+                        <span className="text-muted text-xs">
+                          {item.dutyImpact.proposed.rate}
+                        </span>
+                      </span>
+                    </HoverCard.Trigger>
+                    <HoverCard.Content className="p-3" placement="top">
+                      <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
+                        {item.dutyImpact.proposed.breakdown.map((line) => (
+                          <span key={line} className="text-muted">
+                            {line}
+                          </span>
+                        ))}
+                      </div>
+                    </HoverCard.Content>
+                  </HoverCard>
+                ) : null}
+                {item.citations.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="text-muted text-xs">Based on</span>
+                    {item.citations.slice(0, 2).map((citation) => (
+                      <CitationPill
+                        key={citation.ref}
+                        citation={citation}
+                        document={findCitedDocument(item, citation)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {item.noticeForm && hasResponseDraft ? (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <FileCheck className="text-success size-3.5 shrink-0" />
+                    <span className="text-muted text-xs">
+                      Response draft ready — in the file below, with exhibits.
+                    </span>
+                  </div>
+                ) : null}
               </Widget.Content>
             </Widget>
 
@@ -1263,9 +1332,32 @@ function ReviewDetail({
                             {alt.detail}
                           </span>
                         </div>
-                        <span className="text-muted text-xs tabular-nums">
-                          {Math.round(alt.confidence * 100)}%
-                        </span>
+                        <div className="flex shrink-0 flex-col items-end gap-0.5">
+                          {(() => {
+                            const impact =
+                              item.dutyImpact?.alternates?.[alt.value];
+                            if (!impact) return null;
+
+                            return (
+                              <span
+                                className={`whitespace-nowrap text-xs font-medium tabular-nums ${
+                                  impact.deltaUsd > 0
+                                    ? "text-danger"
+                                    : impact.deltaUsd < 0
+                                      ? "text-success"
+                                      : "text-muted"
+                                }`}
+                              >
+                                {impact.deltaUsd === 0
+                                  ? "$0 duty change"
+                                  : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
+                              </span>
+                            );
+                          })()}
+                          <span className="text-muted text-xs tabular-nums">
+                            {Math.round(alt.confidence * 100)}%
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
