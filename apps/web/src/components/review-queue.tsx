@@ -24,10 +24,12 @@ import {
   Button,
   Card,
   Chip,
+  Modal,
   ScrollShadow,
   SearchField,
   Separator,
   Skeleton,
+  Spinner,
   toast,
 } from "@heroui/react";
 import {
@@ -57,6 +59,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { TableFetchingState } from "#/components/table-loading";
+import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   getShipmentEventsControllerFindByShipmentQueryKey,
@@ -95,7 +98,6 @@ import type {
   TraceStepKind,
 } from "#/lib/review-types";
 import { docSlug } from "#/lib/review-types";
-import { clientLogos } from "#/data/client-logos";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -741,135 +743,249 @@ function DocumentTimelineItem({
           </div>
         </div>
         {isOpen ? (
-        <Card>
-          <Card.Content className="flex flex-col gap-2">
-            {document.kind === "email" ? (
-              <>
-                <span className="text-muted text-xs">
-                  From: {document.from} · {document.meta}
-                </span>
-                <p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
-                  {document.body}
-                </p>
-              </>
-            ) : document.kind === "pdf" && document.src ? (
-              <PdfWithExtraction document={document} />
-            ) : (
-              <>
-                {document.kind === "scan" ? (
-                  <>
-                    <a
-                      className="block"
-                      href={document.src}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <img
-                        alt={document.name}
-                        className="max-h-80 w-full rounded-lg border bg-white object-contain"
-                        src={document.src}
-                      />
-                    </a>
-                    <span className="text-muted text-xs font-medium">
-                      AI-extracted fields
-                    </span>
-                  </>
-                ) : null}
-                <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-                  {(document.kind === "scan"
-                    ? document.extracted
-                    : document.lines
-                  ).map((line) => (
-                    <DocumentLineRow key={line.label} line={line} />
-                  ))}
-                </div>
-                {document.note ? (
-                  <span className="text-muted inline-flex items-start gap-1.5 text-xs">
-                    <Sparkles className="mt-0.5 size-3 shrink-0" />
-                    {document.note}
+          <Card>
+            <Card.Content className="flex flex-col gap-2">
+              {document.kind === "email" ? (
+                <>
+                  <span className="text-muted text-xs">
+                    From: {document.from} · {document.meta}
                   </span>
-                ) : null}
-              </>
-            )}
-          </Card.Content>
-        </Card>
+                  <p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
+                    {document.body}
+                  </p>
+                </>
+              ) : document.kind === "pdf" && document.src ? (
+                <PdfWithExtraction document={document} />
+              ) : (
+                <>
+                  {document.kind === "scan" ? (
+                    <>
+                      <a
+                        className="block"
+                        href={document.src}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <img
+                          alt={document.name}
+                          className="max-h-80 w-full rounded-lg border bg-white object-contain"
+                          src={document.src}
+                        />
+                      </a>
+                      <span className="text-muted text-xs font-medium">
+                        AI-extracted fields
+                      </span>
+                    </>
+                  ) : null}
+                  <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+                    {(document.kind === "scan"
+                      ? document.extracted
+                      : document.lines
+                    ).map((line) => (
+                      <DocumentLineRow key={line.label} line={line} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </Card.Content>
+          </Card>
         ) : null}
       </Timeline.Content>
     </Timeline.Item>
   );
 }
 
-/** How many extracted fields show before "View all". */
-const EXTRACTION_PREVIEW_LINES = 6;
+/** How many extracted fields the inline preview shows. */
+const EXTRACTION_PREVIEW_LINES = 5;
 
 /**
- * A real PDF rendered beside what the AI extracted from it — the document and
- * its reading, side by side.
+ * Inline preview of a real PDF beside what the AI extracted from it. The
+ * preview is deliberately non-interactive — "View document" opens the full
+ * viewer with the complete extraction.
  */
 function PdfWithExtraction({
   document,
 }: {
   document: ReviewDocument & { kind: "pdf"; src?: string };
 }) {
-  const [showAllFields, setShowAllFields] = useState(false);
+  const [isViewerOpen, setViewerOpen] = useState(false);
+  const [isPreviewLoaded, setPreviewLoaded] = useState(false);
   const lines = document.lines;
-  const visibleLines = showAllFields
-    ? lines
-    : lines.slice(0, EXTRACTION_PREVIEW_LINES);
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
-      <object
-        aria-label={document.name}
-        className="h-[420px] w-full rounded-lg border bg-white"
-        data={`${document.src}#toolbar=0&navpanes=0`}
-        type="application/pdf"
-      >
-        <div className="flex h-full items-center justify-center">
-          <a
-            className="text-accent text-xs underline-offset-2 hover:underline"
-            href={document.src}
-            rel="noreferrer"
-            target="_blank"
-          >
-            Open {document.name}
-          </a>
-        </div>
-      </object>
-
-      <div className="flex min-w-0 flex-col gap-2">
-        {document.summary ? (
-          <p className="text-muted flex items-start gap-1.5 text-xs leading-relaxed">
-            <Sparkles className="mt-0.5 size-3 shrink-0" />
-            <span>{document.summary}</span>
-          </p>
-        ) : null}
-        <span className="text-muted text-xs font-medium">
-          AI-extracted fields
-        </span>
-        <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-          {visibleLines.map((line) => (
-            <DocumentLineRow key={line.label} line={line} />
-          ))}
-        </div>
-        {lines.length > EXTRACTION_PREVIEW_LINES && !showAllFields ? (
+    <>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {/* Document preview — stretches with the row, faded, not scrollable. */}
+        <div className="relative h-full min-h-72 overflow-hidden rounded-lg border bg-white">
+          {!isPreviewLoaded && (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Spinner aria-label="Loading document preview" size="sm" />
+            </span>
+          )}
+          <object
+            aria-hidden
+            className={`pointer-events-none h-[135%] w-full transition-opacity duration-200 ${
+              isPreviewLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            data={`${document.src}#toolbar=0&navpanes=0&scrollbar=0`}
+            type="application/pdf"
+            onLoad={() => setPreviewLoaded(true)}
+          />
           <button
-            className="text-muted hover:text-foreground inline-flex w-fit cursor-pointer items-center gap-1 text-xs transition-colors"
+            aria-label={`View ${document.name}`}
+            className="group absolute inset-0 cursor-pointer"
             type="button"
-            onClick={() => setShowAllFields(true)}
+            onClick={() => setViewerOpen(true)}
           >
-            View all {lines.length} fields
-            <ChevronRight className="size-3" />
+            <span
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent"
+            />
+            <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
+              <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
+                <ArrowUpRightFromSquare className="size-3.5" />
+                View document
+              </span>
+            </span>
           </button>
-        ) : null}
-        {document.note ? (
-          <span className="text-muted inline-flex items-start gap-1.5 text-xs">
-            <Sparkles className="mt-0.5 size-3 shrink-0" />
-            {document.note}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-2">
+          {document.summary ? (
+            <p className="text-muted text-xs leading-relaxed">
+              {document.summary}
+            </p>
+          ) : null}
+          <span className="text-muted text-xs font-medium">
+            AI-extracted fields
           </span>
-        ) : null}
+          <div
+            className={`bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed ${
+              lines.length > EXTRACTION_PREVIEW_LINES
+                ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)]"
+                : ""
+            }`}
+          >
+            {lines.slice(0, EXTRACTION_PREVIEW_LINES).map((line) => (
+              <DocumentLineRow key={line.label} line={line} />
+            ))}
+          </div>
+          <Button
+            className="mt-1 w-fit"
+            size="sm"
+            variant="secondary"
+            onPress={() => setViewerOpen(true)}
+          >
+            <ArrowUpRightFromSquare className="size-3.5" />
+            View document
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <DocumentViewerModal
+        document={document}
+        isOpen={isViewerOpen}
+        onOpenChange={setViewerOpen}
+      />
+    </>
+  );
+}
+
+/**
+ * The full document viewer: the real PDF at reading size on the left, the
+ * complete AI reading (summary + every extracted field) on the right.
+ */
+function DocumentViewerModal({
+  document,
+  isOpen,
+  onOpenChange,
+}: {
+  document: ReviewDocument & { kind: "pdf"; src?: string };
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [isLoaded, setLoaded] = useState(false);
+
+  return (
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog className="max-w-full sm:w-[95vw]">
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>{document.name}</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body className="min-h-0">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                <div className="relative h-[78dvh] w-full overflow-hidden rounded-lg border bg-white">
+                  {!isLoaded && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Spinner aria-label="Loading document" size="sm" />
+                    </span>
+                  )}
+                  <object
+                    aria-label={document.name}
+                    className={`h-full w-full transition-opacity duration-200 ${
+                      isLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                    data={`${document.src}#view=FitH`}
+                    type="application/pdf"
+                    onLoad={() => setLoaded(true)}
+                  >
+                    <div className="flex h-full items-center justify-center">
+                      <a
+                        className="text-accent text-xs underline-offset-2 hover:underline"
+                        href={document.src}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open {document.name}
+                      </a>
+                    </div>
+                  </object>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-3 lg:h-[78dvh] lg:overflow-y-auto lg:pr-1">
+                  <span className="text-muted text-xs">
+                    {document.meta} · received{" "}
+                    {receivedAgo(document.receivedHoursAgo)}
+                  </span>
+                  {document.summary ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-muted text-xs font-medium">
+                        AI summary
+                      </span>
+                      <p className="text-foreground text-sm leading-relaxed">
+                        {document.summary}
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-muted text-xs font-medium">
+                      Extracted fields ({document.lines.length})
+                    </span>
+                    <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+                      {document.lines.map((line) => (
+                        <DocumentLineRow key={line.label} line={line} />
+                      ))}
+                    </div>
+                  </div>
+                  <a
+                    className="text-muted hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs transition-colors"
+                    href={document.src}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <ArrowUpRightFromSquare className="size-3" />
+                    Open original in a new tab
+                  </a>
+                </div>
+              </div>
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 }
 
@@ -1398,10 +1514,7 @@ function ReviewDetail({
                 />
                 <ShipmentFact label="Mode" value={item.shipment.mode} />
                 <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
-                <ShipmentFact
-                  label="Entry"
-                  value={item.shipment.entryType}
-                />
+                <ShipmentFact label="Entry" value={item.shipment.entryType} />
               </Widget.Content>
             </Widget>
 
@@ -1477,7 +1590,6 @@ function ReviewDetail({
                 </Timeline.Item>
               </Timeline>
             </div>
-
           </div>
         ) : (
           <div className="flex select-text flex-col gap-5 pb-4">

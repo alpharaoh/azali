@@ -986,7 +986,60 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           { label: "Packing", value: "200 cartons · 1 × 20' FCL · G.W. 3,120 kg" },
           { highlight: true, label: "Total invoice value", value: "USD 48,556.00" },
         ],
-        note: "The supplier's shorthand description works against the entered classification — the response addresses it head-on.",
+      },
+      {
+        kind: "pdf",
+        name: "Packing List — PO-88231",
+        meta: "Ningbo Lumina Acoustics · 2 pages",
+        receivedHoursAgo: 2258,
+        src: "/docs/packing-list-azali.pdf",
+        summary:
+          "200 cartons in one 20' FCL — 160 of LUX-SP210 units, 30 of shade assemblies, 10 of cable kits (4,920 units · 2,760 kg net / 3,120 kg gross). Quantities match the invoice line-for-line, and the lithium-ion battery handling declaration (UN3481, PI 967) is present.",
+        lines: [
+          { label: "Ship date", value: "22 Jan · Ningbo Lumina Acoustics" },
+          { label: "Reference", value: "PO-88231 · Invoice AZ-INV-20259-4471" },
+          {
+            highlight: true,
+            label: "Line 1",
+            value: "160 ctn · 2,400 pcs LUX-SP210 (LSP210-BLK) · 2,280 kg",
+          },
+          { label: "Line 2", value: "30 ctn · 2,400 pcs shade/diffuser (LSP210-DIF) · 360 kg" },
+          { label: "Line 3", value: "10 ctn · 120 sets USB-C kit (LSP210-CBL) · 120 kg" },
+          {
+            highlight: true,
+            label: "Totals",
+            value: "200 cartons · 4,920 units · 2,760 kg net / 3,120 kg gross",
+          },
+          { label: "Handling", value: "Li-ion batteries UN3481, PI 967 · keep dry" },
+          { label: "Package type", value: "Cartons · 1 × 20' FCL" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "Bill of Lading — AZ-BOL-20259-0417",
+        meta: "COSCO Shipping Lines · 1 page",
+        receivedHoursAgo: 2256,
+        src: "/docs/bill-of-lading-azali.pdf",
+        summary:
+          "COSCO ocean FCL under B/L AZ-BOL-20259-0417 — container CMAU-4471893, sealed, aboard COSCO Universe 095E: 200 cartons, 3,120 kg, declared value $48,556 FOB Ningbo. References PO-88231 and the invoice — and the shipper's own special instructions note the HTS is under CBP review.",
+        lines: [
+          { label: "B/L", value: "AZ-BOL-20259-0417 · SCAC COSU" },
+          { label: "Carrier", value: "COSCO Shipping Lines / Norton Lilly (inland)" },
+          {
+            highlight: true,
+            label: "Container",
+            value: "CMAU-4471893 · seals SL-8842019/20 · COSCO Universe 095E",
+          },
+          { label: "Freight", value: "3rd party — billed to the importer of record" },
+          { label: "Cargo", value: "200 cartons · 3,120 kg gross · 1 × 20' FCL" },
+          { highlight: true, label: "Declared value", value: "USD 48,556.00 · FOB Ningbo" },
+          {
+            highlight: true,
+            label: "Special instructions",
+            value: "“HTS under CBP review — 8518.22.0000 entered / 8513.10.40”",
+          },
+          { label: "Pickup", value: "22 Jan · signed W. Zhang / M. Torres (COSCO)" },
+        ],
       },
       {
         kind: "pdf",
@@ -1004,7 +1057,6 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           },
           { label: "Retail box header", value: "“Portable Bluetooth Speaker”" },
         ],
-        note: "Component cost and marketing both point to sound reproduction as the principal function.",
       },
       {
         kind: "pdf",
@@ -1029,7 +1081,6 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           { label: "Response due", value: "30 days from issue date" },
           { label: "Port", value: "New York/Newark (1001)" },
         ],
-        note: "CBP is probing whether the lamp function controls — the response clock is running.",
       },
       {
         kind: "pdf",
@@ -1043,7 +1094,6 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           { label: "Invoice wording", value: "Supplier shorthand addressed in §II — packaging and spec control" },
           { label: "Exhibits", value: "A spec · B photos · C cost breakdown · D packaging · E rationale memo" },
         ],
-        note: "Drafted by the agent from the entry file — every claim is cited to a document in this record.",
         draft: CF28_RESPONSE_DRAFT,
       },
     ],
@@ -1056,7 +1106,8 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         occurredHoursAgo: 2240,
         steps: [
           "2,400 × LUX-SP210 @ $18.75 · 2,400 × shade assemblies · 120 × cable kits",
-          "B/L COSU6398471250 · COSCO Universe 095E · Port of NY/Newark (1001)",
+          "Invoice ↔ packing list ↔ B/L reconciled: quantities, weights, and value agree",
+          "Container CMAU-4471893 · COSCO Universe 095E · Port of NY/Newark (1001)",
         ],
       },
       {
