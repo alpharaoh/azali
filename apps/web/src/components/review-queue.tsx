@@ -690,7 +690,12 @@ function EventTimelineItem({
           </time>
         </div>
         {event.detail ? (
-          <p className="text-muted m-0 text-xs leading-5">{event.detail}</p>
+          <p
+            className="text-muted m-0 line-clamp-1 text-xs leading-5"
+            title={event.detail}
+          >
+            {event.detail}
+          </p>
         ) : null}
         {event.steps && onViewTrace ? (
           <button
@@ -723,8 +728,6 @@ function DocumentTimelineItem({
   const isCbpForm =
     document.kind !== "email" && /cbp form 2[89]/i.test(document.name);
   const title = document.kind === "email" ? document.subject : document.name;
-  const meta =
-    document.kind === "email" ? `From ${document.from}` : document.meta;
   const action =
     document.kind === "email"
       ? { icon: ArrowUpRightFromSquare, label: "Open" }
@@ -767,7 +770,6 @@ function DocumentTimelineItem({
             </h3>
           </button>
           <div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
-            <span>{meta}</span>
             <time>{receivedAgo(document.receivedHoursAgo)}</time>
             {onEditDraft ? (
               <Button
@@ -999,13 +1001,10 @@ function PdfWithExtraction({
 
         <div className="flex min-w-0 flex-col gap-2">
           {document.summary ? (
-            <p className="text-muted text-xs leading-relaxed">
+            <p className="text-muted line-clamp-3 text-xs leading-relaxed">
               {document.summary}
             </p>
           ) : null}
-          <span className="text-muted text-xs font-medium">
-            AI-extracted fields
-          </span>
           <div
             className={`bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed ${
               lines.length > EXTRACTION_PREVIEW_LINES
