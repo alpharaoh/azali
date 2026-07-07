@@ -55,6 +55,7 @@ import {
 import type { ComponentProps, ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { TableFetchingState } from "#/components/table-loading";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
@@ -663,8 +664,12 @@ function EventTimelineItem({
 
 function DocumentTimelineItem({
   document,
+  onEditDraft,
   ...rest
-}: { document: ReviewDocument } & TimelineItemPassthrough) {
+}: {
+  document: ReviewDocument;
+  onEditDraft?: () => void;
+} & TimelineItemPassthrough) {
   // Open by default — the file carries the story; collapsing is for skimming.
   const [isOpen, setIsOpen] = useState(true);
   const Icon = document.kind === "email" ? Envelope : FileText;
@@ -708,6 +713,18 @@ function DocumentTimelineItem({
           <div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
             <span>{meta}</span>
             <time>{receivedAgo(document.receivedHoursAgo)}</time>
+            {onEditDraft ? (
+              <Button
+                isIconOnly
+                aria-label="Edit draft"
+                className="size-6 min-h-6 min-w-6"
+                size="sm"
+                variant="tertiary"
+                onPress={onEditDraft}
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+            ) : null}
             <Button
               isIconOnly
               aria-label={action.label}
@@ -973,9 +990,16 @@ function ReviewDetail({
   ].sort((a, b) => b.hoursAgo - a.hoursAgo);
   const TypeIcon = typeMeta[item.type].icon;
   const tone = deadlineTone(deadline);
-  const hasResponseDraft = item.documents.some(
-    (doc) => doc.kind !== "email" && /^draft response/i.test(doc.name),
-  );
+  // The latest agent-drafted document with an editable rich-text body.
+  const responseDraft = [...item.documents]
+    .reverse()
+    .find(
+      (doc): doc is ReviewDocument & { kind: "pdf" } =>
+        doc.kind === "pdf" && Boolean(doc.draft),
+    );
+  const [editingDraft, setEditingDraft] = useState<
+    (ReviewDocument & { kind: "pdf" }) | null
+  >(null);
 
   const handleAddNote = () => {
     const body = draft.trim();
@@ -1165,13 +1189,18 @@ function ReviewDetail({
                     ))}
                   </div>
                 ) : null}
-                {item.noticeForm && hasResponseDraft ? (
-                  <div className="mt-1 flex items-center gap-1.5">
+                {item.noticeForm && responseDraft ? (
+                  <button
+                    className="group mt-1 flex w-fit cursor-pointer items-center gap-1.5"
+                    type="button"
+                    onClick={() => setEditingDraft(responseDraft)}
+                  >
                     <FileCheck className="text-success size-3.5 shrink-0" />
-                    <span className="text-muted text-xs">
-                      Response draft ready — in the file below, with exhibits.
+                    <span className="text-muted group-hover:text-foreground text-xs transition-colors">
+                      Response draft ready — review &amp; edit
                     </span>
-                  </div>
+                    <ChevronRight className="text-muted size-3" />
+                  </button>
                 ) : null}
                 {item.alternates && item.alternates.length > 0 ? (
                   <>
@@ -1312,6 +1341,16 @@ function ReviewDetail({
                       _index={index}
                       _isLast={false}
                       document={entry.document}
+                      onEditDraft={
+                        entry.document.kind === "pdf" && entry.document.draft
+                          ? () =>
+                              setEditingDraft(
+                                entry.document as ReviewDocument & {
+                                  kind: "pdf";
+                                },
+                              )
+                          : undefined
+                      }
                     />
                   ) : (
                     <EventTimelineItem
@@ -1464,6 +1503,15 @@ function ReviewDetail({
           {alternate ? `Approve ${alternate}` : item.approveLabel}
         </Button>
       </div>
+
+      <ResponseDraftModal
+        document={editingDraft}
+        isOpen={Boolean(editingDraft)}
+        shipmentId={item.id}
+        onOpenChange={(open) => {
+          if (!open) setEditingDraft(null);
+        }}
+      />
     </div>
   );
 }

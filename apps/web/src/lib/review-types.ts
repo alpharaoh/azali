@@ -25,6 +25,8 @@ export type ReviewDocument =
       receivedHoursAgo: number;
       lines: DocumentLine[];
       note?: string;
+      /** Editable rich-text body (TipTap JSON) for agent-drafted documents. */
+      draft?: Record<string, unknown>;
     }
   | {
       kind: "email";

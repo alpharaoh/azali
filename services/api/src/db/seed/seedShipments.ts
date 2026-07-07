@@ -427,7 +427,7 @@ const seeds: SeedShipment[] = [
     ],
   },
   {
-    clientName: "Stanley Black & Decker",
+    clientName: "YETI",
     reference: "ENT-3979",
     entryNumber: "ENT-3979",
     stage: ShipmentStage.Released,
@@ -439,12 +439,13 @@ const seeds: SeedShipment[] = [
     conveyance: "COSCO Universe 095E",
     etaHours: -2160,
     valueUsd: 74600,
-    dutyUsd: 3700,
+    dutyUsd: 5595,
     incoterm: "FOB",
     entryType: "01 — Consumption",
     review: {
       type: "enforcement",
-      question: "CBP Form 28 challenges a prior classification — response ready",
+      question:
+        "CBP Form 28 questions the TrailGlow 3-in-1 classification — response drafted",
       // Hours, not days: near the wire so the CF-28 surfaces at the top of
       // the queue (sorted by reviewDeadlineAt asc).
       deadlineHours: 5,
@@ -453,26 +454,23 @@ const seeds: SeedShipment[] = [
       confidence: 0.92,
       proposal: {
         label: "Response",
-        value: "Defend 8467.21.0030",
-        detail: "CF-28 response drafted with CROSS N302876, the product spec, and the 9-entry liquidation history.",
+        value: "Defend 8518.22.0000",
+        detail:
+          "Principal-function brief (Section XVI, Note 3): audio is 55% of component cost, the article is sold as a speaker, and NY N327431 is on point. Exhibits A–E attached.",
       },
       dutyImpact: {
         proposed: {
-          rate: "As entered — no change",
-          amountUsd: 3700,
+          rate: "As entered — Free + 301 List 4A 7.5%",
+          amountUsd: 5595,
           breakdown: [
-            "Duty as entered (8467.21.0030): $3,700 — paid",
-            "If CBP reclassifies: +$1,865 exposure across 9 open entries",
-            "Penalty exposure (19 USC §1592, negligence): up to 2× the duty loss",
+            "As entered (8518.22 Free + 301 List 4A 7.5%): $5,595 — paid",
+            "If reclassified to 8513.10.40: +$12,700 this entry",
+            "Across 11 open entries: ~$140K + penalty exposure (19 USC §1592)",
           ],
         },
       },
     },
-    events: [
-      { type: "cbp_response_received", actor: "cbp", title: "CBP Form 28 request for information received", occurredHoursAgo: 72 },
-      { type: "vector_search", actor: "ai", title: "Pulled entry docs and prior rulings for 8205.40", occurredHoursAgo: 60 },
-      { type: "response_drafted", actor: "ai", title: "Drafted CF-28 response package", occurredHoursAgo: 48, payload: { confidence: 0.92 } },
-    ],
+    events: [],
   },
   // ---- Flowing (autopilot / awaiting / released) ---------------------------
   {

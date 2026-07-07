@@ -630,51 +630,94 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       ]
     }
   ],
+  // Hand-authored: the TrailGlow CF-28 case.
   "ENT-3979": [
     {
-      "label": "Ingestion",
+      "label": "Reading the notice",
       "steps": [
         {
           "citationRef": "CBP Form 28 · ENT-3979",
           "data": [
-            "CBP Form 28 · Entry ENT-3979 · issued at Seattle (3001)",
-            "Ask: basis for 8467.21.0030 · statutory response window: 30 days"
+            "CBP Form 28 · Entry ENT-3979 · issued at New York/Newark (1001)",
+            "Scope: 11 open entries · same SKU · liquidation pending",
+            "Ask: basis for 8518.22.0000 · alternative indicated: 8513.10.40 (lamps)",
+            "Statutory response window: 30 days"
           ],
-          "detail": "Parsed the ACE notification and registered the response deadline. Enforcement volume is up — Form 28s route straight to the queue with the clock attached.",
+          "detail": "Parsed the ACE notification. CBP is probing whether the lantern feature makes the TrailGlow a lamp — a principal-function dispute, and the response clock started at issuance.",
           "kind": "read",
           "title": "Parsed CBP Form 28"
         },
         {
-          "detail": "Retrieved the March entry file: commercial invoice, product spec, the filed 7501, and the original catalog classification decision with its reasoning.",
-          "kind": "lookup",
-          "title": "Pulled the entry file for ENT-3979"
+          "citationRef": "19 USC §1509",
+          "detail": "The Form 28 demands product literature, component cost data, and marketing materials — exactly the records §1509 entitles CBP to examine. All three already exist in the file.",
+          "kind": "check",
+          "title": "Mapped what CBP is entitled to ask"
         }
       ]
     },
     {
-      "label": "Evidence assembly",
+      "label": "Rebuilding the file",
       "steps": [
         {
-          "citationRef": "CROSS NY N302876",
-          "detail": "Directly analogous CBP ruling: cordless impact drivers with self-contained electric motors classify in 8467.21. The entered code sits squarely on precedent.",
+          "detail": "Retrieved the entry file: commercial invoice, TrailGlow spec sheet, the filed 7501, and the classification rationale memo written at first entry. Retrieval, not excavation.",
           "kind": "lookup",
-          "title": "Matched CROSS precedent"
+          "title": "Pulled the entry file for ENT-3979"
         },
         {
-          "citationRef": "Entry history · Titan Tools",
+          "citationRef": "Component cost breakdown",
           "data": [
-            "9 prior entries · same SKU · 8467.21.0030",
+            "Audio subsystem (drivers, amp, BT module): ≈55% of component cost",
+            "Battery + power management: ≈25% · LED lighting: ≈20%",
+            "Retail box header: “Portable Bluetooth Speaker”"
+          ],
+          "detail": "Cost composition, design emphasis, and marketing all point the same direction: the article is a speaker with a lamp feature, not the inverse.",
+          "kind": "read",
+          "title": "Extracted the principal-function evidence"
+        },
+        {
+          "data": [
+            "9 prior entries · same SKU · 8518.22.0000",
             "All liquidated as entered — no Form 29, no rate advance"
           ],
-          "detail": "A consistent, unchallenged history is the core of the reasonable-care defense.",
+          "detail": "A consistent, unchallenged entry history is the core of the reasonable-care record.",
           "kind": "check",
           "title": "Compiled the entry history"
+        }
+      ]
+    },
+    {
+      "label": "Precedent",
+      "steps": [
+        {
+          "citationRef": "CROSS NY N327431",
+          "detail": "Directly supporting ruling: a Bluetooth speaker with LED lantern function classifies in 8518.22 on principal-function grounds. The TrailGlow parallels it, adding only a pass-through USB port.",
+          "kind": "lookup",
+          "title": "Matched supporting CROSS ruling"
         },
         {
-          "citationRef": "19 USC §1509",
-          "detail": "Drafted the response: GRI 1 analysis, product literature, the ruling cite, and history exhibits — exactly the documentation §1509 entitles CBP to demand.",
-          "kind": "decision",
-          "title": "Drafted the response package"
+          "citationRef": "CROSS NY N305672",
+          "data": [
+            "N305672 device: 800 lumens · 3W mono speaker → 8513.10 (lamp)",
+            "TrailGlow: 350 lumens · 10W stereo → the commercial inverse"
+          ],
+          "detail": "The adverse ruling CBP would reach for is distinguishable on its facts — better it arrives pre-distinguished than discovered by the specialist.",
+          "kind": "check",
+          "title": "Distinguished the adverse ruling"
+        }
+      ]
+    },
+    {
+      "label": "Exposure",
+      "steps": [
+        {
+          "data": [
+            "As entered (8518.22 Free + 301 List 4A 7.5%): $5,595 — paid",
+            "If reclassified to 8513.10.40: +$12,700 this entry",
+            "Across 11 open entries: ~$140K + §1592 penalty exposure"
+          ],
+          "detail": "Computed the rate-advance exposure CBP's indicated alternative would produce — the number the broker needs before signing.",
+          "kind": "calc",
+          "title": "Computed reclassification exposure"
         }
       ]
     },
@@ -682,7 +725,13 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "label": "Decision",
       "steps": [
         {
-          "detail": "Form 28 responses always require licensed sign-off before transmission — an incomplete answer invites a Form 29 rate advance and penalties.",
+          "citationRef": "HTSUS Section XVI, Note 3",
+          "detail": "Assembled the persuasion brief: Note 3 principal-function analysis, five probative factors, GRI 3(c) in the alternative, precedent both ways, exhibits A–E.",
+          "kind": "decision",
+          "title": "Drafted the response"
+        },
+        {
+          "detail": "Form 28 responses require licensed sign-off before transmission — everything filed here becomes the §1592 record if CBP escalates to a Form 29.",
           "kind": "flag",
           "title": "Queued for broker sign-off"
         }
