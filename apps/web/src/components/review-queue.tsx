@@ -467,7 +467,10 @@ function CitationQuote({ citation }: { citation: Citation }) {
 function DocPeek({ document: doc }: { document: ReviewDocument }) {
   if (doc.kind === "email") return null;
 
-  const href = doc.kind === "scan" ? doc.src : `/docs/${docSlug(doc.name)}.pdf`;
+  const href =
+    doc.kind === "scan"
+      ? doc.src
+      : (doc.src ?? `/docs/${docSlug(doc.name)}.pdf`);
 
   return (
     <a
@@ -679,10 +682,10 @@ function DocumentTimelineItem({
   const action =
     document.kind === "email"
       ? { icon: ArrowUpRightFromSquare, label: "Open" }
-      : document.kind === "scan"
+      : document.kind === "scan" || (document.kind === "pdf" && document.src)
         ? {
             icon: ArrowUpRightFromSquare,
-            label: "Open Scan",
+            label: "Open Document",
             onPress: () => window.open(document.src, "_blank"),
           }
         : { icon: ArrowDownToLine, label: "Download" };
@@ -749,6 +752,8 @@ function DocumentTimelineItem({
                   {document.body}
                 </p>
               </>
+            ) : document.kind === "pdf" && document.src ? (
+              <PdfWithExtraction document={document} />
             ) : (
               <>
                 {document.kind === "scan" ? (
@@ -791,6 +796,80 @@ function DocumentTimelineItem({
         ) : null}
       </Timeline.Content>
     </Timeline.Item>
+  );
+}
+
+/** How many extracted fields show before "View all". */
+const EXTRACTION_PREVIEW_LINES = 6;
+
+/**
+ * A real PDF rendered beside what the AI extracted from it — the document and
+ * its reading, side by side.
+ */
+function PdfWithExtraction({
+  document,
+}: {
+  document: ReviewDocument & { kind: "pdf"; src?: string };
+}) {
+  const [showAllFields, setShowAllFields] = useState(false);
+  const lines = document.lines;
+  const visibleLines = showAllFields
+    ? lines
+    : lines.slice(0, EXTRACTION_PREVIEW_LINES);
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <object
+        aria-label={document.name}
+        className="h-[420px] w-full rounded-lg border bg-white"
+        data={`${document.src}#toolbar=0&navpanes=0`}
+        type="application/pdf"
+      >
+        <div className="flex h-full items-center justify-center">
+          <a
+            className="text-accent text-xs underline-offset-2 hover:underline"
+            href={document.src}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Open {document.name}
+          </a>
+        </div>
+      </object>
+
+      <div className="flex min-w-0 flex-col gap-2">
+        {document.summary ? (
+          <p className="text-muted flex items-start gap-1.5 text-xs leading-relaxed">
+            <Sparkles className="mt-0.5 size-3 shrink-0" />
+            <span>{document.summary}</span>
+          </p>
+        ) : null}
+        <span className="text-muted text-xs font-medium">
+          AI-extracted fields
+        </span>
+        <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+          {visibleLines.map((line) => (
+            <DocumentLineRow key={line.label} line={line} />
+          ))}
+        </div>
+        {lines.length > EXTRACTION_PREVIEW_LINES && !showAllFields ? (
+          <button
+            className="text-muted hover:text-foreground inline-flex w-fit cursor-pointer items-center gap-1 text-xs transition-colors"
+            type="button"
+            onClick={() => setShowAllFields(true)}
+          >
+            View all {lines.length} fields
+            <ChevronRight className="size-3" />
+          </button>
+        ) : null}
+        {document.note ? (
+          <span className="text-muted inline-flex items-start gap-1.5 text-xs">
+            <Sparkles className="mt-0.5 size-3 shrink-0" />
+            {document.note}
+          </span>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

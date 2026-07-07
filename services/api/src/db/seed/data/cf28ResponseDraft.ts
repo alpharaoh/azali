@@ -1,5 +1,5 @@
 /**
- * The agent-drafted CF-28 response letter for ENT-3979 (TrailGlow 3-in-1),
+ * The agent-drafted CF-28 response letter for ENT-3979 (LUX-SP210),
  * stored as TipTap JSONContent so the broker can edit it in the rich text
  * editor. Plain objects only — no tiptap dependency on the API side.
  */
@@ -56,16 +56,16 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
     ),
     paragraph(
       bold("RE: "),
-      "Entry No. ENT-3979 · TrailGlow 3-in-1 Portable Bluetooth Speaker with LED Lantern and Power Bank (SKU YT-CL-450)",
+      "Entry No. ENT-3979 · LUX-SP210 Portable Bluetooth Speaker with LED Lamp Ring (Invoice AZ-INV-20259-4471)",
     ),
     paragraph(
       "Dear Import Specialist: This responds to the Form 28 dated June 30, 2026, requesting the basis for classification of the above merchandise under subheading 8518.22.0000, HTSUS. The classification is correct, for the reasons and on the evidence set out below.",
     ),
     heading(3, "I. The Merchandise"),
     paragraph(
-      "The TrailGlow 3-in-1 is a portable, battery-operated device combining ",
+      "The LUX-SP210 is a portable, battery-operated device combining ",
       bold("three functions"),
-      " in a single cylindrical housing: a Bluetooth loudspeaker (two full-range drivers, 2 × 5W, mounted in the same enclosure), a dimmable 350-lumen LED lantern ring, and a 4,400 mAh battery with a single USB-A output for charging external devices (Exhibit A: specification sheet; Exhibit B: photographs).",
+      " in a single cylindrical housing: a Bluetooth loudspeaker (full-range driver in a tuned aluminum enclosure), a dimmable LED lamp ring with frosted diffuser, and a 5,000 mAh battery charged via USB-C (Exhibit A: specification sheet; Exhibit B: photographs).",
     ),
     paragraph(
       "Component cost composition (Exhibit C): audio subsystem ≈ ",
@@ -87,7 +87,7 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
       ],
       [
         bold("Design emphasis"),
-        " — dual drivers in a tuned enclosure with a dedicated amplifier; the LED ring and single 5V/1A port are commodity conveniences dimensioned to the speaker's power draw.",
+        " — a tuned aluminum acoustic enclosure with a dedicated amplifier and Bluetooth module; the LED ring and diffuser are commodity conveniences.",
       ],
       [
         bold("Commercial identity"),
@@ -112,7 +112,7 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
     ),
     paragraph(
       bold("NY N305672"),
-      ", classifying a “camping lantern with speaker feature” in subheading 8513.10, is distinguishable on its facts: that device was lighting-dominant (800 lumens; 3-watt monaural speaker). The present article is the commercial inverse (10W stereo audio; 350-lumen secondary light), and its cost composition, design emphasis, and marketing all run opposite.",
+      ", classifying a “camping lantern with speaker feature” in subheading 8513.10, is distinguishable on its facts: that device was lighting-dominant (800 lumens; 3-watt monaural speaker). The present article's cost composition, design emphasis, and marketing all run opposite to that lighting-dominant configuration.",
     ),
     heading(3, "IV. Entry History and Reasonable Care"),
     paragraph(
@@ -123,7 +123,7 @@ export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
       "The requested information is enclosed as Exhibits A–E. For the foregoing reasons, no rate advance is warranted and the covered entries should liquidate as entered. A physical sample is available upon request, and we welcome a call to discuss any remaining question.",
     ),
     paragraph(
-      "Respectfully submitted, [Broker Name], Licensed Customs Broker — on behalf of YETI (Importer of Record).",
+      "Respectfully submitted, [Broker Name], Licensed Customs Broker — on behalf of the Importer of Record.",
     ),
     paragraph(
       italic(

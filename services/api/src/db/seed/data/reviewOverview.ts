@@ -21,6 +21,10 @@ export type SeedDocument =
       note?: string;
       /** Editable rich-text body (TipTap JSON) for agent-drafted documents. */
       draft?: Record<string, unknown>;
+      /** Public path to the real PDF file — rendered side-by-side with the extraction. */
+      src?: string;
+      /** AI summary of the document, shown next to the extracted fields. */
+      summary?: string;
     }
   | { kind: "email"; from: string; subject: string; body: string; meta: string; receivedHoursAgo: number }
   | { kind: "scan"; name: string; meta: string; receivedHoursAgo: number; src: string; extracted: SeedDocumentLine[]; note?: string };
@@ -949,9 +953,59 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "approveLabel": "Approve Origin",
     "canRequestInfo": false
   },
-  // Hand-authored: the TrailGlow CF-28 case (principal-function dispute).
+  // Hand-authored: the LUX-SP210 CF-28 case (principal-function dispute).
+  // The commercial invoice is a real PDF in apps/web/public/docs.
   "ENT-3979": {
     documents: [
+      {
+        kind: "pdf",
+        name: "Commercial Invoice — AZ-INV-20259-4471",
+        meta: "Ningbo Lumina Acoustics · 1 page",
+        receivedHoursAgo: 2260,
+        src: "/docs/commercial-invoice-azali.pdf",
+        summary:
+          "Three-line invoice from Ningbo Lumina Acoustics totaling $48,556 FOB Ningbo-Zhoushan. The supplier's own line description calls the LUX-SP210 an “LED table lamp with integrated Bluetooth speaker” and suggests 8513.10.40 — that wording is the likely CF-28 trigger. The spec sheet, cost data, and retail packaging support the entered 8518.22.0000.",
+        lines: [
+          { label: "Invoice", value: "AZ-INV-20259-4471 · 05 Feb" },
+          { label: "Reference", value: "PO-88231 / ENT-3979" },
+          { label: "Seller", value: "Ningbo Lumina Acoustics Co., Ltd." },
+          { label: "Terms", value: "FOB Ningbo-Zhoushan (Incoterms 2020) · Net 30" },
+          { label: "Transport", value: "Ocean · COSCO Universe 095E · B/L COSU6398471250" },
+          {
+            highlight: true,
+            label: "Line 1",
+            value: "2,400 × LUX-SP210 @ $18.75 — “LED table lamp with integrated Bluetooth speaker”",
+          },
+          { label: "Line 2", value: "2,400 × lamp shade/diffuser @ $1.10 (9405.92.0000)" },
+          { label: "Line 3", value: "120 × USB-C cable kit @ $2.30 (8544.42.9090)" },
+          {
+            highlight: true,
+            label: "Supplier HTS note",
+            value: "8513.10.40 suggested — “as entered: 8518.22.0000, under CBP review”",
+          },
+          { label: "Packing", value: "200 cartons · 1 × 20' FCL · G.W. 3,120 kg" },
+          { highlight: true, label: "Total invoice value", value: "USD 48,556.00" },
+        ],
+        note: "The supplier's shorthand description works against the entered classification — the response addresses it head-on.",
+      },
+      {
+        kind: "pdf",
+        name: "Spec Sheet — LUX-SP210",
+        meta: "Manufacturer spec · 3 pages",
+        receivedHoursAgo: 2250,
+        lines: [
+          { label: "Audio", value: "3W full-range driver · Bluetooth 5.0 · tuned aluminum enclosure" },
+          { label: "Light", value: "Dimmable LED ring · 3 settings · frosted diffuser" },
+          { label: "Power", value: "5,000 mAh Li-ion · USB-C" },
+          {
+            highlight: true,
+            label: "Cost split",
+            value: "Audio 55% · power 25% · lighting 20%",
+          },
+          { label: "Retail box header", value: "“Portable Bluetooth Speaker”" },
+        ],
+        note: "Component cost and marketing both point to sound reproduction as the principal function.",
+      },
       {
         kind: "pdf",
         name: "CBP Form 28 — Request for Information",
@@ -975,25 +1029,7 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           { label: "Response due", value: "30 days from issue date" },
           { label: "Port", value: "New York/Newark (1001)" },
         ],
-        note: "CBP is probing whether the lantern feature makes this a lamp, not a speaker — the response clock is running.",
-      },
-      {
-        kind: "pdf",
-        name: "Spec Sheet — TrailGlow 3-in-1 (YT-CL-450)",
-        meta: "Manufacturer spec · 3 pages",
-        receivedHoursAgo: 30,
-        lines: [
-          { label: "Audio", value: "2 × 5W full-range drivers · Bluetooth 5.0 · tuned enclosure" },
-          { label: "Light", value: "350-lumen dimmable LED ring · 3 settings" },
-          { label: "Power", value: "4,400 mAh Li-ion · USB-A out (5V/1A)" },
-          {
-            highlight: true,
-            label: "Cost split",
-            value: "Audio 55% · power 25% · lighting 20%",
-          },
-          { label: "Retail box header", value: "“Portable Bluetooth Speaker”" },
-        ],
-        note: "Component cost and marketing both point to sound reproduction as the principal function.",
+        note: "CBP is probing whether the lamp function controls — the response clock is running.",
       },
       {
         kind: "pdf",
@@ -1004,6 +1040,7 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
           { highlight: true, label: "Position", value: "8518.22.0000 affirmed — principal function is sound reproduction" },
           { label: "Legal frame", value: "Section XVI, Note 3 · GRI 3(c) in the alternative" },
           { label: "Precedent", value: "NY N327431 (supporting) · NY N305672 (distinguished)" },
+          { label: "Invoice wording", value: "Supplier shorthand addressed in §II — packaging and spec control" },
           { label: "Exhibits", value: "A spec · B photos · C cost breakdown · D packaging · E rationale memo" },
         ],
         note: "Drafted by the agent from the entry file — every claim is cited to a document in this record.",
@@ -1012,9 +1049,33 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     ],
     events: [
       {
+        title: "Entry documents extracted",
+        detail:
+          "Commercial invoice AZ-INV-20259-4471 parsed: 3 line items, $48,556 total, FOB Ningbo-Zhoushan.",
+        icon: "ai",
+        occurredHoursAgo: 2240,
+        steps: [
+          "2,400 × LUX-SP210 @ $18.75 · 2,400 × shade assemblies · 120 × cable kits",
+          "B/L COSU6398471250 · COSCO Universe 095E · Port of NY/Newark (1001)",
+        ],
+      },
+      {
+        title: "Classified 8518.22.0000 with rationale memo",
+        detail:
+          "Principal function analysis (Section XVI, Note 3): audio 55% of cost, sold as a speaker. Supplier's invoice wording flagged as adverse and documented at entry.",
+        icon: "ai",
+        occurredHoursAgo: 2230,
+      },
+      {
+        title: "Entry filed and cargo released",
+        detail: "Filed via ABI; released without exam. Liquidation pending.",
+        icon: "check",
+        occurredHoursAgo: 2150,
+      },
+      {
         title: "CBP Form 28 received via ACE",
         detail:
-          "CBP questions the TrailGlow's classification across 11 open entries — the lantern feature suggests 8513 to the import specialist.",
+          "CBP questions the LUX-SP210 classification across 11 open entries — the supplier's lamp-first invoice description points the specialist at 8513.",
         icon: "mail",
         occurredHoursAgo: 50,
         status: "warning",
@@ -1034,14 +1095,14 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       {
         title: "Response drafted for broker sign-off",
         detail:
-          "Note 3 principal-function brief with cost, design, and marketing evidence; supporting ruling cited, adverse ruling distinguished.",
+          "Note 3 principal-function brief with cost, design, and marketing evidence; the supplier's invoice shorthand addressed head-on; adverse ruling distinguished.",
         icon: "ai",
         occurredHoursAgo: 2,
         status: "current",
         steps: [
           "Matched CROSS NY N327431 — speaker/lantern combination → 8518.22",
           "Distinguished NY N305672 — lighting-dominant device (800 lm, 3W mono)",
-          "Exposure if reclassified: +$12,700 this entry · ~$140K across 11 open entries",
+          "Exposure if reclassified: +$1,700 this entry · ~$19K across 11 open entries",
         ],
       },
     ],
@@ -1077,11 +1138,18 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         ref: "CROSS NY N305672",
       },
       {
-        documentName: "Spec Sheet — TrailGlow 3-in-1 (YT-CL-450)",
+        documentName: "Spec Sheet — LUX-SP210",
         kind: "evidence",
         quote:
           "Audio subsystem ≈55% of component cost — more than lighting (20%) and power (25%) combined; retail box header: “Portable Bluetooth Speaker.”",
         ref: "Component cost breakdown",
+      },
+      {
+        documentName: "Commercial Invoice — AZ-INV-20259-4471",
+        kind: "evidence",
+        quote:
+          "“Portable rechargeable LED table lamp with integrated Bluetooth speaker … HTS 8513.10.40” — the supplier's shorthand, addressed head-on in §II of the response.",
+        ref: "Invoice AZ-INV-20259-4471",
       },
       {
         documentName: "CBP Form 28 — Request for Information",

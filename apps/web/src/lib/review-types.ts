@@ -27,6 +27,10 @@ export type ReviewDocument =
       note?: string;
       /** Editable rich-text body (TipTap JSON) for agent-drafted documents. */
       draft?: Record<string, unknown>;
+      /** Public path to the real PDF — rendered beside the extracted fields. */
+      src?: string;
+      /** AI summary shown next to the extraction. */
+      summary?: string;
     }
   | {
       kind: "email";

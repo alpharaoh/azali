@@ -153,6 +153,8 @@ let count = 0;
 for (const item of Object.values(REVIEW_OVERVIEW)) {
 	for (const document of item.documents) {
 		if (document.kind !== "pdf") continue;
+		// Documents backed by a real PDF file (src) don't need a generated one.
+		if (document.src) continue;
 		const path = join(outDir, `${docSlug(document.name)}.pdf`);
 
 		writeFileSync(path, buildPdf(document), "latin1");

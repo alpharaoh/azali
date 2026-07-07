@@ -438,14 +438,14 @@ const seeds: SeedShipment[] = [
     transportMode: "ocean",
     conveyance: "COSCO Universe 095E",
     etaHours: -2160,
-    valueUsd: 74600,
-    dutyUsd: 5595,
+    valueUsd: 48556,
+    dutyUsd: 3642,
     incoterm: "FOB",
     entryType: "01 — Consumption",
     review: {
       type: "enforcement",
       question:
-        "CBP Form 28 questions the TrailGlow 3-in-1 classification — response drafted",
+        "CBP Form 28 questions the LUX-SP210 classification — response drafted",
       // Hours, not days: near the wire so the CF-28 surfaces at the top of
       // the queue (sorted by reviewDeadlineAt asc).
       deadlineHours: 5,
@@ -456,16 +456,16 @@ const seeds: SeedShipment[] = [
         label: "Response",
         value: "Defend 8518.22.0000",
         detail:
-          "Principal-function brief (Section XVI, Note 3): audio is 55% of component cost, the article is sold as a speaker, and NY N327431 is on point. Exhibits A–E attached.",
+          "Principal-function brief (Section XVI, Note 3): audio is 55% of component cost, the article is sold as a speaker, and NY N327431 is on point. The supplier's lamp-first invoice wording is addressed head-on.",
       },
       dutyImpact: {
         proposed: {
           rate: "As entered — Free + 301 List 4A 7.5%",
-          amountUsd: 5595,
+          amountUsd: 3642,
           breakdown: [
-            "As entered (8518.22 Free + 301 List 4A 7.5%): $5,595 — paid",
-            "If reclassified to 8513.10.40: +$12,700 this entry",
-            "Across 11 open entries: ~$140K + penalty exposure (19 USC §1592)",
+            "As entered (8518.22 Free + 301 List 4A 7.5%): $3,642 — paid",
+            "If reclassified to 8513.10.40 (3.5% base): +$1,700 this entry",
+            "Across 11 open entries: ~$19K + penalty exposure (19 USC §1592)",
           ],
         },
       },

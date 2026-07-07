@@ -630,7 +630,7 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       ]
     }
   ],
-  // Hand-authored: the TrailGlow CF-28 case.
+  // Hand-authored: the LUX-SP210 CF-28 case.
   "ENT-3979": [
     {
       "label": "Reading the notice",
@@ -643,7 +643,7 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
             "Ask: basis for 8518.22.0000 · alternative indicated: 8513.10.40 (lamps)",
             "Statutory response window: 30 days"
           ],
-          "detail": "Parsed the ACE notification. CBP is probing whether the lantern feature makes the TrailGlow a lamp — a principal-function dispute, and the response clock started at issuance.",
+          "detail": "Parsed the ACE notification. CBP is probing whether the lamp function makes the LUX-SP210 a lamp — a principal-function dispute, and the response clock started at issuance.",
           "kind": "read",
           "title": "Parsed CBP Form 28"
         },
@@ -659,7 +659,7 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "label": "Rebuilding the file",
       "steps": [
         {
-          "detail": "Retrieved the entry file: commercial invoice, TrailGlow spec sheet, the filed 7501, and the classification rationale memo written at first entry. Retrieval, not excavation.",
+          "detail": "Retrieved the entry file: commercial invoice AZ-INV-20259-4471, LUX-SP210 spec sheet, the filed 7501, and the classification rationale memo written at first entry. Retrieval, not excavation.",
           "kind": "lookup",
           "title": "Pulled the entry file for ENT-3979"
         },
@@ -690,7 +690,7 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "steps": [
         {
           "citationRef": "CROSS NY N327431",
-          "detail": "Directly supporting ruling: a Bluetooth speaker with LED lantern function classifies in 8518.22 on principal-function grounds. The TrailGlow parallels it, adding only a pass-through USB port.",
+          "detail": "Directly supporting ruling: a Bluetooth speaker with LED lantern function classifies in 8518.22 on principal-function grounds. The LUX-SP210 parallels it, adding only a pass-through USB port.",
           "kind": "lookup",
           "title": "Matched supporting CROSS ruling"
         },
@@ -698,7 +698,7 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
           "citationRef": "CROSS NY N305672",
           "data": [
             "N305672 device: 800 lumens · 3W mono speaker → 8513.10 (lamp)",
-            "TrailGlow: 350 lumens · 10W stereo → the commercial inverse"
+            "LUX-SP210: audio-led design, 55% of component cost → the commercial inverse"
           ],
           "detail": "The adverse ruling CBP would reach for is distinguishable on its facts — better it arrives pre-distinguished than discovered by the specialist.",
           "kind": "check",
@@ -711,9 +711,9 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "steps": [
         {
           "data": [
-            "As entered (8518.22 Free + 301 List 4A 7.5%): $5,595 — paid",
-            "If reclassified to 8513.10.40: +$12,700 this entry",
-            "Across 11 open entries: ~$140K + §1592 penalty exposure"
+            "As entered (8518.22 Free + 301 List 4A 7.5%): $3,642 — paid",
+            "If reclassified to 8513.10.40 (3.5% base): +$1,700 this entry",
+            "Across 11 open entries: ~$19K + §1592 penalty exposure"
           ],
           "detail": "Computed the rate-advance exposure CBP's indicated alternative would produce — the number the broker needs before signing.",
           "kind": "calc",
