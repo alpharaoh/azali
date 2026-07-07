@@ -735,7 +735,7 @@ export function PipelineBoard() {
           </SearchField.Group>
         </SearchField>
         {/* Filter: Client */}
-        <Dropdown>
+        <Dropdown onOpenChange={setClientMenuOpen}>
           <Button size="sm" variant="secondary">
             <Funnel />
             Client

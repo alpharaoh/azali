@@ -48,7 +48,6 @@ import {
   TableFetchingState,
   TableSkeleton,
 } from "#/components/table-loading";
-import { useClientsById } from "#/lib/use-clients-by-id";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
@@ -287,14 +286,12 @@ export function AutopilotLog() {
     { limit: 100 },
     { query: { placeholderData: keepPreviousData } },
   );
-  const clientsById = useClientsById();
-
   const shipmentById = useMemo(() => {
-    const map = new Map<string, { clientId: string; reference: string }>();
+    const map = new Map<string, { clientName?: string; reference: string }>();
 
     for (const shipment of shipmentsResponse?.data.data ?? []) {
       map.set(shipment.id, {
-        clientId: shipment.clientId,
+        clientName: shipment.client?.name,
         reference: shipment.reference,
       });
     }
@@ -305,20 +302,19 @@ export function AutopilotLog() {
   const actions = useMemo<Row[]>(() => {
     return (eventsResponse?.data.data ?? []).map((event) => {
       const shipment = shipmentById.get(event.shipmentId);
-      const client = shipment ? clientsById.get(shipment.clientId) : undefined;
       const confidence = (event.payload as { confidence?: number }).confidence;
 
       return {
         id: event.id,
         type: bucketForEvent(event.type, event.payload),
         title: event.title,
-        client: client?.name ?? "Unknown client",
+        client: shipment?.clientName ?? "Unknown client",
         reference: shipment?.reference ?? "—",
         confidence,
         occurredAt: new Date(event.occurredAt),
       };
     });
-  }, [eventsResponse, shipmentById, clientsById]);
+  }, [eventsResponse, shipmentById]);
 
   const overviewStats = useMemo(() => {
     const now = Date.now();

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { PipelineBoard } from "#/components/pipeline-board";
 import {
-  getClientsControllerFindAllQueryOptions,
   getShipmentsControllerFindAllQueryOptions,
   getShipmentsControllerStatsQueryOptions,
   ShipmentsControllerFindAllStatusItem,
@@ -65,9 +64,6 @@ export const Route = createFileRoute("/dashboard/pipeline")({
     );
     void context.queryClient.prefetchQuery(
       getShipmentsControllerStatsQueryOptions(),
-    );
-    void context.queryClient.prefetchQuery(
-      getClientsControllerFindAllQueryOptions({ limit: 100 }),
     );
   },
   component: PipelinePage,
