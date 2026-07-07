@@ -16,7 +16,6 @@ export const db = drizzle({
   // connections abruptly and queries racing onto them fail with
   // "Idle timeout reached after 30s".
   connection: {
-    max: 3,
     url: url.toString(),
     connectionTimeout: 10,
   },

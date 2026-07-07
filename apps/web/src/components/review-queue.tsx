@@ -333,7 +333,6 @@ function QueueRow({
             <div className="flex shrink-0 items-center gap-2">
               <span
                 className={`whitespace-nowrap text-xs leading-tight ${deadlineTextClass[tone]}`}
-                title={item.deadlineReason}
               >
                 {formatDistanceToNowStrict(deadline)}
               </span>
@@ -387,7 +386,7 @@ function receivedAgo(hoursAgo: number) {
 
 function ShipmentFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-0 items-baseline gap-1.5">
       <span className="text-muted text-xs">{label}</span>
       <span className="text-foreground truncate text-sm font-medium">
         {value}
@@ -672,6 +671,8 @@ function DocumentTimelineItem({
   document,
   ...rest
 }: { document: ReviewDocument } & TimelineItemPassthrough) {
+  // Open by default — the file carries the story; collapsing is for skimming.
+  const [isOpen, setIsOpen] = useState(true);
   const Icon = document.kind === "email" ? Envelope : FileText;
   const title = document.kind === "email" ? document.subject : document.name;
   const meta =
@@ -695,9 +696,21 @@ function DocumentTimelineItem({
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
         <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
-            {title}
-          </h3>
+          <button
+            aria-expanded={isOpen}
+            className="group flex min-w-0 cursor-pointer items-center gap-1.5 text-left"
+            type="button"
+            onClick={() => setIsOpen((open) => !open)}
+          >
+            <ChevronRight
+              className={`text-muted size-3 shrink-0 transition-transform ${
+                isOpen ? "rotate-90" : ""
+              }`}
+            />
+            <h3 className="text-foreground group-hover:underline m-0 min-w-0 truncate text-xs font-medium leading-5">
+              {title}
+            </h3>
+          </button>
           <div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
             <span>{meta}</span>
             <time>{receivedAgo(document.receivedHoursAgo)}</time>
@@ -713,6 +726,7 @@ function DocumentTimelineItem({
             </Button>
           </div>
         </div>
+        {isOpen ? (
         <Card>
           <Card.Content className="flex flex-col gap-2">
             {document.kind === "email" ? (
@@ -763,6 +777,7 @@ function DocumentTimelineItem({
             )}
           </Card.Content>
         </Card>
+        ) : null}
       </Timeline.Content>
     </Timeline.Item>
   );
@@ -1034,15 +1049,24 @@ function ReviewDetail({
           >
             <Chip.Label>
               {formatDistanceToNowStrict(deadline, { addSuffix: true })}
-              {item.deadlineReason ? ` · ${item.deadlineReason}` : null}
             </Chip.Label>
           </Chip>
         </div>
 
         <div className="flex items-center gap-2 px-1">
-          <span className="text-muted whitespace-nowrap text-xs tabular-nums">
-            {position} of {total}
-          </span>
+          <Segment
+            selectedKey={view}
+            size="sm"
+            onSelectionChange={(key) =>
+              setView(key === "trace" ? "trace" : "overview")
+            }
+          >
+            <Segment.Item id="overview">Overview</Segment.Item>
+            <Segment.Item id="trace">
+              <Sparkles className="size-3.5" />
+              Agent Trace
+            </Segment.Item>
+          </Segment>
           <div className="flex items-center">
             <Button
               isIconOnly
@@ -1070,30 +1094,15 @@ function ReviewDetail({
         </div>
       </div>
 
-      {/* Title + view switch */}
-      <div className="flex flex-col gap-3 lg:px-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-foreground text-base font-semibold leading-normal">
-            {item.question}
-          </h1>
-          <span className="text-muted text-xs">
-            {item.client} · {item.reference} ·{" "}
-            {formatCurrency(item.shipmentValue)} shipment
-          </span>
-        </div>
-        <Segment
-          className="self-start w-80"
-          selectedKey={view}
-          onSelectionChange={(key) =>
-            setView(key === "trace" ? "trace" : "overview")
-          }
-        >
-          <Segment.Item id="overview">Overview</Segment.Item>
-          <Segment.Item id="trace">
-            <Sparkles className="size-3.5" />
-            Agent Trace
-          </Segment.Item>
-        </Segment>
+      {/* Title */}
+      <div className="flex flex-col gap-1 lg:px-4">
+        <h1 className="text-foreground text-base font-semibold leading-normal">
+          {item.question}
+        </h1>
+        <span className="text-muted text-xs">
+          {item.client} · {item.reference} ·{" "}
+          {formatCurrency(item.shipmentValue)} shipment
+        </span>
       </div>
 
       {/* Body */}
@@ -1170,20 +1179,110 @@ function ReviewDetail({
                     </span>
                   </div>
                 ) : null}
+                {item.alternates && item.alternates.length > 0 ? (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="flex flex-col gap-2">
+                      <span className="text-muted text-xs font-medium">
+                        Alternate classifications
+                      </span>
+                      {item.alternates.map((alt) => {
+                        const isSelected = alternate === alt.value;
+
+                        return (
+                          <button
+                            key={alt.value}
+                            className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                              isSelected
+                                ? "border-accent ring-accent/40 ring-1"
+                                : "hover:border-foreground/25"
+                            }`}
+                            type="button"
+                            onClick={() =>
+                              setAlternate(isSelected ? null : alt.value)
+                            }
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-foreground text-sm font-semibold tabular-nums">
+                                {alt.value}
+                              </span>
+                              <span className="text-muted text-xs">
+                                {alt.detail}
+                              </span>
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-0.5">
+                              {(() => {
+                                const impact =
+                                  item.dutyImpact?.alternates?.[alt.value];
+                                if (!impact) return null;
+
+                                return (
+                                  <span
+                                    className={`whitespace-nowrap text-xs font-medium tabular-nums ${
+                                      impact.deltaUsd > 0
+                                        ? "text-danger"
+                                        : impact.deltaUsd < 0
+                                          ? "text-success"
+                                          : "text-muted"
+                                    }`}
+                                  >
+                                    {impact.deltaUsd === 0
+                                      ? "$0 duty change"
+                                      : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
+                                  </span>
+                                );
+                              })()}
+                              <span className="text-muted text-xs tabular-nums">
+                                {Math.round(alt.confidence * 100)}%
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : null}
               </Widget.Content>
             </Widget>
 
-            {/* Shipment */}
+            {/* Comparison — when two documents disagree, it's decision material */}
+            {item.comparison ? (
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>What differs between them</Widget.Title>
+                </Widget.Header>
+                <Widget.Content>
+                  <div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] overflow-hidden rounded-lg border text-xs">
+                    <div className="bg-default/40 p-2.5" />
+                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
+                      {item.comparison.docA}
+                    </div>
+                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
+                      {item.comparison.docB}
+                    </div>
+                    {item.comparison.rows.map((row) => (
+                      <div key={row.label} className="contents">
+                        <div className="text-muted border-t p-2.5">
+                          {row.label}
+                        </div>
+                        <div className="text-foreground border-t p-2.5">
+                          {row.a}
+                        </div>
+                        <div className="text-foreground border-t p-2.5">
+                          {row.b}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Widget.Content>
+              </Widget>
+            ) : null}
+
+            {/* Shipment — one scannable strip */}
             <Widget>
-              <Widget.Header>
-                <Widget.Title>Shipment</Widget.Title>
-              </Widget.Header>
-              <Widget.Content className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+              <Widget.Content className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
                 <ShipmentFact label="Origin" value={item.shipment.origin} />
-                <ShipmentFact
-                  label="Port of entry"
-                  value={item.shipment.port}
-                />
+                <ShipmentFact label="Port" value={item.shipment.port} />
                 <ShipmentFact
                   label="Arrives"
                   value={
@@ -1198,7 +1297,7 @@ function ReviewDetail({
                 <ShipmentFact label="Mode" value={item.shipment.mode} />
                 <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
                 <ShipmentFact
-                  label="Entry type"
+                  label="Entry"
                   value={item.shipment.entryType}
                 />
               </Widget.Content>
@@ -1267,103 +1366,6 @@ function ReviewDetail({
               </Timeline>
             </div>
 
-            {/* Comparison — when two documents disagree */}
-            {item.comparison ? (
-              <Widget>
-                <Widget.Header>
-                  <Widget.Title>What differs between them</Widget.Title>
-                </Widget.Header>
-                <Widget.Content>
-                  <div className="grid grid-cols-[minmax(96px,auto)_1fr_1fr] overflow-hidden rounded-lg border text-xs">
-                    <div className="bg-default/40 p-2.5" />
-                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                      {item.comparison.docA}
-                    </div>
-                    <div className="bg-default/40 text-foreground p-2.5 font-medium">
-                      {item.comparison.docB}
-                    </div>
-                    {item.comparison.rows.map((row) => (
-                      <div key={row.label} className="contents">
-                        <div className="text-muted border-t p-2.5">
-                          {row.label}
-                        </div>
-                        <div className="text-foreground border-t p-2.5">
-                          {row.a}
-                        </div>
-                        <div className="text-foreground border-t p-2.5">
-                          {row.b}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Widget.Content>
-              </Widget>
-            ) : null}
-
-            {/* Alternates */}
-            {item.alternates && item.alternates.length > 0 ? (
-              <>
-                <Separator />
-                <div className="flex flex-col gap-2">
-                  <span className="text-muted text-xs font-medium">
-                    Alternate classifications
-                  </span>
-                  {item.alternates.map((alt) => {
-                    const isSelected = alternate === alt.value;
-
-                    return (
-                      <button
-                        key={alt.value}
-                        className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
-                          isSelected
-                            ? "border-accent ring-accent/40 ring-1"
-                            : "hover:border-foreground/25"
-                        }`}
-                        type="button"
-                        onClick={() =>
-                          setAlternate(isSelected ? null : alt.value)
-                        }
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-foreground text-sm font-semibold tabular-nums">
-                            {alt.value}
-                          </span>
-                          <span className="text-muted text-xs">
-                            {alt.detail}
-                          </span>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-0.5">
-                          {(() => {
-                            const impact =
-                              item.dutyImpact?.alternates?.[alt.value];
-                            if (!impact) return null;
-
-                            return (
-                              <span
-                                className={`whitespace-nowrap text-xs font-medium tabular-nums ${
-                                  impact.deltaUsd > 0
-                                    ? "text-danger"
-                                    : impact.deltaUsd < 0
-                                      ? "text-success"
-                                      : "text-muted"
-                                }`}
-                              >
-                                {impact.deltaUsd === 0
-                                  ? "$0 duty change"
-                                  : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
-                              </span>
-                            );
-                          })()}
-                          <span className="text-muted text-xs tabular-nums">
-                            {Math.round(alt.confidence * 100)}%
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : null}
           </div>
         ) : (
           <div className="flex select-text flex-col gap-5 pb-4">
