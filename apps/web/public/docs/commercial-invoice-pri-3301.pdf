@@ -15,19 +15,25 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 681 >>
+<< /Length 1123 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Commercial Invoice PRI-3301) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (PDF - 6 pages) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (Shenzhen Kaida Trading - 6 pages) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
-BT /F1 9.5 Tf 0.45 g 72 686 Td (Seller) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (Shenzhen Kaida Trading Co.) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 664 Td (Buyer) Tj ET
-BT /F2 10 Tf 0 g 250 664 Td (Pacific Rim Imports) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 642 Td (Terms) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td (FOB Shanghai) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 620 Td (Invoice total) Tj ET
-BT /F2 10 Tf 0 g 250 620 Td ($186,400) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 686 Td (Invoice) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (PRI-3301 - Net 45) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 664 Td (Seller) Tj ET
+BT /F2 10 Tf 0 g 250 664 Td (Shenzhen Kaida Trading Co., Ltd.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 642 Td (Buyer) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (Pacific Rim Imports - IOR 36-4821997) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Terms) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td (FOB Shanghai \(Incoterms 2020\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 598 Td (Lines) Tj ET
+BT /F2 10 Tf 0 g 250 598 Td (24 line items - Ch. 85 \(14\) - Ch. 94 \(7\) - Ch. 39 \(3\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 576 Td (Largest line) Tj ET
+BT /F2 10 Tf 0 g 250 576 Td (Smart kettle SK-8 - 4,100 pcs @ $16.40) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 554 Td (Total invoice value) Tj ET
+BT /F2 10 Tf 0 g 250 554 Td (USD 186,400.00) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -44,5 +50,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1128
+1571
 %%EOF

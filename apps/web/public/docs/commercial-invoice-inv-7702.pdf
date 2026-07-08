@@ -15,22 +15,25 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 904 >>
+<< /Length 1079 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Commercial Invoice INV-7702) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (PDF - 2 pages) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (Rheinwerk Prazision - 2 pages) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
-BT /F1 9.5 Tf 0.45 g 72 686 Td (Seller) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (Rheinwerk Prazision GmbH, Stuttgart) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 664 Td (Country of origin) Tj ET
-BT /F2 10 Tf 0 g 250 664 Td (\(blank\)) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 642 Td (Port of lading) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td (Hamburg) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 620 Td (Part) Tj ET
-BT /F2 10 Tf 0 g 250 620 Td (RW-2205 precision spindle) Tj ET
-0.85 G 0.5 w 72 590 m 540 590 l S
-BT /F2 8.5 Tf 0.45 g 72 572 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 559 Td (Origin is required for entry - every other signal on this shipment points to Germany.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 686 Td (Invoice) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (INV-7702 - Net 60) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 664 Td (Seller) Tj ET
+BT /F2 10 Tf 0 g 250 664 Td (Rheinwerk Prazision GmbH, Stuttgart) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 642 Td (Part) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (RW-2205 precision spindle - 140 units) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Unit price) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td ($1,026.43 - total $143,700) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 598 Td (Country of origin) Tj ET
+BT /F2 10 Tf 0 g 250 598 Td (\(blank\) - required for entry) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 576 Td (Port of lading) Tj ET
+BT /F2 10 Tf 0 g 250 576 Td (Hamburg) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 554 Td (Terms) Tj ET
+BT /F2 10 Tf 0 g 250 554 Td (CIP Houston \(Incoterms 2020\)) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -47,5 +50,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1351
+1527
 %%EOF

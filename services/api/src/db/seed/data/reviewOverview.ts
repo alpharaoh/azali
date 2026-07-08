@@ -4,6 +4,7 @@
 // (ENT-3979 is hand-authored: the TrailGlow CF-28 case.)
 
 import { CF28_RESPONSE_DRAFT, CLASSIFICATION_MEMO } from "./cf28ResponseDraft";
+import { RATIONALE_MEMOS } from "./rationaleMemos";
 
 export interface SeedDocumentLine {
   label: string;
@@ -60,88 +61,111 @@ export interface SeedOverview {
 
 export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
   "ENT-4471": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Entry no.",
-            "value": "AZL-2026-4471"
-          },
-          {
-            "label": "Importer of record",
-            "value": "Pacific Rim Imports · 36-4821997"
-          },
-          {
-            "label": "Lines",
-            "value": "24"
-          },
-          {
-            "label": "Declared value",
-            "value": "$186,400"
-          },
-          {
-            "highlight": true,
-            "label": "Estimated duty",
-            "value": "$12,430"
-          },
-          {
-            "label": "Ch. 99 measures",
-            "value": "301 List 4A · 7.5% (22 lines)"
-          },
-          {
-            "label": "AD/CVD · PGA flags",
-            "value": "None"
-          }
-        ],
-        "meta": "CBP 7501 draft · 4 pages",
-        "name": "Entry Summary Draft",
-        "note": "All 24 lines matched classifications your team previously approved — nothing new to decide.",
-        "receivedHoursAgo": 1
+        kind: "email",
+        from: "bookings@pacificrimimports.com",
+        subject: "ENT-4471 — full doc set for LA/Long Beach, vessel due Thursday",
+        body: "Docs attached for the Shanghai consolidation: commercial invoice PRI-3301, packing list, and the COSCO bill of lading. Same product mix as the June shipment. Please file pre-arrival — the DC is expecting delivery Friday.",
+        meta: "Email · 3 attachments",
+        receivedHoursAgo: 26,
       },
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Seller",
-            "value": "Shenzhen Kaida Trading Co."
-          },
-          {
-            "label": "Buyer",
-            "value": "Pacific Rim Imports"
-          },
-          {
-            "label": "Terms",
-            "value": "FOB Shanghai"
-          },
-          {
-            "label": "Invoice total",
-            "value": "$186,400"
-          }
+        kind: "pdf",
+        name: "Commercial Invoice PRI-3301",
+        meta: "Shenzhen Kaida Trading · 6 pages",
+        receivedHoursAgo: 26,
+        summary:
+          "Twenty-four line items from Shenzhen Kaida Trading totaling $186,400 FOB Shanghai — housewares across Chapters 85, 94, and 39. Every line matched a classification the team previously approved; the invoice, packing list, and bill of lading agree on all 72 compared fields.",
+        lines: [
+          { label: "Invoice", value: "PRI-3301 · Net 45" },
+          { label: "Seller", value: "Shenzhen Kaida Trading Co., Ltd." },
+          { label: "Buyer", value: "Pacific Rim Imports · IOR 36-4821997" },
+          { label: "Terms", value: "FOB Shanghai (Incoterms 2020)" },
+          { highlight: true, label: "Lines", value: "24 line items · Ch. 85 (14) · Ch. 94 (7) · Ch. 39 (3)" },
+          { label: "Largest line", value: "Smart kettle SK-8 · 4,100 pcs @ $16.40" },
+          { highlight: true, label: "Total invoice value", value: "USD 186,400.00" },
         ],
-        "meta": "PDF · 6 pages",
-        "name": "Commercial Invoice PRI-3301",
-        "receivedHoursAgo": 26
-      }
+      },
+      {
+        kind: "pdf",
+        name: "Packing List — PRI-3301",
+        meta: "Shenzhen Kaida Trading · 3 pages",
+        receivedHoursAgo: 26,
+        lines: [
+          { label: "Reference", value: "PRI-3301 · PO-77841" },
+          { highlight: true, label: "Totals", value: "480 cartons · 18,340 units · G.W. 6,480 kg" },
+          { label: "Container", value: "1 × 40' HC · floor-loaded" },
+          { label: "Marks", value: "PACIFIC RIM / LA · C/NO 1-480 · MADE IN CHINA" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "Bill of Lading — COSU7719402113",
+        meta: "COSCO Shipping Lines · 1 page",
+        receivedHoursAgo: 25,
+        lines: [
+          { label: "B/L", value: "COSU7719402113 · SCAC COSU" },
+          { highlight: true, label: "Vessel", value: "COSCO Harmony 112E · Shanghai → LA/Long Beach" },
+          { label: "Container", value: "CSNU-7719402 · seal SL-9917740" },
+          { label: "Cargo", value: "480 cartons · 6,480 kg gross" },
+          { label: "Consignee", value: "Pacific Rim Imports, Los Angeles CA" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "Entry Summary Draft",
+        meta: "CBP 7501 draft · 4 pages",
+        receivedHoursAgo: 1,
+        summary:
+          "Draft 7501 ready to transmit: 24 lines, $186,400 declared, estimated duty $12,430 including the Section 301 List 4A stack on 22 China-origin lines. AD/CVD and PGA screens are clean. Every classification matched approved catalog entries — nothing new to decide, only the licensed sign-off.",
+        lines: [
+          { label: "Entry no.", value: "AZL-2026-4471 · Type 01" },
+          { label: "Importer of record", value: "Pacific Rim Imports · 36-4821997" },
+          { label: "Lines", value: "24 · all catalog-matched" },
+          { label: "Declared value", value: "$186,400" },
+          { highlight: true, label: "Estimated duty", value: "$12,430 (effective 6.7%)" },
+          { label: "Ch. 99 measures", value: "301 List 4A · 7.5% (22 lines)" },
+          { label: "AD/CVD · PGA flags", value: "None" },
+        ],
+      },
     ],
-    "events": [
+    events: [
       {
-        "detail": "24 of 24 lines matched approved catalog classifications.",
-        "icon": "ai",
-        "occurredHoursAgo": 1,
-        "status": "current",
-        "steps": [
+        title: "Entry documents extracted",
+        detail:
+          "Invoice, packing list, and bill of lading parsed — 118 fields, lowest confidence 0.94, cross-confirmed against the packing list.",
+        icon: "ai",
+        occurredHoursAgo: 22,
+        steps: [
+          "24 line items · Σ line values $186,400.00 — matches the printed total exactly",
           "Invoice ↔ packing list ↔ B/L: 72 field comparisons, 0 conflicts",
-          "24/24 lines matched approved catalog entries (22 exact SKU, 2 similarity ≥0.97)",
-          "Duty $12,430 = Ch. 85/94/39 base + Section 301 List 4A stack (9903.88.15) · AD/CVD and PGA screens clean"
         ],
-        "title": "AI reconciled documents & computed duty"
       },
       {
-        "icon": "check",
-        "occurredHoursAgo": 0.5,
-        "title": "Queued for licensed sign-off"
-      }
+        title: "Classified all 24 lines from the catalog",
+        detail:
+          "22 exact SKU matches, 2 by description similarity ≥ 0.97 — no new classification decisions required. Codes re-validated against the current HTS.",
+        icon: "ai",
+        occurredHoursAgo: 20,
+      },
+      {
+        title: "Duty computed and entry assembled",
+        detail:
+          "Duty $12,430 across Ch. 85/94/39 plus the Section 301 List 4A stack; AD/CVD and PGA screens clean. Draft 7501 attached above.",
+        icon: "ai",
+        occurredHoursAgo: 2,
+        status: "current",
+        steps: [
+          "Ch. 85: $1,890 · Ch. 94: $2,387 · Ch. 39: $1,214 · 301 List 4A: $6,939",
+          "Vessel ETA ≈ 14 h — pre-arrival filing secures release on arrival",
+        ],
+      },
+      {
+        title: "Queued for licensed sign-off",
+        icon: "check",
+        occurredHoursAgo: 0.5,
+      },
     ],
     "alternates": null,
     "comparison": null,
@@ -191,56 +215,71 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": false
   },
   "SHP-2209": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Line items (12)",
-            "value": "see page 1–2"
-          },
-          {
-            "highlight": true,
-            "label": "Sum of line items",
-            "value": "$45,780"
-          },
-          {
-            "highlight": true,
-            "label": "Total (printed)",
-            "value": "$48,250"
-          },
-          {
-            "label": "Currency",
-            "value": "USD"
-          }
-        ],
-        "meta": "PDF · 2 pages",
-        "name": "Commercial Invoice INV-88231",
-        "note": "The two totals disagree by $2,470 — the packing list quantities support the line-item sum.",
-        "receivedHoursAgo": 3
+        kind: "email",
+        from: "logistics@nestleusa.com",
+        subject: "SHP-2209 — docs for the Rotterdam sailing, NY/NJ arrival",
+        body: "Hi team — attached invoice and packing list for the Rotterdam shipment on Maersk Essen. Please clear before the weekend if possible, we have a DC appointment Monday morning.",
+        meta: "Email · 2 attachments",
+        receivedHoursAgo: 4,
       },
       {
-        "body": "Hi team — attached invoice and packing list for the Laem Chabang shipment. Please clear before the weekend if possible, we have a DC appointment Monday morning.",
-        "from": "ops@harborfoods.com",
-        "kind": "email",
-        "meta": "Email · 2 attachments",
-        "receivedHoursAgo": 3,
-        "subject": "SHP-2209 — docs for Savannah arrival"
-      }
-    ],
-    "events": [
+        kind: "pdf",
+        name: "Commercial Invoice INV-88231",
+        meta: "Nestlé Suisse S.A. · 2 pages",
+        receivedHoursAgo: 3,
+        summary:
+          "Twelve line items of specialty food product totaling $45,780 by line-item sum — but the printed total on page 2 reads $48,250, a $2,470 discrepancy the document carries within itself. The packing list corroborates the line items, pointing to a typo in the printed total.",
+        lines: [
+          { label: "Invoice", value: "INV-88231 · 05 Jul" },
+          { label: "Seller", value: "Nestlé Suisse S.A., Vevey" },
+          { label: "Terms", value: "CIF New York (Incoterms 2020)" },
+          { label: "Lines", value: "12 line items · specialty food product" },
+          { label: "Largest line", value: "Line 4 · 1,800 cases @ $9.10" },
+          { highlight: true, label: "Σ line items (1–12)", value: "USD 45,780.00" },
+          { highlight: true, label: "Total (printed, p.2)", value: "USD 48,250.00 — disagrees by $2,470" },
+          { label: "Currency", value: "USD" },
+        ],
+      },
       {
-        "detail": "Printed total disagrees with the line-item sum by $2,470.",
-        "icon": "ai",
-        "occurredHoursAgo": 2,
-        "status": "warning",
-        "steps": [
+        kind: "pdf",
+        name: "Packing List PL-88231",
+        meta: "Nestlé Suisse S.A. · 2 pages",
+        receivedHoursAgo: 3,
+        lines: [
+          { label: "Reference", value: "PL-88231 · matches INV-88231" },
+          { highlight: true, label: "Corroboration", value: "Quantities and unit prices agree with lines 1–12 (24/24 fields)" },
+          { label: "Totals", value: "310 cartons · 8,650 kg gross" },
+          { label: "Container", value: "1 × 20' reefer · MRKU-8823144" },
+        ],
+      },
+    ],
+    events: [
+      {
+        title: "Entry documents extracted",
+        detail:
+          "Both pages parsed at confidence ≥ 0.96 — the printed total itself read cleanly, so this is not an OCR error.",
+        icon: "ai",
+        occurredHoursAgo: 2.5,
+        steps: [
+          "12 line items · 34 fields extracted",
+          "Packing list PL-88231: 24 of 24 field comparisons agree with the line items",
+        ],
+      },
+      {
+        title: "AI flagged a totals mismatch",
+        detail:
+          "Printed total disagrees with the line-item sum by $2,470 — proposing the line-item sum with the packing list as support.",
+        icon: "ai",
+        occurredHoursAgo: 2,
+        status: "warning",
+        steps: [
           "Σ(12 line items) $45,780 ≠ printed total $48,250 (−5.1%)",
           "Ruled out freight add-ons, currency mix-up, and missing pages",
-          "Packing list corroborates the line items → typo in the printed total"
+          "Declared @ $48,250 → duty $12,798 · @ $45,780 → $12,118 (Δ ≈ $680 overpaid)",
         ],
-        "title": "AI flagged a totals mismatch"
-      }
+      },
     ],
     "alternates": null,
     "comparison": null,
@@ -254,6 +293,7 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
       {
         "kind": "evidence",
         "quote": "Packing list quantities and unit prices agree with the 12 line items, not the printed total.",
+        "documentName": "Packing List PL-88231",
         "ref": "Packing list PL-88231"
       },
       {
@@ -272,69 +312,90 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": false
   },
   "SHP-2214": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Line 1",
-            "value": "USB-C cables (2m) · $6,200"
-          },
-          {
-            "label": "Line 2",
-            "value": "Mesh extender EX-3 · $14,800"
-          },
-          {
-            "highlight": true,
-            "label": "Line 3",
-            "value": "AX5400 tri-band mesh router, 2-pack · $128,000"
-          },
-          {
-            "label": "Country of origin",
-            "value": "Taiwan"
-          }
+        kind: "pdf",
+        name: "Commercial Invoice BW-5540",
+        meta: "Bluewave Electronics · 3 pages",
+        receivedHoursAgo: 7,
+        summary:
+          "Three-line invoice totaling $149,000 FOB Kaohsiung, origin Taiwan. Lines 1 and 2 matched the catalog automatically; line 3 — 2,400 two-packs of the AX5400 tri-band mesh router at $128,000 — is the SKU needing the classification call. Taiwan origin means no Section 301 exposure.",
+        lines: [
+          { label: "Invoice", value: "BW-5540 · Net 30" },
+          { label: "Seller", value: "Bluewave Electronics Co., Kaohsiung" },
+          { label: "Terms", value: "FOB Kaohsiung (Incoterms 2020)" },
+          { label: "Line 1", value: "USB-C cables (2m) · $6,200 — catalog match" },
+          { label: "Line 2", value: "Mesh extender EX-3 · $14,800 — catalog match" },
+          { highlight: true, label: "Line 3", value: "AX5400 tri-band mesh router, 2-pack (RBK762) · 2,400 packs · $128,000" },
+          { highlight: true, label: "Country of origin", value: "Taiwan — outside the Section 301 lists" },
+          { label: "Total invoice value", value: "USD 149,000.00" },
         ],
-        "meta": "PDF · 3 pages",
-        "name": "Commercial Invoice BW-5540",
-        "note": "Line 3 is the SKU in question — lines 1 and 2 matched the catalog automatically.",
-        "receivedHoursAgo": 7
       },
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Merchandise",
-            "value": "Mesh Wi-Fi system (router + satellites)"
-          },
-          {
-            "highlight": true,
-            "label": "Holding",
-            "value": "8517.62.0090 · free of duty"
-          },
-          {
-            "label": "Ruling date",
-            "value": "March 2022"
-          }
+        kind: "pdf",
+        name: "Datasheet — AX5400 (RBK762)",
+        meta: "Manufacturer datasheet · 4 pages",
+        receivedHoursAgo: 7,
+        lines: [
+          { label: "System", value: "Tri-band Wi-Fi 6 mesh · router + satellite per retail pack" },
+          { highlight: true, label: "Function", value: "Wireless reception, conversion & transmission of data" },
+          { label: "Throughput", value: "AX5400 · 5.4 Gbps aggregate" },
+          { label: "Ports", value: "1 × WAN, 3 × LAN gigabit per unit" },
+          { label: "Retail pack", value: "Router + satellite sold as a set" },
         ],
-        "meta": "Reference · CBP rulings database",
-        "name": "CROSS Ruling NY N324089",
-        "note": "Closest precedent — a comparable consumer mesh system with the same principal function.",
-        "receivedHoursAgo": 7
-      }
-    ],
-    "events": [
+      },
       {
-        "detail": "Below the 95% auto-file threshold — queued for review.",
-        "icon": "ai",
-        "occurredHoursAgo": 6,
-        "status": "current",
-        "steps": [
-          "CROSS query “mesh wi-fi router system” → 14 rulings · top match NY N324089 (0.94)",
-          "Catalog precedent: Bluewave's EX-3 extender approved under the same code",
-          "Rejected 8517.69 (posterior 0.11) · GRI set question caps confidence at 87%"
+        kind: "pdf",
+        name: "CROSS Ruling NY N324089",
+        meta: "Reference · CBP rulings database",
+        receivedHoursAgo: 7,
+        lines: [
+          { label: "Merchandise", value: "Mesh Wi-Fi system (router + satellites)" },
+          { highlight: true, label: "Holding", value: "8517.62.0090 · free of duty" },
+          { label: "Ruling date", value: "March 2022" },
+          { label: "Relevance", value: "Closest precedent — same principal function, same set question" },
         ],
-        "title": "AI proposed 8517.62.0090 at 87%"
-      }
+      },
+      {
+        kind: "pdf",
+        name: "Classification Rationale Memo — AX5400",
+        meta: "Generated by Azali · 2 pages",
+        receivedHoursAgo: 6,
+        lines: [
+          { highlight: true, label: "Recommendation", value: "8517.62.0090 · confidence 0.87" },
+          { label: "Alternate", value: "8517.69.0000 · confidence 0.11" },
+          { label: "Why reviewed", value: "GRI 3(b) set question caps confidence below the 95% auto-file line" },
+          { label: "Precedent", value: "NY N324089 · catalog match on the EX-3 extender" },
+        ],
+        draft: RATIONALE_MEMOS["SHP-2214"],
+      },
+    ],
+    events: [
+      {
+        title: "Entry documents extracted",
+        detail:
+          "Invoice parsed; lines 1 and 2 matched approved catalog entries automatically — only line 3 needs a decision.",
+        icon: "ai",
+        occurredHoursAgo: 6.5,
+        steps: [
+          "Line 3: AX5400 tri-band mesh Wi-Fi 6 router, 2-pack · $128,000 · origin Taiwan",
+          "Datasheet pulled from the manufacturer portal for the set analysis",
+        ],
+      },
+      {
+        title: "Classified 8517.62.0090 at 87% with rationale memo",
+        detail:
+          "Below the 95% auto-file threshold because of the GRI 3(b) set question — queued for review with the memo attached.",
+        icon: "ai",
+        memo: true,
+        occurredHoursAgo: 6,
+        status: "current",
+        steps: [
+          "CROSS query \u201cmesh wi-fi router system\u201d \u2192 14 rulings · top match NY N324089 (0.94)",
+          "Catalog precedent: the companion EX-3 extender approved under the same code",
+          "Rejected 8517.69 (posterior 0.11) · duty Free either way — classification risk only",
+        ],
+      },
     ],
     "alternates": [
       {
@@ -386,6 +447,14 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
   },
   "SHP-2218": {
     "documents": [
+      {
+        kind: "email",
+        from: "imports@caterpillar-logistics.com",
+        subject: "SHP-2218 — scanned CBP forms for the vessel import",
+        body: "Scans attached as requested — these are the two forms we have on file for the vessel transaction. Apologies for the quality, they came from the broker's archive. Let us know if anything is missing.",
+        meta: "Email · 2 attachments",
+        receivedHoursAgo: 5,
+      },
       {
         "extracted": [
           {
@@ -521,56 +590,79 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": true
   },
   "SHP-2216": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Style",
-            "value": "SA-2241 women's blazer"
-          },
-          {
-            "highlight": true,
-            "label": "Shell",
-            "value": "55% wool / 45% polyester"
-          },
-          {
-            "label": "Lining",
-            "value": "100% polyester"
-          },
-          {
-            "label": "Units",
-            "value": "3,800"
-          }
+        kind: "pdf",
+        name: "Spec Sheet — Style SA-2241",
+        meta: "Solstice Apparel · 2 pages",
+        receivedHoursAgo: 12,
+        summary:
+          "Approved spec for the SA-2241 women's woven blazer: shell 55% wool / 45% polyester, fully lined in polyester. Chief weight decides the code — 55% wool puts it in 6204.31 at 17.5% instead of 6204.33 at 26.9%, a $6,035 swing on this shipment.",
+        lines: [
+          { label: "Style", value: "SA-2241 women's woven blazer" },
+          { highlight: true, label: "Shell", value: "55% wool / 45% polyester" },
+          { label: "Lining", value: "100% polyester (does not govern)" },
+          { label: "Weight", value: "310 g/m² shell fabric" },
+          { label: "Units", value: "3,800 · unit price $16.89" },
+          { label: "Origin", value: "India · Nhava Sheva" },
         ],
-        "meta": "PDF · 1 page",
-        "name": "Spec Sheet — Style SA-2241",
-        "note": "Chief weight decides the code — 55% wool puts it in 6204.31 at 17.5% instead of 26.9%.",
-        "receivedHoursAgo": 12
       },
       {
-        "body": "Confirming shell composition is 55/45 wool-poly per the mill certificate. The final commercial invoice will match the spec sheet — certificate attached for your records.",
-        "from": "merch@solsticeapparel.com",
-        "kind": "email",
-        "meta": "Email · 1 attachment",
-        "receivedHoursAgo": 6,
-        "subject": "RE: SA-2241 fabric composition"
-      }
+        kind: "pdf",
+        name: "Mill Certificate — Lot 44-A",
+        meta: "Rajshree Mills · 1 page",
+        receivedHoursAgo: 6,
+        lines: [
+          { label: "Certificate", value: "RM-2026-1188 · Lot 44-A" },
+          { highlight: true, label: "Lab result", value: "55.2% wool / 44.8% polyester by weight (ISO 1833)" },
+          { label: "Sampling", value: "3 specimens · shell fabric only" },
+          { label: "Margin", value: "5.2 points above the 50% chief-weight line" },
+        ],
+      },
+      {
+        kind: "email",
+        from: "merch@solsticeapparel.com",
+        subject: "RE: SA-2241 fabric composition",
+        body: "Confirming shell composition is 55/45 wool-poly per the mill certificate. The final commercial invoice will match the spec sheet — certificate attached for your records.",
+        meta: "Email · 1 attachment",
+        receivedHoursAgo: 6,
+      },
+      {
+        kind: "pdf",
+        name: "Classification Rationale Memo — SA-2241",
+        meta: "Generated by Azali · 2 pages",
+        receivedHoursAgo: 5,
+        lines: [
+          { highlight: true, label: "Recommendation", value: "6204.31.20 (wool chief weight) · confidence 0.82" },
+          { label: "Alternate", value: "6204.33.5010 (synthetic) · confidence 0.28 · +$6,035 duty" },
+          { label: "Legal frame", value: "Ch. 62, Subheading Note 2 — chief-weight fibre of the shell" },
+          { label: "Precedent", value: "HQ 960950 — 55/45 wool-poly blazer → 6204.31" },
+        ],
+        draft: RATIONALE_MEMOS["SHP-2216"],
+      },
     ],
-    "events": [
+    events: [
       {
-        "detail": "Asked the merch team to confirm SA-2241's fabric composition.",
-        "icon": "mail",
-        "occurredHoursAgo": 8,
-        "title": "Info request sent to Solstice"
+        title: "Info request sent to Solstice",
+        detail:
+          "Asked the merch team to confirm SA-2241's fabric composition before locking the chief-weight call.",
+        icon: "mail",
+        occurredHoursAgo: 8,
       },
       {
-        "detail": "Client reply matches the spec sheet — wool is chief weight.",
-        "icon": "ai",
-        "occurredHoursAgo": 5,
-        "status": "current",
-        "title": "AI confirmed the chief-weight call"
-      }
+        title: "Classified 6204.31.20 with rationale memo",
+        detail:
+          "Client confirmation and mill certificate agree with the spec — wool is chief weight at 55%, with lab corroboration at 55.2%.",
+        icon: "ai",
+        memo: true,
+        occurredHoursAgo: 5,
+        status: "current",
+        steps: [
+          "6204.31 (wool) 17.5% vs 6204.33 (synthetic) 26.9% — $6,035 at stake",
+          "Mill certificate RM-2026-1188: 55.2% wool by ISO 1833",
+          "HQ 960950 on point for the 55/45 configuration",
+        ],
+      },
     ],
     "alternates": [
       {
@@ -615,49 +707,78 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": false
   },
   "SHP-2220": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Product",
-            "value": "LED facial mask · SKU JB-LED-01"
-          },
-          {
-            "highlight": true,
-            "label": "Claims",
-            "value": "“red & blue light for skin rejuvenation”"
-          },
-          {
-            "label": "Power",
-            "value": "USB-C · 5V"
-          },
-          {
-            "label": "Units",
-            "value": "6,500"
-          }
+        kind: "pdf",
+        name: "Product Listing — JB-LED-01",
+        meta: "Juniper Beauty Labs · 2 pages",
+        receivedHoursAgo: 20,
+        summary:
+          "Marketplace listing for the JB-LED-01 LED facial mask: red & blue light modes marketed \u201cfor skin rejuvenation.\u201d The wellness-vs-medical-device line turns on exactly this claim language — blue-light positioning reads as a structure/function claim to FDA.",
+        lines: [
+          { label: "Product", value: "LED facial mask · SKU JB-LED-01" },
+          { highlight: true, label: "Claims", value: "\u201cred & blue light for skin rejuvenation\u201d" },
+          { label: "Modes", value: "Red (630nm) · blue (415nm) · 10-min auto cycle" },
+          { label: "Power", value: "USB-C · 5V · 24 LEDs" },
+          { label: "Units", value: "6,500 · unit price $5.98" },
         ],
-        "meta": "PDF · 1 page",
-        "name": "Product Listing — JB-LED-01",
-        "note": "The wellness-vs-medical-device line turns on the claims printed on the packaging.",
-        "receivedHoursAgo": 20
       },
       {
-        "body": "Packaging files attached — there are no medical claims on the retail box, only 'wellness' language. Let us know if the FDA prior notice is still needed; we can adjust artwork for the next PO if that helps.",
-        "from": "ops@juniperbeautylabs.com",
-        "kind": "email",
-        "meta": "Email · 1 attachment",
-        "receivedHoursAgo": 5,
-        "subject": "JB-LED-01 packaging artwork"
-      }
-    ],
-    "events": [
+        kind: "email",
+        from: "ops@juniperbeautylabs.com",
+        subject: "JB-LED-01 packaging artwork",
+        body: "Packaging files attached — there are no medical claims on the retail box, only 'wellness' language. Let us know if the FDA prior notice is still needed; we can adjust artwork for the next PO if that helps.",
+        meta: "Email · 1 attachment",
+        receivedHoursAgo: 5,
+      },
       {
-        "detail": "Asked Juniper for the retail packaging artwork.",
-        "icon": "mail",
-        "occurredHoursAgo": 8,
-        "title": "Packaging artwork requested"
-      }
+        kind: "pdf",
+        name: "Packaging Artwork — JB-LED-01",
+        meta: "Retail box panels · 3 pages",
+        receivedHoursAgo: 5,
+        lines: [
+          { label: "Front panel", value: "\u201cLED Beauty Mask — glow at home\u201d" },
+          { highlight: true, label: "Back panel", value: "Wellness language only — no treatment or cure claims" },
+          { label: "Inserts", value: "Usage guide references \u201cskin rejuvenation routine\u201d" },
+          { label: "Markings", value: "CE · FCC · \u201cnot a medical device\u201d absent" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "PGA Rationale Memo — JB-LED-01",
+        meta: "Generated by Azali · 2 pages",
+        receivedHoursAgo: 4,
+        lines: [
+          { highlight: true, label: "Determination", value: "FDA DEV flag required · confidence 0.74" },
+          { label: "Basis", value: "21 CFR §878.4810 — light-based devices for medical purposes" },
+          { label: "Exemption", value: "General-wellness exemption likely unavailable on current claims" },
+          { label: "Forward fix", value: "Artwork/claims cleanup could restore the exemption on future POs" },
+        ],
+        draft: RATIONALE_MEMOS["SHP-2220"],
+      },
+    ],
+    events: [
+      {
+        title: "Packaging artwork requested",
+        detail:
+          "Asked Juniper for the retail packaging artwork — the device determination turns on the claims as printed.",
+        icon: "mail",
+        occurredHoursAgo: 8,
+      },
+      {
+        title: "FDA determination drafted with rationale memo",
+        detail:
+          "Listing claims read as structure/function; the wellness exemption is likely unavailable — recommending the entry file with the FDA DEV flag.",
+        icon: "ai",
+        memo: true,
+        occurredHoursAgo: 4,
+        status: "current",
+        steps: [
+          "\u201cSkin rejuvenation\u201d + blue-light modes → intended-use analysis under §878.4810",
+          "Retail box is wellness-only, but the listing language controls intended use",
+          "DEV flag adds the FDA data set to the entry — no duty impact",
+        ],
+      },
     ],
     "alternates": null,
     "comparison": null,
@@ -690,70 +811,83 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": true
   },
   "SHP-2225": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Seller",
-            "value": "Meridian GmbH (parent company)"
-          },
-          {
-            "highlight": true,
-            "label": "Unit price",
-            "value": "$8.40"
-          },
-          {
-            "label": "Quantity",
-            "value": "11,000 units"
-          },
-          {
-            "label": "Part",
-            "value": "RW-4471 sensor housing"
-          }
+        kind: "pdf",
+        name: "Commercial Invoice INV-4471",
+        meta: "Bosch Fertigung GmbH · 5 pages",
+        receivedHoursAgo: 30,
+        summary:
+          "Intercompany invoice from the German parent: 11,000 RW-4471 sensor housings at $8.40/unit ($92,400) — 18% under the trailing unrelated-seller average of $10.25 for the same part. Related-party pricing triggers the circumstances-of-sale review before entry summary.",
+        lines: [
+          { label: "Invoice", value: "INV-4471 · intercompany" },
+          { highlight: true, label: "Seller", value: "Bosch Fertigung GmbH (parent company)" },
+          { label: "Part", value: "RW-4471 sensor housing" },
+          { highlight: true, label: "Unit price", value: "$8.40 × 11,000 units = $92,400" },
+          { label: "Terms", value: "FCA Hamburg (Incoterms 2020)" },
+          { label: "Relationship", value: "Buyer and seller under common control" },
         ],
-        "meta": "PDF · 5 pages",
-        "name": "Commercial Invoice INV-4471",
-        "note": "Related-party price sits 18% under the unrelated-seller average for the same part.",
-        "receivedHoursAgo": 30
       },
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "highlight": true,
-            "label": "Unrelated sellers (12-mo avg)",
-            "value": "$10.25/unit"
-          },
-          {
-            "label": "This invoice",
-            "value": "$8.40/unit (−18%)"
-          },
-          {
-            "label": "Prior related-party entries",
-            "value": "$8.35–8.55/unit"
-          }
+        kind: "pdf",
+        name: "Transfer Pricing Study — Extract",
+        meta: "FY2025 study · relevant pages",
+        receivedHoursAgo: 28,
+        lines: [
+          { label: "Method", value: "TNMM · tested party: US distributor" },
+          { highlight: true, label: "Arm's-length range", value: "Operating margin 2.1%–4.8% · tested result 3.4%" },
+          { label: "Coverage", value: "Includes part family RW-44xx" },
+          { label: "Prepared by", value: "Independent advisor · FY2025" },
         ],
-        "meta": "Generated by Azali · entry history",
-        "name": "12-Month Price Comparison",
-        "receivedHoursAgo": 1
-      }
+      },
+      {
+        kind: "pdf",
+        name: "12-Month Price Comparison",
+        meta: "Generated by Azali · entry history",
+        receivedHoursAgo: 1,
+        lines: [
+          { highlight: true, label: "Unrelated sellers (12-mo avg)", value: "$10.25/unit (n = 7 entries)" },
+          { label: "This invoice", value: "$8.40/unit (−18%)" },
+          { label: "Prior related-party entries", value: "$8.35–8.55/unit · all liquidated without question" },
+          { label: "Volume", value: "Parent supplies at contract volume; unrelated sellers quote spot" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "Valuation Rationale Memo — RW-4471",
+        meta: "Generated by Azali · 2 pages",
+        receivedHoursAgo: 1,
+        lines: [
+          { highlight: true, label: "Recommendation", value: "Accept transaction value · confidence 0.71" },
+          { label: "Legal frame", value: "19 USC §1401a(b)(2)(B) — circumstances of sale" },
+          { label: "Support", value: "TP study in range · consistent prior pricing · volume explanation" },
+          { label: "Risk", value: "§1592 exposure reaches prior entries at the same price" },
+        ],
+        draft: RATIONALE_MEMOS["SHP-2225"],
+      },
     ],
-    "events": [
+    events: [
       {
-        "detail": "Invoice price is 18% under the unrelated-seller average.",
-        "icon": "ai",
-        "occurredHoursAgo": 28,
-        "status": "warning",
-        "title": "AI flagged related-party pricing"
+        title: "AI flagged related-party pricing",
+        detail:
+          "Invoice price is 18% under the unrelated-seller average for the same part — circumstances-of-sale review required before entry summary.",
+        icon: "ai",
+        occurredHoursAgo: 28,
+        status: "warning",
+        steps: [
+          "Unrelated sellers, same part, trailing 12 months: avg $10.25/unit",
+          "This invoice: $8.40/unit → −18.0% vs the unrelated average",
+        ],
       },
       {
-        "detail": "Continuous bond utilization hit 82% after the new tariff stack — the surety requires updated financials before renewal. Renewal packet drafted.",
-        "icon": "check",
-        "occurredHoursAgo": 12,
-        "status": "warning",
-        "title": "Surety flagged bond utilization"
-      }
+        title: "Valuation memo drafted",
+        detail:
+          "Circumstances-of-sale test supported by the transfer pricing study, consistent prior pricing, and the volume explanation — recommending transaction value be accepted.",
+        icon: "ai",
+        memo: true,
+        occurredHoursAgo: 1,
+        status: "current",
+      },
     ],
     "alternates": null,
     "comparison": null,
@@ -787,59 +921,69 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": true
   },
   "SHP-2230": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "highlight": true,
-            "label": "Change",
-            "value": "6404.11.90 split by upper material"
-          },
-          {
-            "label": "Effective",
-            "value": "Current period (mid-year revision)"
-          },
-          {
-            "label": "Summit SKUs affected",
-            "value": "132 (129 auto-reassigned)"
-          }
+        kind: "pdf",
+        name: "HTS Revision Notice — Heading 6404",
+        meta: "USITC revision record · reference",
+        receivedHoursAgo: 25,
+        summary:
+          "Mid-year HTS revision subdivides 6404.11.90 by upper material. Tariff Radar swept the Summit catalog: 132 SKUs affected, 129 reassigned automatically — the TR-9 trail runner is one of three needing a manual call because its upper mixes textile mesh and synthetic overlays.",
+        lines: [
+          { highlight: true, label: "Change", value: "6404.11.90 subdivided by constituent material of the upper" },
+          { label: "Effective", value: "Current period (mid-year revision)" },
+          { label: "Summit SKUs affected", value: "132 · 129 auto-reassigned · 3 manual" },
+          { label: "Duty", value: "20% under both old and new lines — statistical change only" },
         ],
-        "meta": "Reference · USITC revision record",
-        "name": "HTS Revision Notice — Heading 6404",
-        "note": "This item came from Tariff Radar — the code split left 3 SKUs needing a manual call.",
-        "receivedHoursAgo": 25
       },
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "highlight": true,
-            "label": "Upper",
-            "value": "78% textile mesh / 22% synthetic overlays"
-          },
-          {
-            "label": "Sole",
-            "value": "Rubber"
-          },
-          {
-            "label": "Style",
-            "value": "TR-9 trail runner"
-          }
+        kind: "pdf",
+        name: "Spec — TR-9 Trail Runner",
+        meta: "Summit Footwear · 2 pages",
+        receivedHoursAgo: 24,
+        lines: [
+          { label: "Style", value: "TR-9 trail runner" },
+          { highlight: true, label: "Upper", value: "78% textile mesh / 22% synthetic overlays (by surface area)" },
+          { label: "Sole", value: "Rubber · cemented construction" },
+          { highlight: true, label: "Value", value: "$13.58/pair — over the $12 statistical line" },
+          { label: "Units", value: "3,800 pairs this shipment" },
         ],
-        "meta": "PDF · 2 pages",
-        "name": "Spec — TR-9 Trail Runner",
-        "receivedHoursAgo": 24
-      }
-    ],
-    "events": [
+      },
       {
-        "detail": "129 of 132 affected SKUs were reassigned automatically.",
-        "icon": "ai",
-        "occurredHoursAgo": 25,
-        "status": "current",
-        "title": "Tariff Radar triggered a reclassification sweep"
-      }
+        kind: "pdf",
+        name: "Classification Rationale Memo — TR-9",
+        meta: "Generated by Azali · 1 page",
+        receivedHoursAgo: 23,
+        lines: [
+          { highlight: true, label: "Recommendation", value: "6404.11.90 (new statistical suffix) · confidence 0.91" },
+          { label: "Basis", value: "Textile upper controls (78% by surface) · >$12/pair" },
+          { label: "Duty impact", value: "$0 — ten-digit statistical change only" },
+        ],
+        draft: RATIONALE_MEMOS["SHP-2230"],
+      },
+    ],
+    events: [
+      {
+        title: "Tariff Radar triggered a reclassification sweep",
+        detail:
+          "The 6404 split touched 132 Summit SKUs; 129 were reassigned automatically on unambiguous specs.",
+        icon: "ai",
+        occurredHoursAgo: 25,
+      },
+      {
+        title: "Reclassified TR-9 with rationale memo",
+        detail:
+          "Textile mesh controls the upper at 78% by surface area and the value break is clear — codes-only correction before the Savannah filing.",
+        icon: "ai",
+        memo: true,
+        occurredHoursAgo: 23,
+        status: "current",
+        steps: [
+          "Upper: 78% textile mesh / 22% synthetic overlays → textile line",
+          "$13.58/pair → over-$12 statistical break",
+          "Codes-only correction — $0 duty impact",
+        ],
+      },
     ],
     "alternates": null,
     "comparison": null,
@@ -866,63 +1010,91 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
     "canRequestInfo": false
   },
   "SHP-2233": {
-    "documents": [
+    documents: [
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "label": "Seller",
-            "value": "Rheinwerk Präzision GmbH, Stuttgart"
-          },
-          {
-            "highlight": true,
-            "label": "Country of origin",
-            "value": "(blank)"
-          },
-          {
-            "label": "Port of lading",
-            "value": "Hamburg"
-          },
-          {
-            "label": "Part",
-            "value": "RW-2205 precision spindle"
-          }
-        ],
-        "meta": "PDF · 2 pages",
-        "name": "Commercial Invoice INV-7702",
-        "note": "Origin is required for entry — every other signal on this shipment points to Germany.",
-        "receivedHoursAgo": 40
+        kind: "email",
+        from: "export@rheinwerk-praezision.de",
+        subject: "SHP-2233 — shipping docs, Bremerhaven sailing",
+        body: "Documents for the spindle shipment attached: commercial invoice and packing list. B/L to follow from the forwarder once the vessel departs Bremerhaven.",
+        meta: "Email · 2 attachments",
+        receivedHoursAgo: 42,
       },
       {
-        "kind": "pdf",
-        "lines": [
-          {
-            "highlight": true,
-            "label": "Prior entries for RW-2205",
-            "value": "14 · all origin DE"
-          },
-          {
-            "label": "Most recent",
-            "value": "3 weeks ago"
-          },
-          {
-            "label": "Duty impact",
-            "value": "None (no special tariffs for DE)"
-          }
+        kind: "pdf",
+        name: "Commercial Invoice INV-7702",
+        meta: "Rheinwerk Präzision · 2 pages",
+        receivedHoursAgo: 40,
+        summary:
+          "Invoice for 140 RW-2205 precision spindles at $1,026.43/unit ($143,700) from Rheinwerk Präzision, Stuttgart — with the country-of-origin field left blank. Origin is required for entry; every other signal (seller address, Hamburg lading, 14 prior entries) points to Germany.",
+        lines: [
+          { label: "Invoice", value: "INV-7702 · Net 60" },
+          { label: "Seller", value: "Rheinwerk Präzision GmbH, Stuttgart" },
+          { label: "Part", value: "RW-2205 precision spindle · 140 units" },
+          { label: "Unit price", value: "$1,026.43 · total $143,700" },
+          { highlight: true, label: "Country of origin", value: "(blank) — required for entry" },
+          { label: "Port of lading", value: "Hamburg" },
+          { label: "Terms", value: "CIP Houston (Incoterms 2020)" },
         ],
-        "meta": "Generated by Azali · entry history",
-        "name": "Entry History — Part RW-2205",
-        "receivedHoursAgo": 1
-      }
-    ],
-    "events": [
+      },
       {
-        "detail": "Seller address, lading port, and 14 prior entries all agree.",
-        "icon": "ai",
-        "occurredHoursAgo": 1,
-        "status": "current",
-        "title": "AI inferred German origin"
-      }
+        kind: "email",
+        from: "export@rheinwerk-praezision.de",
+        subject: "RE: SHP-2233 — country of origin confirmation",
+        body: "Confirming country of origin: Germany. All RW-2205 spindles are machined and assembled at our Nürnberg plant. Signed manufacturer's declaration attached — apologies for the blank field on the invoice.",
+        meta: "Email · 1 attachment",
+        receivedHoursAgo: 2,
+      },
+      {
+        kind: "pdf",
+        name: "Manufacturer's Declaration — RW-2205",
+        meta: "Rheinwerk Präzision · 1 page",
+        receivedHoursAgo: 2,
+        lines: [
+          { highlight: true, label: "Declaration", value: "Country of origin: Germany (Nürnberg plant)" },
+          { label: "Scope", value: "Part RW-2205, all serials this shipment" },
+          { label: "Signed", value: "K. Brandt, Export Compliance · Rheinwerk Präzision" },
+        ],
+      },
+      {
+        kind: "pdf",
+        name: "Entry History — Part RW-2205",
+        meta: "Generated by Azali · entry history",
+        receivedHoursAgo: 1,
+        lines: [
+          { highlight: true, label: "Prior entries for RW-2205", value: "14 · all origin DE" },
+          { label: "Most recent", value: "3 weeks ago" },
+          { label: "Duty impact", value: "None (no special tariffs for DE)" },
+        ],
+      },
+    ],
+    events: [
+      {
+        title: "AI flagged missing origin",
+        detail:
+          "The invoice's country-of-origin field is blank — origin is required before the entry can file.",
+        icon: "ai",
+        occurredHoursAgo: 40,
+        status: "warning",
+      },
+      {
+        title: "Chase email sent to the supplier",
+        detail:
+          "Requested written origin confirmation and a manufacturer's declaration from Rheinwerk's export team.",
+        icon: "mail",
+        occurredHoursAgo: 38,
+      },
+      {
+        title: "Origin confirmed: Germany",
+        detail:
+          "Supplier declaration, seller address, Hamburg lading, and 14 prior entries all agree — proposing DE with the declaration on file.",
+        icon: "ai",
+        occurredHoursAgo: 1,
+        status: "current",
+        steps: [
+          "Manufacturer's declaration: machined and assembled at the Nürnberg plant",
+          "14 prior entries for RW-2205, all declared DE and accepted",
+        ],
+      },
     ],
     "alternates": null,
     "comparison": null,

@@ -15,17 +15,21 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 585 >>
+<< /Length 873 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Spec - TR-9 Trail Runner) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (PDF - 2 pages) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (Summit Footwear - 2 pages) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
-BT /F1 9.5 Tf 0.45 g 72 686 Td (Upper) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (78% textile mesh / 22% synthetic overlays) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 664 Td (Sole) Tj ET
-BT /F2 10 Tf 0 g 250 664 Td (Rubber) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 642 Td (Style) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td (TR-9 trail runner) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 686 Td (Style) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (TR-9 trail runner) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 664 Td (Upper) Tj ET
+BT /F2 10 Tf 0 g 250 664 Td (78% textile mesh / 22% synthetic overlays \(by surface area\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 642 Td (Sole) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (Rubber - cemented construction) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Value) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td ($13.58/pair - over the $12 statistical line) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 598 Td (Units) Tj ET
+BT /F2 10 Tf 0 g 250 598 Td (3,800 pairs this shipment) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -42,5 +46,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1032
+1320
 %%EOF

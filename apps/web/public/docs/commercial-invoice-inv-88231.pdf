@@ -15,22 +15,27 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 881 >>
+<< /Length 1191 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Commercial Invoice INV-88231) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (PDF - 2 pages) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (Nestle Suisse S.A. - 2 pages) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
-BT /F1 9.5 Tf 0.45 g 72 686 Td (Line items \(12\)) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (see page 1-2) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 664 Td (Sum of line items) Tj ET
-BT /F2 10 Tf 0 g 250 664 Td ($45,780) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 642 Td (Total \(printed\)) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td ($48,250) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 620 Td (Currency) Tj ET
-BT /F2 10 Tf 0 g 250 620 Td (USD) Tj ET
-0.85 G 0.5 w 72 590 m 540 590 l S
-BT /F2 8.5 Tf 0.45 g 72 572 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 559 Td (The two totals disagree by $2,470 - the packing list quantities support the line-item sum.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 686 Td (Invoice) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (INV-88231 - 05 Jul) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 664 Td (Seller) Tj ET
+BT /F2 10 Tf 0 g 250 664 Td (Nestle Suisse S.A., Vevey) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 642 Td (Terms) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (CIF New York \(Incoterms 2020\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Lines) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td (12 line items - specialty food product) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 598 Td (Largest line) Tj ET
+BT /F2 10 Tf 0 g 250 598 Td (Line 4 - 1,800 cases @ $9.10) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 576 Td (Sum  line items \(1-12\)) Tj ET
+BT /F2 10 Tf 0 g 250 576 Td (USD 45,780.00) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 554 Td (Total \(printed, p.2\)) Tj ET
+BT /F2 10 Tf 0 g 250 554 Td (USD 48,250.00 - disagrees by $2,470) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 532 Td (Currency) Tj ET
+BT /F2 10 Tf 0 g 250 532 Td (USD) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -47,5 +52,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1328
+1639
 %%EOF

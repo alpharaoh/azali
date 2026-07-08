@@ -15,22 +15,27 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 924 >>
+<< /Length 1277 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (Commercial Invoice BW-5540) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (PDF - 3 pages) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (Bluewave Electronics - 3 pages) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
-BT /F1 9.5 Tf 0.45 g 72 686 Td (Line 1) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (USB-C cables \(2m\) - $6,200) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 664 Td (Line 2) Tj ET
-BT /F2 10 Tf 0 g 250 664 Td (Mesh extender EX-3 - $14,800) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 642 Td (Line 3) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td (AX5400 tri-band mesh router, 2-pack - $128,000) Tj ET
-BT /F1 9.5 Tf 0.45 g 72 620 Td (Country of origin) Tj ET
-BT /F2 10 Tf 0 g 250 620 Td (Taiwan) Tj ET
-0.85 G 0.5 w 72 590 m 540 590 l S
-BT /F2 8.5 Tf 0.45 g 72 572 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 559 Td (Line 3 is the SKU in question - lines 1 and 2 matched the catalog automatically.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 686 Td (Invoice) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (BW-5540 - Net 30) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 664 Td (Seller) Tj ET
+BT /F2 10 Tf 0 g 250 664 Td (Bluewave Electronics Co., Kaohsiung) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 642 Td (Terms) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (FOB Kaohsiung \(Incoterms 2020\)) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Line 1) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td (USB-C cables \(2m\) - $6,200 - catalog match) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 598 Td (Line 2) Tj ET
+BT /F2 10 Tf 0 g 250 598 Td (Mesh extender EX-3 - $14,800 - catalog match) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 576 Td (Line 3) Tj ET
+BT /F2 10 Tf 0 g 250 576 Td (AX5400 tri-band mesh router, 2-pack \(RBK762\) - 2,400 packs - $128,000) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 554 Td (Country of origin) Tj ET
+BT /F2 10 Tf 0 g 250 554 Td (Taiwan - outside the Section 301 lists) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 532 Td (Total invoice value) Tj ET
+BT /F2 10 Tf 0 g 250 532 Td (USD 149,000.00) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -47,5 +52,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1371
+1725
 %%EOF

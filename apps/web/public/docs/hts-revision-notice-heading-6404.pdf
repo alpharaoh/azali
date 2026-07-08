@@ -15,20 +15,19 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 868 >>
+<< /Length 841 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (HTS Revision Notice - Heading 6404) Tj ET
-BT /F1 9 Tf 0.45 g 72 724 Td (Reference - USITC revision record) Tj ET
+BT /F1 9 Tf 0.45 g 72 724 Td (USITC revision record - reference) Tj ET
 0.85 G 0.5 w 72 710 m 540 710 l S
 BT /F1 9.5 Tf 0.45 g 72 686 Td (Change) Tj ET
-BT /F2 10 Tf 0 g 250 686 Td (6404.11.90 split by upper material) Tj ET
+BT /F2 10 Tf 0 g 250 686 Td (6404.11.90 subdivided by constituent material of the upper) Tj ET
 BT /F1 9.5 Tf 0.45 g 72 664 Td (Effective) Tj ET
 BT /F2 10 Tf 0 g 250 664 Td (Current period \(mid-year revision\)) Tj ET
 BT /F1 9.5 Tf 0.45 g 72 642 Td (Summit SKUs affected) Tj ET
-BT /F2 10 Tf 0 g 250 642 Td (132 \(129 auto-reassigned\)) Tj ET
-0.85 G 0.5 w 72 612 m 540 612 l S
-BT /F2 8.5 Tf 0.45 g 72 594 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 581 Td (This item came from Tariff Radar - the code split left 3 SKUs needing a manual call.) Tj ET
+BT /F2 10 Tf 0 g 250 642 Td (132 - 129 auto-reassigned - 3 manual) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Duty) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td (20% under both old and new lines - statistical change only) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -45,5 +44,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1315
+1288
 %%EOF

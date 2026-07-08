@@ -15,7 +15,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 6 0 obj
-<< /Length 834 >>
+<< /Length 780 >>
 stream
 BT /F2 15 Tf 0 g 72 740 Td (CROSS Ruling NY N324089) Tj ET
 BT /F1 9 Tf 0.45 g 72 724 Td (Reference - CBP rulings database) Tj ET
@@ -26,9 +26,8 @@ BT /F1 9.5 Tf 0.45 g 72 664 Td (Holding) Tj ET
 BT /F2 10 Tf 0 g 250 664 Td (8517.62.0090 - free of duty) Tj ET
 BT /F1 9.5 Tf 0.45 g 72 642 Td (Ruling date) Tj ET
 BT /F2 10 Tf 0 g 250 642 Td (March 2022) Tj ET
-0.85 G 0.5 w 72 612 m 540 612 l S
-BT /F2 8.5 Tf 0.45 g 72 594 Td (Note) Tj ET
-BT /F1 9 Tf 0.3 g 72 581 Td (Closest precedent - a comparable consumer mesh system with the same principal function.) Tj ET
+BT /F1 9.5 Tf 0.45 g 72 620 Td (Relevance) Tj ET
+BT /F2 10 Tf 0 g 250 620 Td (Closest precedent - same principal function, same set question) Tj ET
 0.85 G 0.5 w 72 56 m 540 56 l S
 BT /F1 7.5 Tf 0.55 g 72 42 Td (Azali - AI Customs Brokerage - reconstructed document preview) Tj ET
 endstream
@@ -45,5 +44,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1281
+1227
 %%EOF

@@ -882,29 +882,31 @@ function DocumentBody({
             {document.body}
           </p>
         </>
-      ) : document.kind === "pdf" && document.src ? (
-        <PdfWithExtraction document={document} />
+      ) : document.kind === "pdf" ? (
+        // Real PDFs carry their own src; everything else falls back to the
+        // generated file at the conventional /docs/<slug>.pdf path.
+        <PdfWithExtraction
+          document={{
+            ...document,
+            src: document.src ?? `/docs/${docSlug(document.name)}.pdf`,
+          }}
+        />
       ) : (
         <>
-          {document.kind === "scan" ? (
-            <a
-              className="block"
-              href={document.src}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <img
-                alt={document.name}
-                className="max-h-80 w-full rounded-lg border bg-white object-contain"
-                src={document.src}
-              />
-            </a>
-          ) : null}
+          <a
+            className="block"
+            href={document.src}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <img
+              alt={document.name}
+              className="max-h-80 w-full rounded-lg border bg-white object-contain"
+              src={document.src}
+            />
+          </a>
           <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-            {(document.kind === "scan"
-              ? document.extracted
-              : document.lines
-            ).map((line) => (
+            {document.extracted.map((line) => (
               <DocumentLineRow key={line.label} line={line} />
             ))}
           </div>
@@ -1435,15 +1437,15 @@ function ReviewDetail({
   const thread = threads.get(item.id) ?? [];
   const chat = thread.filter((message) => message.kind === "chat");
   // The intake documents (invoice, packing list, B/L, spec…) collapse into ONE
-  // tab-switched timeline item anchored at the earliest one. CBP correspondence
-  // and drafted responses are story beats — they keep their own timeline slots.
-  // The rationale memo never renders as a document; it opens from the
-  // classification event's "View memo" action.
+  // tab-switched timeline item anchored at the earliest one. Emails, CBP
+  // correspondence, and drafted responses are story beats — they keep their
+  // own timeline slots at their own times. The rationale memo never renders
+  // as a document; it opens from its event's "View memo" action.
   const isStandaloneDoc = (document: ReviewDocument) =>
-    document.kind !== "email" &&
+    document.kind === "email" ||
     /cbp form 2[89]|draft response/i.test(document.name);
   const isMemoDoc = (document: ReviewDocument) =>
-    document.kind !== "email" && /rationale memo/i.test(document.name);
+    document.kind === "pdf" && /rationale memo/i.test(document.name);
   const memoDocument = item.documents.find(
     (document): document is ReviewDocument & { kind: "pdf" } =>
       document.kind === "pdf" && isMemoDoc(document),

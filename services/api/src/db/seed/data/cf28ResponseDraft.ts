@@ -4,46 +4,7 @@
  * editor. Plain objects only — no tiptap dependency on the API side.
  */
 
-interface InlineNode {
-  type: "text";
-  text: string;
-  marks?: Array<{ type: string }>;
-}
-
-const text = (value: string): InlineNode => ({ type: "text", text: value });
-
-const bold = (value: string): InlineNode => ({
-  type: "text",
-  text: value,
-  marks: [{ type: "bold" }],
-});
-
-const italic = (value: string): InlineNode => ({
-  type: "text",
-  text: value,
-  marks: [{ type: "italic" }],
-});
-
-const heading = (level: number, value: string) => ({
-  type: "heading",
-  attrs: { level },
-  content: [text(value)],
-});
-
-const paragraph = (...children: Array<InlineNode | string>) => ({
-  type: "paragraph",
-  content: children.map((child) =>
-    typeof child === "string" ? text(child) : child,
-  ),
-});
-
-const bullets = (items: Array<Array<InlineNode | string>>) => ({
-  type: "bulletList",
-  content: items.map((item) => ({
-    type: "listItem",
-    content: [paragraph(...item)],
-  })),
-});
+import { bold, bullets, heading, italic, paragraph } from "./tiptap";
 
 export const CF28_RESPONSE_DRAFT: Record<string, unknown> = {
   type: "doc",
