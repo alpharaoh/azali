@@ -59,7 +59,7 @@ import {
   subHours,
 } from "date-fns";
 import type { ComponentProps, ComponentType, ReactNode, SVGProps } from "react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { TableFetchingState } from "#/components/table-loading";
@@ -988,8 +988,6 @@ function DraftDocumentPreview({
   );
 }
 
-/** How many extracted fields the inline preview shows. */
-const EXTRACTION_PREVIEW_LINES = 5;
 
 /**
  * Inline preview of a real PDF beside what the AI extracted from it. The
@@ -1003,37 +1001,86 @@ function PdfWithExtraction({
 }) {
   const [isViewerOpen, setViewerOpen] = useState(false);
   const [isPreviewLoaded, setPreviewLoaded] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   const lines = document.lines;
+  // Page count lives in the document meta ("… · 3 pages") — the preview
+  // always shows page one.
+  const pageCount = /(\d+)\s+pages?/i.exec(document.meta)?.[1] ?? null;
+  // How many extracted-field rows the item cap clips off, measured for real
+  // so the "N more fields" hint is always accurate.
+  const fieldsRegionRef = useRef<HTMLDivElement>(null);
+  const [hiddenFields, setHiddenFields] = useState(0);
+
+  useEffect(() => {
+    const region = fieldsRegionRef.current;
+    if (!region) return;
+
+    const update = () => {
+      let hidden = 0;
+      for (const row of region.querySelectorAll<HTMLElement>(
+        "[data-field-row]",
+      )) {
+        if (row.offsetTop + row.offsetHeight > region.clientHeight) {
+          hidden += 1;
+        }
+      }
+      setHiddenFields(hidden);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(region);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
-      <div className="grid gap-3 lg:grid-cols-2">
-        {/* Document preview — stretches with the row, faded, not scrollable. */}
-        <div className="relative h-full min-h-72 overflow-hidden rounded-lg border bg-white">
+      {/* The whole item is capped: the right column dictates the height up to
+          max-h-96; fields clip with a fade, the button never does. */}
+      <div className="grid gap-3 lg:max-h-96 lg:grid-cols-2">
+        {/* Document preview — page one rendered whole (object-contain) on a
+            soft gray mat; the page count sits top-right. PNGs live next to
+            each PDF in public/docs; the <object> viewer is the fallback. */}
+        <div className="bg-default/40 relative flex h-full max-h-96 min-h-72 items-center justify-center overflow-hidden rounded-lg border p-1">
           {!isPreviewLoaded && (
             <span className="absolute inset-0 flex items-center justify-center">
               <Spinner aria-label="Loading document preview" size="sm" />
             </span>
           )}
-          <object
-            aria-hidden
-            className={`pointer-events-none h-[135%] w-full transition-opacity duration-200 ${
-              isPreviewLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            data={`${document.src}#toolbar=0&navpanes=0&scrollbar=0`}
-            type="application/pdf"
-            onLoad={() => setPreviewLoaded(true)}
-          />
+          {previewFailed ? (
+            <object
+              aria-hidden
+              className="pointer-events-none h-full w-full"
+              data={`${document.src}#toolbar=0&navpanes=0&scrollbar=0`}
+              type="application/pdf"
+            />
+          ) : (
+            <img
+              alt=""
+              aria-hidden
+              className={`pointer-events-none h-full max-h-full w-auto max-w-full rounded-sm bg-white object-contain shadow-sm transition-opacity duration-200 ${
+                isPreviewLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              src={document.src?.replace(/\.pdf$/i, ".png")}
+              onError={() => {
+                setPreviewFailed(true);
+                setPreviewLoaded(true);
+              }}
+              onLoad={() => setPreviewLoaded(true)}
+            />
+          )}
+          {pageCount ? (
+            <span className="bg-background/80 text-muted absolute right-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums backdrop-blur-sm">
+              1 of {pageCount}
+            </span>
+          ) : null}
           <button
             aria-label={`View ${document.name}`}
             className="group absolute inset-0 cursor-pointer"
             type="button"
             onClick={() => setViewerOpen(true)}
           >
-            <span
-              aria-hidden
-              className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent"
-            />
             <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
               <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
                 <ArrowUpRightFromSquare className="size-3.5" />
@@ -1043,25 +1090,31 @@ function PdfWithExtraction({
           </button>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-2">
+        <div className="flex min-h-0 min-w-0 flex-col gap-2 lg:max-h-96">
           {document.summary ? (
-            <p className="text-muted line-clamp-3 text-xs leading-relaxed">
+            <p className="text-muted line-clamp-3 shrink-0 text-xs leading-relaxed">
               {document.summary}
             </p>
           ) : null}
+          {/* Fields clip against the item cap; the button below never does. */}
           <div
-            className={`bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed ${
-              lines.length > EXTRACTION_PREVIEW_LINES
-                ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)]"
+            ref={fieldsRegionRef}
+            className={`bg-background/40 relative min-h-0 flex-1 overflow-hidden rounded-lg border ${
+              hiddenFields > 0
+                ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent)]"
                 : ""
             }`}
           >
-            {lines.slice(0, EXTRACTION_PREVIEW_LINES).map((line) => (
-              <DocumentLineRow key={line.label} line={line} />
-            ))}
+            <div className="flex flex-col gap-0.5 p-3 font-mono text-xs leading-relaxed">
+              {lines.map((line) => (
+                <div key={line.label} data-field-row>
+                  <DocumentLineRow line={line} />
+                </div>
+              ))}
+            </div>
           </div>
           <Button
-            className="mt-1 w-fit"
+            className="w-fit shrink-0"
             size="sm"
             variant="secondary"
             onPress={() => setViewerOpen(true)}
