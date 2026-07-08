@@ -689,20 +689,20 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "label": "Precedent",
       "steps": [
         {
-          "citationRef": "CROSS NY N327431",
-          "detail": "Directly supporting ruling: a Bluetooth speaker with LED lantern function classifies in 8518.22 on principal-function grounds. The LUX-SP210 parallels it, adding only a pass-through USB port.",
+          "citationRef": "CROSS NY N305672",
+          "detail": "The controlling analog: a lighting-dominant lantern with speaker feature classifies in 8513.10 — the same conclusion the rationale memo reached at entry.",
           "kind": "lookup",
-          "title": "Matched supporting CROSS ruling"
+          "title": "Re-confirmed the controlling ruling"
         },
         {
-          "citationRef": "CROSS NY N305672",
+          "citationRef": "CROSS NY N327431",
           "data": [
-            "N305672 device: 800 lumens · 3W mono speaker → 8513.10 (lamp)",
-            "LUX-SP210: audio-led design, 55% of component cost → the commercial inverse"
+            "N327431 device: 10W stereo · speaker-led marketing → 8518.22",
+            "LUX-SP210: 3W mono · lamp-first spec and invoice → distinguishable"
           ],
-          "detail": "The adverse ruling CBP would reach for is distinguishable on its facts — better it arrives pre-distinguished than discovered by the specialist.",
+          "detail": "The ruling the override leaned on is distinguishable on its facts — the LUX-SP210 is not the audio-dominant article it describes.",
           "kind": "check",
-          "title": "Distinguished the adverse ruling"
+          "title": "Distinguished the override's ruling"
         }
       ]
     },
@@ -711,13 +711,13 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "steps": [
         {
           "data": [
-            "As entered (8518.22 Free + 301 List 4A 7.5%): $3,642 — paid",
-            "If reclassified to 8513.10.40 (3.5% base): +$1,700 this entry",
-            "Across 11 open entries: ~$19K + §1592 penalty exposure"
+            "Corrected duty (8513.10.40 · 3.5% + 301 List 4A 7.5%): $5,342",
+            "Tender: +$1,700 this entry · ~$19K across 11 open entries",
+            "Penalty posture: memo + override log + prompt correction = reasonable care"
           ],
-          "detail": "Computed the rate-advance exposure CBP's indicated alternative would produce — the number the broker needs before signing.",
+          "detail": "Computed the tender the concession requires — and the §1592 mitigation the entry-time memo buys.",
           "kind": "calc",
-          "title": "Computed reclassification exposure"
+          "title": "Computed the tender and penalty posture"
         }
       ]
     },
@@ -726,9 +726,9 @@ export const REVIEW_TRACES: Record<string, SeedTracePhase[]> = {
       "steps": [
         {
           "citationRef": "HTSUS Section XVI, Note 3",
-          "detail": "Assembled the persuasion brief: Note 3 principal-function analysis, five probative factors, GRI 3(c) in the alternative, precedent both ways, exhibits A–E.",
+          "detail": "Drafted the corrected response: concede 8513.10.40 per the entry-time memo, tender the difference, request no penalties on the documented reasonable-care record.",
           "kind": "decision",
-          "title": "Drafted the response"
+          "title": "Drafted the corrected response"
         },
         {
           "detail": "Form 28 responses require licensed sign-off before transmission — everything filed here becomes the §1592 record if CBP escalates to a Form 29.",

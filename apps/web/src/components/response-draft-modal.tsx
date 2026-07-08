@@ -32,11 +32,14 @@ export function ResponseDraftModal({
   document,
   isOpen,
   onOpenChange,
+  readOnly = false,
   shipmentId,
 }: {
   document: (ReviewDocument & { kind: "pdf" }) | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  /** View-only (e.g. the classification rationale memo) — no revisions. */
+  readOnly?: boolean;
   shipmentId: string;
 }) {
   const queryClient = useQueryClient();
@@ -103,6 +106,7 @@ export function ResponseDraftModal({
               {document ? (
                 <RichTextEditor
                   defaultValue={document.draft as JSONContent}
+                  isReadOnly={readOnly}
                   onValueChange={(value, details) => {
                     latest.current = { draft: value, words: details.wordCount };
                   }}
@@ -210,7 +214,9 @@ export function ResponseDraftModal({
                     </RichTextEditor.BubbleMenu>
                     <RichTextEditor.Footer>
                       <span className="text-muted text-xs">
-                        Saving appends a revision to the audit record
+                        {readOnly
+                          ? "Written at entry — part of the audit record"
+                          : "Saving appends a revision to the audit record"}
                       </span>
                       <RichTextEditor.CharacterCount showWords />
                     </RichTextEditor.Footer>
@@ -220,15 +226,17 @@ export function ResponseDraftModal({
             </Modal.Body>
             <Modal.Footer>
               <Button variant="outline" onPress={() => onOpenChange(false)}>
-                Cancel
+                {readOnly ? "Close" : "Cancel"}
               </Button>
-              <Button
-                isPending={isSaving}
-                variant="primary"
-                onPress={handleSave}
-              >
-                Save to file
-              </Button>
+              {!readOnly && (
+                <Button
+                  isPending={isSaving}
+                  variant="primary"
+                  onPress={handleSave}
+                >
+                  Save to file
+                </Button>
+              )}
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>

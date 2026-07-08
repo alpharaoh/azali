@@ -445,27 +445,27 @@ const seeds: SeedShipment[] = [
     review: {
       type: "enforcement",
       question:
-        "CBP Form 28 questions the LUX-SP210 classification — response drafted",
+        "CBP Form 28 confirms the entry-time recommendation — corrected response drafted",
       // Hours, not days: near the wire so the CF-28 surfaces at the top of
       // the queue (sorted by reviewDeadlineAt asc).
       deadlineHours: 5,
       deadlineReason: "CF-28 response due (day 30 of 30)",
       noticeForm: "CF-28",
-      confidence: 0.92,
+      confidence: 0.96,
       proposal: {
         label: "Response",
-        value: "Defend 8518.22.0000",
+        value: "Concede — 8513.10.40",
         detail:
-          "Principal-function brief (Section XVI, Note 3): audio is 55% of component cost, the article is sold as a speaker, and NY N327431 is on point. The supplier's lamp-first invoice wording is addressed head-on.",
+          "Azali classified 8513.10.40 at entry; the broker filed the 8518.22.0000 alternate. The drafted response concedes the correct code, tenders the difference, and leans on the entry-time rationale memo as the reasonable-care record.",
       },
       dutyImpact: {
         proposed: {
-          rate: "As entered — Free + 301 List 4A 7.5%",
-          amountUsd: 3642,
+          rate: "Corrected — 8513.10.40 (3.5% + 301 List 4A)",
+          amountUsd: 5342,
           breakdown: [
-            "As entered (8518.22 Free + 301 List 4A 7.5%): $3,642 — paid",
-            "If reclassified to 8513.10.40 (3.5% base): +$1,700 this entry",
-            "Across 11 open entries: ~$19K + penalty exposure (19 USC §1592)",
+            "Corrected duty (8513.10.40 · 3.5% + 301 List 4A 7.5%): $5,342",
+            "Tender: +$1,700 this entry · ~$19K across 11 open entries",
+            "Penalty exposure mitigated — rationale memo on file (reasonable care, 19 USC §1592(c)(4))",
           ],
         },
       },
@@ -731,6 +731,8 @@ for (const seed of seeds) {
       doc.kind !== "email" ? /CBP Form (28|29)/i.exec(doc.name) : null;
     const isDraftResponse =
       doc.kind !== "email" && /^draft response/i.test(doc.name);
+    const isRationaleMemo =
+      doc.kind !== "email" && /rationale memo/i.test(doc.name);
 
     await insertShipmentEvent({
       organizationId,
@@ -740,8 +742,10 @@ for (const seed of seeds) {
         ? "cbp_notice_received"
         : isDraftResponse
           ? "response_drafted"
-          : "document_received",
-      actor: cbpForm ? "cbp" : isDraftResponse ? "ai" : "system",
+          : isRationaleMemo
+            ? "classification_memo_drafted"
+            : "document_received",
+      actor: cbpForm ? "cbp" : isDraftResponse || isRationaleMemo ? "ai" : "system",
       title,
       occurredAt: hoursFromNow(-doc.receivedHoursAgo),
       payload: {
@@ -765,6 +769,7 @@ for (const seed of seeds) {
         ...(activity.detail && { detail: activity.detail }),
         ...(activity.steps && { steps: activity.steps }),
         ...(activity.status && { status: activity.status }),
+        ...(activity.memo && { memo: true }),
         icon: activity.icon,
       },
     });

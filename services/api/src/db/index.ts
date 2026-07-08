@@ -17,6 +17,10 @@ export const db = drizzle({
   // "Idle timeout reached after 30s".
   connection: {
     url: url.toString(),
+    // PlanetScale's connection limit is shared by dev, prod, and every seed
+    // script. Uncapped, one busy dev server absorbs 10 slots and reseeds
+    // start failing with "remaining connection slots are reserved".
+    max: 5,
     connectionTimeout: 10,
   },
   schema,

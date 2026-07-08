@@ -57,8 +57,10 @@ export interface ActivityEvent {
   /** Compact thinking lines shown under the event — what the AI actually did. */
   steps?: string[];
   occurredHoursAgo: number;
-  icon: "ai" | "check" | "mail";
+  icon: "ai" | "check" | "mail" | "user";
   status?: "current" | "default" | "success" | "warning";
+  /** A rationale memo backs this event — renders a "View memo" action. */
+  memo?: boolean;
 }
 
 export type TraceStepKind =

@@ -438,6 +438,13 @@ function eventMarker(event: ActivityEvent): {
         "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
     };
   }
+  if (event.icon === "user") {
+    return {
+      Icon: Person,
+      className:
+        "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    };
+  }
   if (/classif/i.test(event.title)) {
     return {
       Icon: Tag,
@@ -663,10 +670,12 @@ function ThreadTimelineItem({
 
 function EventTimelineItem({
   event,
+  onViewMemo,
   onViewTrace,
   ...rest
 }: {
   event: ActivityEvent;
+  onViewMemo?: () => void;
   onViewTrace?: () => void;
 } & TimelineItemPassthrough) {
   const { Icon, className: markerClassName } = eventMarker(event);
@@ -695,6 +704,17 @@ function EventTimelineItem({
           >
             {event.detail}
           </p>
+        ) : null}
+        {event.memo && onViewMemo ? (
+          <button
+            className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
+            type="button"
+            onClick={onViewMemo}
+          >
+            <FileText className="size-3" />
+            View memo
+            <ChevronRight className="size-3" />
+          </button>
         ) : null}
         {event.steps && onViewTrace ? (
           <button
@@ -1417,11 +1437,19 @@ function ReviewDetail({
   // The intake documents (invoice, packing list, B/L, spec…) collapse into ONE
   // tab-switched timeline item anchored at the earliest one. CBP correspondence
   // and drafted responses are story beats — they keep their own timeline slots.
+  // The rationale memo never renders as a document; it opens from the
+  // classification event's "View memo" action.
   const isStandaloneDoc = (document: ReviewDocument) =>
     document.kind !== "email" &&
     /cbp form 2[89]|draft response/i.test(document.name);
+  const isMemoDoc = (document: ReviewDocument) =>
+    document.kind !== "email" && /rationale memo/i.test(document.name);
+  const memoDocument = item.documents.find(
+    (document): document is ReviewDocument & { kind: "pdf" } =>
+      document.kind === "pdf" && isMemoDoc(document),
+  );
   const intakeDocuments = item.documents.filter(
-    (document) => !isStandaloneDoc(document),
+    (document) => !isStandaloneDoc(document) && !isMemoDoc(document),
   );
   const activity = [
     ...(intakeDocuments.length
@@ -1458,6 +1486,7 @@ function ReviewDetail({
   const [editingDraft, setEditingDraft] = useState<
     (ReviewDocument & { kind: "pdf" }) | null
   >(null);
+  const [isMemoOpen, setMemoOpen] = useState(false);
 
   const handleAddNote = () => {
     const body = draft.trim();
@@ -1821,6 +1850,9 @@ function ReviewDetail({
                       _index={index}
                       _isLast={false}
                       event={entry.event}
+                      onViewMemo={
+                        memoDocument ? () => setMemoOpen(true) : undefined
+                      }
                       onViewTrace={() => setView("trace")}
                     />
                   ),
@@ -1974,6 +2006,15 @@ function ReviewDetail({
           if (!open) setEditingDraft(null);
         }}
       />
+      {memoDocument ? (
+        <ResponseDraftModal
+          readOnly
+          document={memoDocument}
+          isOpen={isMemoOpen}
+          shipmentId={item.id}
+          onOpenChange={setMemoOpen}
+        />
+      ) : null}
     </div>
   );
 }
@@ -2162,6 +2203,7 @@ export function ReviewQueue() {
           steps?: string[];
           status?: string;
           icon?: ActivityEvent["icon"];
+          memo?: boolean;
         };
 
         return {
@@ -2170,6 +2212,7 @@ export function ReviewQueue() {
           steps: payload.steps,
           occurredHoursAgo: hoursAgo(event.occurredAt),
           icon: payload.icon ?? (event.actor === "ai" ? "ai" : "check"),
+          memo: payload.memo,
           status: payload.status as ActivityEvent["status"],
         };
       });
