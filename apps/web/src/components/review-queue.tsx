@@ -1101,7 +1101,7 @@ function PdfWithExtraction({
             ref={fieldsRegionRef}
             className={`bg-background/40 relative min-h-0 flex-1 overflow-hidden rounded-lg border ${
               hiddenFields > 0
-                ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent)]"
+                ? "[mask-image:linear-gradient(to_bottom,black_calc(100%-5rem),transparent)]"
                 : ""
             }`}
           >
