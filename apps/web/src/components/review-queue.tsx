@@ -829,6 +829,51 @@ function SingleDocumentTimelineItem({
   );
 }
 
+/**
+ * First-load placeholder for the case file: the tabbed documents item
+ * (tabs bar, document pane, extraction) followed by a few event rows.
+ */
+function ActivitySkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Loading the file"
+      className="flex flex-col gap-7"
+      role="status"
+    >
+      <div className="flex gap-3">
+        <Skeleton className="size-6 shrink-0 rounded-full" />
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex gap-2">
+            <Skeleton className="h-7 w-24 rounded-lg" />
+            <Skeleton className="h-7 w-28 rounded-lg" />
+            <Skeleton className="h-7 w-24 rounded-lg" />
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Skeleton className="h-56 rounded-lg" />
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-5/6 rounded" />
+              <Skeleton className="h-3 w-2/3 rounded" />
+              <Skeleton className="h-36 rounded-lg" />
+              <Skeleton className="mt-1 h-8 w-32 rounded-lg" />
+            </div>
+          </div>
+        </div>
+      </div>
+      {Array.from({ length: 3 }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+        <div key={index} className="flex gap-3">
+          <Skeleton className="size-6 shrink-0 rounded-full" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
+            <Skeleton className="h-3.5 w-1/2 rounded" />
+            <Skeleton className="h-3 w-3/4 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Tab label + icon for a document, inferred from what it is. */
 function docTabMeta(document: ReviewDocument): {
   label: string;
@@ -1009,7 +1054,6 @@ function DraftDocumentPreview({
     </div>
   );
 }
-
 
 /**
  * Inline preview of a real PDF beside what the AI extracted from it. The
@@ -1410,6 +1454,7 @@ interface NoteEntry {
 
 function ReviewDetail({
   deadline,
+  isFileLoading = false,
   item,
   notes,
   onAddNote,
@@ -1420,6 +1465,8 @@ function ReviewDetail({
   total,
 }: {
   deadline: Date;
+  /** The per-shipment events fetch is still in flight — skeleton the file. */
+  isFileLoading?: boolean;
   item: ReviewItem;
   notes: NoteEntry[];
   onAddNote: (body: string) => void;
@@ -1684,9 +1731,9 @@ function ReviewDetail({
                     type="button"
                     onClick={() => setEditingDraft(responseDraft)}
                   >
-                    <FileCheck className="text-success size-3.5 shrink-0" />
+                    <FileCheck className="text-green-700 size-3.5 shrink-0" />
                     <span className="text-muted group-hover:text-foreground text-xs transition-colors">
-                      Response draft ready — review &amp; edit
+                      Response draft ready. Review &amp; edit
                     </span>
                     <ChevronRight className="text-muted size-3" />
                   </button>
@@ -1815,85 +1862,92 @@ function ReviewDetail({
             {/* Activity — documents, events, and your notes to the AI, oldest first */}
             <div className="flex flex-col gap-2">
               <span className="text-muted text-xs font-medium">Activity</span>
-              <Timeline density="comfortable" size="sm">
-                {activity.map((entry, index) =>
-                  entry.kind === "documents" ? (
-                    <DocumentsTimelineItem
-                      key="documents"
-                      _index={index}
+              {isFileLoading ? (
+                <ActivitySkeleton />
+              ) : (
+                <Timeline density="comfortable" size="sm">
+                  {activity.map((entry, index) =>
+                    entry.kind === "documents" ? (
+                      <DocumentsTimelineItem
+                        key="documents"
+                        _index={index}
+                        _isLast={false}
+                        documents={entry.documents}
+                        onEditDraft={(document) => setEditingDraft(document)}
+                      />
+                    ) : entry.kind === "document" ? (
+                      <SingleDocumentTimelineItem
+                        key={
+                          entry.document.kind === "email"
+                            ? entry.document.subject
+                            : entry.document.name
+                        }
+                        _index={index}
+                        _isLast={false}
+                        document={entry.document}
+                        onEditDraft={
+                          entry.document.kind === "pdf" && entry.document.draft
+                            ? () =>
+                                setEditingDraft(
+                                  entry.document as ReviewDocument & {
+                                    kind: "pdf";
+                                  },
+                                )
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <EventTimelineItem
+                        key={entry.event.title}
+                        _index={index}
+                        _isLast={false}
+                        event={entry.event}
+                        onViewMemo={
+                          memoDocument ? () => setMemoOpen(true) : undefined
+                        }
+                        onViewTrace={() => setView("trace")}
+                      />
+                    ),
+                  )}
+                  {notes.map((note, index) => (
+                    <ThreadTimelineItem
+                      key={note.id}
+                      _index={activity.length + index}
                       _isLast={false}
-                      documents={entry.documents}
-                      onEditDraft={(document) => setEditingDraft(document)}
+                      message={{
+                        author: "broker",
+                        body: note.body,
+                        id: note.id,
+                        kind: "note",
+                      }}
+                      time={formatDistanceToNowStrict(
+                        new Date(note.occurredAt),
+                        {
+                          addSuffix: true,
+                        },
+                      )}
                     />
-                  ) : entry.kind === "document" ? (
-                    <SingleDocumentTimelineItem
-                      key={
-                        entry.document.kind === "email"
-                          ? entry.document.subject
-                          : entry.document.name
-                      }
-                      _index={index}
-                      _isLast={false}
-                      document={entry.document}
-                      onEditDraft={
-                        entry.document.kind === "pdf" && entry.document.draft
-                          ? () =>
-                              setEditingDraft(
-                                entry.document as ReviewDocument & {
-                                  kind: "pdf";
-                                },
-                              )
-                          : undefined
-                      }
-                    />
-                  ) : (
-                    <EventTimelineItem
-                      key={entry.event.title}
-                      _index={index}
-                      _isLast={false}
-                      event={entry.event}
-                      onViewMemo={
-                        memoDocument ? () => setMemoOpen(true) : undefined
-                      }
-                      onViewTrace={() => setView("trace")}
-                    />
-                  ),
-                )}
-                {notes.map((note, index) => (
-                  <ThreadTimelineItem
-                    key={note.id}
-                    _index={activity.length + index}
-                    _isLast={false}
-                    message={{
-                      author: "broker",
-                      body: note.body,
-                      id: note.id,
-                      kind: "note",
-                    }}
-                    time={formatDistanceToNowStrict(new Date(note.occurredAt), {
-                      addSuffix: true,
-                    })}
-                  />
-                ))}
-                <Timeline.Item
-                  _index={activity.length + notes.length}
-                  _isLast
-                  align="start"
-                  status="default"
-                >
-                  <Timeline.Marker aria-hidden="true" className="size-6">
-                    <Pencil className="size-3.5" />
-                  </Timeline.Marker>
-                  <Timeline.Content className="gap-2">
-                    <Composer
-                      placeholder="Add a note to the audit record…"
-                      value={draft}
-                      onSubmit={handleAddNote}
-                      onValueChange={setDraft}
-                    />
-                  </Timeline.Content>
-                </Timeline.Item>
-              </Timeline>
+                  ))}
+                  <Timeline.Item
+                    _index={activity.length + notes.length}
+                    _isLast
+                    align="start"
+                    status="default"
+                  >
+                    <Timeline.Marker aria-hidden="true" className="size-6">
+                      <Pencil className="size-3.5" />
+                    </Timeline.Marker>
+                    <Timeline.Content className="gap-2">
+                      <Composer
+                        placeholder="Add a note to the audit record…"
+                        value={draft}
+                        onSubmit={handleAddNote}
+                        onValueChange={setDraft}
+                      />
+                    </Timeline.Content>
+                  </Timeline.Item>
+                </Timeline>
+              )}
             </div>
           </div>
         ) : (
@@ -2143,11 +2197,12 @@ export function ReviewQueue() {
     : -1;
 
   // One fetch for the whole case file — split by event type at the edge.
-  const { data: eventsResponse } = useShipmentEventsControllerFindByShipment(
-    displayItem?.id ?? "",
-    { limit: 200 },
-    { query: { enabled: Boolean(displayItem) } },
-  );
+  const { data: eventsResponse, isPending: isFileLoading } =
+    useShipmentEventsControllerFindByShipment(
+      displayItem?.id ?? "",
+      { limit: 200 },
+      { query: { enabled: Boolean(displayItem) } },
+    );
 
   const live = useMemo(() => {
     // API returns occurredAt desc; the record reads oldest-first.
@@ -2484,6 +2539,7 @@ export function ReviewQueue() {
           <ReviewDetail
             key={detailItem.id}
             deadline={deadlineFor(detailItem)}
+            isFileLoading={isFileLoading}
             item={detailItem}
             notes={live.notes}
             position={displayIndex + 1}

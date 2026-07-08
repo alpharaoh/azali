@@ -21,7 +21,7 @@ import { docSlug } from "../src/lib/review-types";
 
 const CHROME =
 	"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const outDir = join(import.meta.dir, "..", "public", "docs");
+const outDir = new URL("../public/docs", import.meta.url).pathname;
 mkdirSync(outDir, { recursive: true });
 
 /* -------------------------------------------------------------------------------------------------
