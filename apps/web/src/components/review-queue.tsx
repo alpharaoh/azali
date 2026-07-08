@@ -1,9 +1,11 @@
 import {
-  ArrowDownToLine,
   ArrowLeft,
   ArrowRight,
   ArrowUp,
   ArrowUpRightFromSquare,
+  Bell,
+  Box,
+  Boxes3,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
@@ -11,9 +13,11 @@ import {
   Envelope,
   FileCheck,
   FileText,
+  ListCheck,
   PaperPlane,
   Pencil,
   Person,
+  Receipt,
   ShieldCheck,
   ShieldExclamation,
   Sparkles,
@@ -22,7 +26,6 @@ import {
 import {
   Avatar,
   Button,
-  Card,
   Chip,
   Modal,
   ScrollShadow,
@@ -30,6 +33,7 @@ import {
   Separator,
   Skeleton,
   Spinner,
+  Tabs,
   toast,
 } from "@heroui/react";
 import {
@@ -708,7 +712,61 @@ function EventTimelineItem({
   );
 }
 
-function DocumentTimelineItem({
+function DocumentsTimelineItem({
+  documents,
+  onEditDraft,
+  ...rest
+}: {
+  documents: ReviewDocument[];
+  onEditDraft?: (document: ReviewDocument & { kind: "pdf" }) => void;
+} & TimelineItemPassthrough) {
+  return (
+    <Timeline.Item align="start" status="default" {...rest}>
+      <Timeline.Marker aria-hidden="true" className="size-6">
+        <FileText className="text-muted size-3.5" />
+      </Timeline.Marker>
+      <Timeline.Content className="gap-2">
+        <Tabs className="w-fit" variant="secondary">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Shipment documents" className="w-fit">
+              {documents.map((document, index) => {
+                const { Icon, label } = docTabMeta(document);
+
+                return (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static per-shipment doc set
+                  <Tabs.Tab key={index} id={`doc-${index}`} className="w-fit">
+                    <Icon className="size-3.5 mr-1.5" />
+                    {label}
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                );
+              })}
+            </Tabs.List>
+          </Tabs.ListContainer>
+          {documents.map((document, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static per-shipment doc set
+            <Tabs.Panel key={index} className="pt-2" id={`doc-${index}`}>
+              <DocumentBody
+                document={document}
+                onEditDraft={
+                  document.kind === "pdf" && document.draft && onEditDraft
+                    ? () =>
+                        onEditDraft(
+                          document as ReviewDocument & { kind: "pdf" },
+                        )
+                    : undefined
+                }
+              />
+            </Tabs.Panel>
+          ))}
+        </Tabs>
+      </Timeline.Content>
+    </Timeline.Item>
+  );
+}
+
+/** A standalone document beat (CBP correspondence, drafted responses). */
+function SingleDocumentTimelineItem({
   document,
   onEditDraft,
   ...rest
@@ -716,24 +774,9 @@ function DocumentTimelineItem({
   document: ReviewDocument;
   onEditDraft?: () => void;
 } & TimelineItemPassthrough) {
-  // Open by default — the file carries the story; collapsing is for skimming.
-  const [isOpen, setIsOpen] = useState(true);
-  const Icon = document.kind === "email" ? Envelope : FileText;
-  // CBP correspondence stands out; ordinary documents keep neutral markers.
   const isCbpForm =
     document.kind !== "email" && /cbp form 2[89]/i.test(document.name);
   const title = document.kind === "email" ? document.subject : document.name;
-  const action =
-    document.kind === "email"
-      ? { icon: ArrowUpRightFromSquare, label: "Open" }
-      : document.kind === "scan" || (document.kind === "pdf" && document.src)
-        ? {
-            icon: ArrowUpRightFromSquare,
-            label: "Open Document",
-            onPress: () => window.open(document.src, "_blank"),
-          }
-        : { icon: ArrowDownToLine, label: "Download" };
-  const ActionIcon = action.icon;
 
   return (
     <Timeline.Item align="start" status="default" {...rest}>
@@ -745,106 +788,109 @@ function DocumentTimelineItem({
             : ""
         }`}
       >
-        <Icon className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
+        {document.kind === "email" ? (
+          <Envelope className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
+        ) : (
+          <FileText className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
+        )}
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <button
-            aria-expanded={isOpen}
-            className="group flex min-w-0 cursor-pointer items-center gap-1.5 text-left"
-            type="button"
-            onClick={() => setIsOpen((open) => !open)}
-          >
-            <ChevronRight
-              className={`text-muted size-3 shrink-0 transition-transform ${
-                isOpen ? "rotate-90" : ""
-              }`}
-            />
-            <h3 className="text-foreground group-hover:underline m-0 min-w-0 truncate text-xs font-medium leading-5">
-              {title}
-            </h3>
-          </button>
-          <div className="text-muted flex shrink-0 items-center gap-2 text-xs leading-5">
-            <time>{receivedAgo(document.receivedHoursAgo)}</time>
-            {onEditDraft ? (
-              <Button
-                isIconOnly
-                aria-label="Edit draft"
-                className="size-6 min-h-6 min-w-6"
-                size="sm"
-                variant="tertiary"
-                onPress={onEditDraft}
-              >
-                <Pencil className="size-3.5" />
-              </Button>
-            ) : null}
-            <Button
-              isIconOnly
-              aria-label={action.label}
-              className="size-6 min-h-6 min-w-6"
-              size="sm"
-              variant="tertiary"
-              onPress={action.onPress}
-            >
-              <ActionIcon className="size-3.5" />
-            </Button>
-          </div>
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
+            {title}
+          </h3>
+          <time className="text-muted shrink-0 text-xs leading-5">
+            {receivedAgo(document.receivedHoursAgo)}
+          </time>
         </div>
-        {isOpen ? (
-          <Card>
-            <Card.Content className="flex flex-col gap-2">
-              {document.kind === "pdf" && document.draft ? (
-                <DraftDocumentPreview
-                  document={document}
-                  onView={onEditDraft}
-                />
-              ) : document.kind === "email" ? (
-                <>
-                  <span className="text-muted text-xs">
-                    From: {document.from} · {document.meta}
-                  </span>
-                  <p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
-                    {document.body}
-                  </p>
-                </>
-              ) : document.kind === "pdf" && document.src ? (
-                <PdfWithExtraction document={document} />
-              ) : (
-                <>
-                  {document.kind === "scan" ? (
-                    <>
-                      <a
-                        className="block"
-                        href={document.src}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        <img
-                          alt={document.name}
-                          className="max-h-80 w-full rounded-lg border bg-white object-contain"
-                          src={document.src}
-                        />
-                      </a>
-                      <span className="text-muted text-xs font-medium">
-                        AI-extracted fields
-                      </span>
-                    </>
-                  ) : null}
-                  <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
-                    {(document.kind === "scan"
-                      ? document.extracted
-                      : document.lines
-                    ).map((line) => (
-                      <DocumentLineRow key={line.label} line={line} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </Card.Content>
-          </Card>
-        ) : null}
+        <DocumentBody document={document} onEditDraft={onEditDraft} />
       </Timeline.Content>
     </Timeline.Item>
+  );
+}
+
+/** Tab label + icon for a document, inferred from what it is. */
+function docTabMeta(document: ReviewDocument): {
+  label: string;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+} {
+  if (document.kind === "email") return { Icon: Envelope, label: "Email" };
+
+  const name = document.name;
+
+  if (/cbp form 28/i.test(name)) {
+    return { Icon: ShieldExclamation, label: "CF-28" };
+  }
+  if (/cbp form 29/i.test(name)) {
+    return { Icon: ShieldExclamation, label: "CF-29" };
+  }
+  if (/draft response|response/i.test(name)) {
+    return { Icon: Pencil, label: "Response Draft" };
+  }
+  if (/invoice/i.test(name)) return { Icon: Receipt, label: "Invoice" };
+  if (/packing/i.test(name)) return { Icon: Box, label: "Packing List" };
+  if (/bill of lading|b\/l|awb/i.test(name)) {
+    return { Icon: Boxes3, label: "Bill of Lading" };
+  }
+  if (/arrival/i.test(name)) return { Icon: Bell, label: "Arrival Notice" };
+  if (/spec/i.test(name)) return { Icon: ListCheck, label: "Spec Sheet" };
+
+  return {
+    Icon: FileText,
+    label: name.length > 22 ? `${name.slice(0, 22)}…` : name,
+  };
+}
+
+/** One document's content — draft letter, real PDF + extraction, email, or fields. */
+function DocumentBody({
+  document,
+  onEditDraft,
+}: {
+  document: ReviewDocument;
+  onEditDraft?: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {document.kind === "pdf" && document.draft ? (
+        <DraftDocumentPreview document={document} onView={onEditDraft} />
+      ) : document.kind === "email" ? (
+        <>
+          <span className="text-muted text-xs">
+            From: {document.from} · {document.meta}
+          </span>
+          <p className="bg-background/40 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
+            {document.body}
+          </p>
+        </>
+      ) : document.kind === "pdf" && document.src ? (
+        <PdfWithExtraction document={document} />
+      ) : (
+        <>
+          {document.kind === "scan" ? (
+            <a
+              className="block"
+              href={document.src}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <img
+                alt={document.name}
+                className="max-h-80 w-full rounded-lg border bg-white object-contain"
+                src={document.src}
+              />
+            </a>
+          ) : null}
+          <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-3 font-mono text-xs leading-relaxed">
+            {(document.kind === "scan"
+              ? document.extracted
+              : document.lines
+            ).map((line) => (
+              <DocumentLineRow key={line.label} line={line} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1315,8 +1361,28 @@ function ReviewDetail({
   const threads = useReviewThreads();
   const thread = threads.get(item.id) ?? [];
   const chat = thread.filter((message) => message.kind === "chat");
+  // The intake documents (invoice, packing list, B/L, spec…) collapse into ONE
+  // tab-switched timeline item anchored at the earliest one. CBP correspondence
+  // and drafted responses are story beats — they keep their own timeline slots.
+  const isStandaloneDoc = (document: ReviewDocument) =>
+    document.kind !== "email" &&
+    /cbp form 2[89]|draft response/i.test(document.name);
+  const intakeDocuments = item.documents.filter(
+    (document) => !isStandaloneDoc(document),
+  );
   const activity = [
-    ...item.documents.map((document) => ({
+    ...(intakeDocuments.length
+      ? [
+          {
+            documents: intakeDocuments,
+            hoursAgo: Math.max(
+              ...intakeDocuments.map((document) => document.receivedHoursAgo),
+            ),
+            kind: "documents" as const,
+          },
+        ]
+      : []),
+    ...item.documents.filter(isStandaloneDoc).map((document) => ({
       document,
       hoursAgo: document.receivedHoursAgo,
       kind: "document" as const,
@@ -1667,8 +1733,16 @@ function ReviewDetail({
               <span className="text-muted text-xs font-medium">Activity</span>
               <Timeline density="comfortable" size="sm">
                 {activity.map((entry, index) =>
-                  entry.kind === "document" ? (
-                    <DocumentTimelineItem
+                  entry.kind === "documents" ? (
+                    <DocumentsTimelineItem
+                      key="documents"
+                      _index={index}
+                      _isLast={false}
+                      documents={entry.documents}
+                      onEditDraft={(document) => setEditingDraft(document)}
+                    />
+                  ) : entry.kind === "document" ? (
+                    <SingleDocumentTimelineItem
                       key={
                         entry.document.kind === "email"
                           ? entry.document.subject
