@@ -43,6 +43,8 @@ import {
   ChatSource,
   ChatSources,
   HoverCard,
+  ItemCard,
+  ItemCardGroup,
   PromptInput,
   PromptSuggestion,
   Segment,
@@ -705,28 +707,30 @@ function EventTimelineItem({
             {event.detail}
           </p>
         ) : null}
-        {event.memo && onViewMemo ? (
-          <button
-            className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
-            type="button"
-            onClick={onViewMemo}
-          >
-            <FileText className="size-3" />
-            View memo
-            <ChevronRight className="size-3" />
-          </button>
-        ) : null}
-        {event.steps && onViewTrace ? (
-          <button
-            className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
-            type="button"
-            onClick={onViewTrace}
-          >
-            <Sparkles className="size-3" />
-            View agent trace
-            <ChevronRight className="size-3" />
-          </button>
-        ) : null}
+        <div className="flex items-center gap-4.5">
+          {event.steps && onViewTrace ? (
+            <button
+              className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
+              type="button"
+              onClick={onViewTrace}
+            >
+              <Sparkles className="size-3" />
+              View agent trace
+              <ChevronRight className="size-3" />
+            </button>
+          ) : null}
+          {event.memo && onViewMemo ? (
+            <button
+              className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
+              type="button"
+              onClick={onViewMemo}
+            >
+              <FileText className="size-3" />
+              View memo
+              <ChevronRight className="size-3" />
+            </button>
+          ) : null}
+        </div>
       </Timeline.Content>
     </Timeline.Item>
   );
@@ -1745,59 +1749,71 @@ function ReviewDetail({
                       <span className="text-muted text-xs font-medium">
                         Alternate classifications
                       </span>
-                      {item.alternates.map((alt) => {
-                        const isSelected = alternate === alt.value;
+                      <ItemCardGroup variant="outline">
+                        {item.alternates.map((alt, index) => {
+                          const isSelected = alternate === alt.value;
+                          const impact =
+                            item.dutyImpact?.alternates?.[alt.value];
 
-                        return (
-                          <button
-                            key={alt.value}
-                            className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
-                              isSelected
-                                ? "border-accent ring-accent/40 ring-1"
-                                : "hover:border-foreground/25"
-                            }`}
-                            type="button"
-                            onClick={() =>
-                              setAlternate(isSelected ? null : alt.value)
-                            }
-                          >
-                            <div className="flex flex-col">
-                              <span className="text-foreground text-sm font-semibold tabular-nums">
-                                {alt.value}
-                              </span>
-                              <span className="text-muted text-xs">
-                                {alt.detail}
-                              </span>
-                            </div>
-                            <div className="flex shrink-0 flex-col items-end gap-0.5">
-                              {(() => {
-                                const impact =
-                                  item.dutyImpact?.alternates?.[alt.value];
-                                if (!impact) return null;
-
-                                return (
-                                  <span
-                                    className={`whitespace-nowrap text-xs font-medium tabular-nums ${
-                                      impact.deltaUsd > 0
-                                        ? "text-danger"
-                                        : impact.deltaUsd < 0
-                                          ? "text-success"
-                                          : "text-muted"
-                                    }`}
+                          return (
+                            <Fragment key={alt.value}>
+                              {index > 0 ? <Separator /> : null}
+                              <ItemCard>
+                                <ItemCard.Content>
+                                  <ItemCard.Title className="whitespace-normal tabular-nums">
+                                    {alt.value}
+                                  </ItemCard.Title>
+                                  {/* The component truncates by default — let the
+                                      detail + duty delta wrap instead. */}
+                                  <ItemCard.Description className="whitespace-normal leading-relaxed">
+                                    {alt.detail} ·{" "}
+                                    {Math.round(alt.confidence * 100)}%
+                                    confidence
+                                    {impact ? (
+                                      <>
+                                        {" · "}
+                                        <span
+                                          className={`font-medium tabular-nums ${
+                                            impact.deltaUsd > 0
+                                              ? "text-danger"
+                                              : impact.deltaUsd < 0
+                                                ? "text-success"
+                                                : ""
+                                          }`}
+                                        >
+                                          {impact.deltaUsd === 0
+                                            ? "$0 duty change"
+                                            : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
+                                        </span>
+                                      </>
+                                    ) : null}
+                                  </ItemCard.Description>
+                                </ItemCard.Content>
+                                <ItemCard.Action>
+                                  <Button
+                                    size="sm"
+                                    variant={isSelected ? "primary" : "outline"}
+                                    onPress={() =>
+                                      setAlternate(
+                                        isSelected ? null : alt.value,
+                                      )
+                                    }
                                   >
-                                    {impact.deltaUsd === 0
-                                      ? "$0 duty change"
-                                      : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
-                                  </span>
-                                );
-                              })()}
-                              <span className="text-muted text-xs tabular-nums">
-                                {Math.round(alt.confidence * 100)}%
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
+                                    {isSelected ? (
+                                      <>
+                                        <CircleCheck className="size-3.5" />
+                                        Selected
+                                      </>
+                                    ) : (
+                                      "Choose alternative"
+                                    )}
+                                  </Button>
+                                </ItemCard.Action>
+                              </ItemCard>
+                            </Fragment>
+                          );
+                        })}
+                      </ItemCardGroup>
                     </div>
                   </>
                 ) : null}
