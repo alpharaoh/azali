@@ -2034,7 +2034,7 @@ function ReviewDetail({
       </ScrollShadow>
 
       {/* Actions — pinned below the scroll area */}
-      <div className="flex items-center justify-end gap-2 border-t pt-4">
+      <div className="flex items-center justify-end gap-2 pt-1">
         {item.canRequestInfo ? (
           <Button variant="ghost" onPress={() => onResolve("info-requested")}>
             Request Info
@@ -2042,6 +2042,7 @@ function ReviewDetail({
         ) : null}
         <Button
           variant="primary"
+          size="lg"
           onPress={() =>
             onResolve(
               alternate ? "corrected" : "approved",
