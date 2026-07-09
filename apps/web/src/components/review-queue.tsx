@@ -1674,6 +1674,16 @@ function ReviewDetail({
             <Widget>
               <Widget.Header>
                 <Widget.Title>{item.proposal.label}</Widget.Title>
+                {memoDocument ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => setMemoOpen(true)}
+                  >
+                    <FileText className="size-3.5" />
+                    View memo
+                  </Button>
+                ) : null}
               </Widget.Header>
               <Widget.Content className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
