@@ -1685,7 +1685,7 @@ function ReviewDetail({
                   </Button>
                 ) : null}
               </Widget.Header>
-              <Widget.Content className="flex flex-col gap-1">
+              <Widget.Content className="flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
                     {item.proposal.value}
@@ -1700,135 +1700,122 @@ function ReviewDetail({
                     </Chip.Label>
                   </Chip>
                 </div>
-                <span className="text-muted text-sm">
+                <span className="text-muted max-w-prose text-sm leading-relaxed">
                   {item.proposal.detail}
                 </span>
-                {item.dutyImpact ? (
-                  <HoverCard closeDelay={100} openDelay={150}>
-                    <HoverCard.Trigger className="mt-1.5 inline-flex w-fit">
-                      <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
-                        <span className="text-foreground text-sm font-semibold tabular-nums">
-                          Duty{" "}
-                          {formatCurrency(item.dutyImpact.proposed.amountUsd)}
-                        </span>
-                        <span className="text-muted text-xs">
-                          {item.dutyImpact.proposed.rate}
-                        </span>
-                      </span>
-                    </HoverCard.Trigger>
-                    <HoverCard.Content className="p-3" placement="top">
-                      <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
-                        {item.dutyImpact.proposed.breakdown.map((line) => (
-                          <span key={line} className="text-muted">
-                            {line}
+                {/* One quiet meta row: the money, the evidence, the artifact. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {item.dutyImpact ? (
+                    <HoverCard closeDelay={100} openDelay={150}>
+                      <HoverCard.Trigger className="inline-flex w-fit">
+                        <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
+                          <span className="text-foreground text-sm font-semibold tabular-nums">
+                            Duty{" "}
+                            {formatCurrency(item.dutyImpact.proposed.amountUsd)}
                           </span>
-                        ))}
-                      </div>
-                    </HoverCard.Content>
-                  </HoverCard>
-                ) : null}
-                {item.citations.length > 0 ? (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="text-muted text-xs">Based on</span>
-                    {item.citations.slice(0, 2).map((citation) => (
-                      <CitationPill
-                        key={citation.ref}
-                        citation={citation}
-                        document={findCitedDocument(item, citation)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-                {item.noticeForm && responseDraft ? (
-                  <button
-                    className="group mt-1 flex w-fit cursor-pointer items-center gap-1.5"
-                    type="button"
-                    onClick={() => setEditingDraft(responseDraft)}
-                  >
-                    <FileCheck className="text-green-700 size-3.5 shrink-0" />
-                    <span className="text-muted group-hover:text-foreground text-xs transition-colors">
-                      Response draft ready. Review &amp; edit
-                    </span>
-                    <ChevronRight className="text-muted size-3" />
-                  </button>
-                ) : null}
-                {item.alternates && item.alternates.length > 0 ? (
-                  <>
-                    <Separator className="my-2" />
-                    <div className="flex flex-col gap-2">
-                      <span className="text-muted text-xs font-medium">
-                        Alternate classifications
-                      </span>
-                      <ItemCardGroup variant="outline">
-                        {item.alternates.map((alt, index) => {
-                          const isSelected = alternate === alt.value;
-                          const impact =
-                            item.dutyImpact?.alternates?.[alt.value];
-
-                          return (
-                            <Fragment key={alt.value}>
-                              {index > 0 ? <Separator /> : null}
-                              <ItemCard>
-                                <ItemCard.Content>
-                                  <ItemCard.Title className="whitespace-normal tabular-nums">
-                                    {alt.value}
-                                  </ItemCard.Title>
-                                  {/* The component truncates by default — let the
-                                      detail + duty delta wrap instead. */}
-                                  <ItemCard.Description className="whitespace-normal leading-relaxed">
-                                    {alt.detail} ·{" "}
-                                    {Math.round(alt.confidence * 100)}%
-                                    confidence
-                                    {impact ? (
-                                      <>
-                                        {" · "}
-                                        <span
-                                          className={`font-medium tabular-nums ${
-                                            impact.deltaUsd > 0
-                                              ? "text-danger"
-                                              : impact.deltaUsd < 0
-                                                ? "text-success"
-                                                : ""
-                                          }`}
-                                        >
-                                          {impact.deltaUsd === 0
-                                            ? "$0 duty change"
-                                            : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
-                                        </span>
-                                      </>
-                                    ) : null}
-                                  </ItemCard.Description>
-                                </ItemCard.Content>
-                                <ItemCard.Action>
-                                  <Button
-                                    size="sm"
-                                    variant={isSelected ? "primary" : "outline"}
-                                    onPress={() =>
-                                      setAlternate(
-                                        isSelected ? null : alt.value,
-                                      )
-                                    }
-                                  >
-                                    {isSelected ? (
-                                      <>
-                                        <CircleCheck className="size-3.5" />
-                                        Selected
-                                      </>
-                                    ) : (
-                                      "Choose alternative"
-                                    )}
-                                  </Button>
-                                </ItemCard.Action>
-                              </ItemCard>
-                            </Fragment>
-                          );
-                        })}
-                      </ItemCardGroup>
+                          <span className="text-muted text-xs">
+                            {item.dutyImpact.proposed.rate}
+                          </span>
+                        </span>
+                      </HoverCard.Trigger>
+                      <HoverCard.Content className="p-3" placement="top">
+                        <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
+                          {item.dutyImpact.proposed.breakdown.map((line) => (
+                            <span key={line} className="text-muted">
+                              {line}
+                            </span>
+                          ))}
+                        </div>
+                      </HoverCard.Content>
+                    </HoverCard>
+                  ) : null}
+                  {item.citations.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-muted text-xs">Based on</span>
+                      {item.citations.slice(0, 2).map((citation) => (
+                        <CitationPill
+                          key={citation.ref}
+                          citation={citation}
+                          document={findCitedDocument(item, citation)}
+                        />
+                      ))}
                     </div>
-                  </>
-                ) : null}
+                  ) : null}
+                </div>
               </Widget.Content>
             </Widget>
+
+            {/* Alternates — their own card, out of the decision's way */}
+            {item.alternates && item.alternates.length > 0 ? (
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>Alternate classifications</Widget.Title>
+                </Widget.Header>
+                <Widget.Content>
+                  <ItemCardGroup variant="outline">
+                    {item.alternates.map((alt, index) => {
+                      const isSelected = alternate === alt.value;
+                      const impact = item.dutyImpact?.alternates?.[alt.value];
+
+                      return (
+                        <Fragment key={alt.value}>
+                          {index > 0 ? <Separator /> : null}
+                          <ItemCard>
+                            <ItemCard.Content>
+                              <ItemCard.Title className="whitespace-normal tabular-nums">
+                                {alt.value}
+                              </ItemCard.Title>
+                              {/* The component truncates by default — let the
+                                      detail + duty delta wrap instead. */}
+                              <ItemCard.Description className="whitespace-normal leading-relaxed">
+                                {alt.detail} ·{" "}
+                                {Math.round(alt.confidence * 100)}% confidence
+                                {impact ? (
+                                  <>
+                                    {" · "}
+                                    <span
+                                      className={`font-medium tabular-nums ${
+                                        impact.deltaUsd > 0
+                                          ? "text-danger"
+                                          : impact.deltaUsd < 0
+                                            ? "text-success"
+                                            : ""
+                                      }`}
+                                    >
+                                      {impact.deltaUsd === 0
+                                        ? "$0 duty change"
+                                        : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
+                                    </span>
+                                  </>
+                                ) : null}
+                              </ItemCard.Description>
+                            </ItemCard.Content>
+                            <ItemCard.Action>
+                              <Button
+                                size="sm"
+                                variant={isSelected ? "primary" : "outline"}
+                                onPress={() =>
+                                  setAlternate(isSelected ? null : alt.value)
+                                }
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <CircleCheck className="size-3.5" />
+                                    Selected
+                                  </>
+                                ) : (
+                                  "Choose alternative"
+                                )}
+                              </Button>
+                            </ItemCard.Action>
+                          </ItemCard>
+                        </Fragment>
+                      );
+                    })}
+                  </ItemCardGroup>
+                </Widget.Content>
+              </Widget>
+            ) : null}
 
             {/* Comparison — when two documents disagree, it's decision material */}
             {item.comparison ? (
