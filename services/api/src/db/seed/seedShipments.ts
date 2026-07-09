@@ -195,6 +195,8 @@ const seeds: SeedShipment[] = [
         },
         alternates: {
           "8517.69.0000": { amountUsd: 0, deltaUsd: 0 },
+          "8471.80.1000": { amountUsd: 0, deltaUsd: 0 },
+          "8517.71.0000": { amountUsd: 0, deltaUsd: 0 },
         },
       },
     },

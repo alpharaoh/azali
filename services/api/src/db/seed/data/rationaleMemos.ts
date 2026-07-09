@@ -14,7 +14,7 @@ export const RATIONALE_MEMOS: Record<string, Record<string, unknown>> = {
       heading(2, "Classification Rationale Memo — AX5400 Mesh Router"),
       paragraph(
         italic(
-          "Prepared by Azali · SHP-2214, invoice BW-5540 line 3 · Confidence 0.87 · Alternate: 8517.69.0000 (0.11)",
+          "Prepared by Azali · SHP-2214, invoice BW-5540 line 3 · Confidence 0.87 · 3 alternates rejected",
         ),
       ),
       heading(3, "I. Facts"),
@@ -34,17 +34,28 @@ export const RATIONALE_MEMOS: Record<string, Record<string, unknown>> = {
           bold("GRI 3(b) set question"),
           " — router + satellite are a retail set; the router gives the set its essential character. This caps confidence at 0.87 and is the reason for broker review.",
         ],
+      ]),
+      heading(3, "III. Alternatives considered and rejected"),
+      bullets([
         [
-          bold("8517.69 rejected"),
-          " — the residual “other” provision yields to the more specific 8517.62 description (posterior 0.11).",
+          bold("8517.69.0000 (0.11)"),
+          " — the residual \u201cother\u201d provision. Rejected on relative specificity: 8517.62's description covers the article exactly, and NY N324089 placed the identical router-plus-satellite configuration under .62. Retains 0.11 only for the outside chance the set analysis reads the satellite as the dominant component.",
+        ],
+        [
+          bold("8471.80.1000 (0.06)"),
+          " — ADP network units. Rejected by operation of law: Chapter 84, Note 6(D) excludes machines performing a communication function from heading 8471. Residual weight reflects legacy hub rulings that predate the note.",
+        ],
+        [
+          bold("8517.71.0000 (0.03)"),
+          " — antennas and parts. Rejected under GRI 1: the AX5400 is complete, retail-packaged apparatus, not a part. Near-zero weight kept only for the mesh satellite viewed in isolation.",
         ],
       ]),
-      heading(3, "III. Precedent & measures"),
+      heading(3, "IV. Precedent & measures"),
       paragraph(
         bold("NY N324089"),
-        " classified a comparable consumer mesh system (router + satellites) in 8517.62.00, free of duty. Origin Taiwan — no Section 301 exposure. Duty: Free either way; the call is classification risk only.",
+        " classified a comparable consumer mesh system (router + satellites) in 8517.62.00, free of duty. Origin Taiwan — no Section 301 exposure. Duty: Free across every candidate; the call is classification risk only.",
       ),
-      heading(3, "IV. Conclusion"),
+      heading(3, "V. Conclusion"),
       paragraph(
         "Classify under ",
         bold("8517.62.0090"),
@@ -75,9 +86,10 @@ export const RATIONALE_MEMOS: Record<string, Record<string, unknown>> = {
         bold("6204.31"),
         " (of wool) at 17.5%, not 6204.33 (of synthetic fibres) at 26.9%. The 10-point margin above 50% leaves headroom against lab variance; the mill certificate corroborates.",
       ),
-      heading(3, "III. Risk"),
+      heading(3, "III. Alternative considered and rejected"),
       paragraph(
-        "A 5-point composition error on the final invoice would flip the code and add ~$6,035 duty. The client confirmed composition in writing; the confirmation email and certificate are on file.",
+        bold("6204.33.5010 (0.28)"),
+        " — of synthetic fibres, 26.9%. Applies only if polyester were chief weight of the shell. Rejected on the evidence: the approved spec states 55/45 wool-poly and the mill certificate's laboratory result is 55.2% wool by ISO 1833 — the lab would need to err by more than five points. The alternate keeps meaningful weight (0.28) because the blend sits near the 50% line: a composition change on the final invoice would flip the code and add ~$6,035 duty. The client's written confirmation and the certificate are on file against exactly that risk.",
       ),
       heading(3, "IV. Conclusion"),
       paragraph(

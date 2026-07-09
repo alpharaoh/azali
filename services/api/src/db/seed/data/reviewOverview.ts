@@ -55,7 +55,13 @@ export interface SeedOverview {
   canRequestInfo: boolean;
   documents: SeedDocument[];
   events: SeedActivityEvent[];
-  alternates: Array<{ value: string; detail: string; confidence: number }> | null;
+  alternates: Array<{
+    value: string;
+    detail: string;
+    confidence: number;
+    /** Why this candidate scored what it did — and why it wasn't chosen. */
+    reason?: string;
+  }> | null;
   comparison: { docA: string; docB: string; rows: Array<{ label: string; a: string; b: string }> } | null;
 }
 
@@ -397,12 +403,28 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         ],
       },
     ],
-    "alternates": [
+    alternates: [
       {
-        "confidence": 0.11,
-        "detail": "Other communication apparatus — 0% duty, weaker precedent fit",
-        "value": "8517.69.0000"
-      }
+        value: "8517.69.0000",
+        detail: "Other apparatus for transmission or reception of data",
+        confidence: 0.11,
+        reason:
+          "The residual \u201cother\u201d bucket. Loses to 8517.62's specific description under relative specificity, and NY N324089 addressed this exact router-plus-satellite configuration under .62 \u2014 the ruling would have to be wrong for this code to be right.",
+      },
+      {
+        value: "8471.80.1000",
+        detail: "Automatic data processing units \u2014 network hubs and similar",
+        confidence: 0.06,
+        reason:
+          "Routers are excluded from ADP heading 8471 by Chapter 84, Note 6(D) \u2014 machines performing a communication function belong to 8517. Scored above zero only because legacy hub rulings predate the note.",
+      },
+      {
+        value: "8517.71.0000",
+        detail: "Aerials and antennas; parts suitable for use with 8517 apparatus",
+        confidence: 0.03,
+        reason:
+          "A parts provision. The AX5400 is complete, retail-packaged apparatus \u2014 GRI 1 keeps finished machines out of parts headings.",
+      },
     ],
     "comparison": null,
     "citations": [
@@ -664,12 +686,14 @@ export const REVIEW_OVERVIEW: Record<string, SeedOverview> = {
         ],
       },
     ],
-    "alternates": [
+    alternates: [
       {
-        "confidence": 0.28,
-        "detail": "Of synthetic fibres — 26.9% duty",
-        "value": "6204.33.5010"
-      }
+        value: "6204.33.5010",
+        detail: "Of synthetic fibres \u2014 26.9% duty",
+        confidence: 0.28,
+        reason:
+          "Applies only if synthetics were chief weight. The mill certificate puts wool at 55.2% (ISO 1833) \u2014 the lab would need to be wrong by more than five points. Scored 0.28 because a 55/45 blend sits close enough to the line that a composition error on the final invoice could flip it.",
+      },
     ],
     "comparison": null,
     "citations": [

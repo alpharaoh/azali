@@ -148,7 +148,13 @@ export interface ReviewItem {
     docB: string;
     rows: Array<{ label: string; a: string; b: string }>;
   };
-  alternates?: Array<{ value: string; detail: string; confidence: number }>;
+  alternates?: Array<{
+    value: string;
+    detail: string;
+    confidence: number;
+    /** Why this candidate scored what it did — and why it wasn't chosen. */
+    reason?: string;
+  }>;
   approveLabel: string;
   canRequestInfo?: boolean;
 }

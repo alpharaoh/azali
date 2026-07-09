@@ -1614,7 +1614,6 @@ function ReviewDetail({
         <div className="flex items-center gap-2 px-1">
           <Segment
             selectedKey={view}
-            size="sm"
             onSelectionChange={(key) =>
               setView(key === "trace" ? "trace" : "overview")
             }
@@ -1622,7 +1621,7 @@ function ReviewDetail({
             <Segment.Item id="overview">Overview</Segment.Item>
             <Segment.Item id="trace">
               <Sparkles className="size-3.5" />
-              Agent Trace
+              Agent trace
             </Segment.Item>
           </Segment>
           <div className="flex items-center">
@@ -1741,6 +1740,16 @@ function ReviewDetail({
                       ))}
                     </div>
                   ) : null}
+                  {responseDraft ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onPress={() => setEditingDraft(responseDraft)}
+                    >
+                      <Pencil className="size-3.5" />
+                      Review response draft
+                    </Button>
+                  ) : null}
                 </div>
               </Widget.Content>
             </Widget>
@@ -1766,29 +1775,50 @@ function ReviewDetail({
                                 {alt.value}
                               </ItemCard.Title>
                               {/* The component truncates by default — let the
-                                      detail + duty delta wrap instead. */}
+                                      detail wrap instead. */}
                               <ItemCard.Description className="whitespace-normal leading-relaxed">
-                                {alt.detail} ·{" "}
-                                {Math.round(alt.confidence * 100)}% confidence
-                                {impact ? (
-                                  <>
-                                    {" · "}
-                                    <span
-                                      className={`font-medium tabular-nums ${
-                                        impact.deltaUsd > 0
-                                          ? "text-danger"
-                                          : impact.deltaUsd < 0
-                                            ? "text-success"
-                                            : ""
-                                      }`}
-                                    >
-                                      {impact.deltaUsd === 0
-                                        ? "$0 duty change"
-                                        : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
-                                    </span>
-                                  </>
-                                ) : null}
+                                {alt.detail}
                               </ItemCard.Description>
+                              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                                <Chip color="default" size="sm" variant="soft">
+                                  <Chip.Label>
+                                    {Math.round(alt.confidence * 100)}%
+                                    confident
+                                  </Chip.Label>
+                                </Chip>
+                                {impact ? (
+                                  <span
+                                    className={`text-xs font-medium tabular-nums ${
+                                      impact.deltaUsd > 0
+                                        ? "text-danger"
+                                        : impact.deltaUsd < 0
+                                          ? "text-success"
+                                          : "text-muted"
+                                    }`}
+                                  >
+                                    {impact.deltaUsd === 0
+                                      ? "$0 duty change"
+                                      : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
+                                  </span>
+                                ) : null}
+                                {alt.reason ? (
+                                  <HoverCard closeDelay={100} openDelay={150}>
+                                    <HoverCard.Trigger className="inline-flex w-fit">
+                                      <span className="text-muted cursor-help text-xs underline decoration-dashed underline-offset-2">
+                                        Why not?
+                                      </span>
+                                    </HoverCard.Trigger>
+                                    <HoverCard.Content
+                                      className="max-w-xs p-3"
+                                      placement="top"
+                                    >
+                                      <p className="text-muted text-xs leading-relaxed">
+                                        {alt.reason}
+                                      </p>
+                                    </HoverCard.Content>
+                                  </HoverCard>
+                                ) : null}
+                              </div>
                             </ItemCard.Content>
                             <ItemCard.Action>
                               <Button
@@ -2047,7 +2077,7 @@ function ReviewDetail({
       </ScrollShadow>
 
       {/* Actions — pinned below the scroll area */}
-      <div className="flex items-center justify-end gap-2 pt-1">
+      <div className="flex items-center justify-end gap-2 pt-0">
         {item.canRequestInfo ? (
           <Button variant="ghost" onPress={() => onResolve("info-requested")}>
             Request Info
