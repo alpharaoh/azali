@@ -18,6 +18,7 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string(),
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_S3_BUCKET: z.string(),
+  PINECONE_API_KEY: z.string(),
 });
 
 const _env = envSchema.safeParse(process.env);
