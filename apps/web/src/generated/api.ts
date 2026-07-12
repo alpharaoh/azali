@@ -1345,6 +1345,59 @@ export interface IngestDocumentsResponseDto {
   eventIds: string[];
 }
 
+/**
+ * Extracted data — available once processing completes.
+ * @nullable
+ */
+export type ListShipmentDocumentsResponseDtoDocumentsItemExtraction = {
+  /** A short summary of the document's contents. */
+  summary: string;
+  /** The document's structured data as key-value pairs. */
+  fields: {
+  label: string;
+  value: string;
+}[];
+} | null;
+
+export type ListShipmentDocumentsResponseDtoDocumentsItem = {
+  /** Document id. */
+  id: string;
+  /** Original file name. */
+  fileName: string;
+  /** MIME type of the file. */
+  contentType: string;
+  /** File size in bytes. */
+  sizeBytes: number;
+  /** Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other. */
+  category: string;
+  /** Processing status: pending (queued), extracted (data available), or failed. */
+  status: string;
+  /**
+   * Number of pages, when known.
+   * @nullable
+   */
+  pageCount: number | null;
+  /**
+   * Extracted data — available once processing completes.
+   * @nullable
+   */
+  extraction: ListShipmentDocumentsResponseDtoDocumentsItemExtraction;
+  /** Short-lived link to the original file. Expires after 5 minutes; request the list again for a fresh one. */
+  fileUrl: string;
+  /**
+   * Short-lived link to a first-page preview image, when available.
+   * @nullable
+   */
+  previewUrl: string | null;
+  /** When the document was received. */
+  createdAt: string;
+};
+
+export interface ListShipmentDocumentsResponseDto {
+  /** The shipment's documents, oldest first. */
+  documents: ListShipmentDocumentsResponseDtoDocumentsItem[];
+}
+
 export type ClientsControllerFindAllParams = {
 /**
  * Free-text search on the client name (case-insensitive).
@@ -3668,3 +3721,111 @@ export const useShipmentDocumentsControllerIngest = <TError = ErrorType<unknown>
       > => {
       return useMutation(getShipmentDocumentsControllerIngestMutationOptions(options), queryClient);
     }
+    
+/**
+ * Returns the documents attached to a shipment, including the extracted fields and summary for each, plus short-lived links to view the original file and its preview image. Links expire after 5 minutes — request the list again for fresh ones.
+ * @summary List shipment documents
+ */
+export type shipmentDocumentsControllerListResponse200 = {
+  data: ListShipmentDocumentsResponseDto
+  status: 200
+}
+
+export type shipmentDocumentsControllerListResponseSuccess = (shipmentDocumentsControllerListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type shipmentDocumentsControllerListResponse = (shipmentDocumentsControllerListResponseSuccess)
+
+export const getShipmentDocumentsControllerListUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/documents`
+}
+
+export const shipmentDocumentsControllerList = async (id: string, options?: RequestInit): Promise<shipmentDocumentsControllerListResponse> => {
+  
+  return axios<shipmentDocumentsControllerListResponse>(getShipmentDocumentsControllerListUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentDocumentsControllerListQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/documents`
+    ] as const;
+    }
+
+    
+export const getShipmentDocumentsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShipmentDocumentsControllerListQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>> = ({ signal }) => shipmentDocumentsControllerList(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentDocumentsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>>
+export type ShipmentDocumentsControllerListQueryError = ErrorType<unknown>
+
+
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List shipment documents
+ */
+
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getShipmentDocumentsControllerListQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

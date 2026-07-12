@@ -1,11 +1,17 @@
-import { Body, Controller, Post } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from "@nestjs/swagger";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
 import { IngestDocumentsDto } from "./dto/ingest-documents.dto";
 import {
   IngestDocumentsResponseDto,
+  ListShipmentDocumentsResponseDto,
   UploadDocumentsResponseDto,
 } from "./dto/shipment-document.response.dto";
 import { UploadDocumentsDto } from "./dto/upload-documents.dto";
@@ -61,6 +67,26 @@ export class ShipmentDocumentsController {
       getActiveOrganizationId(session),
       session.user.id,
       dto,
+    );
+  }
+
+  @Get(":id/documents")
+  @ApiOperation({
+    summary: "List shipment documents",
+    description:
+      "Returns the documents attached to a shipment, including the extracted fields and summary for each, plus short-lived links to view the original file and its preview image. Links expire after 5 minutes — request the list again for fresh ones.",
+  })
+  @ApiOkResponse({
+    type: ListShipmentDocumentsResponseDto,
+    description: "The shipment's documents, oldest first.",
+  })
+  list(
+    @Session() session: UserSession<typeof auth>,
+    @Param("id") id: string,
+  ) {
+    return this.shipmentDocumentsService.list(
+      getActiveOrganizationId(session),
+      id,
     );
   }
 }

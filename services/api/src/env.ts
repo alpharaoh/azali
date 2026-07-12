@@ -19,6 +19,9 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_S3_BUCKET: z.string(),
   PINECONE_API_KEY: z.string(),
+  // Optional so the API boots without it; document extraction fails with a
+  // clear error at the point of use instead.
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

@@ -37,3 +37,57 @@ export const ingestDocumentsResponseSchema = z.object({
 export class IngestDocumentsResponseDto extends createZodDto(
   ingestDocumentsResponseSchema,
 ) {}
+
+export const listShipmentDocumentsResponseSchema = z.object({
+  documents: z
+    .array(
+      z.object({
+        id: z.string().describe("Document id."),
+        fileName: z.string().describe("Original file name."),
+        contentType: z.string().describe("MIME type of the file."),
+        sizeBytes: z.number().describe("File size in bytes."),
+        category: z
+          .string()
+          .describe(
+            "Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other.",
+          ),
+        status: z
+          .string()
+          .describe(
+            "Processing status: pending (queued), extracted (data available), or failed.",
+          ),
+        pageCount: z
+          .number()
+          .nullable()
+          .describe("Number of pages, when known."),
+        extraction: z
+          .object({
+            summary: z
+              .string()
+              .describe("A short summary of the document's contents."),
+            fields: z
+              .array(z.object({ label: z.string(), value: z.string() }))
+              .describe("The document's structured data as key-value pairs."),
+          })
+          .nullable()
+          .describe("Extracted data — available once processing completes."),
+        fileUrl: z
+          .string()
+          .describe(
+            "Short-lived link to the original file. Expires after 5 minutes; request the list again for a fresh one.",
+          ),
+        previewUrl: z
+          .string()
+          .nullable()
+          .describe(
+            "Short-lived link to a first-page preview image, when available.",
+          ),
+        createdAt: z.string().describe("When the document was received."),
+      }),
+    )
+    .describe("The shipment's documents, oldest first."),
+});
+
+export class ListShipmentDocumentsResponseDto extends createZodDto(
+  listShipmentDocumentsResponseSchema,
+) {}

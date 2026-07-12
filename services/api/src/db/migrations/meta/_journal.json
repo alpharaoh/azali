@@ -43,6 +43,13 @@
       "when": 1783303151153,
       "tag": "0005_peaceful_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783868564258,
+      "tag": "0006_dizzy_hitman",
+      "breakpoints": true
     }
   ]
 }
