@@ -124,11 +124,14 @@ const chapterNotesCache = new Map<number, string>();
  * duty rates, and binding Section/Chapter Notes the classifier works from.
  */
 export class HtsService {
+  /** Broad keywords can match hundreds of lines — cap what the agent sees. */
+  private static readonly MAX_SEARCH_LINES = 60;
+
   static async search(input: SearchHtsInput): Promise<HtsLine[]> {
     const response = await htsRequest<HtsApiLine[]>("/search", {
       keyword: input.query,
     });
-    return response.map(toLine);
+    return response.slice(0, HtsService.MAX_SEARCH_LINES).map(toLine);
   }
 
   static async browseHeading(input: BrowseHeadingInput): Promise<HtsLine[]> {

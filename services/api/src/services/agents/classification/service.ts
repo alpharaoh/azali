@@ -151,6 +151,14 @@ export class ClassificationAgentService {
           }),
       );
 
+      // A placeholder is not a classification — fail loudly so the step
+      // retries instead of a non-answer flowing into the shipment record.
+      if (!/^\d{4}\.\d{2}\.\d{2,4}/.test(output.htsCode)) {
+        throw new Error(
+          `Agent returned an invalid HTS code ("${output.htsCode}") — rejecting the run`,
+        );
+      }
+
       await recorder.complete({
         result: output as unknown as Record<string, unknown>,
         usage: {
