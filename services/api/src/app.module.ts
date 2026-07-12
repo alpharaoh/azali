@@ -19,6 +19,27 @@ import { auth } from "./lib/auth";
     AuthModule.forRoot({ auth }),
     LoggerModule.forRoot({
       forRoutes: [{ path: "*path", method: RequestMethod.ALL }],
+      pinoHttp: {
+        redact: {
+          paths: [
+            "req.headers.cookie",
+            "req.headers.authorization",
+            'res.headers["set-cookie"]',
+          ],
+          remove: true,
+        },
+        // The Inngest dev server syncs and executes against this route
+        // constantly; its own dashboard covers observability there.
+        autoLogging: {
+          ignore: (req) => {
+            // Nest mounts this middleware via middie, which rewrites req.url
+            // to the unmatched suffix; originalUrl keeps the full path.
+            const url =
+              (req as { originalUrl?: string }).originalUrl ?? req.url;
+            return url?.split("?")[0] === "/v1/inngest";
+          },
+        },
+      },
     }),
     UsersModule,
     ClientsModule,
