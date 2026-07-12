@@ -1132,7 +1132,11 @@ function PdfWithExtraction({
               className={`pointer-events-none h-full max-h-full w-auto max-w-full rounded-sm bg-white object-contain shadow-sm transition-opacity duration-200 ${
                 isPreviewLoaded ? "opacity-100" : "opacity-0"
               }`}
-              src={document.src?.replace(/\.pdf$/i, ".png")}
+              src={
+                // Mock docs have no previewUrl; their PNG sits next to the
+                // PDF in public/docs under the same name.
+                document.previewUrl ?? document.src?.replace(/\.pdf$/i, ".png")
+              }
               onError={() => {
                 setPreviewFailed(true);
                 setPreviewLoaded(true);

@@ -29,6 +29,8 @@ export type ReviewDocument =
       draft?: Record<string, unknown>;
       /** Public path to the real PDF — rendered beside the extracted fields. */
       src?: string;
+      /** Short-lived link to the first-page preview image, when available. */
+      previewUrl?: string | null;
       /** AI summary shown next to the extraction. */
       summary?: string;
     }

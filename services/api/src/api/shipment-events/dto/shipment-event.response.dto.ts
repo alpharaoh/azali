@@ -25,7 +25,9 @@ export const shipmentEventSchema = z.object({
   occurredAt: z.iso.datetime().describe("When the event happened."),
   payload: z
     .record(z.string(), z.unknown())
-    .describe("Type-specific structured data."),
+    .describe(
+      "Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones.",
+    ),
 });
 
 export class ShipmentEventResponseDto extends createZodDto(

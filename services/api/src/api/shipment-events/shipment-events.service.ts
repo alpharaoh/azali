@@ -2,10 +2,55 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import { listShipmentEvents } from "@/db/queries/select/many/listShipmentEvents";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
+import { selectShipmentDocument } from "@/db/queries/select/one/selectShipmentDocument";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { ShipmentStatus } from "@/db/schemas/shipments";
+import { BlobStorageService } from "@/services/external/s3/service";
 import type { CreateShipmentEventDto } from "./dto/create-shipment-event.dto";
 import type { ListShipmentEventsDto } from "./dto/list-shipment-events.dto";
+
+type ShipmentEventRow = Awaited<
+  ReturnType<typeof listShipmentEvents>
+>["data"][number];
+
+/**
+ * Document events store only a documentId — viewing links expire, so fresh
+ * presigned src/previewUrl are attached to the payload on every read.
+ */
+async function attachDocumentLinks(
+  organizationId: string,
+  events: ShipmentEventRow[],
+): Promise<ShipmentEventRow[]> {
+  const payloadDocumentId = (event: ShipmentEventRow) => {
+    const { documentId } = event.payload as { documentId?: unknown };
+    return typeof documentId === "string" ? documentId : null;
+  };
+
+  const documentIds = [
+    ...new Set(events.map(payloadDocumentId).filter((id) => id !== null)),
+  ];
+  if (documentIds.length === 0) return events;
+
+  const links = new Map<string, { src: string; previewUrl: string | null }>();
+  await Promise.all(
+    documentIds.map(async (id) => {
+      const doc = await selectShipmentDocument(id, organizationId);
+      if (!doc) return;
+      links.set(doc.id, {
+        src: await BlobStorageService.getDownloadUrl({ key: doc.storageKey }),
+        previewUrl: doc.previewKey
+          ? await BlobStorageService.getDownloadUrl({ key: doc.previewKey })
+          : null,
+      });
+    }),
+  );
+
+  return events.map((event) => {
+    const documentId = payloadDocumentId(event);
+    const link = documentId ? links.get(documentId) : undefined;
+    return link ? { ...event, payload: { ...event.payload, ...link } } : event;
+  });
+}
 
 @Injectable()
 export class ShipmentEventsService {
@@ -56,12 +101,14 @@ export class ShipmentEventsService {
   async findAll(organizationId: string, query: ListShipmentEventsDto) {
     const { limit, offset, type, actor } = query;
 
-    return listShipmentEvents(
+    const { data, count } = await listShipmentEvents(
       { organizationId, types: type, actors: actor },
       { occurredAt: "desc" },
       limit,
       offset,
     );
+
+    return { data: await attachDocumentLinks(organizationId, data), count };
   }
 
   async findByShipment(
@@ -71,11 +118,13 @@ export class ShipmentEventsService {
   ) {
     const { limit, offset, type, actor } = query;
 
-    return listShipmentEvents(
+    const { data, count } = await listShipmentEvents(
       { organizationId, shipmentId, types: type, actors: actor },
       { occurredAt: "desc" },
       limit,
       offset,
     );
+
+    return { data: await attachDocumentLinks(organizationId, data), count };
   }
 }
