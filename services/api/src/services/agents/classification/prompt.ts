@@ -1,7 +1,14 @@
+/** Langfuse Prompt Management name — edit/version the prompt there. */
+export const CLASSIFICATION_PROMPT_NAME =
+  "shipment-classification-system-prompt";
+
 /**
  * The classification control loop. Under the Customs Modernization Act the
  * importer bears a "reasonable care" burden — the agent's output must be a
  * defensible reasoning chain, not just a code.
+ *
+ * This is the FALLBACK — the live version is fetched from Langfuse
+ * ({@link CLASSIFICATION_PROMPT_NAME}, label "latest") at call time.
  */
 export const CLASSIFICATION_SYSTEM_PROMPT = `You are a US customs classification specialist working for a licensed customs broker. Classify the product into its 10-digit HTSUS statistical suffix with an audit-ready reasoning chain.
 

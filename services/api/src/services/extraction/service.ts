@@ -3,8 +3,28 @@ import { z } from "zod";
 import type { DocumentExtraction } from "@/db/schema";
 import { ShipmentDocumentCategory } from "@/db/schema";
 import { anthropic } from "@/services/external/anthropic/client";
+import { resolvePrompt } from "@/services/external/langfuse/prompts";
 
 const EXTRACTION_MODEL = "claude-sonnet-4-6";
+
+/* -------------------------------------------------------------------------------------------------
+ * Prompts — the live versions are managed in Langfuse (label "latest");
+ * these are the fallback templates ({{variables}} compiled either way).
+ * -----------------------------------------------------------------------------------------------*/
+
+export const EXTRACTION_PROMPT_NAME = "document-extraction-prompt";
+export const EXTRACTION_PROMPT_FALLBACK = `You are a customs brokerage document processor. Extract the structured data from this {{documentType}} ("{{fileName}}").
+
+Standard fields to look for: {{fieldGuidance}}
+
+Only include fields actually present on the document. Keep values verbatim (amounts with currency symbols, dates as printed). Flag any internal inconsistencies (e.g. totals that don't add up) as their own field.`;
+
+export const SYNTHESIS_PROMPT_NAME = "shipment-synthesis-prompt";
+export const SYNTHESIS_PROMPT_FALLBACK = `You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.
+
+Use null for anything the documents don't state. Prefer the commercial invoice for parties and value, the bill of lading for routing.
+
+{{extractions}}`;
 
 const extractionSchema = z.object({
   summary: z
@@ -82,11 +102,15 @@ export class DocumentExtractionService {
     category: ShipmentDocumentCategory;
     fileName: string;
   }): Promise<DocumentExtraction> {
-    const prompt = [
-      `You are a customs brokerage document processor. Extract the structured data from this ${category.replace(/_/g, " ")} ("${fileName}").`,
-      `Standard fields to look for: ${CATEGORY_FIELD_GUIDANCE[category]}`,
-      "Only include fields actually present on the document. Keep values verbatim (amounts with currency symbols, dates as printed). Flag any internal inconsistencies (e.g. totals that don't add up) as their own field.",
-    ].join("\n\n");
+    const { text: prompt } = await resolvePrompt(
+      EXTRACTION_PROMPT_NAME,
+      EXTRACTION_PROMPT_FALLBACK,
+      {
+        documentType: category.replace(/_/g, " "),
+        fileName,
+        fieldGuidance: CATEGORY_FIELD_GUIDANCE[category],
+      },
+    );
 
     const filePart =
       contentType === "application/pdf"
@@ -96,7 +120,9 @@ export class DocumentExtractionService {
           : null;
 
     if (!filePart) {
-      throw new Error(`Unsupported content type for extraction: ${contentType}`);
+      throw new Error(
+        `Unsupported content type for extraction: ${contentType}`,
+      );
     }
 
     const { output } = await generateText({
@@ -124,15 +150,17 @@ export class DocumentExtractionService {
       extraction: DocumentExtraction;
     }>;
   }): Promise<ShipmentSynthesis> {
+    const { text: prompt } = await resolvePrompt(
+      SYNTHESIS_PROMPT_NAME,
+      SYNTHESIS_PROMPT_FALLBACK,
+      { extractions: JSON.stringify(extractions, null, 2) },
+    );
+
     const { output } = await generateText({
       model: anthropic(EXTRACTION_MODEL),
       output: Output.object({ schema: shipmentSynthesisSchema }),
       telemetry: { functionId: "shipment-synthesis" },
-      prompt: [
-        "You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.",
-        "Use null for anything the documents don't state. Prefer the commercial invoice for parties and value, the bill of lading for routing.",
-        JSON.stringify(extractions, null, 2),
-      ].join("\n\n"),
+      prompt,
     });
 
     return output;

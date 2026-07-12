@@ -3,9 +3,13 @@ import { generateText, Output, stepCountIs } from "ai";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { anthropic } from "@/services/external/anthropic/client";
 import { crossRulingsTools } from "@/services/external/cross/tools";
+import { resolvePrompt } from "@/services/external/langfuse/prompts";
 import { createKnowledgeBaseTools } from "@/services/external/pinecone/tools";
 import { htsTools } from "@/services/external/usitc/tools";
-import { CLASSIFICATION_SYSTEM_PROMPT } from "./prompt";
+import {
+  CLASSIFICATION_PROMPT_NAME,
+  CLASSIFICATION_SYSTEM_PROMPT,
+} from "./prompt";
 import {
   type ClassificationResult,
   classificationResultSchema,
@@ -149,6 +153,11 @@ export class ClassificationAgentService {
     shipment: ClassificationShipmentFacts;
     documents: ClassificationDocument[];
   }): Promise<ClassificationOutcome> {
+    const systemPrompt = await resolvePrompt(
+      CLASSIFICATION_PROMPT_NAME,
+      CLASSIFICATION_SYSTEM_PROMPT,
+    );
+
     const { output, steps } = await propagateAttributes(
       {
         traceName: "hts-classification",
@@ -160,7 +169,7 @@ export class ClassificationAgentService {
       () =>
         generateText({
           model: anthropic(CLASSIFICATION_MODEL),
-          system: CLASSIFICATION_SYSTEM_PROMPT,
+          system: systemPrompt.text,
           prompt: buildDossier(shipment, documents),
           tools: {
             ...htsTools,
@@ -169,7 +178,16 @@ export class ClassificationAgentService {
           },
           stopWhen: stepCountIs(MAX_STEPS),
           output: Output.object({ schema: classificationResultSchema }),
-          telemetry: { functionId: "hts-classification" },
+          // Links the Langfuse prompt version to the generation in traces.
+          ...(systemPrompt.prompt
+            ? { runtimeContext: { langfusePrompt: systemPrompt.prompt } }
+            : {}),
+          telemetry: {
+            functionId: "hts-classification",
+            ...(systemPrompt.prompt
+              ? { includeRuntimeContext: { langfusePrompt: true } }
+              : {}),
+          },
         }),
     );
 
