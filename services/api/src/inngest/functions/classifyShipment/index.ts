@@ -1,5 +1,5 @@
-import type { Logger } from "@nestjs/common";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
+import { listAgentRunItems } from "@/db/queries/select/many/listAgentRunItems";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import { updateShipment } from "@/db/queries/update/updateShipment";
@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
+import { toTracePhases } from "@/services/agents/classification/projection";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
 import { inngest } from "../../client";
 import { buildReviewPayload } from "./utils";
@@ -36,7 +37,7 @@ const REVIEW_DEADLINE_HOURS = 6;
  * binding notes, CROSS precedent, and the importer's own record. Confident
  * results apply automatically; uncertain ones are routed to broker review.
  */
-export const classifyShipment = (dependencies: { logger: Logger }) => {
+export const classifyShipment = () => {
   return inngest.createFunction(
     {
       id: "classify-shipment",
@@ -44,7 +45,7 @@ export const classifyShipment = (dependencies: { logger: Logger }) => {
       concurrency: [{ key: "event.data.organizationId", limit: 2 }],
       triggers: [{ event: SHIPMENT_CLASSIFY_REQUESTED_EVENT }],
     },
-    async ({ event, step }) => {
+    async ({ event, step, logger }) => {
       const { organizationId, userId, shipmentId } =
         event.data as ShipmentClassifyRequestedEvent["data"];
 
@@ -61,7 +62,10 @@ export const classifyShipment = (dependencies: { logger: Logger }) => {
         };
       });
       if (!shipment) {
-        dependencies.logger.warn(`Shipment ${shipmentId} not found — skipping`);
+        logger.warn(
+          { shipmentId },
+          "shipment not found — skipping classification",
+        );
         return { shipmentId, classified: false, reason: "shipment_not_found" };
       }
 
@@ -86,7 +90,8 @@ export const classifyShipment = (dependencies: { logger: Logger }) => {
       }
 
       // The agent loop is a single atomic reasoning unit — one step by design.
-      const { result, trace } = await step.run("classify", () =>
+      // Its full audit record lands in agent_runs/agent_run_items as it works.
+      const { result, runId } = await step.run("classify", () =>
         ClassificationAgentService.classify({
           organizationId,
           userId,
@@ -134,14 +139,18 @@ export const classifyShipment = (dependencies: { logger: Logger }) => {
             },
           }),
         ),
-        step.run("record-trace", () =>
-          insertShipmentEvent({
+        step.run("record-trace", async () => {
+          // Presentation projection of the canonical audit record.
+          const items = runId
+            ? await listAgentRunItems(runId, organizationId)
+            : [];
+          return insertShipmentEvent({
             ...base,
             type: "agent_trace",
             title: "Classification research trail",
-            payload: { phases: trace },
-          }),
-        ),
+            payload: { phases: toTracePhases(items, result), runId },
+          });
+        }),
         step.run("record-memo", () =>
           insertShipmentEvent({
             ...base,

@@ -1,10 +1,9 @@
-import type { Logger } from "@nestjs/common";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import type { ShipmentDocumentCategory } from "@/db/schema";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { KnowledgeBaseService } from "@/services/external/pinecone/service";
-import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 import { inngest } from "../../client";
+import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 import {
   attachDocument,
   createDocumentRow,
@@ -51,7 +50,7 @@ export type ShipmentDocumentsUploadedEvent = {
  * bytes cannot cross a step boundary. Documents are processed in parallel;
  * one bad file marks its own row and never sinks the batch.
  */
-export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
+export const ingestShipmentDocuments = () => {
   return inngest.createFunction(
     {
       id: "ingest-shipment-documents",
@@ -59,7 +58,7 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
       concurrency: [{ key: "event.data.organizationId", limit: 2 }],
       triggers: [{ event: SHIPMENT_DOCUMENTS_UPLOADED_EVENT }],
     },
-    async ({ event, step }) => {
+    async ({ event, step, logger }) => {
       const { organizationId, userId, files } =
         event.data as ShipmentDocumentsUploadedEvent["data"];
       const context = {
@@ -93,8 +92,9 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
             await step.run(`mark-failed-${document.id}`, () =>
               markExtractionFailed(context, document.id, error),
             );
-            dependencies.logger.warn(
-              `Extraction failed for document ${document.id} (${document.fileName})`,
+            logger.warn(
+              { documentId: document.id, fileName: document.fileName },
+              "document extraction failed",
             );
             return null;
           }
@@ -115,8 +115,9 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
               );
             } catch {
               // A missing preview never blocks ingestion.
-              dependencies.logger.warn(
-                `Preview render failed for document ${document.id} (${document.fileName})`,
+              logger.warn(
+                { documentId: document.id, fileName: document.fileName },
+                "preview render failed",
               );
             }
           }),

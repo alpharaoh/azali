@@ -3,6 +3,7 @@ import { APP_PIPE } from "@nestjs/core";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { LoggerModule } from "nestjs-pino";
 import { ZodValidationPipe } from "nestjs-zod";
+import { AgentRunsModule } from "./api/agent-runs/agent-runs.module";
 import { ClientsModule } from "./api/clients/clients.module";
 import { OrganizationModule } from "./api/organization/organization.module";
 import { ShipmentDocumentsModule } from "./api/shipment-documents/shipment-documents.module";
@@ -60,6 +61,7 @@ import { auth } from "./lib/auth";
     ShipmentsModule,
     ShipmentEventsModule,
     ShipmentDocumentsModule,
+    AgentRunsModule,
   ],
   controllers: [AppController, UsersController],
   providers: [

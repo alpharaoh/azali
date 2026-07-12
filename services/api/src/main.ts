@@ -1,7 +1,6 @@
 // Tracing must initialize before anything that calls the AI SDK loads.
 import "./instrumentation";
 
-import type { Logger as NestLogger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
@@ -12,7 +11,6 @@ import { serve } from "inngest/fastify";
 import { Logger } from "nestjs-pino";
 import { cleanupOpenApiDoc } from "nestjs-zod";
 import { AppModule } from "./app.module";
-import { AppService } from "./app.service";
 import { inngest } from "./inngest/client";
 import { getInngestFunctions } from "./inngest/functions";
 
@@ -44,11 +42,7 @@ async function bootstrap() {
   const logger = app.get(Logger);
   app.useLogger(logger);
 
-  const appService = app.get(AppService);
-  const inngestFunctions = getInngestFunctions({
-    appService,
-    logger: logger as unknown as NestLogger,
-  });
+  const inngestFunctions = getInngestFunctions();
 
   app
     .getHttpAdapter()

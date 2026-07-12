@@ -1,4 +1,13 @@
-import { gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import {
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  lte,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import { buildListQuery } from "@/db/lib/buildListQuery";
 import { embedClients } from "@/db/lib/embedClient";

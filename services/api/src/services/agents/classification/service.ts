@@ -1,11 +1,12 @@
 import { propagateAttributes } from "@langfuse/tracing";
-import { generateText, Output, stepCountIs } from "ai";
+import { Output, stepCountIs, ToolLoopAgent } from "ai";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { anthropic } from "@/services/external/anthropic/client";
 import { crossRulingsTools } from "@/services/external/cross/tools";
 import { resolvePrompt } from "@/services/external/langfuse/prompts";
 import { createKnowledgeBaseTools } from "@/services/external/pinecone/tools";
 import { htsTools } from "@/services/external/usitc/tools";
+import { AgentRunRecorder } from "../recorder";
 import {
   CLASSIFICATION_PROMPT_NAME,
   CLASSIFICATION_SYSTEM_PROMPT,
@@ -17,6 +18,7 @@ import {
 
 const CLASSIFICATION_MODEL = "claude-sonnet-4-6";
 const MAX_STEPS = 24;
+const THINKING_BUDGET_TOKENS = 8_000;
 
 export interface ClassificationShipmentFacts {
   id: string;
@@ -32,22 +34,10 @@ export interface ClassificationDocument {
   extraction: DocumentExtraction;
 }
 
-/** The trace shape the review UI renders (TracePhase/TraceStep). */
-export interface AgentTraceStep {
-  kind: "calc" | "check" | "decision" | "flag" | "lookup" | "read";
-  title: string;
-  detail: string;
-  data?: string[];
-}
-
-export interface AgentTracePhase {
-  label: string;
-  steps: AgentTraceStep[];
-}
-
 export interface ClassificationOutcome {
   result: ClassificationResult;
-  trace: AgentTracePhase[];
+  /** The canonical audit record (agent_runs.id); null if recording failed. */
+  runId: string | null;
 }
 
 function buildDossier(
@@ -79,68 +69,6 @@ function buildDossier(
   ].join("\n");
 }
 
-const TOOL_STEP_KIND: Record<string, AgentTraceStep["kind"]> = {
-  searchHts: "lookup",
-  browseHtsHeading: "lookup",
-  getChapterNotes: "read",
-  searchRulings: "lookup",
-  getRuling: "read",
-  searchKnowledge: "lookup",
-};
-
-/** One compact evidence line per tool result, for the trace UI. */
-// Tool outputs are summarized dynamically — shapes vary per tool.
-function summarizeToolResult(toolName: string, output: any): string[] {
-  try {
-    switch (toolName) {
-      case "searchHts":
-      case "browseHtsHeading":
-        return (
-          output as Array<{
-            htsNumber: string;
-            description: string;
-            general: string;
-          }>
-        )
-          .filter((line) => line.htsNumber)
-          .slice(0, 4)
-          .map(
-            (line) =>
-              `${line.htsNumber} — ${line.description.slice(0, 60)}${line.general ? ` (${line.general})` : ""}`,
-          );
-      case "getChapterNotes":
-        return [`${String(output).slice(0, 90).replace(/\n/g, " ")}…`];
-      case "searchRulings":
-        return [
-          `${output.totalHits} hits`,
-          ...output.rulings
-            .slice(0, 3)
-            .map(
-              (r: {
-                rulingNumber: string;
-                subject: string;
-                revoked: boolean;
-              }) =>
-                `${r.rulingNumber} — ${r.subject.slice(0, 60)}${r.revoked ? " [REVOKED]" : ""}`,
-            ),
-        ];
-      case "getRuling":
-        return [`${output.rulingNumber} — ${output.subject.slice(0, 70)}`];
-      case "searchKnowledge":
-        return (output as Array<{ text: string; score: number }>)
-          .slice(0, 3)
-          .map(
-            (m) =>
-              `${m.score.toFixed(2)} ${m.text.slice(0, 60).replace(/\n/g, " ")}`,
-          );
-      default:
-        return [];
-    }
-  } catch {
-    return [];
-  }
-}
-
 export class ClassificationAgentService {
   static async classify({
     organizationId,
@@ -157,78 +85,85 @@ export class ClassificationAgentService {
       CLASSIFICATION_PROMPT_NAME,
       CLASSIFICATION_SYSTEM_PROMPT,
     );
+    const dossier = buildDossier(shipment, documents);
 
-    const { output, steps } = await propagateAttributes(
-      {
-        traceName: "hts-classification",
-        userId,
-        sessionId: shipment.id,
-        tags: ["classification"],
-        metadata: { organizationId, reference: shipment.reference },
+    const recorder = await AgentRunRecorder.start({
+      organizationId,
+      userId,
+      shipmentId: shipment.id,
+      agent: "classification",
+      model: CLASSIFICATION_MODEL,
+      promptName: systemPrompt.prompt ? CLASSIFICATION_PROMPT_NAME : null,
+      promptVersion: systemPrompt.prompt?.version ?? null,
+      input: {
+        dossier,
+        reference: shipment.reference,
+        documents: documents.map((document) => ({
+          fileName: document.fileName,
+          category: document.category,
+        })),
       },
-      () =>
-        generateText({
-          model: anthropic(CLASSIFICATION_MODEL),
-          system: systemPrompt.text,
-          prompt: buildDossier(shipment, documents),
-          tools: {
-            ...htsTools,
-            ...crossRulingsTools,
-            ...createKnowledgeBaseTools(organizationId),
-          },
-          stopWhen: stepCountIs(MAX_STEPS),
-          output: Output.object({ schema: classificationResultSchema }),
-          // Links the Langfuse prompt version to the generation in traces.
-          ...(systemPrompt.prompt
-            ? { runtimeContext: { langfusePrompt: systemPrompt.prompt } }
-            : {}),
-          telemetry: {
-            functionId: "hts-classification",
-            ...(systemPrompt.prompt
-              ? { includeRuntimeContext: { langfusePrompt: true } }
-              : {}),
-          },
-        }),
-    );
-
-    // Map the tool-call history into the trace shape the review UI renders.
-    const trace: AgentTracePhase[] = [];
-    for (const step of steps) {
-      const stepEntries: AgentTraceStep[] = step.toolCalls.map((call) => {
-        const result = step.toolResults.find(
-          (toolResult) => toolResult.toolCallId === call.toolCallId,
-        );
-        return {
-          kind: TOOL_STEP_KIND[call.toolName] ?? "check",
-          title: call.toolName,
-          detail: JSON.stringify(call.input),
-          data: result
-            ? summarizeToolResult(call.toolName, result.output)
-            : undefined,
-        };
-      });
-      if (stepEntries.length > 0) {
-        trace.push({
-          label: `Research — pass ${trace.length + 1}`,
-          steps: stepEntries,
-        });
-      }
-    }
-    trace.push({
-      label: "Decision",
-      steps: [
-        {
-          kind: "decision",
-          title: `Classified ${output.htsCode}`,
-          detail: output.summary,
-          data: [
-            `confidence ${output.confidence.toFixed(2)}`,
-            `duty: ${output.dutyRate.effective}`,
-          ],
-        },
-      ],
     });
 
-    return { result: output, trace };
+    // The agent loop: think → call tools → observe → repeat, until the
+    // evidence converges and the structured classification is emitted.
+    const agent = new ToolLoopAgent({
+      model: anthropic(CLASSIFICATION_MODEL),
+      instructions: systemPrompt.text,
+      tools: {
+        ...htsTools,
+        ...crossRulingsTools,
+        ...createKnowledgeBaseTools(organizationId),
+      },
+      stopWhen: stepCountIs(MAX_STEPS),
+      output: Output.object({ schema: classificationResultSchema }),
+      providerOptions: {
+        anthropic: {
+          thinking: { type: "enabled", budgetTokens: THINKING_BUDGET_TOKENS },
+        },
+      },
+    });
+
+    try {
+      const { output, totalUsage } = await propagateAttributes(
+        {
+          traceName: "hts-classification",
+          userId,
+          sessionId: shipment.id,
+          tags: ["classification"],
+          metadata: { organizationId, reference: shipment.reference },
+        },
+        () =>
+          agent.generate({
+            prompt: dossier,
+            // Persist each loop step as it completes — a crashed run still
+            // leaves its audit trail.
+            onStepFinish: (step) => recorder.recordStep(step),
+            ...(systemPrompt.prompt
+              ? { runtimeContext: { langfusePrompt: systemPrompt.prompt } }
+              : {}),
+            telemetry: {
+              functionId: "hts-classification",
+              ...(systemPrompt.prompt
+                ? { includeRuntimeContext: { langfusePrompt: true } }
+                : {}),
+            },
+          }),
+      );
+
+      await recorder.complete({
+        result: output as unknown as Record<string, unknown>,
+        usage: {
+          inputTokens: totalUsage.inputTokens,
+          outputTokens: totalUsage.outputTokens,
+          totalTokens: totalUsage.totalTokens,
+        },
+      });
+
+      return { result: output, runId: recorder.runId };
+    } catch (error) {
+      await recorder.fail(error);
+      throw error;
+    }
   }
 }

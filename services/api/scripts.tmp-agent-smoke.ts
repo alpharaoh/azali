@@ -1,12 +1,15 @@
 /** Temp: direct classification agent smoke test with a fake dossier. */
 import { ShipmentDocumentCategory } from "@/db/schema";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
+import { db } from "@/db";
+import { shipments } from "@/db/schema";
 
-const { result, trace } = await ClassificationAgentService.classify({
+const [realShipment] = await db.select({ id: shipments.id, userId: shipments.userId }).from(shipments).limit(1);
+const { result, runId } = await ClassificationAgentService.classify({
   organizationId: "7beb7047-894e-4bf1-8d5f-2598e15a8edd",
-  userId: "smoke-test",
+  userId: realShipment.userId,
   shipment: {
-    id: "smoke-shipment",
+    id: realShipment.id,
     reference: "SMOKE-1",
     clientName: "TCL North America",
     originCountry: "TW",
@@ -40,5 +43,5 @@ console.log("notes:", result.notesApplied.map((n) => n.ref).join("; "));
 console.log("alternates:", result.alternates.map((a) => `${a.code}@${a.confidence}`).join(", "));
 console.log("citations:", result.citations.map((c) => `${c.kind}:${c.ref}`).join(", "));
 console.log("overlays:", JSON.stringify(result.overlays));
-console.log("trace phases:", trace.length, "| tool calls:", trace.flatMap((p) => p.steps).length);
+console.log("runId:", runId);
 process.exit(0);

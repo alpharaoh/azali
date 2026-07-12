@@ -1403,6 +1403,158 @@ export interface ListShipmentDocumentsResponseDto {
   documents: ListShipmentDocumentsResponseDtoDocumentsItem[];
 }
 
+/**
+ * The run's final structured result, when completed.
+ * @nullable
+ */
+export type ListAgentRunsResponseDtoRunsItemResult = {[key: string]: unknown} | null;
+
+export type ListAgentRunsResponseDtoRunsItem = {
+  /** Run id. */
+  id: string;
+  /** Which AI workflow ran, e.g. classification. */
+  agent: string;
+  /** running (in progress), completed, or failed. */
+  status: string;
+  /** The AI model used. */
+  model: string;
+  /**
+   * The managed prompt used, when applicable.
+   * @nullable
+   */
+  promptName: string | null;
+  /**
+   * The prompt version used.
+   * @nullable
+   */
+  promptVersion: number | null;
+  /**
+   * The run's final structured result, when completed.
+   * @nullable
+   */
+  result: ListAgentRunsResponseDtoRunsItemResult;
+  /**
+   * Failure reason, when failed.
+   * @nullable
+   */
+  error: string | null;
+  /** How many reasoning passes the run took. */
+  stepCount: number;
+  /** How many research actions it performed. */
+  toolCallCount: number;
+  /** @nullable */
+  inputTokens: number | null;
+  /** @nullable */
+  outputTokens: number | null;
+  /** @nullable */
+  totalTokens: number | null;
+  /** When the run started. */
+  startedAt: string;
+  /**
+   * When the run finished.
+   * @nullable
+   */
+  completedAt: string | null;
+  /**
+   * Total runtime in milliseconds.
+   * @nullable
+   */
+  durationMs: number | null;
+};
+
+export interface ListAgentRunsResponseDto {
+  /** The shipment's AI runs, newest first. */
+  runs: ListAgentRunsResponseDtoRunsItem[];
+}
+
+/**
+ * The run's final structured result, when completed.
+ * @nullable
+ */
+export type AgentRunDetailResponseDtoRunResult = {[key: string]: unknown} | null;
+
+export type AgentRunDetailResponseDtoRun = {
+  /** Run id. */
+  id: string;
+  /** Which AI workflow ran, e.g. classification. */
+  agent: string;
+  /** running (in progress), completed, or failed. */
+  status: string;
+  /** The AI model used. */
+  model: string;
+  /**
+   * The managed prompt used, when applicable.
+   * @nullable
+   */
+  promptName: string | null;
+  /**
+   * The prompt version used.
+   * @nullable
+   */
+  promptVersion: number | null;
+  /**
+   * The run's final structured result, when completed.
+   * @nullable
+   */
+  result: AgentRunDetailResponseDtoRunResult;
+  /**
+   * Failure reason, when failed.
+   * @nullable
+   */
+  error: string | null;
+  /** How many reasoning passes the run took. */
+  stepCount: number;
+  /** How many research actions it performed. */
+  toolCallCount: number;
+  /** @nullable */
+  inputTokens: number | null;
+  /** @nullable */
+  outputTokens: number | null;
+  /** @nullable */
+  totalTokens: number | null;
+  /** When the run started. */
+  startedAt: string;
+  /**
+   * When the run finished.
+   * @nullable
+   */
+  completedAt: string | null;
+  /**
+   * Total runtime in milliseconds.
+   * @nullable
+   */
+  durationMs: number | null;
+};
+
+/**
+ * The item's full content — reasoning text, action input, or findings.
+ */
+export type AgentRunDetailResponseDtoItemsItemContent = {[key: string]: unknown};
+
+export type AgentRunDetailResponseDtoItemsItem = {
+  /** Which reasoning pass this belongs to. */
+  stepIndex: number;
+  /** Order within the pass. */
+  itemIndex: number;
+  /** reasoning (the AI's thinking), tool_call (a research action), tool_result (what it found), or text. */
+  kind: string;
+  /**
+   * The research action, when applicable.
+   * @nullable
+   */
+  toolName: string | null;
+  /** The item's full content — reasoning text, action input, or findings. */
+  content: AgentRunDetailResponseDtoItemsItemContent;
+  /** When it happened. */
+  createdAt: string;
+};
+
+export interface AgentRunDetailResponseDto {
+  run: AgentRunDetailResponseDtoRun;
+  /** The complete ordered record of the run — every reasoning passage, research action, and finding. */
+  items: AgentRunDetailResponseDtoItemsItem[];
+}
+
 export type ClientsControllerFindAllParams = {
 /**
  * Free-text search on the client name (case-insensitive).
@@ -3912,6 +4064,230 @@ export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<ty
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getShipmentDocumentsControllerListQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns the AI runs performed for a shipment — what ran, its status, the result, and how much work it took. Use the run id to fetch the complete audit record.
+ * @summary List a shipment's AI runs
+ */
+export type agentRunsControllerListResponse200 = {
+  data: ListAgentRunsResponseDto
+  status: 200
+}
+
+export type agentRunsControllerListResponseSuccess = (agentRunsControllerListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type agentRunsControllerListResponse = (agentRunsControllerListResponseSuccess)
+
+export const getAgentRunsControllerListUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/runs`
+}
+
+export const agentRunsControllerList = async (id: string, options?: RequestInit): Promise<agentRunsControllerListResponse> => {
+  
+  return axios<agentRunsControllerListResponse>(getAgentRunsControllerListUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getAgentRunsControllerListQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/runs`
+    ] as const;
+    }
+
+    
+export const getAgentRunsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAgentRunsControllerListQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof agentRunsControllerList>>> = ({ signal }) => agentRunsControllerList(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AgentRunsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof agentRunsControllerList>>>
+export type AgentRunsControllerListQueryError = ErrorType<unknown>
+
+
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof agentRunsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof agentRunsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof agentRunsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof agentRunsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List a shipment's AI runs
+ */
+
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAgentRunsControllerListQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns the complete audit record of an AI run: every reasoning passage, every research action with its inputs, and everything it found — in the order it happened. This is the record behind each AI decision.
+ * @summary Get an AI run's audit record
+ */
+export type agentRunsControllerFindResponse200 = {
+  data: AgentRunDetailResponseDto
+  status: 200
+}
+
+export type agentRunsControllerFindResponseSuccess = (agentRunsControllerFindResponse200) & {
+  headers: Headers;
+};
+;
+
+export type agentRunsControllerFindResponse = (agentRunsControllerFindResponseSuccess)
+
+export const getAgentRunsControllerFindUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/runs/${id}`
+}
+
+export const agentRunsControllerFind = async (id: string, options?: RequestInit): Promise<agentRunsControllerFindResponse> => {
+  
+  return axios<agentRunsControllerFindResponse>(getAgentRunsControllerFindUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getAgentRunsControllerFindQueryKey = (id: string,) => {
+    return [
+    `/v1/runs/${id}`
+    ] as const;
+    }
+
+    
+export const getAgentRunsControllerFindQueryOptions = <TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAgentRunsControllerFindQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof agentRunsControllerFind>>> = ({ signal }) => agentRunsControllerFind(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AgentRunsControllerFindQueryResult = NonNullable<Awaited<ReturnType<typeof agentRunsControllerFind>>>
+export type AgentRunsControllerFindQueryError = ErrorType<unknown>
+
+
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof agentRunsControllerFind>>,
+          TError,
+          Awaited<ReturnType<typeof agentRunsControllerFind>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof agentRunsControllerFind>>,
+          TError,
+          Awaited<ReturnType<typeof agentRunsControllerFind>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get an AI run's audit record
+ */
+
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAgentRunsControllerFindQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
