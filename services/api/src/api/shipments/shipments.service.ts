@@ -11,11 +11,13 @@ import { listShipments } from "@/db/queries/select/many/listShipments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
+import { inngest } from "@/inngest/client";
+import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
 import type { CreateShipmentDto } from "./dto/create-shipment.dto";
 import type { ListShipmentsDto } from "./dto/list-shipments.dto";
 import {
-  ReviewResolutionAction,
   type ResolveReviewDto,
+  ReviewResolutionAction,
 } from "./dto/resolve-review.dto";
 import type { UpdateShipmentDto } from "./dto/update-shipment.dto";
 
@@ -123,7 +125,11 @@ export class ShipmentsService {
   }
 
   async update(organizationId: string, id: string, dto: UpdateShipmentDto) {
-    const shipment = await updateShipment(id, organizationId, toInsertValues(dto));
+    const shipment = await updateShipment(
+      id,
+      organizationId,
+      toInsertValues(dto),
+    );
     if (!shipment) {
       throw new NotFoundException(`Shipment "${id}" not found`);
     }
@@ -193,5 +199,20 @@ export class ShipmentsService {
     });
 
     return updated ?? shipment;
+  }
+
+  /** Kick off an asynchronous classification run for a shipment. */
+  async classify(organizationId: string, userId: string, id: string) {
+    const shipment = await selectShipment(id, organizationId);
+    if (!shipment) {
+      throw new NotFoundException(`Shipment "${id}" not found`);
+    }
+
+    const result = await inngest.send({
+      name: SHIPMENT_CLASSIFY_REQUESTED_EVENT,
+      data: { organizationId, userId, shipmentId: id },
+    });
+
+    return { eventIds: result.ids };
   }
 }

@@ -69,10 +69,7 @@ export const shipmentSchema = z.object({
     .nullable()
     .describe("Vessel name or flight/trip number."),
   etaAt: z.iso.datetime().nullable().describe("Estimated arrival time."),
-  valueCents: z
-    .number()
-    .int()
-    .describe("Declared shipment value in US cents."),
+  valueCents: z.number().int().describe("Declared shipment value in US cents."),
   dutyCents: z
     .number()
     .int()
@@ -113,5 +110,13 @@ export class ShipmentStatsResponseDto extends createZodDto(
     byReviewType: z
       .record(z.string(), z.number().int())
       .describe("Pending-review counts keyed by review type."),
+  }),
+) {}
+
+export class ClassifyResponseDto extends createZodDto(
+  z.object({
+    eventIds: z
+      .array(z.string())
+      .describe("Ids of the classification runs started for this shipment."),
   }),
 ) {}

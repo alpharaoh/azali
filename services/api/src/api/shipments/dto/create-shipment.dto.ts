@@ -5,7 +5,10 @@ import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 export const transportModes = ["ocean", "air", "truck", "rail"] as const;
 
 export const createShipmentSchema = z.object({
-  clientId: z.string().min(1).describe("Id of the client this shipment belongs to."),
+  clientId: z
+    .string()
+    .min(1)
+    .describe("Id of the client this shipment belongs to."),
   reference: z
     .string()
     .min(1)

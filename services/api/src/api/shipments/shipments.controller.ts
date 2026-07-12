@@ -22,6 +22,7 @@ import { CreateShipmentDto } from "./dto/create-shipment.dto";
 import { ListShipmentsDto } from "./dto/list-shipments.dto";
 import { ResolveReviewDto } from "./dto/resolve-review.dto";
 import {
+  ClassifyResponseDto,
   ListShipmentsResponseDto,
   ShipmentResponseDto,
   ShipmentStatsResponseDto,
@@ -174,6 +175,29 @@ export class ShipmentsController {
       session.user.id,
       id,
       dto,
+    );
+  }
+
+  /** Run (or re-run) the AI classification for a shipment. */
+  @Post(":id/classify")
+  @ApiOperation({
+    summary: "Classify a shipment",
+    description:
+      "Runs the AI classification for the shipment's documents: candidate tariff headings are analyzed under the General Rules of Interpretation with the binding Section and Chapter Notes, checked against published customs rulings, and resolved to a 10-digit HTS code with duty details. The result appears on the shipment timeline; uncertain classifications are routed to review. Runs asynchronously — safe to call again to re-classify.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiCreatedResponse({
+    type: ClassifyResponseDto,
+    description: "Ids of the dispatched classification runs.",
+  })
+  classify(
+    @Session() session: UserSession<typeof auth>,
+    @Param("id") id: string,
+  ) {
+    return this.shipmentsService.classify(
+      getActiveOrganizationId(session),
+      session.user.id,
+      id,
     );
   }
 }

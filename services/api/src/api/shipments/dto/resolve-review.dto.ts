@@ -17,7 +17,9 @@ export const resolveReviewSchema = z.object({
     .string()
     .min(1)
     .optional()
-    .describe('The value the broker chose instead, when action is "corrected".'),
+    .describe(
+      'The value the broker chose instead, when action is "corrected".',
+    ),
   note: z
     .string()
     .min(1)

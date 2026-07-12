@@ -1,6 +1,7 @@
 import type { Logger } from "@nestjs/common";
 import type { AppService } from "@/app.service";
 
+import { classifyShipment } from "@/inngest/functions/classifyShipment";
 import { hello } from "@/inngest/functions/hello";
 import { ingestShipmentDocuments } from "@/inngest/functions/ingestShipmentDocuments";
 
@@ -14,5 +15,6 @@ export const getInngestFunctions = (dependencies: {
       logger: dependencies.logger,
     }),
     ingestShipmentDocuments({ logger: dependencies.logger }),
+    classifyShipment({ logger: dependencies.logger }),
   ];
 };

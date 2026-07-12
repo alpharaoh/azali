@@ -1099,8 +1099,13 @@ export interface ResolveReviewDto {
   note?: string;
 }
 
+export interface ClassifyResponseDto {
+  /** Ids of the classification runs started for this shipment. */
+  eventIds: string[];
+}
+
 /**
- * Type-specific structured data.
+ * Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones.
  */
 export type ListShipmentEventsResponseDtoDataItemPayload = {[key: string]: unknown};
 
@@ -1141,7 +1146,7 @@ export type ListShipmentEventsResponseDtoDataItem = {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   occurredAt: string;
-  /** Type-specific structured data. */
+  /** Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones. */
   payload: ListShipmentEventsResponseDtoDataItemPayload;
 };
 
@@ -1197,7 +1202,7 @@ export interface CreateShipmentEventDto {
 }
 
 /**
- * Type-specific structured data.
+ * Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones.
  */
 export type ShipmentEventResponseDtoPayload = {[key: string]: unknown};
 
@@ -1238,7 +1243,7 @@ export interface ShipmentEventResponseDto {
    * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
    */
   occurredAt: string;
-  /** Type-specific structured data. */
+  /** Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones. */
   payload: ShipmentEventResponseDtoPayload;
 }
 
@@ -3221,6 +3226,89 @@ export const useShipmentsControllerResolve = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getShipmentsControllerResolveMutationOptions(options), queryClient);
+    }
+    
+/**
+ * Runs the AI classification for the shipment's documents: candidate tariff headings are analyzed under the General Rules of Interpretation with the binding Section and Chapter Notes, checked against published customs rulings, and resolved to a 10-digit HTS code with duty details. The result appears on the shipment timeline; uncertain classifications are routed to review. Runs asynchronously — safe to call again to re-classify.
+ * @summary Classify a shipment
+ */
+export type shipmentsControllerClassifyResponse201 = {
+  data: ClassifyResponseDto
+  status: 201
+}
+
+export type shipmentsControllerClassifyResponseSuccess = (shipmentsControllerClassifyResponse201) & {
+  headers: Headers;
+};
+;
+
+export type shipmentsControllerClassifyResponse = (shipmentsControllerClassifyResponseSuccess)
+
+export const getShipmentsControllerClassifyUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/classify`
+}
+
+export const shipmentsControllerClassify = async (id: string, options?: RequestInit): Promise<shipmentsControllerClassifyResponse> => {
+  
+  return axios<shipmentsControllerClassifyResponse>(getShipmentsControllerClassifyUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
+
+
+
+export const getShipmentsControllerClassifyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['shipmentsControllerClassify'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerClassify>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  shipmentsControllerClassify(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerClassifyMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerClassify>>>
+    
+    export type ShipmentsControllerClassifyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Classify a shipment
+ */
+export const useShipmentsControllerClassify = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerClassify>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerClassifyMutationOptions(options), queryClient);
     }
     
 /**

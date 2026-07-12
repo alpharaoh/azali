@@ -9,6 +9,22 @@ const getLibrary = () => {
 };
 
 export class PdfPreviewService {
+  /** Extract per-page text from a PDF. */
+  static async text({ data }: { data: Uint8Array }): Promise<string[]> {
+    const library = await getLibrary();
+    const doc = await library.loadDocument(data);
+
+    try {
+      const pages: string[] = [];
+      for (let i = 0; i < doc.getPageCount(); i++) {
+        pages.push(doc.getPage(i).getText());
+      }
+      return pages;
+    } finally {
+      doc.destroy();
+    }
+  }
+
   /** Render page 1 of a PDF as a PNG, and report the page count. */
   static async render({
     data,
@@ -18,11 +34,11 @@ export class PdfPreviewService {
     scale?: number;
   }): Promise<{ png: Uint8Array; pageCount: number }> {
     const library = await getLibrary();
-    const document = await library.loadDocument(data);
+    const doc = await library.loadDocument(data);
 
     try {
-      const pageCount = document.getPageCount();
-      const bitmap = await document.getPage(0).render({
+      const pageCount = doc.getPageCount();
+      const bitmap = await doc.getPage(0).render({
         scale,
         render: "bitmap",
       });
@@ -44,7 +60,7 @@ export class PdfPreviewService {
 
       return { png, pageCount };
     } finally {
-      document.destroy();
+      doc.destroy();
     }
   }
 }

@@ -3,6 +3,7 @@ import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import type { ShipmentDocumentCategory } from "@/db/schema";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { KnowledgeBaseService } from "@/services/external/pinecone/service";
+import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 import { inngest } from "../../client";
 import {
   attachDocument,
@@ -187,6 +188,12 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
           ),
         }),
       );
+
+      // Classification picks up from here as its own run.
+      await step.sendEvent("request-classification", {
+        name: SHIPMENT_CLASSIFY_REQUESTED_EVENT,
+        data: { organizationId, userId, shipmentId: shipment.id },
+      });
 
       // Push any buffered trace spans out before the run completes.
       await langfuseSpanProcessor?.forceFlush();
