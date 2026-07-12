@@ -1,8 +1,8 @@
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { DocumentExtraction } from "@/db/schema";
 import { ShipmentDocumentCategory } from "@/db/schema";
-import { anthropic } from "./client";
+import { anthropic } from "@/services/external/anthropic/client";
 
 const EXTRACTION_MODEL = "claude-sonnet-4-6";
 
@@ -99,9 +99,9 @@ export class DocumentExtractionService {
       throw new Error(`Unsupported content type for extraction: ${contentType}`);
     }
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: anthropic(EXTRACTION_MODEL),
-      schema: extractionSchema,
+      output: Output.object({ schema: extractionSchema }),
       messages: [
         {
           role: "user",
@@ -110,7 +110,7 @@ export class DocumentExtractionService {
       ],
     });
 
-    return object;
+    return output;
   }
 
   /** Derive the shipment facts from a batch of document extractions. */
@@ -123,26 +123,16 @@ export class DocumentExtractionService {
       extraction: DocumentExtraction;
     }>;
   }): Promise<ShipmentSynthesis> {
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: anthropic(EXTRACTION_MODEL),
-      schema: shipmentSynthesisSchema,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: [
-                "You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.",
-                "Use null for anything the documents don't state. Prefer the commercial invoice for parties and value, the bill of lading for routing.",
-                JSON.stringify(extractions, null, 2),
-              ].join("\n\n"),
-            },
-          ],
-        },
-      ],
+      output: Output.object({ schema: shipmentSynthesisSchema }),
+      prompt: [
+        "You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.",
+        "Use null for anything the documents don't state. Prefer the commercial invoice for parties and value, the bill of lading for routing.",
+        JSON.stringify(extractions, null, 2),
+      ].join("\n\n"),
     });
 
-    return object;
+    return output;
   }
 }
