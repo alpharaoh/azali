@@ -22,6 +22,6 @@
 	},
 	"files": {
 		"ignoreUnknown": true,
-		"includes": ["src/**/*", "test/**/*", "drizzle.config.ts"]
+		"includes": ["src/**/*", "test/**/*", "drizzle.config.ts", "!**/migrations/**"]
 	}
 }

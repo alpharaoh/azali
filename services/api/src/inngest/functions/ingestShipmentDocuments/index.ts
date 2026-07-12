@@ -1,6 +1,7 @@
 import type { Logger } from "@nestjs/common";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import type { ShipmentDocumentCategory } from "@/db/schema";
+import { langfuseSpanProcessor } from "@/instrumentation";
 import { KnowledgeBaseService } from "@/services/external/pinecone/service";
 import { inngest } from "../../client";
 import {
@@ -60,7 +61,11 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
     async ({ event, step }) => {
       const { organizationId, userId, files } =
         event.data as ShipmentDocumentsUploadedEvent["data"];
-      const context = { organizationId, userId };
+      const context = {
+        organizationId,
+        userId,
+        batchId: event.id ?? "unbatched",
+      };
 
       // 1. One audit row per file, in parallel — rows exist even if
       //    extraction fails, and re-delivered events reuse them.
@@ -77,7 +82,7 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
         documents.map(async (document): Promise<ExtractedDocument | null> => {
           try {
             const extraction = await step.run(`extract-${document.id}`, () =>
-              extractDocument(document),
+              extractDocument(context, document),
             );
             await step.run(`save-extraction-${document.id}`, () =>
               saveExtraction(context, document.id, extraction),
@@ -128,7 +133,7 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
 
       // 3. Derive the shipment: facts → client → shipment → attach documents.
       const synthesis = await step.run("synthesize-shipment", () =>
-        synthesizeShipmentFacts(extracted),
+        synthesizeShipmentFacts(context, extracted),
       );
       const clientId = await step.run("resolve-client", () =>
         resolveClient(context, synthesis),
@@ -182,6 +187,9 @@ export const ingestShipmentDocuments = (dependencies: { logger: Logger }) => {
           ),
         }),
       );
+
+      // Push any buffered trace spans out before the run completes.
+      await langfuseSpanProcessor?.forceFlush();
 
       return {
         shipmentId: shipment.id,

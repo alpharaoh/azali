@@ -22,6 +22,10 @@ const envSchema = z.object({
   // Optional so the API boots without it; document extraction fails with a
   // clear error at the point of use instead.
   ANTHROPIC_API_KEY: z.string().optional(),
+  // Optional — tracing is simply disabled when the keys are absent.
+  LANGFUSE_PUBLIC_KEY: z.string().optional(),
+  LANGFUSE_SECRET_KEY: z.string().optional(),
+  LANGFUSE_BASE_URL: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

@@ -102,6 +102,7 @@ export class DocumentExtractionService {
     const { output } = await generateText({
       model: anthropic(EXTRACTION_MODEL),
       output: Output.object({ schema: extractionSchema }),
+      telemetry: { functionId: "document-extraction" },
       messages: [
         {
           role: "user",
@@ -126,6 +127,7 @@ export class DocumentExtractionService {
     const { output } = await generateText({
       model: anthropic(EXTRACTION_MODEL),
       output: Output.object({ schema: shipmentSynthesisSchema }),
+      telemetry: { functionId: "shipment-synthesis" },
       prompt: [
         "You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.",
         "Use null for anything the documents don't state. Prefer the commercial invoice for parties and value, the bill of lading for routing.",

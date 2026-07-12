@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { propagateAttributes } from "@langfuse/tracing";
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocument";
@@ -11,17 +12,19 @@ import {
   ShipmentStage,
   ShipmentStatus,
 } from "@/db/schema";
+import type { KnowledgeDocument } from "@/services/external/pinecone/service";
+import { BlobStorageService } from "@/services/external/s3/service";
 import {
   DocumentExtractionService,
   type ShipmentSynthesis,
 } from "@/services/extraction/service";
-import type { KnowledgeDocument } from "@/services/external/pinecone/service";
-import { BlobStorageService } from "@/services/external/s3/service";
 import { PdfPreviewService } from "@/services/pdf/service";
 
 export interface IngestContext {
   organizationId: string;
   userId: string;
+  /** The ingestion run id — groups the batch's traces into one session. */
+  batchId: string;
 }
 
 export interface UploadedFile {
@@ -93,18 +96,34 @@ export async function createDocumentRow(
  * boundary, so this is the one intentionally compound operation.
  */
 export async function extractDocument(
+  context: IngestContext,
   doc: DocumentRow,
 ): Promise<DocumentExtraction> {
   const data = await BlobStorageService.getObject({
     key: doc.storageKey,
   });
 
-  return DocumentExtractionService.extractDocument({
-    data,
-    contentType: doc.contentType,
-    category: doc.category,
-    fileName: doc.fileName,
-  });
+  return propagateAttributes(
+    {
+      traceName: "document-extraction",
+      userId: context.userId,
+      sessionId: context.batchId,
+      tags: ["document-ingestion"],
+      metadata: {
+        organizationId: context.organizationId,
+        documentId: doc.id,
+        fileName: doc.fileName,
+        category: doc.category,
+      },
+    },
+    () =>
+      DocumentExtractionService.extractDocument({
+        data,
+        contentType: doc.contentType,
+        category: doc.category,
+        fileName: doc.fileName,
+      }),
+  );
 }
 
 export async function saveExtraction(
@@ -160,15 +179,29 @@ export async function savePreview(
 }
 
 export async function synthesizeShipmentFacts(
+  context: IngestContext,
   extracted: ExtractedDocument[],
 ): Promise<ShipmentSynthesis> {
-  return DocumentExtractionService.synthesizeShipment({
-    extractions: extracted.map(({ fileName, category, extraction }) => ({
-      fileName,
-      category,
-      extraction,
-    })),
-  });
+  return propagateAttributes(
+    {
+      traceName: "shipment-synthesis",
+      userId: context.userId,
+      sessionId: context.batchId,
+      tags: ["document-ingestion"],
+      metadata: {
+        organizationId: context.organizationId,
+        documentCount: String(extracted.length),
+      },
+    },
+    () =>
+      DocumentExtractionService.synthesizeShipment({
+        extractions: extracted.map(({ fileName, category, extraction }) => ({
+          fileName,
+          category,
+          extraction,
+        })),
+      }),
+  );
 }
 
 /**

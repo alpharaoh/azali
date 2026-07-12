@@ -1,3 +1,6 @@
+// Tracing must initialize before anything that calls the AI SDK loads.
+import "./instrumentation";
+
 import type { Logger as NestLogger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import {
