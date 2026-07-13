@@ -1,5 +1,6 @@
 import { propagateAttributes } from "@langfuse/tracing";
 import { Output, stepCountIs, ToolLoopAgent } from "ai";
+import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { anthropic } from "@/services/external/anthropic/client";
 import { crossRulingsTools } from "@/services/external/cross/tools";
@@ -85,6 +86,7 @@ export class ClassificationAgentService {
       CLASSIFICATION_PROMPT_NAME,
       CLASSIFICATION_SYSTEM_PROMPT,
     );
+    const organizationSlug = await getOrganizationSlug(organizationId);
     const dossier = buildDossier(shipment, documents);
 
     const recorder = await AgentRunRecorder.start({
@@ -131,7 +133,11 @@ export class ClassificationAgentService {
           userId,
           sessionId: shipment.id,
           tags: ["classification"],
-          metadata: { organizationId, reference: shipment.reference },
+          metadata: {
+            organizationId,
+            organizationSlug,
+            reference: shipment.reference,
+          },
         },
         () =>
           agent.generate({

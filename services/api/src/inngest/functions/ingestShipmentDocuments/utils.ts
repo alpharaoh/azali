@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { propagateAttributes } from "@langfuse/tracing";
+import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocument";
@@ -111,6 +112,7 @@ export async function extractDocument(
       tags: ["document-ingestion"],
       metadata: {
         organizationId: context.organizationId,
+        organizationSlug: await getOrganizationSlug(context.organizationId),
         documentId: doc.id,
         fileName: doc.fileName,
         category: doc.category,
@@ -190,6 +192,7 @@ export async function synthesizeShipmentFacts(
       tags: ["document-ingestion"],
       metadata: {
         organizationId: context.organizationId,
+        organizationSlug: await getOrganizationSlug(context.organizationId),
         documentCount: String(extracted.length),
       },
     },
