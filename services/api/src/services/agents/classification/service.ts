@@ -18,7 +18,7 @@ import {
   classificationResultSchema,
 } from "./schema";
 
-const CLASSIFICATION_MODEL = "claude-sonnet-4-6";
+const CLASSIFICATION_MODEL = "claude-opus-4-8";
 const MAX_STEPS = 24;
 const THINKING_BUDGET_TOKENS = 8_000;
 
@@ -148,11 +148,7 @@ export class ClassificationAgentService {
           },
         },
         async () => {
-          // Stream the loop so every unit of work is auditable the moment
-          // it happens — reasoning, tool calls, and results land in the run
-          // record live instead of after each step completes.
-          const stream = agent.stream({
-            prompt: dossier,
+          const callOptions = {
             // The real deadline — replaces Bun's per-request fetch timeout.
             timeout: { totalMs: 900_000, stepMs: 420_000 },
             ...(systemPrompt.prompt
@@ -164,80 +160,145 @@ export class ClassificationAgentService {
                 ? { includeRuntimeContext: { langfusePrompt: true } }
                 : {}),
             },
-          });
+          };
 
-          const buffers = new Map<string, string>();
-          for await (const part of stream.fullStream) {
-            switch (part.type) {
-              case "reasoning-delta":
-              case "text-delta":
-                buffers.set(part.id, (buffers.get(part.id) ?? "") + part.text);
-                break;
-              case "reasoning-end": {
-                const text = buffers.get(part.id)?.trim();
-                buffers.delete(part.id);
-                if (text) {
-                  await recorder.recordItem({
-                    kind: AgentRunItemKind.Reasoning,
-                    content: { text },
-                  });
+          // Stream the loop so every unit of work is auditable the moment it
+          // happens — reasoning, tool calls, and results land in the run
+          // record live. Returns how many tool calls the pass made.
+          const consume = async (
+            activeStream: ReturnType<typeof agent.stream>,
+          ): Promise<number> => {
+            const buffers = new Map<string, string>();
+            let toolCalls = 0;
+
+            for await (const part of activeStream.fullStream) {
+              switch (part.type) {
+                case "reasoning-delta":
+                case "text-delta":
+                  buffers.set(
+                    part.id,
+                    (buffers.get(part.id) ?? "") + part.text,
+                  );
+                  break;
+                case "reasoning-end": {
+                  const text = buffers.get(part.id)?.trim();
+                  buffers.delete(part.id);
+                  if (text) {
+                    await recorder.recordItem({
+                      kind: AgentRunItemKind.Reasoning,
+                      content: { text },
+                    });
+                  }
+                  break;
                 }
-                break;
-              }
-              case "text-end": {
-                const text = buffers.get(part.id)?.trim();
-                buffers.delete(part.id);
-                if (text) {
-                  await recorder.recordItem({
-                    kind: AgentRunItemKind.Text,
-                    content: { text },
-                  });
+                case "text-end": {
+                  const text = buffers.get(part.id)?.trim();
+                  buffers.delete(part.id);
+                  if (text) {
+                    await recorder.recordItem({
+                      kind: AgentRunItemKind.Text,
+                      content: { text },
+                    });
+                  }
+                  break;
                 }
-                break;
+                case "tool-call":
+                  toolCalls++;
+                  await recorder.recordItem({
+                    kind: AgentRunItemKind.ToolCall,
+                    toolName: part.toolName,
+                    toolCallId: part.toolCallId,
+                    content: { input: part.input as unknown },
+                  });
+                  break;
+                case "tool-result":
+                  await recorder.recordItem({
+                    kind: AgentRunItemKind.ToolResult,
+                    toolName: part.toolName,
+                    toolCallId: part.toolCallId,
+                    content: { output: part.output as unknown },
+                  });
+                  break;
+                case "tool-error":
+                  await recorder.recordItem({
+                    kind: AgentRunItemKind.ToolResult,
+                    toolName: part.toolName,
+                    toolCallId: part.toolCallId,
+                    content: {
+                      error:
+                        part.error instanceof Error
+                          ? part.error.message
+                          : String(part.error),
+                    },
+                  });
+                  break;
+                case "finish-step":
+                  recorder.advanceStep();
+                  break;
+                case "error":
+                  throw part.error instanceof Error
+                    ? part.error
+                    : new Error(String(part.error));
+                default:
+                  break;
               }
-              case "tool-call":
-                await recorder.recordItem({
-                  kind: AgentRunItemKind.ToolCall,
-                  toolName: part.toolName,
-                  toolCallId: part.toolCallId,
-                  content: { input: part.input as unknown },
-                });
-                break;
-              case "tool-result":
-                await recorder.recordItem({
-                  kind: AgentRunItemKind.ToolResult,
-                  toolName: part.toolName,
-                  toolCallId: part.toolCallId,
-                  content: { output: part.output as unknown },
-                });
-                break;
-              case "tool-error":
-                await recorder.recordItem({
-                  kind: AgentRunItemKind.ToolResult,
-                  toolName: part.toolName,
-                  toolCallId: part.toolCallId,
-                  content: {
-                    error:
-                      part.error instanceof Error
-                        ? part.error.message
-                        : String(part.error),
-                  },
-                });
-                break;
-              case "finish-step":
-                recorder.advanceStep();
-                break;
-              case "error":
-                throw part.error instanceof Error
-                  ? part.error
-                  : new Error(String(part.error));
-              default:
-                break;
             }
+
+            return toolCalls;
+          };
+
+          const usages: Array<{
+            inputTokens?: number;
+            outputTokens?: number;
+            totalTokens?: number;
+          }> = [];
+
+          let stream = agent.stream({ prompt: dossier, ...callOptions });
+          const toolCallsSeen = await consume(stream);
+          usages.push(await stream.totalUsage);
+
+          // Prompt-level mandates are not a guarantee — when the model
+          // answers purely from memory, send it back to verify against the
+          // live schedule and CROSS before the answer can count.
+          if (toolCallsSeen === 0) {
+            recorder.advanceStep();
+            await recorder.recordItem({
+              kind: AgentRunItemKind.Text,
+              content: {
+                text: "[verification] the run made no lookups — sending it back to verify against the live schedule and CROSS",
+              },
+            });
+
+            const { messages } = await stream.response;
+            stream = agent.stream({
+              messages: [
+                { role: "user", content: dossier },
+                ...messages,
+                {
+                  role: "user",
+                  content:
+                    "You answered without a single lookup — that does not meet the reasonable-care standard. Execute the verification checklist now: searchHts for your chosen and rejected headings, getChapterNotes for the governing notes, searchRulings (and getRuling) for real precedent, and browseHtsHeading to confirm the exact statistical line. Then re-emit the final answer with citations drawn only from these lookups.",
+                },
+              ],
+              ...callOptions,
+            });
+            await consume(stream);
+            usages.push(await stream.totalUsage);
           }
 
           let output = await stream.output;
-          let usage = await stream.totalUsage;
+          let usage = usages.reduce(
+            (sum, entry) => ({
+              inputTokens: (sum.inputTokens ?? 0) + (entry.inputTokens ?? 0),
+              outputTokens: (sum.outputTokens ?? 0) + (entry.outputTokens ?? 0),
+              totalTokens: (sum.totalTokens ?? 0) + (entry.totalTokens ?? 0),
+            }),
+            {} as {
+              inputTokens?: number;
+              outputTokens?: number;
+              totalTokens?: number;
+            },
+          );
 
           // The model occasionally emits a placeholder answer. Give it one
           // repair turn — with its own research still in context — before

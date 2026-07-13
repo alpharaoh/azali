@@ -113,6 +113,34 @@ function summarizeResult(item: RunItem): string[] {
   }
 }
 
+/** The final answer text item is the structured output as JSON. */
+function parseAnswer(text: string): {
+  htsCode: string;
+  confidence?: number;
+  summary?: string;
+  duty?: string;
+} | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{")) return null;
+  try {
+    const value = JSON.parse(trimmed) as {
+      htsCode?: string;
+      confidence?: number;
+      summary?: string;
+      dutyRate?: { effective?: string };
+    };
+    if (typeof value.htsCode !== "string") return null;
+    return {
+      htsCode: value.htsCode,
+      confidence: value.confidence,
+      summary: value.summary,
+      duty: value.dutyRate?.effective,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function formatDuration(durationMs: number | null): string {
   if (!durationMs) return "a moment";
   const seconds = Math.round(durationMs / 1000);
@@ -273,12 +301,48 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                     if (item.kind === "text") {
                       const text = (item.content as { text?: string }).text;
                       if (!text) return null;
+
+                      // The structured answer arrives as JSON text — present
+                      // the decision, not the wire format.
+                      const answer = parseAnswer(text);
+                      if (answer) {
+                        return (
+                          <ChainOfThought.Step
+                            key={key}
+                            label={
+                              <span className="text-accent font-medium">
+                                Classified {answer.htsCode}
+                              </span>
+                            }
+                          >
+                            <div className="flex flex-col gap-1.5">
+                              {answer.summary ? (
+                                <ClampedText
+                                  className="text-muted text-xs leading-relaxed"
+                                  lines={4}
+                                  text={answer.summary}
+                                />
+                              ) : null}
+                              <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+                                <span>
+                                  {answer.htsCode} · confidence{" "}
+                                  {answer.confidence?.toFixed(2) ?? "—"}
+                                </span>
+                                {answer.duty ? (
+                                  <span>duty: {answer.duty}</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </ChainOfThought.Step>
+                        );
+                      }
+
                       return (
                         <ChainOfThought.Step
                           key={key}
                           label={
                             <span className="text-accent font-medium">
-                              Drafting the answer
+                              Working notes
                             </span>
                           }
                         >
