@@ -29,6 +29,13 @@ export function buildReviewPayload(
     (parseAdValoremRate(result.dutyRate.general) ?? 0) * 100;
   const proposedAmountUsd = Math.round((valueUsd * proposedPct) / 100);
 
+  // The card shows a short rate label next to the amount; the full duty
+  // explanation (overlay reasoning, caveats) lives in the hover breakdown.
+  const shortRate =
+    result.dutyRate.effectivePct !== null
+      ? `${result.dutyRate.effectivePct}% effective`
+      : result.dutyRate.general;
+
   const alternateImpacts: Record<
     string,
     { amountUsd: number; deltaUsd: number }
@@ -54,7 +61,7 @@ export function buildReviewPayload(
     },
     dutyImpact: {
       proposed: {
-        rate: result.dutyRate.effective,
+        rate: shortRate,
         amountUsd: proposedAmountUsd,
         breakdown: [
           `${result.htsCode}: ${result.dutyRate.general} (Column 1 General)`,
