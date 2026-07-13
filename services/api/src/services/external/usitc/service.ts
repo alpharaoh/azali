@@ -181,3 +181,13 @@ export class HtsService {
     return text;
   }
 }
+
+/** The user-facing HTS search URL for a query — the audit reference. */
+export function htsSearchUrl(query: string): string {
+  return `https://hts.usitc.gov/search?query=${encodeURIComponent(query)}`;
+}
+
+/** The published chapter PDF — where the Notes text lives. */
+export function chapterNotesUrl(chapter: number): string {
+  return `https://hts.usitc.gov/reststop/file?release=currentRelease&filename=${encodeURIComponent(`Chapter ${chapter}`)}`;
+}

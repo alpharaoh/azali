@@ -2,10 +2,11 @@ import {
   Book,
   CircleExclamation,
   FileText,
+  Globe,
   Magnifier,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Chip, Skeleton } from "@heroui/react";
+import { Chip, Link, Skeleton } from "@heroui/react";
 import { ChainOfThought } from "@heroui-pro/react";
 import type { ComponentType, SVGProps } from "react";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "@/generated/api";
@@ -14,20 +15,66 @@ import { ClampedText } from "./clamped-text";
 
 /* -------------------------------------------------------------------------------------------------
  * The agent trace, rendered directly from the canonical audit record
- * (agent_runs / agent_run_items) — reasoning passages, every research action
- * with its findings, and the drafted answer, in the exact order they happened.
+ * (agent_runs / agent_run_items) — reasoning, narration, every research
+ * action with its source system, the exact search URL it hit, and what it
+ * found, in the order it happened.
  * -----------------------------------------------------------------------------------------------*/
+
+type SourceName = "HTSUS" | "CROSS" | "Knowledge base" | "Web";
 
 const TOOL_META: Record<
   string,
-  { label: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
+  {
+    label: string;
+    source: SourceName;
+    icon: ComponentType<SVGProps<SVGSVGElement>>;
+  }
 > = {
-  searchHts: { label: "Searched the tariff schedule", icon: Magnifier },
-  browseHtsHeading: { label: "Browsed a tariff heading", icon: Book },
-  getChapterNotes: { label: "Read the chapter notes", icon: Book },
-  searchRulings: { label: "Searched customs rulings", icon: Magnifier },
-  getRuling: { label: "Read a ruling", icon: FileText },
-  searchKnowledge: { label: "Searched the importer's record", icon: Magnifier },
+  searchHts: {
+    label: "Searched the tariff schedule",
+    source: "HTSUS",
+    icon: Magnifier,
+  },
+  browseHtsHeading: {
+    label: "Browsed a tariff heading",
+    source: "HTSUS",
+    icon: Book,
+  },
+  getChapterNotes: {
+    label: "Read the chapter notes",
+    source: "HTSUS",
+    icon: Book,
+  },
+  searchRulings: {
+    label: "Searched customs rulings",
+    source: "CROSS",
+    icon: Magnifier,
+  },
+  getRuling: {
+    label: "Read a ruling in full",
+    source: "CROSS",
+    icon: FileText,
+  },
+  searchKnowledge: {
+    label: "Searched the importer's record",
+    source: "Knowledge base",
+    icon: Magnifier,
+  },
+  webSearch: {
+    label: "Searched the web",
+    source: "Web",
+    icon: Globe,
+  },
+};
+
+const SOURCE_CHIP_COLOR: Record<
+  SourceName,
+  "accent" | "default" | "success" | "warning"
+> = {
+  HTSUS: "accent",
+  CROSS: "warning",
+  "Knowledge base": "default",
+  Web: "success",
 };
 
 /** "{"query":"wifi router"}" → wifi router · Chapter 85 · … */
@@ -38,6 +85,75 @@ function summarizeInput(content: Record<string, unknown>): string {
     .filter((value) => value !== undefined && value !== null)
     .map(String)
     .join(" · ");
+}
+
+interface ToolEnvelope {
+  source?: string;
+  url?: string;
+  lines?: unknown;
+  rulings?: unknown;
+  notes?: unknown;
+  matches?: unknown;
+  totalHits?: number;
+}
+
+/** The exact search URL a tool hit, when the source is public. */
+function resultUrl(result: RunItem | undefined): string | null {
+  if (!result) return null;
+  const output = (result.content as { output?: ToolEnvelope }).output;
+  return typeof output?.url === "string" ? output.url : null;
+}
+
+function summarizeHtsLines(lines: unknown): string[] {
+  const rows = (
+    lines as Array<{ htsNumber: string; description: string; general: string }>
+  ).filter((line) => line.htsNumber);
+  return [
+    ...rows
+      .slice(0, 5)
+      .map(
+        (line) =>
+          `${line.htsNumber}  ${line.description.slice(0, 64)}${line.general ? `  (${line.general})` : ""}`,
+      ),
+    ...(rows.length > 5 ? [`… ${rows.length - 5} more lines`] : []),
+  ];
+}
+
+function summarizeRulings(value: {
+  totalHits?: number;
+  rulings: Array<{ rulingNumber: string; subject: string; revoked: boolean }>;
+}): string[] {
+  return [
+    `${value.totalHits ?? value.rulings.length} hits`,
+    ...value.rulings
+      .slice(0, 4)
+      .map(
+        (ruling) =>
+          `${ruling.rulingNumber}  ${ruling.subject.slice(0, 64)}${ruling.revoked ? "  [REVOKED]" : ""}`,
+      ),
+  ];
+}
+
+function summarizeMatches(matches: unknown): string[] {
+  return (matches as Array<{ text: string; score: number }>)
+    .slice(0, 3)
+    .map(
+      (match) =>
+        `${match.score.toFixed(2)}  ${match.text.slice(0, 70).replace(/\n/g, " ")}`,
+    );
+}
+
+function summarizeWebResults(output: unknown): string[] {
+  const results = output as Array<{ url: string; title: string | null }>;
+  return results.slice(0, 4).map((result) => {
+    let host = "";
+    try {
+      host = new URL(result.url).hostname.replace(/^www\./, "");
+    } catch {
+      host = result.url.slice(0, 40);
+    }
+    return `${(result.title ?? result.url).slice(0, 64)}  — ${host}`;
+  });
 }
 
 /** Compact evidence lines from a stored tool result. */
@@ -52,59 +168,32 @@ function summarizeResult(item: RunItem): string[] {
   if (content.truncated) return ["(large result — clamped in the record)"];
 
   const output = content.output;
+  const envelope = (output ?? {}) as ToolEnvelope;
+
   try {
     switch (item.toolName) {
       case "searchHts":
-      case "browseHtsHeading": {
-        const lines = (
-          output as Array<{
-            htsNumber: string;
-            description: string;
-            general: string;
-          }>
-        ).filter((line) => line.htsNumber);
-        return [
-          ...lines
-            .slice(0, 5)
-            .map(
-              (line) =>
-                `${line.htsNumber}  ${line.description.slice(0, 64)}${line.general ? `  (${line.general})` : ""}`,
-            ),
-          ...(lines.length > 5 ? [`… ${lines.length - 5} more lines`] : []),
-        ];
+      case "browseHtsHeading":
+        // Envelope shape; legacy runs stored the bare array.
+        return summarizeHtsLines(envelope.lines ?? output);
+      case "getChapterNotes": {
+        const notes = envelope.notes ?? output;
+        return [`${String(notes).slice(0, 110).replace(/\n/g, " ")}…`];
       }
-      case "getChapterNotes":
-        return [`${String(output).slice(0, 110).replace(/\n/g, " ")}…`];
-      case "searchRulings": {
-        const value = output as {
-          totalHits: number;
-          rulings: Array<{
-            rulingNumber: string;
-            subject: string;
-            revoked: boolean;
-          }>;
-        };
-        return [
-          `${value.totalHits} hits`,
-          ...value.rulings
-            .slice(0, 4)
-            .map(
-              (ruling) =>
-                `${ruling.rulingNumber}  ${ruling.subject.slice(0, 64)}${ruling.revoked ? "  [REVOKED]" : ""}`,
-            ),
-        ];
-      }
+      case "searchRulings":
+        return summarizeRulings(
+          (envelope.rulings ? envelope : output) as Parameters<
+            typeof summarizeRulings
+          >[0],
+        );
       case "getRuling": {
         const value = output as { rulingNumber: string; subject: string };
         return [`${value.rulingNumber}  ${value.subject.slice(0, 80)}`];
       }
       case "searchKnowledge":
-        return (output as Array<{ text: string; score: number }>)
-          .slice(0, 3)
-          .map(
-            (match) =>
-              `${match.score.toFixed(2)}  ${match.text.slice(0, 70).replace(/\n/g, " ")}`,
-          );
+        return summarizeMatches(envelope.matches ?? output);
+      case "webSearch":
+        return summarizeWebResults(output);
       default:
         return [JSON.stringify(output).slice(0, 110)];
     }
@@ -148,21 +237,47 @@ function formatDuration(durationMs: number | null): string {
   return `${Math.round(seconds / 60)}m ${seconds % 60}s`;
 }
 
+/** Mimics the loaded trace's structure so the swap doesn't jump. */
+function TraceSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-1.5">
+        <Skeleton className="size-3.5 rounded-full" />
+        <Skeleton className="h-3.5 w-64 rounded-md" />
+      </div>
+      {[0, 1].map((pass) => (
+        <div key={pass} className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-40 rounded-md" />
+            <Skeleton className="h-3 w-12 rounded-md" />
+          </div>
+          <div className="flex flex-col gap-3 pl-1.5">
+            {[0, 1, pass === 0 ? 2 : -1]
+              .filter((step) => step >= 0)
+              .map((step) => (
+                <div key={step} className="flex gap-3">
+                  <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
+                  <div className="flex w-full flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3.5 w-44 rounded-md" />
+                      <Skeleton className="h-4 w-14 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-56 rounded-md" />
+                    <Skeleton className="h-12 w-full rounded-lg" />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AgentRunTrace({ runId }: { runId: string }) {
   const { data, isLoading } = useAgentRunsControllerFind(runId);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-3">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="flex items-center gap-3">
-            <Skeleton className="size-6 rounded-full" />
-            <Skeleton className="h-4 flex-1 rounded-md" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  if (isLoading) return <TraceSkeleton />;
 
   const run = data?.data.run;
   const items = data?.data.items ?? [];
@@ -252,12 +367,15 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                     if (item.kind === "tool_call") {
                       const meta = TOOL_META[item.toolName ?? ""] ?? {
                         label: item.toolName ?? "Action",
+                        source: "Knowledge base" as const,
                         icon: Magnifier,
                       };
                       const result = item.toolCallId
                         ? resultsByCallId.get(item.toolCallId)
                         : undefined;
                       const evidence = result ? summarizeResult(result) : [];
+                      const url = resultUrl(result);
+                      const query = summarizeInput(item.content);
                       const failed = Boolean(
                         result && (result.content as { error?: string }).error,
                       );
@@ -266,26 +384,50 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                         <ChainOfThought.Step
                           key={key}
                           label={
-                            <span
-                              className={
-                                failed
-                                  ? "text-warning inline-flex items-center gap-1.5 font-medium"
-                                  : "text-foreground inline-flex items-center gap-1.5 font-medium"
-                              }
-                            >
-                              {failed ? (
-                                <CircleExclamation className="size-3.5" />
-                              ) : (
-                                <meta.icon className="size-3.5" />
-                              )}
-                              {meta.label}
+                            <span className="inline-flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={
+                                  failed
+                                    ? "text-warning inline-flex items-center gap-1.5 font-medium"
+                                    : "text-foreground inline-flex items-center gap-1.5 font-medium"
+                                }
+                              >
+                                {failed ? (
+                                  <CircleExclamation className="size-3.5" />
+                                ) : (
+                                  <meta.icon className="size-3.5" />
+                                )}
+                                {meta.label}
+                              </span>
+                              <Chip
+                                color={SOURCE_CHIP_COLOR[meta.source]}
+                                size="sm"
+                                variant="soft"
+                              >
+                                <Chip.Label>{meta.source}</Chip.Label>
+                              </Chip>
                             </span>
                           }
                         >
                           <div className="flex flex-col gap-1.5">
-                            <span className="text-muted text-xs leading-relaxed">
-                              {summarizeInput(item.content)}
-                            </span>
+                            {url ? (
+                              <Link
+                                className="w-fit text-xs"
+                                href={url}
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                {query || url}
+                                <Link.Icon className="size-3" />
+                              </Link>
+                            ) : query ? (
+                              <span className="text-muted text-xs leading-relaxed">
+                                {query}
+                                {meta.source === "Knowledge base"
+                                  ? " · internal"
+                                  : ""}
+                              </span>
+                            ) : null}
                             {evidence.length > 0 ? (
                               <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
                                 {evidence.map((line) => (
@@ -341,8 +483,8 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                         <ChainOfThought.Step
                           key={key}
                           label={
-                            <span className="text-accent font-medium">
-                              Working notes
+                            <span className="text-foreground font-medium">
+                              Analysis
                             </span>
                           }
                         >

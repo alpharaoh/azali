@@ -119,6 +119,8 @@ export class ClassificationAgentService {
         ...htsTools,
         ...crossRulingsTools,
         ...createKnowledgeBaseTools(organizationId),
+        // Provider-executed on Anthropic's side — results carry real URLs.
+        webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
       },
       stopWhen: stepCountIs(MAX_STEPS),
       output: Output.object({ schema: classificationResultSchema }),
@@ -126,8 +128,11 @@ export class ClassificationAgentService {
       // don't let the default (model maximum) inflate request time estimates.
       maxOutputTokens: 24_000,
       providerOptions: {
-        // Opus 4.8 decides its own thinking depth per turn.
-        anthropic: { thinking: { type: "adaptive" } },
+        // Opus 4.8 decides its own thinking depth per turn; summarized
+        // display streams the reasoning into the audit record.
+        anthropic: {
+          thinking: { type: "adaptive", display: "summarized" },
+        },
       },
     });
 
@@ -235,7 +240,11 @@ export class ClassificationAgentService {
                 case "error":
                   throw part.error instanceof Error
                     ? part.error
-                    : new Error(String(part.error));
+                    : new Error(
+                        typeof part.error === "string"
+                          ? part.error
+                          : JSON.stringify(part.error),
+                      );
                 default:
                   break;
               }
@@ -250,9 +259,37 @@ export class ClassificationAgentService {
             totalTokens?: number;
           }> = [];
 
-          let stream = await agent.stream({ prompt: dossier, ...callOptions });
-          const toolCallsSeen = await consume(stream);
-          usages.push(await stream.totalUsage);
+          // Provider capacity errors (529 Overloaded) arrive mid-stream and
+          // bypass request-level retries — restart the pass with backoff.
+          let stream: Awaited<ReturnType<typeof agent.stream>> | undefined;
+          let toolCallsSeen = 0;
+          for (let attempt = 0; ; attempt++) {
+            try {
+              stream = await agent.stream({
+                prompt: dossier,
+                ...callOptions,
+              });
+              toolCallsSeen = await consume(stream);
+              usages.push(await stream.totalUsage);
+              break;
+            } catch (error) {
+              const text =
+                error instanceof Error ? error.message : JSON.stringify(error);
+              const transient = /overloaded|529|rate.?limit/i.test(text);
+              if (!transient || attempt >= 2) throw error;
+              recorder.advanceStep();
+              await recorder.recordItem({
+                kind: AgentRunItemKind.Text,
+                content: {
+                  text: `[retry] the model provider was overloaded — restarting the research pass (attempt ${attempt + 2})`,
+                },
+              });
+              await new Promise((resolve) =>
+                setTimeout(resolve, (attempt + 1) * 10_000),
+              );
+            }
+          }
+          if (!stream) throw new Error("agent stream never started");
 
           // Prompt-level mandates are not a guarantee — when the model
           // answers purely from memory, send it back to verify against the

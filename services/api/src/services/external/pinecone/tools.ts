@@ -28,12 +28,15 @@ export function createKnowledgeBaseTools(organizationId: string) {
       description:
         "Search the importer's own document record — extracted invoices, packing lists, spec sheets, and prior shipment documents. Use it to find product details and prior classification history for similar goods.",
       inputSchema: searchKnowledgeInput,
-      execute: (input) =>
-        KnowledgeBaseService.search({
+      execute: async (input) => ({
+        source: "Azali knowledge base",
+        query: input.query,
+        matches: await KnowledgeBaseService.search({
           organizationId,
           query: input.query,
           topK: input.topK,
         }),
+      }),
     }),
   };
 }

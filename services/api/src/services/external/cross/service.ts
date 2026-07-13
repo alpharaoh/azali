@@ -182,3 +182,15 @@ export class CrossRulingsService {
     };
   }
 }
+
+/** The exact user-facing CROSS search URL for a query — the audit reference. */
+export function crossSearchUrl(input: SearchRulingsInput): string {
+  const params = new URLSearchParams({
+    term: input.term,
+    collection: input.collection,
+    sortBy: input.sortBy,
+    pageSize: String(input.pageSize),
+    page: String(input.page),
+  });
+  return `https://rulings.cbp.gov/search?${params}`;
+}
