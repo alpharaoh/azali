@@ -508,7 +508,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                               <span className="text-muted text-xs leading-relaxed">
                                 {query}
                                 {meta.source === "Knowledge base"
-                                  ? " · internal"
+                                  ? " · classification engine"
                                   : ""}
                               </span>
                             ) : null}
