@@ -138,6 +138,8 @@ export interface ReviewItem {
   proposal: { label: string; value: string; detail: string };
   /** The full phased agent trace — every step of work, always visible. */
   trace: TracePhase[];
+  /** Audit-record id (agent_runs) — real runs render the trace from it. */
+  traceRunId?: string;
   /** The sources behind the proposal — always shown, never collapsed. */
   citations: Citation[];
   shipment: ShipmentFacts;

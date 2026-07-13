@@ -27,7 +27,6 @@ import {
   Avatar,
   Button,
   Chip,
-  Link,
   Modal,
   ScrollShadow,
   SearchField,
@@ -54,6 +53,8 @@ import {
   Widget,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { AgentRunTrace } from "@/components/agent-run-trace";
+import { ClampedText } from "@/components/clamped-text";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   addHours,
@@ -386,38 +387,6 @@ function receivedAgo(hoursAgo: number) {
   return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
     addSuffix: true,
   });
-}
-
-/** Long prose clamped to five lines, with a Read more toggle when it overflows. */
-function ClampedText({ text }: { text: string }) {
-  const [isExpanded, setExpanded] = useState(false);
-  const [isClampable, setClampable] = useState(false);
-  const textRef = useRef<HTMLParagraphElement>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the text changes
-  useEffect(() => {
-    const element = textRef.current;
-    if (element) setClampable(element.scrollHeight > element.clientHeight + 1);
-  }, [text]);
-
-  return (
-    <div className="max-w-prose">
-      <p
-        ref={textRef}
-        className={`text-muted text-sm leading-relaxed ${isExpanded ? "" : "line-clamp-5"}`}
-      >
-        {text}
-      </p>
-      {isClampable || isExpanded ? (
-        <Link
-          className="mt-1 text-xs"
-          onPress={() => setExpanded((value) => !value)}
-        >
-          {isExpanded ? "Show less" : "Read more"}
-        </Link>
-      ) : null}
-    </div>
-  );
 }
 
 function ShipmentFact({ label, value }: { label: string; value: string }) {
@@ -1373,8 +1342,12 @@ function Composer({
   );
 }
 
-/** The full phased reasoning transcript with inline citations — the Agent Trace tab. */
+/** The full reasoning transcript — the Agent Trace tab. Real runs render
+ * straight from the canonical audit record; seeded demos keep their phases. */
 function TraceSection({ item }: { item: ReviewItem }) {
+  if (item.traceRunId) {
+    return <AgentRunTrace runId={item.traceRunId} />;
+  }
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
@@ -2294,8 +2267,10 @@ export function ReviewQueue() {
     const hoursAgo = (occurredAt: string) =>
       (now - new Date(occurredAt).getTime()) / 3_600_000;
 
-    // Agent trace — one event per step, grouped by payload.phase.
+    // Agent trace — one event per step, grouped by payload.phase. Real
+    // agent runs instead carry a runId pointing at the audit record.
     const trace: TracePhase[] = [];
+    let traceRunId: string | undefined;
 
     for (const event of events.filter((e) => eventPlane(e.type) === "trace")) {
       const payload = event.payload as {
@@ -2305,6 +2280,10 @@ export function ReviewQueue() {
         data?: string[];
         citationRef?: string;
       };
+      if (typeof (payload as { runId?: string }).runId === "string") {
+        traceRunId = (payload as { runId?: string }).runId;
+        continue;
+      }
       const label = payload.phase ?? "Trace";
       const step = {
         kind: payload.kind ?? "read",
@@ -2382,13 +2361,14 @@ export function ReviewQueue() {
         occurredAt: event.occurredAt,
       }));
 
-    return { activityEvents, documents, facts, notes, trace };
+    return { activityEvents, documents, facts, notes, trace, traceRunId };
   }, [eventsResponse]);
 
   const detailItem = displayItem
     ? {
         ...displayItem,
         trace: live.trace,
+        traceRunId: live.traceRunId,
         documents: live.documents,
         events: live.activityEvents,
         ...(live.facts && {

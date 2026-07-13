@@ -46,6 +46,10 @@ const agentRunItemSchema = z.object({
     .string()
     .nullable()
     .describe("The research action, when applicable."),
+  toolCallId: z
+    .string()
+    .nullable()
+    .describe("Pairs a research action with its finding."),
   content: z
     .looseObject({})
     .describe(

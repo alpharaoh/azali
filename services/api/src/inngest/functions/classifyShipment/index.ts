@@ -1,5 +1,4 @@
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
-import { listAgentRunItems } from "@/db/queries/select/many/listAgentRunItems";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import { updateShipment } from "@/db/queries/update/updateShipment";
@@ -11,7 +10,6 @@ import {
 } from "@/db/schema";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
-import { toTracePhases } from "@/services/agents/classification/projection";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
 import { inngest } from "../../client";
 import { buildReviewPayload } from "./utils";
@@ -139,18 +137,15 @@ export const classifyShipment = () => {
             },
           }),
         ),
-        step.run("record-trace", async () => {
-          // Presentation projection of the canonical audit record.
-          const items = runId
-            ? await listAgentRunItems(runId, organizationId)
-            : [];
-          return insertShipmentEvent({
+        step.run("record-trace", () =>
+          insertShipmentEvent({
             ...base,
             type: "agent_trace",
             title: "Classification research trail",
-            payload: { phases: toTracePhases(items, result), runId },
-          });
-        }),
+            // The UI renders the trace from the canonical audit record.
+            payload: { runId },
+          }),
+        ),
         step.run("record-memo", () =>
           insertShipmentEvent({
             ...base,

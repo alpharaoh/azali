@@ -70,6 +70,8 @@ function buildDossier(
     ...sections,
     "",
     "Classify the goods on this shipment. Any HS/HTS code appearing in the documents is a supplier hypothesis to verify, not ground truth.",
+    "",
+    "Before you answer: verify candidate headings with searchHts, read the governing notes with getChapterNotes, check precedent with searchRulings (and read the strongest hits with getRuling), and confirm the exact statistical line with browseHtsHeading. Your citations must come from lookups made in this run — start with your first tool call now.",
   ].join("\n");
 }
 

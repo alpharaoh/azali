@@ -32,6 +32,7 @@ function toRunItem(item: SelectAgentRunItem) {
     itemIndex: item.itemIndex,
     kind: item.kind,
     toolName: item.toolName,
+    toolCallId: item.toolCallId,
     content: item.content,
     createdAt: item.createdAt.toISOString(),
   };

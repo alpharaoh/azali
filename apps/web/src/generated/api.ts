@@ -1543,6 +1543,11 @@ export type AgentRunDetailResponseDtoItemsItem = {
    * @nullable
    */
   toolName: string | null;
+  /**
+   * Pairs a research action with its finding.
+   * @nullable
+   */
+  toolCallId: string | null;
   /** The item's full content — reasoning text, action input, or findings. */
   content: AgentRunDetailResponseDtoItemsItemContent;
   /** When it happened. */
