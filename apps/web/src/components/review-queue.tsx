@@ -27,6 +27,7 @@ import {
   Avatar,
   Button,
   Chip,
+  Link,
   Modal,
   ScrollShadow,
   SearchField,
@@ -385,6 +386,38 @@ function receivedAgo(hoursAgo: number) {
   return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
     addSuffix: true,
   });
+}
+
+/** Long prose clamped to five lines, with a Read more toggle when it overflows. */
+function ClampedText({ text }: { text: string }) {
+  const [isExpanded, setExpanded] = useState(false);
+  const [isClampable, setClampable] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the text changes
+  useEffect(() => {
+    const element = textRef.current;
+    if (element) setClampable(element.scrollHeight > element.clientHeight + 1);
+  }, [text]);
+
+  return (
+    <div className="max-w-prose">
+      <p
+        ref={textRef}
+        className={`text-muted text-sm leading-relaxed ${isExpanded ? "" : "line-clamp-5"}`}
+      >
+        {text}
+      </p>
+      {isClampable || isExpanded ? (
+        <Link
+          className="mt-1 text-xs"
+          onPress={() => setExpanded((value) => !value)}
+        >
+          {isExpanded ? "Show less" : "Read more"}
+        </Link>
+      ) : null}
+    </div>
+  );
 }
 
 function ShipmentFact({ label, value }: { label: string; value: string }) {
@@ -1501,10 +1534,14 @@ function ReviewDetail({
     /cbp form 2[89]|draft response/i.test(document.name);
   const isMemoDoc = (document: ReviewDocument) =>
     document.kind === "pdf" && /rationale memo/i.test(document.name);
-  const memoDocument = item.documents.find(
-    (document): document is ReviewDocument & { kind: "pdf" } =>
-      document.kind === "pdf" && isMemoDoc(document),
-  );
+  // Latest memo wins — a re-classification supersedes earlier memos, so the
+  // memo always matches the proposal shown on the decision card.
+  const memoDocument = [...item.documents]
+    .reverse()
+    .find(
+      (document): document is ReviewDocument & { kind: "pdf" } =>
+        document.kind === "pdf" && isMemoDoc(document),
+    );
   const intakeDocuments = item.documents.filter(
     (document) => !isStandaloneDoc(document) && !isMemoDoc(document),
   );
@@ -1703,9 +1740,7 @@ function ReviewDetail({
                     </Chip.Label>
                   </Chip>
                 </div>
-                <span className="text-muted max-w-prose text-sm leading-relaxed">
-                  {item.proposal.detail}
-                </span>
+                <ClampedText text={item.proposal.detail} />
                 {/* One quiet meta row: the money, the evidence, the artifact. */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   {item.dutyImpact ? (
