@@ -20,8 +20,27 @@ export function buildReviewPayload(
   shipment: ClassificationShipmentFacts,
   deadlineAt: string,
 ) {
-  const rate = parseAdValoremRate(result.dutyRate.general);
   const valueUsd = shipment.valueCents / 100;
+
+  // Price everything off the EFFECTIVE rate (base + applicable overlays) —
+  // a "Free" base line with a 25% Section 301 surcharge is anything but free.
+  const proposedPct =
+    result.dutyRate.effectivePct ??
+    (parseAdValoremRate(result.dutyRate.general) ?? 0) * 100;
+  const proposedAmountUsd = Math.round((valueUsd * proposedPct) / 100);
+
+  const alternateImpacts: Record<
+    string,
+    { amountUsd: number; deltaUsd: number }
+  > = {};
+  for (const alternate of result.alternates) {
+    if (alternate.effectiveDutyPct === null) continue;
+    const amountUsd = Math.round((valueUsd * alternate.effectiveDutyPct) / 100);
+    alternateImpacts[alternate.code] = {
+      amountUsd,
+      deltaUsd: amountUsd - proposedAmountUsd,
+    };
+  }
 
   return {
     reviewType: "classification",
@@ -36,20 +55,25 @@ export function buildReviewPayload(
     dutyImpact: {
       proposed: {
         rate: result.dutyRate.effective,
-        amountUsd: rate === null ? 0 : Math.round(valueUsd * rate),
+        amountUsd: proposedAmountUsd,
         breakdown: [
           `${result.htsCode}: ${result.dutyRate.general} (Column 1 General)`,
           ...result.overlays.map(
             (overlay) =>
               `${overlay.program} (${overlay.chapter99}): ${overlay.note}`,
           ),
-          `Effective: ${result.dutyRate.effective}`,
+          `Effective: ${result.dutyRate.effective} ≈ ${formatUsd(proposedAmountUsd)} on this shipment`,
         ],
       },
+      ...(Object.keys(alternateImpacts).length > 0
+        ? { alternates: alternateImpacts }
+        : {}),
     },
     alternates: result.alternates.map((alternate) => ({
       value: alternate.code,
-      detail: alternate.description,
+      detail: alternate.effectiveDutyRate
+        ? `${alternate.description} — duty ${alternate.effectiveDutyRate}`
+        : alternate.description,
       confidence: alternate.confidence,
       reason: alternate.reason,
     })),
@@ -63,4 +87,8 @@ export function buildReviewPayload(
     approveLabel: "Approve classification",
     canRequestInfo: result.clarifyingQuestions.length > 0,
   };
+}
+
+function formatUsd(amount: number): string {
+  return `$${amount.toLocaleString("en-US")}`;
 }

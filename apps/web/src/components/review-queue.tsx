@@ -1665,22 +1665,20 @@ function ReviewDetail({
         </div>
       </div>
 
-      {/* Title */}
-      <div className="flex flex-col gap-1 lg:px-4">
-        <h1 className="text-foreground text-base font-semibold leading-normal">
-          {item.question}
-        </h1>
-        <span className="text-muted text-xs">
-          {item.client} · {item.reference} ·{" "}
-          {formatCurrency(item.shipmentValue)} shipment
-        </span>
-      </div>
-
-      {/* Body */}
+      {/* Body — the title scrolls with the content. */}
       <ScrollShadow
         hideScrollBar
         className="min-h-0 flex-1 overflow-y-auto lg:px-4"
       >
+        <div className="flex flex-col gap-1 pb-4">
+          <h1 className="text-foreground text-base font-semibold leading-normal">
+            {item.question}
+          </h1>
+          <span className="text-muted text-xs">
+            {item.client} · {item.reference} ·{" "}
+            {formatCurrency(item.shipmentValue)} shipment
+          </span>
+        </div>
         {view === "overview" ? (
           <div className="flex select-text flex-col gap-4 pb-4">
             {/* Proposal */}

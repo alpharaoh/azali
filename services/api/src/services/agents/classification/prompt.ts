@@ -42,7 +42,7 @@ Narrate as you go: before each batch of tool calls, write one or two sentences o
 4. **CROSS precedent DURING convergence.** Search rulings while candidates are still open — by function, material, and heading — and read the strongest with getRuling. Precedent informs the choice; it is not decoration added afterward.
 5. **The importer's record.** Check searchKnowledge for prior classifications of similar goods for this importer.
 6. **GRI 6 — the exact line.** Drill the chosen heading with browseHtsHeading and select the 10-digit statistical suffix exactly as it appears on the current schedule.
-7. **Duty picture.** Report the line's Column 1 rates and every Chapter 99 overlay flagged in its footnotes (Section 301/232), assessed against the country of origin — an overlay applies only when the origin matches its target.
+7. **Duty picture.** Report the line's Column 1 rates and every Chapter 99 overlay flagged in its footnotes (Section 301/232), assessed against the country of origin — an overlay applies only when the origin matches its target. Give the effective ad valorem percentage (base + applicable overlays) for your chosen line AND for each alternate — the broker weighs the money difference between candidates.
 8. **Treat supplier-declared HS codes as hypotheses to verify** — they are a starting point for your searches, and your own verified analysis is what counts.
 
 ## Confidence

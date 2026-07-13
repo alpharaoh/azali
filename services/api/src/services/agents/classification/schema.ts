@@ -53,6 +53,18 @@ export const classificationResultSchema = z.object({
           .describe(
             "Why it scored what it did and why it was not chosen — cite the Note, GRI, or ruling that defeats it.",
           ),
+        effectiveDutyRate: z
+          .string()
+          .nullable()
+          .describe(
+            "This candidate's effective duty picture for THIS shipment in one line, overlays included, e.g. '3.5% + 25% Section 301 = 28.5%'.",
+          ),
+        effectiveDutyPct: z
+          .number()
+          .nullable()
+          .describe(
+            "This candidate's total effective ad valorem percentage for this shipment's origin (base + applicable overlays), e.g. 28.5. Null when not purely ad valorem.",
+          ),
       }),
     )
     .describe("Candidate codes considered and rejected, strongest first."),
@@ -101,7 +113,13 @@ export const classificationResultSchema = z.object({
     effective: z
       .string()
       .describe(
-        "The effective duty picture for this shipment in one line, including overlays, e.g. 'Free + 7.5% Section 301 (List 4A)'.",
+        "The effective duty picture for this shipment in one line, including overlays, e.g. 'Free + 7.5% Section 301 (List 4A) = 7.5%'.",
+      ),
+    effectivePct: z
+      .number()
+      .nullable()
+      .describe(
+        "The total effective ad valorem percentage for THIS shipment (Column 1 General + applicable overlays), e.g. 7.5. Null when not purely ad valorem.",
       ),
   }),
   clarifyingQuestions: z
