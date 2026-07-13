@@ -253,13 +253,16 @@ export async function createShipmentFromSynthesis(
   synthesis: ShipmentSynthesis,
   clientId: string,
 ): Promise<{ id: string; reference: string }> {
-  const created = await insertShipment({
-    organizationId: context.organizationId,
-    userId: context.userId,
-    clientId,
-    reference:
-      synthesis.reference ?? `SHP-${randomUUID().slice(0, 8).toUpperCase()}`,
-    stage: ShipmentStage.Intake,
+  const baseReference =
+    synthesis.reference ?? `SHP-${randomUUID().slice(0, 8).toUpperCase()}`;
+
+  const insertWith = (reference: string) =>
+    insertShipment({
+      organizationId: context.organizationId,
+      userId: context.userId,
+      clientId,
+      reference,
+      stage: ShipmentStage.Intake,
     status: ShipmentStatus.Autopilot,
     originCountry: synthesis.originCountry ?? "unknown",
     originPort: synthesis.originPort,
@@ -268,9 +271,24 @@ export async function createShipmentFromSynthesis(
     conveyance: synthesis.conveyance,
     etaAt: synthesis.etaAt ? new Date(synthesis.etaAt) : null,
     valueCents: Math.round((synthesis.valueUsd ?? 0) * 100),
-    incoterm: synthesis.incoterm,
-    summary: { description: synthesis.summary },
-  });
+      incoterm: synthesis.incoterm,
+      summary: { description: synthesis.summary },
+    });
+
+  // Repeat orders reuse invoice numbers — on collision, suffix and retry.
+  // Catching the violation (rather than check-then-insert) stays atomic.
+  let created: Awaited<ReturnType<typeof insertShipment>>;
+  try {
+    created = await insertWith(baseReference);
+  } catch (error) {
+    const message = error instanceof Error ? (error.cause instanceof Error ? error.cause.message : error.message) : "";
+    if (!/shipments_org_reference_uidx|duplicate key/i.test(message)) {
+      throw error;
+    }
+    created = await insertWith(
+      `${baseReference}-${randomUUID().slice(0, 4).toUpperCase()}`,
+    );
+  }
   if (!created) throw new Error("Shipment insert returned no row");
 
   return { id: created.id, reference: created.reference };
