@@ -19,6 +19,8 @@ import {
 } from "./schema";
 
 const CLASSIFICATION_MODEL = "claude-opus-4-8";
+/** Used when the primary model's endpoint is overloaded. */
+const FALLBACK_MODEL = "claude-sonnet-4-6";
 const MAX_STEPS = 24;
 const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
 
@@ -112,29 +114,35 @@ export class ClassificationAgentService {
 
     // The agent loop: think → call tools → observe → repeat, until the
     // evidence converges and the structured classification is emitted.
-    const agent = new ToolLoopAgent({
-      model: anthropic(CLASSIFICATION_MODEL),
-      instructions: systemPrompt.text,
-      tools: {
-        ...htsTools,
-        ...crossRulingsTools,
-        ...createKnowledgeBaseTools(organizationId),
-        // Provider-executed on Anthropic's side — results carry real URLs.
-        webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
-      },
-      stopWhen: stepCountIs(MAX_STEPS),
-      output: Output.object({ schema: classificationResultSchema }),
-      // Thinking tokens count toward the output budget — keep headroom, but
-      // don't let the default (model maximum) inflate request time estimates.
-      maxOutputTokens: 24_000,
-      providerOptions: {
-        // Opus 4.8 decides its own thinking depth per turn; summarized
-        // display streams the reasoning into the audit record.
-        anthropic: {
-          thinking: { type: "adaptive", display: "summarized" },
+    const buildAgent = (model: string) =>
+      new ToolLoopAgent({
+        model: anthropic(model),
+        instructions: systemPrompt.text,
+        tools: {
+          ...htsTools,
+          ...crossRulingsTools,
+          ...createKnowledgeBaseTools(organizationId),
+          // Provider-executed on Anthropic's side — results carry real URLs.
+          webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
         },
-      },
-    });
+        stopWhen: stepCountIs(MAX_STEPS),
+        output: Output.object({ schema: classificationResultSchema }),
+        // Thinking tokens count toward the output budget — keep headroom, but
+        // don't let the default (model maximum) inflate request time
+        // estimates. Summarized thinking streams the reasoning into the
+        // audit record; Opus thinks adaptively, Sonnet on a budget.
+        maxOutputTokens: 24_000,
+        providerOptions: {
+          anthropic: {
+            thinking: model.includes("opus")
+              ? { type: "adaptive", display: "summarized" }
+              : { type: "enabled", budgetTokens: 8_000 },
+          },
+        },
+      });
+
+    let activeModel = CLASSIFICATION_MODEL;
+    let agent = buildAgent(activeModel);
 
     try {
       const { output, usage } = await propagateAttributes(
@@ -278,12 +286,24 @@ export class ClassificationAgentService {
               const transient = /overloaded|529|rate.?limit/i.test(text);
               if (!transient || attempt >= 2) throw error;
               recorder.advanceStep();
-              await recorder.recordItem({
-                kind: AgentRunItemKind.Text,
-                content: {
-                  text: `[retry] the model provider was overloaded — restarting the research pass (attempt ${attempt + 2})`,
-                },
-              });
+              if (attempt === 1 && activeModel !== FALLBACK_MODEL) {
+                // Two overloads in a row — the endpoint is saturated.
+                activeModel = FALLBACK_MODEL;
+                agent = buildAgent(activeModel);
+                await recorder.recordItem({
+                  kind: AgentRunItemKind.Text,
+                  content: {
+                    text: `[fallback] ${CLASSIFICATION_MODEL} is overloaded — continuing on ${FALLBACK_MODEL}`,
+                  },
+                });
+              } else {
+                await recorder.recordItem({
+                  kind: AgentRunItemKind.Text,
+                  content: {
+                    text: `[retry] the model provider was overloaded — restarting the research pass (attempt ${attempt + 2})`,
+                  },
+                });
+              }
               await new Promise((resolve) =>
                 setTimeout(resolve, (attempt + 1) * 10_000),
               );
@@ -348,7 +368,7 @@ export class ClassificationAgentService {
 
             const { messages } = await stream.response;
             const repair = await generateText({
-              model: anthropic(CLASSIFICATION_MODEL),
+              model: anthropic(activeModel),
               system: systemPrompt.text,
               messages: [
                 { role: "user", content: dossier },
@@ -388,6 +408,7 @@ export class ClassificationAgentService {
 
       await recorder.complete({
         result: output as unknown as Record<string, unknown>,
+        model: activeModel,
         usage: {
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,

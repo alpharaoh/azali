@@ -131,6 +131,7 @@ export class AgentRunRecorder {
   async complete({
     result,
     usage,
+    model,
   }: {
     result: Record<string, unknown>;
     usage: {
@@ -138,11 +139,14 @@ export class AgentRunRecorder {
       outputTokens?: number;
       totalTokens?: number;
     };
+    /** The model that actually finished the run (capacity fallbacks). */
+    model?: string;
   }): Promise<void> {
     await this.finalize({
       status: AgentRunStatus.Completed,
       result,
       usage,
+      model,
     });
   }
 
@@ -157,6 +161,7 @@ export class AgentRunRecorder {
     status: AgentRunStatus;
     result?: Record<string, unknown>;
     error?: string;
+    model?: string;
     usage?: {
       inputTokens?: number;
       outputTokens?: number;
@@ -167,6 +172,7 @@ export class AgentRunRecorder {
     try {
       await updateAgentRun(this.runId, this.organizationId, {
         status: values.status,
+        ...(values.model ? { model: values.model } : {}),
         result: values.result ?? null,
         error: values.error ?? null,
         inputTokens: values.usage?.inputTokens ?? null,

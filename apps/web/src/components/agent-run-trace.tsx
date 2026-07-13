@@ -9,6 +9,8 @@ import {
 import { Chip, Link, Skeleton } from "@heroui/react";
 import { ChainOfThought } from "@heroui-pro/react";
 import type { ComponentType, SVGProps } from "react";
+import crossLogo from "#/assets/cross-logo.png";
+import htsBadge from "#/assets/hts-badge.png";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "@/generated/api";
 import { useAgentRunsControllerFind } from "@/generated/api";
 import { ClampedText } from "./clamped-text";
@@ -67,15 +69,46 @@ const TOOL_META: Record<
   },
 };
 
-const SOURCE_CHIP_COLOR: Record<
-  SourceName,
-  "accent" | "default" | "success" | "warning"
-> = {
-  HTSUS: "accent",
-  CROSS: "warning",
-  "Knowledge base": "default",
-  Web: "success",
-};
+/** Source badge — official marks for the government databases. */
+function SourceBadge({ source }: { source: SourceName }) {
+  if (source === "HTSUS") {
+    return (
+      <img
+        alt="HTSUS — United States International Trade Commission"
+        className="h-4 w-auto rounded-sm"
+        height={16}
+        loading="lazy"
+        src={htsBadge}
+      />
+    );
+  }
+  if (source === "CROSS") {
+    return (
+      <Chip color="default" size="sm" variant="soft">
+        <Chip.Label className="inline-flex items-center gap-1">
+          <img
+            alt=""
+            className="size-3 rounded-full"
+            height={12}
+            loading="lazy"
+            src={crossLogo}
+            width={12}
+          />
+          CROSS
+        </Chip.Label>
+      </Chip>
+    );
+  }
+  return (
+    <Chip
+      color={source === "Web" ? "success" : "default"}
+      size="sm"
+      variant="soft"
+    >
+      <Chip.Label>{source}</Chip.Label>
+    </Chip>
+  );
+}
 
 /** "{"query":"wifi router"}" → wifi router · Chapter 85 · … */
 function summarizeInput(content: Record<string, unknown>): string {
@@ -399,13 +432,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                                 )}
                                 {meta.label}
                               </span>
-                              <Chip
-                                color={SOURCE_CHIP_COLOR[meta.source]}
-                                size="sm"
-                                variant="soft"
-                              >
-                                <Chip.Label>{meta.source}</Chip.Label>
-                              </Chip>
+                              <SourceBadge source={meta.source} />
                             </span>
                           }
                         >
