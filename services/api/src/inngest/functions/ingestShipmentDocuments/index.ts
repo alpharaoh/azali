@@ -7,6 +7,7 @@ import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 import {
   attachDocument,
   createDocumentRow,
+  createLineItems,
   createShipmentFromSynthesis,
   documentReceivedEvent,
   type ExtractedDocument,
@@ -14,6 +15,7 @@ import {
   factsExtractedEvent,
   knowledgeRecord,
   markExtractionFailed,
+  matchOrCreateProduct,
   renderPreview,
   resolveClient,
   saveExtraction,
@@ -210,6 +212,40 @@ export const ingestShipmentDocuments = () => {
         { shipmentId: shipment.id, reference: shipment.reference },
         "shipment created",
       );
+
+      // Entry lines from the invoice (or packing list, or one synthetic
+      // line) — each linked to the importer's product library.
+      const lineItems = await step.run("create-line-items", () =>
+        createLineItems(
+          context,
+          shipment.id,
+          extracted,
+          synthesis,
+          Math.round((synthesis.valueUsd ?? 0) * 100),
+        ),
+      );
+      logger.info(
+        {
+          shipmentId: shipment.id,
+          lineCount: lineItems.length,
+          lines: lineItems.map((line) => line.description.slice(0, 60)),
+        },
+        "line items created",
+      );
+
+      for (const line of lineItems) {
+        const match = await step.run(`match-product-${line.lineNumber}`, () =>
+          matchOrCreateProduct(context, client.clientId, line),
+        );
+        logger.info(
+          {
+            lineNumber: line.lineNumber,
+            productId: match.productId,
+            sku: line.sku,
+          },
+          match.created ? "product created" : "product matched",
+        );
+      }
       await Promise.all(
         documents.map((document) =>
           step.run(`attach-document-${document.id}`, () =>

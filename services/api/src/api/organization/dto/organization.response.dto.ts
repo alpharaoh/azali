@@ -17,7 +17,9 @@ export const organizationProfileSchema = z.object({
   contactEmail: z
     .string()
     .nullable()
-    .describe("Contact email shown to clients and used for CBP correspondence."),
+    .describe(
+      "Contact email shown to clients and used for CBP correspondence.",
+    ),
   filerCode: z
     .string()
     .nullable()

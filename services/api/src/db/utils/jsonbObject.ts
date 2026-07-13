@@ -11,8 +11,9 @@ export const jsonbObject = customType<{ data: Record<string, unknown> }>({
     return value;
   },
   fromDriver(value) {
-    return (
-      typeof value === "string" ? JSON.parse(value) : value
-    ) as Record<string, unknown>;
+    return (typeof value === "string" ? JSON.parse(value) : value) as Record<
+      string,
+      unknown
+    >;
   },
 });

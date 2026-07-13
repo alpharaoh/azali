@@ -106,7 +106,9 @@ export const CLASSIFICATION_MEMO: Record<string, unknown> = {
     heading(3, "I. Facts"),
     paragraph(
       "The LUX-SP210 is a composite device: a dimmable LED lamp ring with frosted diffuser (2700 K, CRI ≥ 80), a 3W monaural Bluetooth speaker, and a 5,000 mAh battery. The supplier's approved specification states the product function as ",
-      italic("“portable rechargeable table lamp with integrated Bluetooth loudspeaker”"),
+      italic(
+        "“portable rechargeable table lamp with integrated Bluetooth loudspeaker”",
+      ),
       ", and the commercial invoice describes the article lamp-first with HTS 8513.10.40 suggested.",
     ),
     heading(3, "II. Analysis"),

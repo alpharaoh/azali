@@ -79,7 +79,20 @@ export const shipmentDocuments = pgTable(
 export type SelectShipmentDocument = typeof shipmentDocuments.$inferSelect;
 export type InsertShipmentDocument = typeof shipmentDocuments.$inferInsert;
 
+export interface ExtractedLineItem {
+  description: string;
+  sku: string | null;
+  quantity: number | null;
+  unit: string | null;
+  unitValueUsd: number | null;
+  totalValueUsd: number | null;
+  originCountry: string | null;
+  declaredHts: string | null;
+}
+
 export interface DocumentExtraction {
   summary: string;
   fields: Array<{ label: string; value: string }>;
+  /** Structured line-item table — invoices and packing lists carry one. */
+  lineItems?: ExtractedLineItem[];
 }

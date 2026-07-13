@@ -23,6 +23,7 @@ import { ListShipmentsDto } from "./dto/list-shipments.dto";
 import { ResolveReviewDto } from "./dto/resolve-review.dto";
 import {
   ClassifyResponseDto,
+  ListShipmentLinesResponseDto,
   ListShipmentsResponseDto,
   ShipmentResponseDto,
   ShipmentStatsResponseDto,
@@ -176,6 +177,22 @@ export class ShipmentsController {
       id,
       dto,
     );
+  }
+
+  /** The shipment's entry lines. */
+  @Get(":id/lines")
+  @ApiOperation({
+    summary: "List shipment lines",
+    description:
+      "Returns the shipment's entry line items — one per invoice line — each with its HTS classification, confidence, and whether the code was reused from the client's product library.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({
+    type: ListShipmentLinesResponseDto,
+    description: "The shipment's lines, in line order.",
+  })
+  lines(@Session() session: UserSession<typeof auth>, @Param("id") id: string) {
+    return this.shipmentsService.lines(getActiveOrganizationId(session), id);
   }
 
   /** Run (or re-run) the AI classification for a shipment. */

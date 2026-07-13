@@ -10,7 +10,9 @@ export const meResponseSchema = z.object({
       emailVerified: z.boolean().describe("Whether the email is verified."),
       image: z.string().nullish().describe("Avatar URL, if any."),
       createdAt: z.iso.datetime().describe("When the account was created."),
-      updatedAt: z.iso.datetime().describe("When the account was last updated."),
+      updatedAt: z.iso
+        .datetime()
+        .describe("When the account was last updated."),
     })
     .describe("The signed-in user."),
   organization: z
@@ -19,7 +21,9 @@ export const meResponseSchema = z.object({
       name: z.string().describe("Organization display name."),
       slug: z.string().describe("URL-safe identifier derived from the name."),
       logo: z.string().nullable().describe("Logo URL, if any."),
-      createdAt: z.iso.datetime().describe("When the organization was created."),
+      createdAt: z.iso
+        .datetime()
+        .describe("When the organization was created."),
       metadata: z
         .string()
         .nullable()
@@ -40,7 +44,9 @@ export const meResponseSchema = z.object({
   member: z
     .object({
       id: z.string().describe("Membership id."),
-      role: z.string().describe("Role in the organization: owner, admin, or member."),
+      role: z
+        .string()
+        .describe("Role in the organization: owner, admin, or member."),
       createdAt: z.iso.datetime().describe("When the user joined."),
     })
     .nullable()

@@ -120,9 +120,26 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted 14 lines from commercial invoice", occurredHoursAgo: 9, payload: { confidence: 0.99 } },
-      { type: "hts_lookup", actor: "ai", title: "Classified all lines against HTSUS", occurredHoursAgo: 7, payload: { confidence: 0.97 } },
-      { type: "duty_calculated", actor: "ai", title: "Computed duty $9,300 across 14 lines", occurredHoursAgo: 5 },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted 14 lines from commercial invoice",
+        occurredHoursAgo: 9,
+        payload: { confidence: 0.99 },
+      },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Classified all lines against HTSUS",
+        occurredHoursAgo: 7,
+        payload: { confidence: 0.97 },
+      },
+      {
+        type: "duty_calculated",
+        actor: "ai",
+        title: "Computed duty $9,300 across 14 lines",
+        occurredHoursAgo: 5,
+      },
     ],
   },
   {
@@ -148,13 +165,30 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "Use line-item sum",
         value: "$45,780.00",
-        detail: "Printed total shows $48,250; 12 line items sum to $45,780 — the packing list supports the lines.",
+        detail:
+          "Printed total shows $48,250; 12 line items sum to $45,780 — the packing list supports the lines.",
       },
     },
     events: [
-      { type: "email_received", actor: "system", title: "Invoice received from supplier", occurredHoursAgo: 12 },
-      { type: "document_extracted", actor: "ai", title: "Extracted invoice totals and 12 line items", occurredHoursAgo: 11, payload: { confidence: 0.96 } },
-      { type: "totals_reconciled", actor: "ai", title: "Detected $2,470 mismatch between header and lines", occurredHoursAgo: 10 },
+      {
+        type: "email_received",
+        actor: "system",
+        title: "Invoice received from supplier",
+        occurredHoursAgo: 12,
+      },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted invoice totals and 12 line items",
+        occurredHoursAgo: 11,
+        payload: { confidence: 0.96 },
+      },
+      {
+        type: "totals_reconciled",
+        actor: "ai",
+        title: "Detected $2,470 mismatch between header and lines",
+        occurredHoursAgo: 10,
+      },
     ],
   },
   {
@@ -181,7 +215,8 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "HTS",
         value: "8517.62.0090",
-        detail: "Machines for reception/conversion/transmission of voice or data.",
+        detail:
+          "Machines for reception/conversion/transmission of voice or data.",
       },
       dutyImpact: {
         proposed: {
@@ -201,9 +236,26 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted product specs from datasheet", occurredHoursAgo: 20, payload: { confidence: 0.95 } },
-      { type: "vector_search", actor: "ai", title: "Searched prior rulings for mesh Wi-Fi systems", occurredHoursAgo: 18 },
-      { type: "hts_lookup", actor: "ai", title: "Candidate headings 8517.62 vs 8517.69 compared", occurredHoursAgo: 16, payload: { confidence: 0.87 } },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted product specs from datasheet",
+        occurredHoursAgo: 20,
+        payload: { confidence: 0.95 },
+      },
+      {
+        type: "vector_search",
+        actor: "ai",
+        title: "Searched prior rulings for mesh Wi-Fi systems",
+        occurredHoursAgo: 18,
+      },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Candidate headings 8517.62 vs 8517.69 compared",
+        occurredHoursAgo: 16,
+        payload: { confidence: 0.87 },
+      },
     ],
   },
   {
@@ -222,20 +274,38 @@ const seeds: SeedShipment[] = [
     incoterm: "FOB",
     review: {
       type: "document",
-      question: "Two scanned CBP forms disagree — which one supports this entry?",
+      question:
+        "Two scanned CBP forms disagree — which one supports this entry?",
       deadlineHours: 12,
       deadlineReason: "Entry blocked on correct 7501",
       confidence: 0.78,
       proposal: {
         label: "Use",
         value: "CBP 7501 (rev. B)",
-        detail: "Rev. B matches the invoice value; rev. A predates the amended PO.",
+        detail:
+          "Rev. B matches the invoice value; rev. A predates the amended PO.",
       },
     },
     events: [
-      { type: "scan_received", actor: "system", title: "Two scanned CBP 7501 drafts received", occurredHoursAgo: 30 },
-      { type: "document_extracted", actor: "ai", title: "OCR extracted both scans for comparison", occurredHoursAgo: 28, payload: { confidence: 0.9 } },
-      { type: "documents_compared", actor: "ai", title: "Found value mismatch between rev. A and rev. B", occurredHoursAgo: 26 },
+      {
+        type: "scan_received",
+        actor: "system",
+        title: "Two scanned CBP 7501 drafts received",
+        occurredHoursAgo: 30,
+      },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "OCR extracted both scans for comparison",
+        occurredHoursAgo: 28,
+        payload: { confidence: 0.9 },
+      },
+      {
+        type: "documents_compared",
+        actor: "ai",
+        title: "Found value mismatch between rev. A and rev. B",
+        occurredHoursAgo: 26,
+      },
     ],
   },
   {
@@ -261,7 +331,8 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "HTS",
         value: "6204.31.20",
-        detail: "Lab report shows 52% wool by weight — wool chief-weight applies.",
+        detail:
+          "Lab report shows 52% wool by weight — wool chief-weight applies.",
       },
       dutyImpact: {
         proposed: {
@@ -278,8 +349,19 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted fabric composition from mill certificate", occurredHoursAgo: 40, payload: { confidence: 0.88 } },
-      { type: "hts_lookup", actor: "ai", title: "Compared 6204.31 (wool) vs 6204.33 (synthetic)", occurredHoursAgo: 38 },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted fabric composition from mill certificate",
+        occurredHoursAgo: 40,
+        payload: { confidence: 0.88 },
+      },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Compared 6204.31 (wool) vs 6204.33 (synthetic)",
+        occurredHoursAgo: 38,
+      },
     ],
   },
   {
@@ -305,12 +387,24 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "PGA flag",
         value: "FDA DEV — required",
-        detail: "Marketed with therapeutic claims; general wellness exemption likely unavailable.",
+        detail:
+          "Marketed with therapeutic claims; general wellness exemption likely unavailable.",
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted product claims from packaging artwork", occurredHoursAgo: 50, payload: { confidence: 0.91 } },
-      { type: "vector_search", actor: "ai", title: "Searched FDA guidance on light-therapy devices", occurredHoursAgo: 48 },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted product claims from packaging artwork",
+        occurredHoursAgo: 50,
+        payload: { confidence: 0.91 },
+      },
+      {
+        type: "vector_search",
+        actor: "ai",
+        title: "Searched FDA guidance on light-therapy devices",
+        occurredHoursAgo: 48,
+      },
     ],
   },
   {
@@ -336,7 +430,8 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "Valuation",
         value: "Transaction value OK",
-        detail: "Circumstances-of-sale test supported by transfer pricing study on file.",
+        detail:
+          "Circumstances-of-sale test supported by transfer pricing study on file.",
       },
       dutyImpact: {
         proposed: {
@@ -351,8 +446,19 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted intercompany invoice terms", occurredHoursAgo: 70, payload: { confidence: 0.93 } },
-      { type: "market_comparison", actor: "ai", title: "Benchmarked price against unrelated-party sales", occurredHoursAgo: 66 },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted intercompany invoice terms",
+        occurredHoursAgo: 70,
+        payload: { confidence: 0.93 },
+      },
+      {
+        type: "market_comparison",
+        actor: "ai",
+        title: "Benchmarked price against unrelated-party sales",
+        occurredHoursAgo: 66,
+      },
     ],
   },
   {
@@ -378,7 +484,8 @@ const seeds: SeedShipment[] = [
       proposal: {
         label: "HTS",
         value: "6404.11.90",
-        detail: "Athletic footwear, textile upper, over $12/pair — new statistical split.",
+        detail:
+          "Athletic footwear, textile upper, over $12/pair — new statistical split.",
       },
       dutyImpact: {
         proposed: {
@@ -393,8 +500,19 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "tariff_change_detected", actor: "ai", title: "Detected new 6404 statistical breakout", occurredHoursAgo: 96 },
-      { type: "hts_lookup", actor: "ai", title: "Re-ran classification under revised nomenclature", occurredHoursAgo: 94, payload: { confidence: 0.91 } },
+      {
+        type: "tariff_change_detected",
+        actor: "ai",
+        title: "Detected new 6404 statistical breakout",
+        occurredHoursAgo: 96,
+      },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Re-ran classification under revised nomenclature",
+        occurredHoursAgo: 94,
+        payload: { confidence: 0.91 },
+      },
     ],
   },
   {
@@ -424,8 +542,19 @@ const seeds: SeedShipment[] = [
       },
     },
     events: [
-      { type: "document_extracted", actor: "ai", title: "Extracted invoice — origin field blank", occurredHoursAgo: 110, payload: { confidence: 0.97 } },
-      { type: "email_sent", actor: "ai", title: "Requested origin confirmation from supplier", occurredHoursAgo: 105 },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted invoice — origin field blank",
+        occurredHoursAgo: 110,
+        payload: { confidence: 0.97 },
+      },
+      {
+        type: "email_sent",
+        actor: "ai",
+        title: "Requested origin confirmation from supplier",
+        occurredHoursAgo: 105,
+      },
     ],
   },
   {
@@ -490,9 +619,26 @@ const seeds: SeedShipment[] = [
     dutyUsd: 1500,
     incoterm: "FOB",
     events: [
-      { type: "invoice_received", actor: "system", title: "Commercial invoice received", occurredHoursAgo: 8 },
-      { type: "document_extracted", actor: "ai", title: "Extracted 9 SKUs from invoice", occurredHoursAgo: 6, payload: { confidence: 0.98 } },
-      { type: "hts_lookup", actor: "ai", title: "Classified 7 of 9 SKUs from catalog memory", occurredHoursAgo: 4, payload: { confidence: 0.96 } },
+      {
+        type: "invoice_received",
+        actor: "system",
+        title: "Commercial invoice received",
+        occurredHoursAgo: 8,
+      },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted 9 SKUs from invoice",
+        occurredHoursAgo: 6,
+        payload: { confidence: 0.98 },
+      },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Classified 7 of 9 SKUs from catalog memory",
+        occurredHoursAgo: 4,
+        payload: { confidence: 0.96 },
+      },
     ],
   },
   {
@@ -510,8 +656,19 @@ const seeds: SeedShipment[] = [
     dutyUsd: 4800,
     incoterm: "FOB",
     events: [
-      { type: "hts_lookup", actor: "ai", title: "Classified 18 lines, all high confidence", occurredHoursAgo: 14, payload: { confidence: 0.97 } },
-      { type: "section_301_check", actor: "ai", title: "Applied Section 301 List 3 duties", occurredHoursAgo: 10 },
+      {
+        type: "hts_lookup",
+        actor: "ai",
+        title: "Classified 18 lines, all high confidence",
+        occurredHoursAgo: 14,
+        payload: { confidence: 0.97 },
+      },
+      {
+        type: "section_301_check",
+        actor: "ai",
+        title: "Applied Section 301 List 3 duties",
+        occurredHoursAgo: 10,
+      },
     ],
   },
   {
@@ -529,8 +686,19 @@ const seeds: SeedShipment[] = [
     dutyUsd: 3500,
     incoterm: "FOB",
     events: [
-      { type: "email_received", actor: "system", title: "Pre-alert received from forwarder", occurredHoursAgo: 3 },
-      { type: "document_extracted", actor: "ai", title: "Extracted bill of lading details", occurredHoursAgo: 2, payload: { confidence: 0.99 } },
+      {
+        type: "email_received",
+        actor: "system",
+        title: "Pre-alert received from forwarder",
+        occurredHoursAgo: 3,
+      },
+      {
+        type: "document_extracted",
+        actor: "ai",
+        title: "Extracted bill of lading details",
+        occurredHoursAgo: 2,
+        payload: { confidence: 0.99 },
+      },
     ],
   },
   {
@@ -548,8 +716,19 @@ const seeds: SeedShipment[] = [
     dutyUsd: 2500,
     incoterm: "CIP",
     events: [
-      { type: "duty_calculated", actor: "ai", title: "Computed duty $2,500 across 6 lines", occurredHoursAgo: 5, payload: { confidence: 0.98 } },
-      { type: "entry_drafted", actor: "ai", title: "Drafted entry summary for filing", occurredHoursAgo: 3 },
+      {
+        type: "duty_calculated",
+        actor: "ai",
+        title: "Computed duty $2,500 across 6 lines",
+        occurredHoursAgo: 5,
+        payload: { confidence: 0.98 },
+      },
+      {
+        type: "entry_drafted",
+        actor: "ai",
+        title: "Drafted entry summary for filing",
+        occurredHoursAgo: 3,
+      },
     ],
   },
   {
@@ -569,8 +748,19 @@ const seeds: SeedShipment[] = [
     incoterm: "FOB",
     entryType: "01 — Consumption",
     events: [
-      { type: "duty_calculated", actor: "ai", title: "Computed duty $8,400", occurredHoursAgo: 26, payload: { confidence: 0.99 } },
-      { type: "entry_filed", actor: "ai", title: "Filed entry ENT-4468 to ACE", occurredHoursAgo: 24 },
+      {
+        type: "duty_calculated",
+        actor: "ai",
+        title: "Computed duty $8,400",
+        occurredHoursAgo: 26,
+        payload: { confidence: 0.99 },
+      },
+      {
+        type: "entry_filed",
+        actor: "ai",
+        title: "Filed entry ENT-4468 to ACE",
+        occurredHoursAgo: 24,
+      },
     ],
   },
   {
@@ -590,7 +780,12 @@ const seeds: SeedShipment[] = [
     incoterm: "FOB",
     entryType: "01 — Consumption",
     events: [
-      { type: "entry_filed", actor: "ai", title: "Filed entry ENT-4465 to ACE", occurredHoursAgo: 30 },
+      {
+        type: "entry_filed",
+        actor: "ai",
+        title: "Filed entry ENT-4465 to ACE",
+        occurredHoursAgo: 30,
+      },
     ],
   },
   {
@@ -610,8 +805,18 @@ const seeds: SeedShipment[] = [
     incoterm: "FOB",
     entryType: "01 — Consumption",
     events: [
-      { type: "entry_filed", actor: "ai", title: "Filed entry ENT-4459 to ACE", occurredHoursAgo: 40 },
-      { type: "cbp_response_received", actor: "cbp", title: "CBP released entry ENT-4459", occurredHoursAgo: 7 },
+      {
+        type: "entry_filed",
+        actor: "ai",
+        title: "Filed entry ENT-4459 to ACE",
+        occurredHoursAgo: 40,
+      },
+      {
+        type: "cbp_response_received",
+        actor: "cbp",
+        title: "CBP released entry ENT-4459",
+        occurredHoursAgo: 7,
+      },
     ],
   },
   {
@@ -631,9 +836,25 @@ const seeds: SeedShipment[] = [
     incoterm: "CIP",
     entryType: "01 — Consumption",
     events: [
-      { type: "entry_filed", actor: "ai", title: "Filed entry ENT-4455 to ACE", occurredHoursAgo: 48 },
-      { type: "cbp_response_received", actor: "cbp", title: "CBP released entry ENT-4455", occurredHoursAgo: 20 },
-      { type: "duty_reconciled", actor: "ai", title: "Reconciled ACH duty statement", occurredHoursAgo: 12, payload: { confidence: 0.99 } },
+      {
+        type: "entry_filed",
+        actor: "ai",
+        title: "Filed entry ENT-4455 to ACE",
+        occurredHoursAgo: 48,
+      },
+      {
+        type: "cbp_response_received",
+        actor: "cbp",
+        title: "CBP released entry ENT-4455",
+        occurredHoursAgo: 20,
+      },
+      {
+        type: "duty_reconciled",
+        actor: "ai",
+        title: "Reconciled ACH duty statement",
+        occurredHoursAgo: 12,
+        payload: { confidence: 0.99 },
+      },
     ],
   },
 ];
@@ -747,7 +968,11 @@ for (const seed of seeds) {
           : isRationaleMemo
             ? "classification_memo_drafted"
             : "document_received",
-      actor: cbpForm ? "cbp" : isDraftResponse || isRationaleMemo ? "ai" : "system",
+      actor: cbpForm
+        ? "cbp"
+        : isDraftResponse || isRationaleMemo
+          ? "ai"
+          : "system",
       title,
       occurredAt: hoursFromNow(-doc.receivedHoursAgo),
       payload: {
@@ -868,5 +1093,7 @@ for (const seed of seeds) {
   );
 }
 
-console.log(`\nDone — ${seeds.length} shipments seeded for org ${organizationId}`);
+console.log(
+  `\nDone — ${seeds.length} shipments seeded for org ${organizationId}`,
+);
 process.exit(0);

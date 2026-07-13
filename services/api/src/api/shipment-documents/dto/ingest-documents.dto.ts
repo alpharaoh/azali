@@ -20,9 +20,7 @@ export const ingestDocumentsSchema = z.object({
           .string()
           .min(1)
           .max(500)
-          .describe(
-            "File key returned by POST /shipments/documents/upload.",
-          ),
+          .describe("File key returned by POST /shipments/documents/upload."),
         fileName: z.string().min(1).max(200).describe("Original file name."),
         contentType: z
           .string()

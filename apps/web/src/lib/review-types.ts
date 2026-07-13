@@ -118,6 +118,20 @@ export interface DutyImpact {
   alternates?: Record<string, { amountUsd: number; deltaUsd: number }>;
 }
 
+/** One entry line of the shipment, as shown in the review's line table. */
+export interface ReviewLineItem {
+  lineItemId: string;
+  lineNumber: number;
+  description: string;
+  quantity: number | null;
+  unit?: string | null;
+  valueUsd: number | null;
+  htsCode: string | null;
+  confidence: number | null;
+  status: string;
+  reused: boolean;
+}
+
 export interface ReviewItem {
   id: string;
   type: ReviewItemType;
@@ -140,6 +154,10 @@ export interface ReviewItem {
   trace: TracePhase[];
   /** Audit-record id (agent_runs) — real runs render the trace from it. */
   traceRunId?: string;
+  /** The shipment's entry lines with their classifications. */
+  lineItems?: ReviewLineItem[];
+  /** The line this review resolves. */
+  reviewLineNumber?: number;
   /** The sources behind the proposal — always shown, never collapsed. */
   citations: Citation[];
   shipment: ShipmentFacts;

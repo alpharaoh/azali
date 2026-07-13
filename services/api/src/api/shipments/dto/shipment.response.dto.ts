@@ -120,3 +120,36 @@ export class ClassifyResponseDto extends createZodDto(
       .describe("Ids of the classification runs started for this shipment."),
   }),
 ) {}
+
+export class ListShipmentLinesResponseDto extends createZodDto(
+  z.object({
+    lines: z
+      .array(
+        z.object({
+          id: z.string().describe("Line item id."),
+          lineNumber: z.number().describe("Position on the entry."),
+          description: z.string().describe("Product description."),
+          sku: z.string().nullable().describe("Part/model/SKU, when printed."),
+          quantity: z.number().nullable(),
+          unit: z.string().nullable().describe("Unit of measure, e.g. PCE."),
+          totalValueUsd: z.number().nullable().describe("Line value in USD."),
+          originCountry: z.string().nullable(),
+          htsCode: z
+            .string()
+            .nullable()
+            .describe("The line's HTS classification."),
+          confidence: z.number().nullable(),
+          status: z
+            .string()
+            .describe(
+              "pending, classified, needs_review, approved, or corrected.",
+            ),
+          reusedFromProduct: z
+            .boolean()
+            .describe("True when the code came from the product library."),
+          productId: z.string().nullable().describe("The linked product."),
+        }),
+      )
+      .describe("The shipment's entry lines, in line order."),
+  }),
+) {}

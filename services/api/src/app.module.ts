@@ -6,6 +6,7 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { AgentRunsModule } from "./api/agent-runs/agent-runs.module";
 import { ClientsModule } from "./api/clients/clients.module";
 import { OrganizationModule } from "./api/organization/organization.module";
+import { ProductsModule } from "./api/products/products.module";
 import { ShipmentDocumentsModule } from "./api/shipment-documents/shipment-documents.module";
 import { ShipmentEventsModule } from "./api/shipment-events/shipment-events.module";
 import { ShipmentsModule } from "./api/shipments/shipments.module";
@@ -62,6 +63,7 @@ import { auth } from "./lib/auth";
     ShipmentEventsModule,
     ShipmentDocumentsModule,
     AgentRunsModule,
+    ProductsModule,
   ],
   controllers: [AppController, UsersController],
   providers: [

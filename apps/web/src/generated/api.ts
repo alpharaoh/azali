@@ -1099,6 +1099,55 @@ export interface ResolveReviewDto {
   note?: string;
 }
 
+export type ListShipmentLinesResponseDtoLinesItem = {
+  /** Line item id. */
+  id: string;
+  /** Position on the entry. */
+  lineNumber: number;
+  /** Product description. */
+  description: string;
+  /**
+   * Part/model/SKU, when printed.
+   * @nullable
+   */
+  sku: string | null;
+  /** @nullable */
+  quantity: number | null;
+  /**
+   * Unit of measure, e.g. PCE.
+   * @nullable
+   */
+  unit: string | null;
+  /**
+   * Line value in USD.
+   * @nullable
+   */
+  totalValueUsd: number | null;
+  /** @nullable */
+  originCountry: string | null;
+  /**
+   * The line's HTS classification.
+   * @nullable
+   */
+  htsCode: string | null;
+  /** @nullable */
+  confidence: number | null;
+  /** pending, classified, needs_review, approved, or corrected. */
+  status: string;
+  /** True when the code came from the product library. */
+  reusedFromProduct: boolean;
+  /**
+   * The linked product.
+   * @nullable
+   */
+  productId: string | null;
+};
+
+export interface ListShipmentLinesResponseDto {
+  /** The shipment's entry lines, in line order. */
+  lines: ListShipmentLinesResponseDtoLinesItem[];
+}
+
 export interface ClassifyResponseDto {
   /** Ids of the classification runs started for this shipment. */
   eventIds: string[];
@@ -1556,6 +1605,107 @@ export interface AgentRunDetailResponseDto {
   items: AgentRunDetailResponseDtoItemsItem[];
 }
 
+export type ListProductsResponseDtoProductsItem = {
+  /** Product id. */
+  id: string;
+  /** The client this product belongs to. */
+  clientId: string;
+  /** Product name as it appears on documents. */
+  name: string;
+  /**
+   * Part/model/SKU number, when known.
+   * @nullable
+   */
+  sku: string | null;
+  /** @nullable */
+  description: string | null;
+  /**
+   * Current HTS classification; null until first classified.
+   * @nullable
+   */
+  htsCode: string | null;
+  /**
+   * The tariff line's text.
+   * @nullable
+   */
+  htsDescription: string | null;
+  /**
+   * Classification confidence.
+   * @nullable
+   */
+  confidence: number | null;
+  /**
+   * Who set the classification: agent (AI) or broker.
+   * @nullable
+   */
+  source: string | null;
+  /**
+   * When it was classified.
+   * @nullable
+   */
+  classifiedAt: string | null;
+  /**
+   * The audit record behind the classification.
+   * @nullable
+   */
+  classificationRunId: string | null;
+  /** When the product was first seen. */
+  createdAt: string;
+};
+
+export interface ListProductsResponseDto {
+  /** The product library, newest first. */
+  products: ListProductsResponseDtoProductsItem[];
+}
+
+export interface ProductResponseDto {
+  /** Product id. */
+  id: string;
+  /** The client this product belongs to. */
+  clientId: string;
+  /** Product name as it appears on documents. */
+  name: string;
+  /**
+   * Part/model/SKU number, when known.
+   * @nullable
+   */
+  sku: string | null;
+  /** @nullable */
+  description: string | null;
+  /**
+   * Current HTS classification; null until first classified.
+   * @nullable
+   */
+  htsCode: string | null;
+  /**
+   * The tariff line's text.
+   * @nullable
+   */
+  htsDescription: string | null;
+  /**
+   * Classification confidence.
+   * @nullable
+   */
+  confidence: number | null;
+  /**
+   * Who set the classification: agent (AI) or broker.
+   * @nullable
+   */
+  source: string | null;
+  /**
+   * When it was classified.
+   * @nullable
+   */
+  classifiedAt: string | null;
+  /**
+   * The audit record behind the classification.
+   * @nullable
+   */
+  classificationRunId: string | null;
+  /** When the product was first seen. */
+  createdAt: string;
+}
+
 export type ClientsControllerFindAllParams = {
 /**
  * Free-text search on the client name (case-insensitive).
@@ -1793,6 +1943,13 @@ export const ShipmentEventsControllerFindByShipmentActorItem = {
   system: 'system',
   cbp: 'cbp',
 } as const;
+
+export type ProductsControllerListParams = {
+/**
+ * Filter to one client's products.
+ */
+clientId?: string;
+};
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -3382,6 +3539,118 @@ export const useShipmentsControllerResolve = <TError = ErrorType<unknown>,
     }
     
 /**
+ * Returns the shipment's entry line items — one per invoice line — each with its HTS classification, confidence, and whether the code was reused from the client's product library.
+ * @summary List shipment lines
+ */
+export type shipmentsControllerLinesResponse200 = {
+  data: ListShipmentLinesResponseDto
+  status: 200
+}
+
+export type shipmentsControllerLinesResponseSuccess = (shipmentsControllerLinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type shipmentsControllerLinesResponse = (shipmentsControllerLinesResponseSuccess)
+
+export const getShipmentsControllerLinesUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/lines`
+}
+
+export const shipmentsControllerLines = async (id: string, options?: RequestInit): Promise<shipmentsControllerLinesResponse> => {
+  
+  return axios<shipmentsControllerLinesResponse>(getShipmentsControllerLinesUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentsControllerLinesQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/lines`
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerLinesQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerLinesQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerLines>>> = ({ signal }) => shipmentsControllerLines(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerLinesQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerLines>>>
+export type ShipmentsControllerLinesQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerLines>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerLines>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerLines>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerLines>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List shipment lines
+ */
+
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getShipmentsControllerLinesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
  * Runs the AI classification for the shipment's documents: candidate tariff headings are analyzed under the General Rules of Interpretation with the binding Section and Chapter Notes, checked against published customs rulings, and resolved to a 10-digit HTS code with duty details. The result appears on the shipment timeline; uncertain classifications are routed to review. Runs asynchronously — safe to call again to re-classify.
  * @summary Classify a shipment
  */
@@ -4289,6 +4558,237 @@ export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof age
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getAgentRunsControllerFindQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns the product library — every product seen on shipment documents, with its current classification. A product is classified once and reused across shipments; the classification carries who set it (AI or broker) and a link to its full audit record.
+ * @summary List products
+ */
+export type productsControllerListResponse200 = {
+  data: ListProductsResponseDto
+  status: 200
+}
+
+export type productsControllerListResponseSuccess = (productsControllerListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerListResponse = (productsControllerListResponseSuccess)
+
+export const getProductsControllerListUrl = (params?: ProductsControllerListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/products?${stringifiedParams}` : `/v1/products`
+}
+
+export const productsControllerList = async (params?: ProductsControllerListParams, options?: RequestInit): Promise<productsControllerListResponse> => {
+  
+  return axios<productsControllerListResponse>(getProductsControllerListUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getProductsControllerListQueryKey = (params?: ProductsControllerListParams,) => {
+    return [
+    `/v1/products`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getProductsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerListQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerList>>> = ({ signal }) => productsControllerList(params, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerList>>>
+export type ProductsControllerListQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params: undefined |  ProductsControllerListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List products
+ */
+
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProductsControllerListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns one product and its current classification details.
+ * @summary Get a product
+ */
+export type productsControllerFindResponse200 = {
+  data: ProductResponseDto
+  status: 200
+}
+
+export type productsControllerFindResponseSuccess = (productsControllerFindResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerFindResponse = (productsControllerFindResponseSuccess)
+
+export const getProductsControllerFindUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/products/${id}`
+}
+
+export const productsControllerFind = async (id: string, options?: RequestInit): Promise<productsControllerFindResponse> => {
+  
+  return axios<productsControllerFindResponse>(getProductsControllerFindUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getProductsControllerFindQueryKey = (id: string,) => {
+    return [
+    `/v1/products/${id}`
+    ] as const;
+    }
+
+    
+export const getProductsControllerFindQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerFindQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerFind>>> = ({ signal }) => productsControllerFind(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerFindQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerFind>>>
+export type ProductsControllerFindQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerFind>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerFind>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerFind>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerFind>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get a product
+ */
+
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProductsControllerFindQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

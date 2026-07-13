@@ -2,12 +2,18 @@ import { randomUUID } from "node:crypto";
 import { propagateAttributes } from "@langfuse/tracing";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import { insertClient } from "@/db/queries/insert/insertClient";
+import { insertProduct } from "@/db/queries/insert/insertProduct";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocument";
+import { insertShipmentLineItems } from "@/db/queries/insert/insertShipmentLineItems";
 import { listClients } from "@/db/queries/select/many/listClients";
+import { listProducts } from "@/db/queries/select/many/listProducts";
 import { updateShipmentDocument } from "@/db/queries/update/updateShipmentDocument";
+import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
 import {
   type DocumentExtraction,
+  type ExtractedLineItem,
+  LineItemStatus,
   ShipmentDocumentCategory,
   ShipmentDocumentStatus,
   ShipmentStage,
@@ -367,4 +373,147 @@ export function knowledgeRecord(
       source: "shipment_document",
     },
   };
+}
+
+/** Slim line projection that travels between steps. */
+export interface LineItemRow {
+  id: string;
+  lineNumber: number;
+  description: string;
+  sku: string | null;
+  quantity: number | null;
+  unit: string | null;
+  totalValueCents: number | null;
+  originCountry: string | null;
+  declaredHts: string | null;
+}
+
+const toCents = (usd: number | null | undefined) =>
+  usd === null || usd === undefined ? null : Math.round(usd * 100);
+
+/**
+ * The commercial invoice is the canonical line source; the packing list is
+ * the fallback. Shipments with neither get ONE synthetic line so every
+ * shipment flows the same classification path.
+ */
+export async function createLineItems(
+  context: IngestContext,
+  shipmentId: string,
+  extracted: ExtractedDocument[],
+  synthesis: ShipmentSynthesis,
+  shipmentValueCents: number,
+): Promise<LineItemRow[]> {
+  const bySource = (category: ShipmentDocumentCategory) =>
+    extracted.find(
+      (document) =>
+        document.category === category &&
+        (document.extraction.lineItems?.length ?? 0) > 0,
+    )?.extraction.lineItems;
+
+  const sourceLines: ExtractedLineItem[] = bySource(
+    ShipmentDocumentCategory.CommercialInvoice,
+  ) ??
+    bySource(ShipmentDocumentCategory.PackingList) ?? [
+      {
+        description: synthesis.summary.slice(0, 300),
+        sku: null,
+        quantity: null,
+        unit: null,
+        unitValueUsd: null,
+        totalValueUsd: shipmentValueCents / 100,
+        originCountry: synthesis.originCountry,
+        declaredHts: null,
+      },
+    ];
+
+  const rows = await insertShipmentLineItems(
+    sourceLines.map((line, index) => ({
+      organizationId: context.organizationId,
+      userId: context.userId,
+      shipmentId,
+      lineNumber: index + 1,
+      description: line.description,
+      sku: line.sku,
+      quantity: line.quantity,
+      unit: line.unit,
+      unitValueCents: toCents(line.unitValueUsd),
+      totalValueCents: toCents(line.totalValueUsd),
+      originCountry: line.originCountry ?? synthesis.originCountry,
+      declaredHts: line.declaredHts,
+      status: LineItemStatus.Pending,
+    })),
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    lineNumber: row.lineNumber,
+    description: row.description,
+    sku: row.sku,
+    quantity: row.quantity,
+    unit: row.unit,
+    totalValueCents: row.totalValueCents,
+    originCountry: row.originCountry,
+    declaredHts: row.declaredHts,
+  }));
+}
+
+/**
+ * Link the line to the importer's product library — exact SKU, else exact
+ * name — creating the product on first sight. The product is the durable
+ * unit of classification.
+ */
+export async function matchOrCreateProduct(
+  context: IngestContext,
+  clientId: string,
+  line: LineItemRow,
+): Promise<{ productId: string; created: boolean }> {
+  // Exact SKU is the strong identifier; case-insensitive name is the
+  // fallback. Semantic matching can layer on later.
+  const bySku = line.sku
+    ? (
+        await listProducts(
+          { organizationId: context.organizationId, clientId, sku: line.sku },
+          undefined,
+          1,
+        )
+      ).data[0]
+    : undefined;
+  const existing =
+    bySku ??
+    (
+      await listProducts(
+        {
+          organizationId: context.organizationId,
+          clientId,
+          nameEquals: line.description,
+        },
+        undefined,
+        1,
+      )
+    ).data[0];
+
+  if (existing) {
+    await updateShipmentLineItem(line.id, context.organizationId, {
+      productId: existing.id,
+    });
+    return { productId: existing.id, created: false };
+  }
+
+  const product = await insertProduct({
+    organizationId: context.organizationId,
+    userId: context.userId,
+    clientId,
+    name: line.description.slice(0, 300),
+    sku: line.sku,
+    attributes: {
+      ...(line.unit ? { unit: line.unit } : {}),
+      ...(line.originCountry ? { originCountry: line.originCountry } : {}),
+      ...(line.declaredHts ? { declaredHts: line.declaredHts } : {}),
+    },
+  });
+  await updateShipmentLineItem(line.id, context.organizationId, {
+    productId: product.id,
+  });
+
+  return { productId: product.id, created: true };
 }

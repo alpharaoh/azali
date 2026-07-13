@@ -80,10 +80,7 @@ export class ShipmentDocumentsController {
     type: ListShipmentDocumentsResponseDto,
     description: "The shipment's documents, oldest first.",
   })
-  list(
-    @Session() session: UserSession<typeof auth>,
-    @Param("id") id: string,
-  ) {
+  list(@Session() session: UserSession<typeof auth>, @Param("id") id: string) {
     return this.shipmentDocumentsService.list(
       getActiveOrganizationId(session),
       id,

@@ -7,9 +7,14 @@ import { deleteShipment } from "@/db/queries/delete/deleteShipment";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import { aggregateShipmentStats } from "@/db/queries/select/many/aggregateShipmentStats";
+import { listShipmentEvents } from "@/db/queries/select/many/listShipmentEvents";
+import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { listShipments } from "@/db/queries/select/many/listShipments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
+import { updateProduct } from "@/db/queries/update/updateProduct";
 import { updateShipment } from "@/db/queries/update/updateShipment";
+import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
+import { LineItemStatus } from "@/db/schemas/shipmentLineItems";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 import { inngest } from "@/inngest/client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
@@ -189,6 +194,8 @@ export class ShipmentsService {
       return shipment;
     }
 
+    await this.applyResolutionToLines(organizationId, id, dto);
+
     const nextStage = advanceStage(shipment.stage);
 
     const updated = await updateShipment(id, organizationId, {
@@ -199,6 +206,100 @@ export class ShipmentsService {
     });
 
     return updated ?? shipment;
+  }
+
+  /**
+   * Land the resolution on the line items and product library: the reviewed
+   * line is approved or corrected (a correction also updates the product as
+   * broker-confirmed — future shipments of that product reuse it); the
+   * remaining classified lines are approved. Shipments without line items
+   * (seeded demos) skip untouched.
+   */
+  private async applyResolutionToLines(
+    organizationId: string,
+    shipmentId: string,
+    dto: ResolveReviewDto,
+  ) {
+    const { data: reviewEvents } = await listShipmentEvents(
+      { organizationId, shipmentId, types: ["review_requested"] },
+      { occurredAt: "desc" },
+      1,
+    );
+    const payload = reviewEvents[0]?.payload as
+      | { lineItemId?: string }
+      | undefined;
+    const { data: lines } = await listShipmentLineItems({
+      organizationId,
+      shipmentId,
+    });
+    if (lines.length === 0) return;
+
+    for (const line of lines) {
+      const isReviewedLine = line.id === payload?.lineItemId;
+
+      if (
+        isReviewedLine &&
+        dto.action === ReviewResolutionAction.Corrected &&
+        dto.alternate
+      ) {
+        await updateShipmentLineItem(line.id, organizationId, {
+          htsCode: dto.alternate,
+          status: LineItemStatus.Corrected,
+        });
+        if (line.productId) {
+          await updateProduct(line.productId, organizationId, {
+            htsCode: dto.alternate,
+            confidence: 1,
+            classifiedAt: new Date(),
+            source: "broker",
+          });
+        }
+        continue;
+      }
+
+      if (
+        line.status === LineItemStatus.Classified ||
+        line.status === LineItemStatus.NeedsReview
+      ) {
+        await updateShipmentLineItem(line.id, organizationId, {
+          status: LineItemStatus.Approved,
+        });
+        if (isReviewedLine && line.productId) {
+          // Approval of the reviewed line is a broker confirmation.
+          await updateProduct(line.productId, organizationId, {
+            source: "broker",
+            classifiedAt: new Date(),
+          });
+        }
+      }
+    }
+  }
+
+  /** The shipment's entry lines with their classifications. */
+  async lines(organizationId: string, id: string) {
+    await this.findOne(organizationId, id);
+    const { data } = await listShipmentLineItems({
+      organizationId,
+      shipmentId: id,
+    });
+    return {
+      lines: data.map((line) => ({
+        id: line.id,
+        lineNumber: line.lineNumber,
+        description: line.description,
+        sku: line.sku,
+        quantity: line.quantity,
+        unit: line.unit,
+        totalValueUsd:
+          line.totalValueCents === null ? null : line.totalValueCents / 100,
+        originCountry: line.originCountry,
+        htsCode: line.htsCode,
+        confidence: line.confidence,
+        status: line.status,
+        reusedFromProduct: line.reusedFromProduct,
+        productId: line.productId,
+      })),
+    };
   }
 
   /** Kick off an asynchronous classification run for a shipment. */

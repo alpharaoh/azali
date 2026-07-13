@@ -17,7 +17,9 @@ export const updateOrganizationSchema = z.object({
   contactEmail: z
     .email()
     .nullish()
-    .describe("Contact email shown to clients and used for CBP correspondence."),
+    .describe(
+      "Contact email shown to clients and used for CBP correspondence.",
+    ),
   filerCode: z
     .string()
     .regex(/^[A-Za-z0-9]{3}$/, "Filer code is 3 letters/digits")

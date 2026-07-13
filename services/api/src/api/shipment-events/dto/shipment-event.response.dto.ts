@@ -20,7 +20,9 @@ export const shipmentEventSchema = z.object({
     .describe(
       "Open event type, e.g. document_received, agent_trace, review_requested, broker_note.",
     ),
-  actor: z.string().describe("Who produced the event: ai, user, system, or cbp."),
+  actor: z
+    .string()
+    .describe("Who produced the event: ai, user, system, or cbp."),
   title: z.string().describe("Human-readable one-line summary."),
   occurredAt: z.iso.datetime().describe("When the event happened."),
   payload: z

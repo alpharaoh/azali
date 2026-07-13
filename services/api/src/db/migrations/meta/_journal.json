@@ -57,6 +57,13 @@
       "when": 1783888162906,
       "tag": "0007_clever_dark_phoenix",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783929272356,
+      "tag": "0008_late_nick_fury",
+      "breakpoints": true
     }
   ]
 }

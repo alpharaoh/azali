@@ -21,8 +21,14 @@ export async function buildListQuery<
   table: T,
   options: ListQueryOptions<TInsert> = {},
 ): Promise<{ data: T["$inferSelect"][]; count: number }> {
-  const { where, orderBy, extraOrderBy, limit, offset, extraConditions = [] } =
-    options;
+  const {
+    where,
+    orderBy,
+    extraOrderBy,
+    limit,
+    offset,
+    extraConditions = [],
+  } = options;
   const { ids, ...rest } = where || {};
 
   let whereCondition = and(

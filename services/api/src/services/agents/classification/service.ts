@@ -47,6 +47,19 @@ export interface ClassificationDocument {
   extraction: DocumentExtraction;
 }
 
+/** The product being classified — one line item of the shipment. */
+export interface ClassificationLineItem {
+  id: string;
+  lineNumber: number;
+  description: string;
+  sku: string | null;
+  quantity: number | null;
+  unit: string | null;
+  totalValueCents: number | null;
+  originCountry: string | null;
+  declaredHts: string | null;
+}
+
 export interface ClassificationOutcome {
   result: ClassificationResult;
   /** The canonical audit record (agent_runs.id); null if recording failed. */
@@ -55,6 +68,7 @@ export interface ClassificationOutcome {
 
 function buildDossier(
   shipment: ClassificationShipmentFacts,
+  lineItem: ClassificationLineItem,
   documents: ClassificationDocument[],
 ): string {
   const sections = documents.map((document) => {
@@ -68,17 +82,34 @@ function buildDossier(
     ].join("\n");
   });
 
+  const lineFacts = [
+    `- Description: ${lineItem.description}`,
+    lineItem.sku ? `- SKU / part number: ${lineItem.sku}` : null,
+    lineItem.quantity !== null
+      ? `- Quantity: ${lineItem.quantity}${lineItem.unit ? ` ${lineItem.unit}` : ""}`
+      : null,
+    lineItem.totalValueCents !== null
+      ? `- Line value: $${(lineItem.totalValueCents / 100).toLocaleString("en-US")}`
+      : null,
+    `- Country of origin: ${lineItem.originCountry ?? shipment.originCountry}`,
+    lineItem.declaredHts
+      ? `- Supplier-declared code (a hypothesis to verify): ${lineItem.declaredHts}`
+      : null,
+  ].filter(Boolean) as string[];
+
   return [
-    "## Shipment",
-    `- Reference: ${shipment.reference}`,
-    `- Importer: ${shipment.clientName ?? "unknown"}`,
-    `- Country of origin: ${shipment.originCountry}`,
-    `- Commercial value: $${(shipment.valueCents / 100).toLocaleString("en-US")}`,
+    `## The product to classify — line ${lineItem.lineNumber} of shipment ${shipment.reference}`,
+    ...lineFacts,
     "",
-    "## Documents (extracted)",
+    "## Shipment context",
+    `- Importer: ${shipment.clientName ?? "unknown"}`,
+    `- Shipment origin: ${shipment.originCountry}`,
+    `- Shipment value: $${(shipment.valueCents / 100).toLocaleString("en-US")}`,
+    "",
+    "## Source documents (extracted)",
     ...sections,
     "",
-    "Classify the goods on this shipment. Any HS/HTS code appearing in the documents is a supplier hypothesis to verify, not ground truth.",
+    "Classify THIS PRODUCT ONLY — the line described above. The documents may mention other line items; use them solely as context for this product. Any HS/HTS code appearing in the documents is a supplier hypothesis to verify, not ground truth.",
     "",
     "Before you answer: verify candidate headings with searchHts, read the governing notes with getChapterNotes, check precedent with searchRulings (and read the strongest hits with getRuling), and confirm the exact statistical line with browseHtsHeading. Your citations must come from lookups made in this run — start with your first tool call now.",
   ].join("\n");
@@ -89,11 +120,13 @@ export class ClassificationAgentService {
     organizationId,
     userId,
     shipment,
+    lineItem,
     documents,
   }: {
     organizationId: string;
     userId: string;
     shipment: ClassificationShipmentFacts;
+    lineItem: ClassificationLineItem;
     documents: ClassificationDocument[];
   }): Promise<ClassificationOutcome> {
     const systemPrompt = await resolvePrompt(
@@ -101,7 +134,7 @@ export class ClassificationAgentService {
       CLASSIFICATION_SYSTEM_PROMPT,
     );
     const organizationSlug = await getOrganizationSlug(organizationId);
-    const dossier = buildDossier(shipment, documents);
+    const dossier = buildDossier(shipment, lineItem, documents);
 
     const recorder = await AgentRunRecorder.start({
       organizationId,
@@ -114,6 +147,12 @@ export class ClassificationAgentService {
       input: {
         dossier,
         reference: shipment.reference,
+        lineItem: {
+          id: lineItem.id,
+          lineNumber: lineItem.lineNumber,
+          description: lineItem.description,
+          sku: lineItem.sku,
+        },
         documents: documents.map((document) => ({
           fileName: document.fileName,
           category: document.category,
@@ -170,6 +209,8 @@ export class ClassificationAgentService {
         runId: recorder.runId,
         shipmentId: shipment.id,
         reference: shipment.reference,
+        lineNumber: lineItem.lineNumber,
+        lineDescription: lineItem.description.slice(0, 80),
         documentCount: documents.length,
         promptVersion: systemPrompt.prompt?.version ?? null,
       },
@@ -187,6 +228,7 @@ export class ClassificationAgentService {
             organizationId,
             organizationSlug,
             reference: shipment.reference,
+            lineNumber: String(lineItem.lineNumber),
           },
         },
         async () => {

@@ -102,6 +102,7 @@ import type {
   ReviewDocument,
   ReviewItem,
   ReviewItemType,
+  ReviewLineItem,
   TracePhase,
   TraceStepKind,
 } from "#/lib/review-types";
@@ -179,6 +180,9 @@ interface ReviewRequestPayload {
   citations?: Citation[];
   approveLabel?: string;
   canRequestInfo?: boolean;
+  lineItems?: ReviewLineItem[];
+  lineNumber?: number;
+  traceRunId?: string;
 }
 
 function capitalize(value: string) {
@@ -231,6 +235,9 @@ function toReviewItem(
     },
     shipmentValue: shipment.valueCents / 100,
     trace: [],
+    traceRunId: payload.traceRunId,
+    lineItems: payload.lineItems,
+    reviewLineNumber: payload.lineNumber,
     type: payload.reviewType ?? "classification",
   };
 }
@@ -1764,6 +1771,82 @@ function ReviewDetail({
               </Widget.Content>
             </Widget>
 
+            {/* Entry lines — every line's code at a glance; the reviewed
+                line is highlighted. */}
+            {item.lineItems && item.lineItems.length > 0 ? (
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>Line items</Widget.Title>
+                </Widget.Header>
+                <Widget.Content className="gap-0">
+                  {item.lineItems.map((line) => {
+                    const isReviewed =
+                      line.lineNumber === item.reviewLineNumber;
+                    return (
+                      <div
+                        key={line.lineItemId}
+                        className={`flex items-center justify-between gap-3 border-b py-2 last:border-b-0 ${
+                          isReviewed ? "bg-warning/5 -mx-2 rounded-md px-2" : ""
+                        }`}
+                      >
+                        <div className="flex min-w-0 items-baseline gap-2">
+                          <span className="text-muted shrink-0 text-xs tabular-nums">
+                            #{line.lineNumber}
+                          </span>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="text-foreground truncate text-sm">
+                              {line.description}
+                            </span>
+                            <span className="text-muted text-xs">
+                              {[
+                                line.quantity !== null
+                                  ? `${line.quantity}${line.unit ? ` ${line.unit}` : ""}`
+                                  : null,
+                                line.valueUsd !== null
+                                  ? formatCurrency(line.valueUsd)
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {line.reused ? (
+                            <Chip
+                              className="bg-purple-100 text-purple-900"
+                              size="sm"
+                              variant="soft"
+                            >
+                              <Chip.Label>Reused</Chip.Label>
+                            </Chip>
+                          ) : null}
+                          {line.confidence !== null ? (
+                            <Chip
+                              color={
+                                line.confidence >= 0.95
+                                  ? "success"
+                                  : "warning"
+                              }
+                              size="sm"
+                              variant="soft"
+                            >
+                              <Chip.Label>
+                                {Math.round(line.confidence * 100)}%
+                              </Chip.Label>
+                            </Chip>
+                          ) : null}
+                          <span className="text-foreground font-mono text-sm tabular-nums">
+                            {line.htsCode ?? "—"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Widget.Content>
+              </Widget>
+            ) : null}
+
             {/* Alternates — their own card, out of the decision's way */}
             {item.alternates && item.alternates.length > 0 ? (
               <Widget>
@@ -2366,7 +2449,7 @@ export function ReviewQueue() {
     ? {
         ...displayItem,
         trace: live.trace,
-        traceRunId: live.traceRunId,
+        traceRunId: displayItem.traceRunId ?? live.traceRunId,
         documents: live.documents,
         events: live.activityEvents,
         ...(live.facts && {

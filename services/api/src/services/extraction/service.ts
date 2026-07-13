@@ -17,7 +17,9 @@ export const EXTRACTION_PROMPT_FALLBACK = `You are a customs brokerage document 
 
 Standard fields to look for: {{fieldGuidance}}
 
-Only include fields actually present on the document. Keep values verbatim (amounts with currency symbols, dates as printed). Flag any internal inconsistencies (e.g. totals that don't add up) as their own field.`;
+Only include fields actually present on the document. Keep values verbatim (amounts with currency symbols, dates as printed). Flag any internal inconsistencies (e.g. totals that don't add up) as their own field.
+
+When the document contains a line-item table (invoices, packing lists), extract every line into lineItems: description, SKU/part number, quantity, unit, unit and total values, per-line origin, and any HS/HTS code printed on the line — all verbatim.`;
 
 export const SYNTHESIS_PROMPT_NAME = "shipment-synthesis-prompt";
 export const SYNTHESIS_PROMPT_FALLBACK = `You are a customs brokerage intake agent. The following documents were uploaded together for one inbound shipment. Derive the shipment facts from their extracted data.
@@ -34,6 +36,39 @@ const extractionSchema = z.object({
     .array(z.object({ label: z.string(), value: z.string() }))
     .describe(
       "Key-value pairs of the document's structured data, in the order they appear.",
+    ),
+  lineItems: z
+    .array(
+      z.object({
+        description: z
+          .string()
+          .describe("The line's product description, verbatim."),
+        sku: z
+          .string()
+          .nullable()
+          .describe("Part/model/SKU number when printed on the line."),
+        quantity: z.number().nullable(),
+        unit: z
+          .string()
+          .nullable()
+          .describe("Unit of measure as printed, e.g. PCE, SET, CTN."),
+        unitValueUsd: z.number().nullable().describe("Unit price in USD."),
+        totalValueUsd: z
+          .number()
+          .nullable()
+          .describe("Line total in USD."),
+        originCountry: z
+          .string()
+          .nullable()
+          .describe("ISO 3166-1 alpha-2 origin when stated per line."),
+        declaredHts: z
+          .string()
+          .nullable()
+          .describe("Any HS/HTS code printed on the line, verbatim."),
+      }),
+    )
+    .describe(
+      "The document's line-item table — invoices and packing lists have one; return every line. Empty array for documents without line items.",
     ),
 });
 

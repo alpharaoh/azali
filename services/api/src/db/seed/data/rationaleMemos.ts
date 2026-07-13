@@ -122,10 +122,7 @@ export const RATIONALE_MEMOS: Record<string, Record<string, unknown>> = {
           bold("Upper composition"),
           " — 78% textile mesh / 22% synthetic overlays by external surface area: textile controls.",
         ],
-        [
-          bold("Value break"),
-          " — $13.58/pair, over the $12 statistical line.",
-        ],
+        [bold("Value break"), " — $13.58/pair, over the $12 statistical line."],
         [
           bold("Duty"),
           " — 20% under both the old and new ten-digit lines: statistical change only, $0 duty impact.",
