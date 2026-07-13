@@ -73,18 +73,26 @@ const TOOL_META: Record<
 function SourceBadge({ source }: { source: SourceName }) {
   if (source === "HTSUS") {
     return (
-      <img
-        alt="HTSUS — United States International Trade Commission"
-        className="h-4 w-auto rounded-sm"
-        height={16}
-        loading="lazy"
-        src={htsBadge}
-      />
+      <Chip
+        className="bg-[#1A4480] text-white w-12 h-5.25 justify-center flex items-center"
+        size="sm"
+        variant="soft"
+      >
+        <Chip.Label className="inline-flex items-center gap-1 h-5">
+          <img
+            alt=""
+            className="h-3 w-auto"
+            height={12}
+            loading="lazy"
+            src={htsBadge}
+          />
+        </Chip.Label>
+      </Chip>
     );
   }
   if (source === "CROSS") {
     return (
-      <Chip color="default" size="sm" variant="soft">
+      <Chip className="bg-sky-100 text-sky-900" size="sm" variant="soft">
         <Chip.Label className="inline-flex items-center gap-1">
           <img
             alt=""
@@ -339,8 +347,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
           <Sparkles className="text-muted size-3.5" />
           <span className="text-muted text-sm">
             Thought for {formatDuration(run.durationMs)} · {run.toolCallCount}{" "}
-            research {run.toolCallCount === 1 ? "action" : "actions"} ·{" "}
-            {run.model}
+            research {run.toolCallCount === 1 ? "action" : "actions"}
           </span>
         </span>
         {run.status === "failed" ? (
@@ -393,6 +400,49 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                             lines={4}
                             text={text}
                           />
+                        </ChainOfThought.Step>
+                      );
+                    }
+
+                    if (
+                      item.kind === "tool_call" &&
+                      item.toolName === "submitClassification"
+                    ) {
+                      const input = (item.content as { input?: unknown })
+                        .input as {
+                        htsCode?: string;
+                        confidence?: number;
+                        summary?: string;
+                        dutyRate?: { effective?: string };
+                      };
+                      if (typeof input?.htsCode !== "string") return null;
+                      return (
+                        <ChainOfThought.Step
+                          key={key}
+                          label={
+                            <span className="text-accent font-medium">
+                              Classified {input.htsCode}
+                            </span>
+                          }
+                        >
+                          <div className="flex flex-col gap-1.5">
+                            {input.summary ? (
+                              <ClampedText
+                                className="text-muted text-xs leading-relaxed"
+                                lines={4}
+                                text={input.summary}
+                              />
+                            ) : null}
+                            <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+                              <span>
+                                {input.htsCode} · confidence{" "}
+                                {input.confidence?.toFixed(2) ?? "—"}
+                              </span>
+                              {input.dutyRate?.effective ? (
+                                <span>duty: {input.dutyRate.effective}</span>
+                              ) : null}
+                            </div>
+                          </div>
                         </ChainOfThought.Step>
                       );
                     }

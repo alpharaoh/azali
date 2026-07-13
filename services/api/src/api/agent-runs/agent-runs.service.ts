@@ -10,7 +10,6 @@ function toRunSummary(run: SelectAgentRun) {
     id: run.id,
     agent: run.agent,
     status: run.status,
-    model: run.model,
     promptName: run.promptName,
     promptVersion: run.promptVersion,
     result: run.result,

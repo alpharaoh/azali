@@ -1,5 +1,11 @@
 import { propagateAttributes } from "@langfuse/tracing";
-import { generateText, Output, stepCountIs, ToolLoopAgent } from "ai";
+import {
+  generateText,
+  hasToolCall,
+  stepCountIs,
+  ToolLoopAgent,
+  tool,
+} from "ai";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { AgentRunItemKind } from "@/db/schema";
@@ -112,8 +118,20 @@ export class ClassificationAgentService {
       },
     });
 
+    // The final answer is a TOOL CALL, not constrained output — leaving the
+    // model's text channel free for narration, and making "the answer ends
+    // the run" literal (stopWhen below). Structured output would force every
+    // text emission into the schema, which is where placeholder answers
+    // came from.
+    const submitClassification = tool({
+      description:
+        "Submit your final classification. Calling this ends the run immediately — call it exactly once, when your research is complete, with real values throughout.",
+      inputSchema: classificationResultSchema,
+      execute: async () => ({ recorded: true }),
+    });
+
     // The agent loop: think → call tools → observe → repeat, until the
-    // evidence converges and the structured classification is emitted.
+    // evidence converges and the classification is submitted.
     const buildAgent = (model: string) =>
       new ToolLoopAgent({
         model: anthropic(model),
@@ -124,9 +142,9 @@ export class ClassificationAgentService {
           ...createKnowledgeBaseTools(organizationId),
           // Provider-executed on Anthropic's side — results carry real URLs.
           webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
+          submitClassification,
         },
-        stopWhen: stepCountIs(MAX_STEPS),
-        output: Output.object({ schema: classificationResultSchema }),
+        stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("submitClassification")],
         // Thinking tokens count toward the output budget — keep headroom, but
         // don't let the default (model maximum) inflate request time
         // estimates. Summarized thinking streams the reasoning into the
@@ -172,9 +190,12 @@ export class ClassificationAgentService {
             },
           };
 
+          // The answer captured from the submitClassification call.
+          let submitted: ClassificationResult | null = null;
+
           // Stream the loop so every unit of work is auditable the moment it
           // happens — reasoning, tool calls, and results land in the run
-          // record live. Returns how many tool calls the pass made.
+          // record live. Returns how many RESEARCH tool calls the pass made.
           const consume = async (
             activeStream: Awaited<ReturnType<typeof agent.stream>>,
           ): Promise<number> => {
@@ -213,7 +234,14 @@ export class ClassificationAgentService {
                   break;
                 }
                 case "tool-call":
-                  toolCalls++;
+                  if (part.toolName === "submitClassification") {
+                    const parsed = classificationResultSchema.safeParse(
+                      part.input,
+                    );
+                    if (parsed.success) submitted = parsed.data;
+                  } else {
+                    toolCalls++;
+                  }
                   await recorder.recordItem({
                     kind: AgentRunItemKind.ToolCall,
                     toolName: part.toolName,
@@ -293,7 +321,7 @@ export class ClassificationAgentService {
                 await recorder.recordItem({
                   kind: AgentRunItemKind.Text,
                   content: {
-                    text: `[fallback] ${CLASSIFICATION_MODEL} is overloaded — continuing on ${FALLBACK_MODEL}`,
+                    text: "[fallback] the primary model is overloaded — continuing on a fallback model",
                   },
                 });
               } else {
@@ -331,7 +359,7 @@ export class ClassificationAgentService {
                 {
                   role: "user",
                   content:
-                    "You answered without a single lookup — that does not meet the reasonable-care standard. Execute the verification checklist now: searchHts for your chosen and rejected headings, getChapterNotes for the governing notes, searchRulings (and getRuling) for real precedent, and browseHtsHeading to confirm the exact statistical line. Then re-emit the final answer with citations drawn only from these lookups.",
+                    "You answered without a single lookup — that does not meet the reasonable-care standard. Execute the verification checklist now: searchHts for your chosen and rejected headings, getChapterNotes for the governing notes, searchRulings (and getRuling) for real precedent, and browseHtsHeading to confirm the exact statistical line. Then call submitClassification with citations drawn only from these lookups.",
                 },
               ],
               ...callOptions,
@@ -340,7 +368,7 @@ export class ClassificationAgentService {
             usages.push(await stream.totalUsage);
           }
 
-          let output = await stream.output;
+          let output = submitted;
           let usage = usages.reduce(
             (sum, entry) => ({
               inputTokens: (sum.inputTokens ?? 0) + (entry.inputTokens ?? 0),
@@ -354,15 +382,17 @@ export class ClassificationAgentService {
             },
           );
 
-          // The model occasionally emits a placeholder answer. Give it one
-          // repair turn — with its own research still in context — before
-          // failing the run.
-          if (!isValidHtsCode(output.htsCode)) {
+          // If the loop ended without a valid submission, give the model one
+          // repair turn — its research is still in context, and the forced
+          // tool choice guarantees a structured submission this time.
+          if (!output || !isValidHtsCode(output.htsCode)) {
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
               content: {
-                text: `[repair] answer contained an invalid HTS code ("${output.htsCode}") — requesting the final classification`,
+                text: output
+                  ? `[repair] the submitted answer had an invalid HTS code ("${output.htsCode}") — requesting a corrected submission`
+                  : "[repair] the run ended without a submitted classification — requesting the submission",
               },
             });
 
@@ -376,14 +406,35 @@ export class ClassificationAgentService {
                 {
                   role: "user",
                   content:
-                    "Your answer contained placeholder values. Emit the final classification object now, with real values only, based on the research above.",
+                    "Call submitClassification now with your complete final answer — real values throughout, based on the research above.",
                 },
               ],
-              output: Output.object({ schema: classificationResultSchema }),
+              tools: { submitClassification },
+              toolChoice: {
+                type: "tool",
+                toolName: "submitClassification",
+              },
+              providerOptions: {
+                // Forced tool choice is incompatible with thinking.
+                anthropic: { thinking: { type: "disabled" } },
+              },
               maxOutputTokens: 24_000,
               telemetry: { functionId: "hts-classification-repair" },
             });
-            output = repair.output;
+
+            const call = repair.toolCalls.find(
+              (candidate) => candidate.toolName === "submitClassification",
+            );
+            const parsed = classificationResultSchema.safeParse(call?.input);
+            output = parsed.success ? parsed.data : null;
+            if (output) {
+              await recorder.recordItem({
+                kind: AgentRunItemKind.ToolCall,
+                toolName: "submitClassification",
+                toolCallId: call?.toolCallId,
+                content: { input: output },
+              });
+            }
             usage = {
               ...usage,
               inputTokens:
@@ -396,9 +447,9 @@ export class ClassificationAgentService {
             };
           }
 
-          if (!isValidHtsCode(output.htsCode)) {
+          if (!output || !isValidHtsCode(output.htsCode)) {
             throw new Error(
-              `Agent returned an invalid HTS code ("${output.htsCode}") even after a repair turn — rejecting the run`,
+              "Agent did not produce a valid classification even after a repair turn — rejecting the run",
             );
           }
 

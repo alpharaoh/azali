@@ -1416,8 +1416,6 @@ export type ListAgentRunsResponseDtoRunsItem = {
   agent: string;
   /** running (in progress), completed, or failed. */
   status: string;
-  /** The AI model used. */
-  model: string;
   /**
    * The managed prompt used, when applicable.
    * @nullable
@@ -1480,8 +1478,6 @@ export type AgentRunDetailResponseDtoRun = {
   agent: string;
   /** running (in progress), completed, or failed. */
   status: string;
-  /** The AI model used. */
-  model: string;
   /**
    * The managed prompt used, when applicable.
    * @nullable
