@@ -10,7 +10,7 @@ import { Chip, Link, Skeleton } from "@heroui/react";
 import { ChainOfThought } from "@heroui-pro/react";
 import type { ComponentType, SVGProps } from "react";
 import crossLogo from "#/assets/cross-logo.png";
-import htsBadge from "#/assets/hts-badge.png";
+import htsBadge from "#/assets/htsus.svg";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "@/generated/api";
 import { useAgentRunsControllerFind } from "@/generated/api";
 import { ClampedText } from "./clamped-text";
@@ -73,19 +73,16 @@ const TOOL_META: Record<
 function SourceBadge({ source }: { source: SourceName }) {
   if (source === "HTSUS") {
     return (
-      <Chip
-        className="bg-[#1A4480] text-white w-12 h-5.25 justify-center flex items-center"
-        size="sm"
-        variant="soft"
-      >
-        <Chip.Label className="inline-flex items-center gap-1 h-5">
+      <Chip className="bg-[#1A4480] text-white" size="sm" variant="soft">
+        <Chip.Label className="inline-flex items-center gap-1">
           <img
             alt=""
             className="h-3 w-auto"
-            height={12}
+            height={14}
             loading="lazy"
             src={htsBadge}
           />
+          HTS
         </Chip.Label>
       </Chip>
     );
