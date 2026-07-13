@@ -467,19 +467,24 @@ export async function matchOrCreateProduct(
   clientId: string,
   line: LineItemRow,
 ): Promise<{ productId: string; created: boolean }> {
-  // Exact SKU is the strong identifier; case-insensitive name is the
-  // fallback. Semantic matching can layer on later.
-  const bySku = line.sku
+  // Identity is SKU + name: suppliers print the parent SKU on accessory
+  // lines, so SKU alone over-matches. Semantic matching can layer on later.
+  const bySkuAndName = line.sku
     ? (
         await listProducts(
-          { organizationId: context.organizationId, clientId, sku: line.sku },
+          {
+            organizationId: context.organizationId,
+            clientId,
+            sku: line.sku,
+            nameEquals: line.description,
+          },
           undefined,
           1,
         )
       ).data[0]
     : undefined;
   const existing =
-    bySku ??
+    bySkuAndName ??
     (
       await listProducts(
         {

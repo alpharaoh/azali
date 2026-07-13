@@ -1,11 +1,10 @@
-import { isNotNull, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   doublePrecision,
   index,
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { agentRuns } from "@/db/schemas/agentRuns";
 import { clients } from "@/db/schemas/clients";
@@ -36,7 +35,11 @@ export const products = pgTable(
     htsCode: text("hts_code"),
     htsDescription: text("hts_description"),
     confidence: doublePrecision("confidence"),
-    /** { general, effective, effectivePct } for the classified line. */
+    /**
+     * Last computed duty picture — a CACHE, not truth. Duty is a property
+     * of the entry line (code × origin × value × date); the per-line
+     * snapshot on shipment_line_items is the filed record.
+     */
     dutyRate: jsonbObject("duty_rate"),
     classificationRunId: text("classification_run_id").references(
       () => agentRuns.id,
@@ -48,9 +51,13 @@ export const products = pgTable(
   },
   (table) => [
     index("products_org_client_idx").on(table.organizationId, table.clientId),
-    uniqueIndex("products_org_client_sku_uidx")
-      .on(table.organizationId, table.clientId, table.sku)
-      .where(isNotNull(table.sku)),
+    // NOT unique: real invoices print the parent SKU on accessory lines
+    // ("replacement shade for LUX-SP210"), so identity is SKU + name.
+    index("products_org_client_sku_idx").on(
+      table.organizationId,
+      table.clientId,
+      table.sku,
+    ),
   ],
 );
 

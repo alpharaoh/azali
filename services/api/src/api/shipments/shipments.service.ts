@@ -264,8 +264,9 @@ export class ShipmentsService {
         await updateShipmentLineItem(line.id, organizationId, {
           status: LineItemStatus.Approved,
         });
-        if (isReviewedLine && line.productId) {
-          // Approval of the reviewed line is a broker confirmation.
+        // Approving the review confirms every line the broker saw in the
+        // table — their products become broker-verified and reusable.
+        if (line.productId) {
           await updateProduct(line.productId, organizationId, {
             source: "broker",
             classifiedAt: new Date(),
