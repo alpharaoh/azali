@@ -20,8 +20,6 @@ import {
 
 const CLASSIFICATION_MODEL = "claude-opus-4-8";
 const MAX_STEPS = 24;
-const THINKING_BUDGET_TOKENS = 8_000;
-
 const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
 
 export interface ClassificationShipmentFacts {
@@ -128,9 +126,8 @@ export class ClassificationAgentService {
       // don't let the default (model maximum) inflate request time estimates.
       maxOutputTokens: 24_000,
       providerOptions: {
-        anthropic: {
-          thinking: { type: "enabled", budgetTokens: THINKING_BUDGET_TOKENS },
-        },
+        // Opus 4.8 decides its own thinking depth per turn.
+        anthropic: { thinking: { type: "adaptive" } },
       },
     });
 
@@ -166,7 +163,7 @@ export class ClassificationAgentService {
           // happens — reasoning, tool calls, and results land in the run
           // record live. Returns how many tool calls the pass made.
           const consume = async (
-            activeStream: ReturnType<typeof agent.stream>,
+            activeStream: Awaited<ReturnType<typeof agent.stream>>,
           ): Promise<number> => {
             const buffers = new Map<string, string>();
             let toolCalls = 0;
@@ -253,7 +250,7 @@ export class ClassificationAgentService {
             totalTokens?: number;
           }> = [];
 
-          let stream = agent.stream({ prompt: dossier, ...callOptions });
+          let stream = await agent.stream({ prompt: dossier, ...callOptions });
           const toolCallsSeen = await consume(stream);
           usages.push(await stream.totalUsage);
 
@@ -270,7 +267,7 @@ export class ClassificationAgentService {
             });
 
             const { messages } = await stream.response;
-            stream = agent.stream({
+            stream = await agent.stream({
               messages: [
                 { role: "user", content: dossier },
                 ...messages,
