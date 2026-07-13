@@ -9,6 +9,7 @@ import {
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { AgentRunItemKind } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
 import { anthropic } from "@/services/external/anthropic/client";
 import { crossRulingsTools } from "@/services/external/cross/tools";
 import { resolvePrompt } from "@/services/external/langfuse/prompts";
@@ -29,6 +30,8 @@ const CLASSIFICATION_MODEL = "claude-opus-4-8";
 const FALLBACK_MODEL = "claude-sonnet-4-6";
 const MAX_STEPS = 24;
 const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
+
+const log = createLogger("classification-agent");
 
 export interface ClassificationShipmentFacts {
   id: string;
@@ -161,6 +164,17 @@ export class ClassificationAgentService {
 
     let activeModel = CLASSIFICATION_MODEL;
     let agent = buildAgent(activeModel);
+
+    log.info(
+      {
+        runId: recorder.runId,
+        shipmentId: shipment.id,
+        reference: shipment.reference,
+        documentCount: documents.length,
+        promptVersion: systemPrompt.prompt?.version ?? null,
+      },
+      "agent run starting",
+    );
 
     try {
       const { output, usage } = await propagateAttributes(
@@ -318,6 +332,10 @@ export class ClassificationAgentService {
                 // Two overloads in a row — the endpoint is saturated.
                 activeModel = FALLBACK_MODEL;
                 agent = buildAgent(activeModel);
+                log.warn(
+                  { runId: recorder.runId, attempt: attempt + 1 },
+                  "provider overloaded twice — switching to the fallback model",
+                );
                 await recorder.recordItem({
                   kind: AgentRunItemKind.Text,
                   content: {
@@ -325,6 +343,10 @@ export class ClassificationAgentService {
                   },
                 });
               } else {
+                log.warn(
+                  { runId: recorder.runId, attempt: attempt + 1 },
+                  "provider overloaded — retrying the research pass",
+                );
                 await recorder.recordItem({
                   kind: AgentRunItemKind.Text,
                   content: {
@@ -343,6 +365,10 @@ export class ClassificationAgentService {
           // answers purely from memory, send it back to verify against the
           // live schedule and CROSS before the answer can count.
           if (toolCallsSeen === 0) {
+            log.warn(
+              { runId: recorder.runId, shipmentId: shipment.id },
+              "run made no lookups — forcing a verification turn",
+            );
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
@@ -386,6 +412,13 @@ export class ClassificationAgentService {
           // repair turn — its research is still in context, and the forced
           // tool choice guarantees a structured submission this time.
           if (!output || !isValidHtsCode(output.htsCode)) {
+            log.warn(
+              {
+                runId: recorder.runId,
+                htsCode: output?.htsCode ?? null,
+              },
+              "no valid submission from the loop — running a repair turn",
+            );
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
@@ -467,8 +500,24 @@ export class ClassificationAgentService {
         },
       });
 
+      log.info(
+        {
+          runId: recorder.runId,
+          shipmentId: shipment.id,
+          htsCode: output.htsCode,
+          confidence: output.confidence,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+        },
+        "agent run completed",
+      );
+
       return { result: output, runId: recorder.runId };
     } catch (error) {
+      log.error(
+        { err: error, runId: recorder.runId, shipmentId: shipment.id },
+        "agent run failed",
+      );
       await recorder.fail(error);
       throw error;
     }

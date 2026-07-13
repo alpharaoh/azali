@@ -214,7 +214,7 @@ export async function synthesizeShipmentFacts(
 export async function resolveClient(
   context: IngestContext,
   synthesis: ShipmentSynthesis,
-): Promise<string> {
+): Promise<{ clientId: string; created: boolean }> {
   if (synthesis.clientName) {
     const { data: candidates } = await listClients(
       { organizationId: context.organizationId, search: synthesis.clientName },
@@ -226,7 +226,7 @@ export async function resolveClient(
         candidate.name.toLowerCase() === synthesis.clientName?.toLowerCase(),
     );
     const match = exact ?? candidates[0];
-    if (match) return match.id;
+    if (match) return { clientId: match.id, created: false };
   }
 
   const created = await insertClient({
@@ -239,7 +239,7 @@ export async function resolveClient(
     industry: "unknown",
   });
 
-  return created.id;
+  return { clientId: created.id, created: true };
 }
 
 export async function createShipmentFromSynthesis(

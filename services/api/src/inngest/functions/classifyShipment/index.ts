@@ -47,6 +47,11 @@ export const classifyShipment = () => {
       const { organizationId, userId, shipmentId } =
         event.data as ShipmentClassifyRequestedEvent["data"];
 
+      logger.info(
+        { shipmentId, organizationId, eventId: event.id },
+        "classification run started",
+      );
+
       const shipment = await step.run("load-shipment", async () => {
         const row = await selectShipment(shipmentId, organizationId);
         if (!row) return null;
@@ -80,12 +85,26 @@ export const classifyShipment = () => {
         }));
       });
       if (documents.length === 0) {
+        logger.warn(
+          { shipmentId },
+          "no extracted documents — skipping classification",
+        );
         return {
           shipmentId,
           classified: false,
           reason: "no_extracted_documents",
         };
       }
+
+      logger.info(
+        {
+          shipmentId,
+          reference: shipment.reference,
+          clientName: shipment.clientName,
+          documentCount: documents.length,
+        },
+        "dossier assembled — starting agent",
+      );
 
       // The agent loop is a single atomic reasoning unit — one step by design.
       // Its full audit record lands in agent_runs/agent_run_items as it works.
@@ -103,6 +122,29 @@ export const classifyShipment = () => {
         Date.now() + REVIEW_DEADLINE_HOURS * 3_600_000,
       ).toISOString();
 
+      logger.info(
+        {
+          shipmentId,
+          runId,
+          htsCode: result.htsCode,
+          confidence: result.confidence,
+          alternates: result.alternates.length,
+          citations: result.citations.length,
+          clarifyingQuestions: result.clarifyingQuestions.length,
+          needsReview,
+        },
+        "agent returned a classification",
+      );
+
+      logger.info(
+        {
+          shipmentId,
+          stage: "classification",
+          status: needsReview ? "needs_review" : "unchanged",
+          reviewDeadlineAt: needsReview ? deadlineAt : null,
+        },
+        "applying classification to shipment",
+      );
       await step.run("apply-classification", async () => {
         await updateShipment(shipmentId, organizationId, {
           stage: ShipmentStage.Classification,
@@ -179,6 +221,18 @@ export const classifyShipment = () => {
       ]);
 
       await langfuseSpanProcessor?.forceFlush();
+
+      logger.info(
+        {
+          shipmentId,
+          runId,
+          htsCode: result.htsCode,
+          confidence: result.confidence,
+          needsReview,
+          elapsedMs: event.ts ? Date.now() - event.ts : undefined,
+        },
+        "classification run complete",
+      );
 
       return {
         shipmentId,

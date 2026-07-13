@@ -67,6 +67,16 @@ export const ingestShipmentDocuments = () => {
         batchId: event.id ?? "unbatched",
       };
 
+      logger.info(
+        {
+          organizationId,
+          batchId: context.batchId,
+          fileCount: files.length,
+          files: files.map((file) => file.fileName),
+        },
+        "ingestion run started",
+      );
+
       // 1. One audit row per file, in parallel — rows exist even if
       //    extraction fails, and re-delivered events reuse them.
       const documents = await Promise.all(
@@ -87,13 +97,26 @@ export const ingestShipmentDocuments = () => {
             await step.run(`save-extraction-${document.id}`, () =>
               saveExtraction(context, document.id, extraction),
             );
+            logger.info(
+              {
+                documentId: document.id,
+                fileName: document.fileName,
+                category: document.category,
+                fieldCount: extraction.fields.length,
+              },
+              "document extracted",
+            );
             return { ...document, extraction };
           } catch (error) {
             await step.run(`mark-failed-${document.id}`, () =>
               markExtractionFailed(context, document.id, error),
             );
             logger.warn(
-              { documentId: document.id, fileName: document.fileName },
+              {
+                err: error,
+                documentId: document.id,
+                fileName: document.fileName,
+              },
               "document extraction failed",
             );
             return null;
@@ -113,6 +136,10 @@ export const ingestShipmentDocuments = () => {
               await step.run(`save-preview-${document.id}`, () =>
                 savePreview(context, document.id, preview),
               );
+              logger.debug(
+                { documentId: document.id, pageCount: preview.pageCount },
+                "preview rendered",
+              );
             } catch {
               // A missing preview never blocks ingestion.
               logger.warn(
@@ -129,7 +156,20 @@ export const ingestShipmentDocuments = () => {
       ]);
       const extracted = extractionResults.filter((item) => item !== null);
 
+      logger.info(
+        {
+          batchId: context.batchId,
+          extracted: extracted.length,
+          failed: documents.length - extracted.length,
+        },
+        "extraction phase complete",
+      );
+
       if (extracted.length === 0) {
+        logger.warn(
+          { batchId: context.batchId, fileCount: files.length },
+          "no documents extracted — stopping without a shipment",
+        );
         return { shipmentId: null, extracted: 0, failed: documents.length };
       }
 
@@ -137,11 +177,38 @@ export const ingestShipmentDocuments = () => {
       const synthesis = await step.run("synthesize-shipment", () =>
         synthesizeShipmentFacts(context, extracted),
       );
-      const clientId = await step.run("resolve-client", () =>
+      logger.info(
+        {
+          clientName: synthesis.clientName,
+          reference: synthesis.reference,
+          originCountry: synthesis.originCountry,
+          portOfEntry: synthesis.portOfEntry,
+          transportMode: synthesis.transportMode,
+          valueUsd: synthesis.valueUsd,
+        },
+        "shipment facts synthesized",
+      );
+
+      const client = await step.run("resolve-client", () =>
         resolveClient(context, synthesis),
       );
+      logger.info(
+        {
+          clientId: client.clientId,
+          clientName: synthesis.clientName,
+          created: client.created,
+        },
+        client.created
+          ? "no matching client — placeholder created"
+          : "client matched",
+      );
+
       const shipment = await step.run("create-shipment", () =>
-        createShipmentFromSynthesis(context, synthesis, clientId),
+        createShipmentFromSynthesis(context, synthesis, client.clientId),
+      );
+      logger.info(
+        { shipmentId: shipment.id, reference: shipment.reference },
+        "shipment created",
       );
       await Promise.all(
         documents.map((document) =>
@@ -177,6 +244,11 @@ export const ingestShipmentDocuments = () => {
         ),
       ]);
 
+      logger.debug(
+        { shipmentId: shipment.id, documentEvents: extracted.length },
+        "timeline events recorded",
+      );
+
       // 5. Make every document retrievable by meaning.
       await step.run("ensure-knowledge-index", () =>
         KnowledgeBaseService.ensureIndex(),
@@ -190,14 +262,31 @@ export const ingestShipmentDocuments = () => {
         }),
       );
 
+      logger.info(
+        { shipmentId: shipment.id, indexed: extracted.length },
+        "documents indexed into the knowledge base",
+      );
+
       // Classification picks up from here as its own run.
       await step.sendEvent("request-classification", {
         name: SHIPMENT_CLASSIFY_REQUESTED_EVENT,
         data: { organizationId, userId, shipmentId: shipment.id },
       });
+      logger.info({ shipmentId: shipment.id }, "classification run requested");
 
       // Push any buffered trace spans out before the run completes.
       await langfuseSpanProcessor?.forceFlush();
+
+      logger.info(
+        {
+          shipmentId: shipment.id,
+          batchId: context.batchId,
+          extracted: extracted.length,
+          failed: documents.length - extracted.length,
+          elapsedMs: event.ts ? Date.now() - event.ts : undefined,
+        },
+        "ingestion run complete",
+      );
 
       return {
         shipmentId: shipment.id,
