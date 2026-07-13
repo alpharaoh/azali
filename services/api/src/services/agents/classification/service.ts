@@ -1,7 +1,8 @@
 import { propagateAttributes } from "@langfuse/tracing";
-import { Output, stepCountIs, ToolLoopAgent } from "ai";
+import { generateText, Output, stepCountIs, ToolLoopAgent } from "ai";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
+import { AgentRunItemKind } from "@/db/schema";
 import { anthropic } from "@/services/external/anthropic/client";
 import { crossRulingsTools } from "@/services/external/cross/tools";
 import { resolvePrompt } from "@/services/external/langfuse/prompts";
@@ -20,6 +21,8 @@ import {
 const CLASSIFICATION_MODEL = "claude-sonnet-4-6";
 const MAX_STEPS = 24;
 const THINKING_BUDGET_TOKENS = 8_000;
+
+const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
 
 export interface ClassificationShipmentFacts {
   id: string;
@@ -130,7 +133,7 @@ export class ClassificationAgentService {
     });
 
     try {
-      const { output, totalUsage } = await propagateAttributes(
+      const { output, usage } = await propagateAttributes(
         {
           traceName: "hts-classification",
           userId,
@@ -142,14 +145,14 @@ export class ClassificationAgentService {
             reference: shipment.reference,
           },
         },
-        () =>
-          agent.generate({
+        async () => {
+          // Stream the loop so every unit of work is auditable the moment
+          // it happens — reasoning, tool calls, and results land in the run
+          // record live instead of after each step completes.
+          const stream = agent.stream({
             prompt: dossier,
             // The real deadline — replaces Bun's per-request fetch timeout.
             timeout: { totalMs: 900_000, stepMs: 420_000 },
-            // Persist each loop step as it completes — a crashed run still
-            // leaves its audit trail.
-            onStepFinish: (step) => recorder.recordStep(step),
             ...(systemPrompt.prompt
               ? { runtimeContext: { langfusePrompt: systemPrompt.prompt } }
               : {}),
@@ -159,23 +162,139 @@ export class ClassificationAgentService {
                 ? { includeRuntimeContext: { langfusePrompt: true } }
                 : {}),
             },
-          }),
-      );
+          });
 
-      // A placeholder is not a classification — fail loudly so the step
-      // retries instead of a non-answer flowing into the shipment record.
-      if (!/^\d{4}\.\d{2}\.\d{2,4}/.test(output.htsCode)) {
-        throw new Error(
-          `Agent returned an invalid HTS code ("${output.htsCode}") — rejecting the run`,
-        );
-      }
+          const buffers = new Map<string, string>();
+          for await (const part of stream.fullStream) {
+            switch (part.type) {
+              case "reasoning-delta":
+              case "text-delta":
+                buffers.set(part.id, (buffers.get(part.id) ?? "") + part.text);
+                break;
+              case "reasoning-end": {
+                const text = buffers.get(part.id)?.trim();
+                buffers.delete(part.id);
+                if (text) {
+                  await recorder.recordItem({
+                    kind: AgentRunItemKind.Reasoning,
+                    content: { text },
+                  });
+                }
+                break;
+              }
+              case "text-end": {
+                const text = buffers.get(part.id)?.trim();
+                buffers.delete(part.id);
+                if (text) {
+                  await recorder.recordItem({
+                    kind: AgentRunItemKind.Text,
+                    content: { text },
+                  });
+                }
+                break;
+              }
+              case "tool-call":
+                await recorder.recordItem({
+                  kind: AgentRunItemKind.ToolCall,
+                  toolName: part.toolName,
+                  toolCallId: part.toolCallId,
+                  content: { input: part.input as unknown },
+                });
+                break;
+              case "tool-result":
+                await recorder.recordItem({
+                  kind: AgentRunItemKind.ToolResult,
+                  toolName: part.toolName,
+                  toolCallId: part.toolCallId,
+                  content: { output: part.output as unknown },
+                });
+                break;
+              case "tool-error":
+                await recorder.recordItem({
+                  kind: AgentRunItemKind.ToolResult,
+                  toolName: part.toolName,
+                  toolCallId: part.toolCallId,
+                  content: {
+                    error:
+                      part.error instanceof Error
+                        ? part.error.message
+                        : String(part.error),
+                  },
+                });
+                break;
+              case "finish-step":
+                recorder.advanceStep();
+                break;
+              case "error":
+                throw part.error instanceof Error
+                  ? part.error
+                  : new Error(String(part.error));
+              default:
+                break;
+            }
+          }
+
+          let output = await stream.output;
+          let usage = await stream.totalUsage;
+
+          // The model occasionally emits a placeholder answer. Give it one
+          // repair turn — with its own research still in context — before
+          // failing the run.
+          if (!isValidHtsCode(output.htsCode)) {
+            recorder.advanceStep();
+            await recorder.recordItem({
+              kind: AgentRunItemKind.Text,
+              content: {
+                text: `[repair] answer contained an invalid HTS code ("${output.htsCode}") — requesting the final classification`,
+              },
+            });
+
+            const { messages } = await stream.response;
+            const repair = await generateText({
+              model: anthropic(CLASSIFICATION_MODEL),
+              system: systemPrompt.text,
+              messages: [
+                { role: "user", content: dossier },
+                ...messages,
+                {
+                  role: "user",
+                  content:
+                    "Your answer contained placeholder values. Emit the final classification object now, with real values only, based on the research above.",
+                },
+              ],
+              output: Output.object({ schema: classificationResultSchema }),
+              maxOutputTokens: 24_000,
+              telemetry: { functionId: "hts-classification-repair" },
+            });
+            output = repair.output;
+            usage = {
+              ...usage,
+              inputTokens:
+                (usage.inputTokens ?? 0) + (repair.totalUsage.inputTokens ?? 0),
+              outputTokens:
+                (usage.outputTokens ?? 0) +
+                (repair.totalUsage.outputTokens ?? 0),
+              totalTokens:
+                (usage.totalTokens ?? 0) + (repair.totalUsage.totalTokens ?? 0),
+            };
+          }
+
+          if (!isValidHtsCode(output.htsCode)) {
+            throw new Error(
+              `Agent returned an invalid HTS code ("${output.htsCode}") even after a repair turn — rejecting the run`,
+            );
+          }
+
+          return { output, usage };
+        },
+      );
 
       await recorder.complete({
         result: output as unknown as Record<string, unknown>,
         usage: {
-          inputTokens: totalUsage.inputTokens,
-          outputTokens: totalUsage.outputTokens,
-          totalTokens: totalUsage.totalTokens,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          totalTokens: usage.totalTokens,
         },
       });
 

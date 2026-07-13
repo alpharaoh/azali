@@ -1,4 +1,3 @@
-import type { StepResult, ToolSet } from "ai";
 import { insertAgentRun } from "@/db/queries/insert/insertAgentRun";
 import { insertAgentRunItems } from "@/db/queries/insert/insertAgentRunItems";
 import { updateAgentRun } from "@/db/queries/update/updateAgentRun";
@@ -78,92 +77,55 @@ export class AgentRunRecorder {
     }
   }
 
+  private stepIndex = 0;
+  private itemIndex = 0;
+
   /**
-   * Persist one loop step in content order: reasoning, tool calls, tool
-   * results (and errors), emitted text — exactly as the model produced them.
+   * Persist one unit of agent work the moment it happens — reasoning as it
+   * concludes, tool calls as they're issued, results as they land. The audit
+   * trail is live, not written after the fact.
    */
-  async recordStep(step: StepResult<ToolSet>): Promise<void> {
-    const stepIndex = this.stepCount++;
+  async recordItem(item: {
+    kind: AgentRunItemKind;
+    toolName?: string;
+    toolCallId?: string;
+    content: Record<string, unknown>;
+  }): Promise<void> {
+    if (item.kind === AgentRunItemKind.ToolCall) this.toolCallCount++;
+    if (this.itemIndex === 0) this.stepCount++;
+    const itemIndex = this.itemIndex++;
     if (!this.runId) return;
 
-    const items: InsertAgentRunItem[] = [];
-    const base = {
+    const row: InsertAgentRunItem = {
       runId: this.runId,
       organizationId: this.organizationId,
       userId: this.userId,
-      stepIndex,
+      stepIndex: this.stepIndex,
+      itemIndex,
+      kind: item.kind,
+      toolName: item.toolName ?? null,
+      toolCallId: item.toolCallId ?? null,
+      content:
+        item.kind === AgentRunItemKind.ToolResult && "output" in item.content
+          ? clampOutput(item.content.output)
+          : item.content,
     };
-    let itemIndex = 0;
-
-    for (const part of step.content) {
-      switch (part.type) {
-        case "reasoning":
-          items.push({
-            ...base,
-            itemIndex: itemIndex++,
-            kind: AgentRunItemKind.Reasoning,
-            content: { text: part.text },
-          });
-          break;
-        case "text":
-          if (part.text.trim()) {
-            items.push({
-              ...base,
-              itemIndex: itemIndex++,
-              kind: AgentRunItemKind.Text,
-              content: { text: part.text },
-            });
-          }
-          break;
-        case "tool-call":
-          this.toolCallCount++;
-          items.push({
-            ...base,
-            itemIndex: itemIndex++,
-            kind: AgentRunItemKind.ToolCall,
-            toolName: part.toolName,
-            toolCallId: part.toolCallId,
-            content: { input: part.input as unknown },
-          });
-          break;
-        case "tool-result":
-          items.push({
-            ...base,
-            itemIndex: itemIndex++,
-            kind: AgentRunItemKind.ToolResult,
-            toolName: part.toolName,
-            toolCallId: part.toolCallId,
-            content: clampOutput(part.output),
-          });
-          break;
-        case "tool-error":
-          items.push({
-            ...base,
-            itemIndex: itemIndex++,
-            kind: AgentRunItemKind.ToolResult,
-            toolName: part.toolName,
-            toolCallId: part.toolCallId,
-            content: {
-              error:
-                part.error instanceof Error
-                  ? part.error.message
-                  : String(part.error),
-            },
-          });
-          break;
-        default:
-          break;
-      }
-    }
 
     try {
-      await insertAgentRunItems(items);
+      await insertAgentRunItems([row]);
     } catch (error) {
       log.error(
-        { err: error, runId: this.runId, stepIndex, itemCount: items.length },
-        "failed to persist run step",
+        { err: error, runId: this.runId, stepIndex: this.stepIndex, itemIndex },
+        "failed to persist run item",
       );
     }
+  }
+
+  /** Called at each loop-step boundary. */
+  advanceStep(): void {
+    if (this.itemIndex === 0) return;
+    this.stepIndex++;
+    this.itemIndex = 0;
   }
 
   async complete({
