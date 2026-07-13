@@ -119,6 +119,9 @@ export class ClassificationAgentService {
       },
       stopWhen: stepCountIs(MAX_STEPS),
       output: Output.object({ schema: classificationResultSchema }),
+      // Thinking tokens count toward the output budget — keep headroom, but
+      // don't let the default (model maximum) inflate request time estimates.
+      maxOutputTokens: 24_000,
       providerOptions: {
         anthropic: {
           thinking: { type: "enabled", budgetTokens: THINKING_BUDGET_TOKENS },
@@ -142,6 +145,8 @@ export class ClassificationAgentService {
         () =>
           agent.generate({
             prompt: dossier,
+            // The real deadline — replaces Bun's per-request fetch timeout.
+            timeout: { totalMs: 900_000, stepMs: 420_000 },
             // Persist each loop step as it completes — a crashed run still
             // leaves its audit trail.
             onStepFinish: (step) => recorder.recordStep(step),
