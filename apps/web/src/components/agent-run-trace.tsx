@@ -1,6 +1,7 @@
 import {
   Book,
   CircleExclamation,
+  DatabaseMagnifier,
   FileText,
   Globe,
   Magnifier,
@@ -104,13 +105,22 @@ function SourceBadge({ source }: { source: SourceName }) {
       </Chip>
     );
   }
+  if (source === "Web") {
+    return (
+      <Chip color="success" size="sm" variant="soft">
+        <Chip.Label className="inline-flex items-center gap-1">
+          <Globe className="size-3" />
+          Web
+        </Chip.Label>
+      </Chip>
+    );
+  }
   return (
-    <Chip
-      color={source === "Web" ? "success" : "default"}
-      size="sm"
-      variant="soft"
-    >
-      <Chip.Label>{source}</Chip.Label>
+    <Chip className="bg-purple-100 text-purple-900" size="sm" variant="soft">
+      <Chip.Label className="inline-flex items-center gap-1">
+        <DatabaseMagnifier className="size-3" />
+        Knowledge base
+      </Chip.Label>
     </Chip>
   );
 }
