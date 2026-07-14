@@ -39,15 +39,11 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
-
+import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
 import {
   useShipmentEventsControllerFindAll,
   useShipmentsControllerFindAll,
 } from "#/generated/api";
-import {
-  TableFetchingState,
-  TableSkeleton,
-} from "#/components/table-loading";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
