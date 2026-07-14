@@ -1614,11 +1614,40 @@ export interface AgentRunDetailResponseDto {
   items: AgentRunDetailResponseDtoItemsItem[];
 }
 
-export type ListProductsResponseDtoProductsItem = {
+/**
+ * The owning client, embedded for display.
+ * @nullable
+ */
+export type ListProductsResponseDtoDataItemClient = {
+  id: string;
+  name: string;
+  /** @nullable */
+  image: string | null;
+} | null;
+
+/**
+ * Last computed duty picture — a cache, not the filed record.
+ * @nullable
+ */
+export type ListProductsResponseDtoDataItemDutyRate = {
+  general?: string;
+  /** @nullable */
+  special?: string | null;
+  effective?: string;
+  /** @nullable */
+  effectivePct?: number | null;
+} | null;
+
+export type ListProductsResponseDtoDataItem = {
   /** Product id. */
   id: string;
   /** The client this product belongs to. */
   clientId: string;
+  /**
+   * The owning client, embedded for display.
+   * @nullable
+   */
+  client: ListProductsResponseDtoDataItemClient;
   /** Product name as it appears on documents. */
   name: string;
   /**
@@ -1644,10 +1673,26 @@ export type ListProductsResponseDtoProductsItem = {
    */
   confidence: number | null;
   /**
+   * Last computed duty picture — a cache, not the filed record.
+   * @nullable
+   */
+  dutyRate: ListProductsResponseDtoDataItemDutyRate;
+  /**
    * Who set the classification: agent (AI) or broker.
    * @nullable
    */
   source: string | null;
+  /**
+   * Times this classification was reused for a shipment line without a fresh agent run.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  reuseCount: number;
+  /**
+   * When it was last reused.
+   * @nullable
+   */
+  lastReusedAt: string | null;
   /**
    * When it was classified.
    * @nullable
@@ -1663,15 +1708,103 @@ export type ListProductsResponseDtoProductsItem = {
 };
 
 export interface ListProductsResponseDto {
-  /** The product library, newest first. */
-  products: ListProductsResponseDtoProductsItem[];
+  /** A page of the product library. */
+  data: ListProductsResponseDtoDataItem[];
+  /**
+   * Total rows matching the current filters.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  count: number;
 }
+
+export type ProductStatsResponseDtoTopChaptersItem = {
+  /** Two-digit HTS chapter. */
+  chapter: string;
+  /**
+   * Classified products in it.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  count: number;
+};
+
+export type ProductStatsResponseDtoGrowthItem = {
+  /** Calendar month, YYYY-MM. */
+  month: string;
+  /**
+   * Products classified during that month.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  added: number;
+};
+
+export interface ProductStatsResponseDto {
+  /**
+   * Classified products on file.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  entries: number;
+  /**
+   * Shipment lines classified straight from product memory.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  totalReuses: number;
+  /**
+   * Entries whose classification a broker set or confirmed.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  brokerApproved: number;
+  /**
+   * Distinct HTS chapters across the knowledge base.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  chaptersCovered: number;
+  /** The most-used HTS chapters, largest first. */
+  topChapters: ProductStatsResponseDtoTopChaptersItem[];
+  /** Knowledge base growth by month, oldest first. */
+  growth: ProductStatsResponseDtoGrowthItem[];
+}
+
+/**
+ * The owning client, embedded for display.
+ * @nullable
+ */
+export type ProductResponseDtoClient = {
+  id: string;
+  name: string;
+  /** @nullable */
+  image: string | null;
+} | null;
+
+/**
+ * Last computed duty picture — a cache, not the filed record.
+ * @nullable
+ */
+export type ProductResponseDtoDutyRate = {
+  general?: string;
+  /** @nullable */
+  special?: string | null;
+  effective?: string;
+  /** @nullable */
+  effectivePct?: number | null;
+} | null;
 
 export interface ProductResponseDto {
   /** Product id. */
   id: string;
   /** The client this product belongs to. */
   clientId: string;
+  /**
+   * The owning client, embedded for display.
+   * @nullable
+   */
+  client: ProductResponseDtoClient;
   /** Product name as it appears on documents. */
   name: string;
   /**
@@ -1697,10 +1830,26 @@ export interface ProductResponseDto {
    */
   confidence: number | null;
   /**
+   * Last computed duty picture — a cache, not the filed record.
+   * @nullable
+   */
+  dutyRate: ProductResponseDtoDutyRate;
+  /**
    * Who set the classification: agent (AI) or broker.
    * @nullable
    */
   source: string | null;
+  /**
+   * Times this classification was reused for a shipment line without a fresh agent run.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  reuseCount: number;
+  /**
+   * When it was last reused.
+   * @nullable
+   */
+  lastReusedAt: string | null;
   /**
    * When it was classified.
    * @nullable
@@ -1955,10 +2104,68 @@ export const ShipmentEventsControllerFindByShipmentActorItem = {
 
 export type ProductsControllerListParams = {
 /**
- * Filter to one client's products.
+ * Free-text search on product name, SKU, HTS code, or client name.
  */
-clientId?: string;
+search?: string;
+/**
+ * Filter to one or more clients; comma-separated.
+ */
+clientId?: string[];
+/**
+ * Filter by who set the classification (agent or broker); comma-separated.
+ */
+source?: ProductsControllerListSourceItem[];
+/**
+ * Column to sort by.
+ */
+sortBy?: ProductsControllerListSortBy;
+/**
+ * Sort direction.
+ */
+sortDir?: ProductsControllerListSortDir;
+/**
+ * Page size (1–100).
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
 };
+
+export type ProductsControllerListSourceItem = typeof ProductsControllerListSourceItem[keyof typeof ProductsControllerListSourceItem];
+
+
+export const ProductsControllerListSourceItem = {
+  agent: 'agent',
+  broker: 'broker',
+} as const;
+
+export type ProductsControllerListSortBy = typeof ProductsControllerListSortBy[keyof typeof ProductsControllerListSortBy];
+
+
+export const ProductsControllerListSortBy = {
+  name: 'name',
+  sku: 'sku',
+  htsCode: 'htsCode',
+  confidence: 'confidence',
+  reuseCount: 'reuseCount',
+  lastReusedAt: 'lastReusedAt',
+  classifiedAt: 'classifiedAt',
+  createdAt: 'createdAt',
+} as const;
+
+export type ProductsControllerListSortDir = typeof ProductsControllerListSortDir[keyof typeof ProductsControllerListSortDir];
+
+
+export const ProductsControllerListSortDir = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -4578,7 +4785,7 @@ export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof age
 
 
 /**
- * Returns the product library — every product seen on shipment documents, with its current classification. A product is classified once and reused across shipments; the classification carries who set it (AI or broker) and a link to its full audit record.
+ * Returns the knowledge base — every classified product, with its current HTS code, who set it (AI or broker), how many shipment lines reused it, and the owning client embedded. Supports filtering by client and source, free-text search, sorting, and offset pagination.
  * @summary List products
  */
 export type productsControllerListResponse200 = {
@@ -4686,6 +4893,118 @@ export function useProductsControllerList<TData = Awaited<ReturnType<typeof prod
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getProductsControllerListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns aggregate counts over the classified-product knowledge base: entries, total reuses, broker-approved entries, and distinct HTS chapters covered.
+ * @summary Knowledge base stats
+ */
+export type productsControllerStatsResponse200 = {
+  data: ProductStatsResponseDto
+  status: 200
+}
+
+export type productsControllerStatsResponseSuccess = (productsControllerStatsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerStatsResponse = (productsControllerStatsResponseSuccess)
+
+export const getProductsControllerStatsUrl = () => {
+
+
+  
+
+  return `/v1/products/stats`
+}
+
+export const productsControllerStats = async ( options?: RequestInit): Promise<productsControllerStatsResponse> => {
+  
+  return axios<productsControllerStatsResponse>(getProductsControllerStatsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getProductsControllerStatsQueryKey = () => {
+    return [
+    `/v1/products/stats`
+    ] as const;
+    }
+
+    
+export const getProductsControllerStatsQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerStatsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerStats>>> = ({ signal }) => productsControllerStats({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerStatsQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerStats>>>
+export type ProductsControllerStatsQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerStats>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerStats>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Knowledge base stats
+ */
+
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProductsControllerStatsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

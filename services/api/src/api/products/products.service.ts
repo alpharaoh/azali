@@ -1,19 +1,29 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import type { EmbeddedClient } from "@/db/lib/embedClient";
+import { embedClient } from "@/db/lib/embedClient";
 import { listProducts } from "@/db/queries/select/many/listProducts";
+import { productStats } from "@/db/queries/select/many/productStats";
 import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import type { SelectProduct } from "@/db/schema";
+import type { ListProductsDto } from "./dto/list-products.dto";
 
-function toProduct(product: SelectProduct) {
+function toProduct(
+  product: SelectProduct & { client?: EmbeddedClient | null },
+) {
   return {
     id: product.id,
     clientId: product.clientId,
+    client: product.client ?? null,
     name: product.name,
     sku: product.sku,
     description: product.description,
     htsCode: product.htsCode,
     htsDescription: product.htsDescription,
     confidence: product.confidence,
+    dutyRate: product.dutyRate ?? null,
     source: product.source,
+    reuseCount: product.reuseCount,
+    lastReusedAt: product.lastReusedAt?.toISOString() ?? null,
     classifiedAt: product.classifiedAt?.toISOString() ?? null,
     classificationRunId: product.classificationRunId,
     createdAt: product.createdAt.toISOString(),
@@ -22,16 +32,33 @@ function toProduct(product: SelectProduct) {
 
 @Injectable()
 export class ProductsService {
-  async findAll(organizationId: string, clientId?: string) {
-    const { data } = await listProducts({
-      organizationId,
-      ...(clientId ? { clientId } : {}),
-    });
-    return { products: data.map(toProduct) };
+  /**
+   * The knowledge base — classified products only, paginated. Every code the
+   * team has approved (or the agent set), with how often it's been reused.
+   */
+  async findAll(organizationId: string, query: ListProductsDto) {
+    const { data, count } = await listProducts(
+      {
+        organizationId,
+        classifiedOnly: true,
+        clientIds: query.clientId,
+        sources: query.source,
+        search: query.search,
+      },
+      { [query.sortBy]: query.sortDir },
+      query.limit,
+      query.offset,
+    );
+
+    return { data: data.map(toProduct), count };
+  }
+
+  async stats(organizationId: string) {
+    return productStats(organizationId);
   }
 
   async findOne(organizationId: string, id: string) {
-    const product = await selectProduct(id, organizationId);
+    const product = await embedClient(await selectProduct(id, organizationId));
     if (!product) {
       throw new NotFoundException(`Product "${id}" not found`);
     }

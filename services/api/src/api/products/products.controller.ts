@@ -3,15 +3,16 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
+import { ListProductsDto } from "./dto/list-products.dto";
 import {
   ListProductsResponseDto,
   ProductResponseDto,
+  ProductStatsResponseDto,
 } from "./dto/product.response.dto";
 import { ProductsService } from "./products.service";
 
@@ -20,30 +21,40 @@ import { ProductsService } from "./products.service";
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  /** The importer's product library. */
+  /** The classified-product knowledge base. */
   @Get()
   @ApiOperation({
     summary: "List products",
     description:
-      "Returns the product library — every product seen on shipment documents, with its current classification. A product is classified once and reused across shipments; the classification carries who set it (AI or broker) and a link to its full audit record.",
-  })
-  @ApiQuery({
-    name: "clientId",
-    required: false,
-    description: "Filter to one client's products.",
+      "Returns the knowledge base — every classified product, with its current HTS code, who set it (AI or broker), how many shipment lines reused it, and the owning client embedded. Supports filtering by client and source, free-text search, sorting, and offset pagination.",
   })
   @ApiOkResponse({
     type: ListProductsResponseDto,
-    description: "The product library, newest first.",
+    description: "A page of classified products plus the total count.",
   })
   list(
     @Session() session: UserSession<typeof auth>,
-    @Query("clientId") clientId?: string,
+    @Query() query: ListProductsDto,
   ) {
     return this.productsService.findAll(
       getActiveOrganizationId(session),
-      clientId,
+      query,
     );
+  }
+
+  /** Aggregate stats over the knowledge base. */
+  @Get("stats")
+  @ApiOperation({
+    summary: "Knowledge base stats",
+    description:
+      "Returns aggregate counts over the classified-product knowledge base: entries, total reuses, broker-approved entries, and distinct HTS chapters covered.",
+  })
+  @ApiOkResponse({
+    type: ProductStatsResponseDto,
+    description: "The knowledge base totals.",
+  })
+  stats(@Session() session: UserSession<typeof auth>) {
+    return this.productsService.stats(getActiveOrganizationId(session));
   }
 
   /** One product with its classification. */

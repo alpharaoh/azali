@@ -4,6 +4,7 @@ import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocu
 import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
+import { incrementProductReuse } from "@/db/queries/update/incrementProductReuse";
 import { updateProduct } from "@/db/queries/update/updateProduct";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
@@ -200,6 +201,7 @@ export const classifyShipment = () => {
                 ? LineItemStatus.Approved
                 : LineItemStatus.Classified,
           });
+          await incrementProductReuse(product.id, organizationId);
           return {
             htsCode: product.htsCode,
             htsDescription: product.htsDescription,

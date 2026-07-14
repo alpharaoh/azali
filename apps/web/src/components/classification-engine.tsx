@@ -1,12 +1,9 @@
 import {
-  ArrowUp,
-  ChevronRight,
+  Book,
   CircleInfo,
   Copy,
   CopyCheck,
   Funnel,
-  MagicWand,
-  Paperclip,
   Xmark,
 } from "@gravity-ui/icons";
 import {
@@ -26,90 +23,46 @@ import {
   AreaChart,
   ChartTooltip,
   DataGrid,
+  EmptyState,
   InlineSelect,
-  PromptInput,
-  TrendChip,
   Widget,
 } from "@heroui-pro/react";
-import {
-  format,
-  formatDistanceToNowStrict,
-  subDays,
-  subMonths,
-} from "date-fns";
-import { useMemo, useState } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
+import { format, formatDistanceToNowStrict, subMonths } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
+import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
 import type {
-  CatalogEntry,
-  CatalogSource,
-  SandboxRule,
-} from "#/data/classification-engine";
+  ListProductsResponseDtoDataItem as ApiProduct,
+  ProductsControllerListSortBy as ProductSortColumn,
+  ProductsControllerListSourceItem as ProductSource,
+  ProductsControllerListParams,
+} from "#/generated/api";
 import {
-  catalogEntries,
-  catalogGrowthTotals,
-  sandboxFallback,
-  sandboxRules,
-  topChapters,
-} from "#/data/classification-engine";
+  useClientsControllerFindAll,
+  useProductsControllerList,
+  useProductsControllerStats,
+} from "#/generated/api";
+import { HTS_CHAPTER_TITLES } from "#/lib/hts-chapters";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+import type { ClassificationsSearch } from "#/routes/dashboard/classifications";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
  * -----------------------------------------------------------------------------------------------*/
-type CatalogRow = CatalogEntry & { learnedNow?: boolean };
-
 const sourceMeta: Record<
-  CatalogSource,
-  { chip: "accent" | "default" | "success"; label: string }
+  ProductSource,
+  { chip: "default" | "success"; label: string }
 > = {
-  approved: { chip: "success", label: "Broker-approved" },
-  auto: { chip: "default", label: "Auto-classified" },
-  corrected: { chip: "accent", label: "Corrected" },
+  agent: { chip: "default", label: "Auto-classified" },
+  broker: { chip: "success", label: "Broker-approved" },
 };
 
-const sourceIds = Object.keys(sourceMeta) as CatalogSource[];
+const sourceIds = Object.keys(sourceMeta) as ProductSource[];
 
-const overviewStats: Array<{
-  change: string;
-  info?: string;
-  title: string;
-  trend: "neutral" | "up";
-  value: string;
-}> = [
-  { change: "+41", title: "Catalog Entries", trend: "up", value: "1,284" },
-  {
-    change: "+1.2%",
-    info: "Share of shipment lines resolved straight from the catalog, with no re-classification needed. This is why touches per entry falls.",
-    title: "Auto-Reuse Rate",
-    trend: "up",
-    value: "91%",
-  },
-  {
-    change: "+3",
-    info: "Every correction teaches the engine — the corrected code becomes the catalog entry going forward.",
-    title: "Corrections This Month",
-    trend: "neutral",
-    value: "14",
-  },
-  {
-    change: "+2",
-    title: "Chapters Covered",
-    trend: "neutral",
-    value: "38",
-  },
-];
-
-// Trailing six months ending with the current month, so the chart never goes stale.
-const catalogGrowth = catalogGrowthTotals.map((entries, index) => ({
-  entries,
-  month: format(
-    subMonths(new Date(), catalogGrowthTotals.length - 1 - index),
-    "MMM",
-  ),
-}));
-
-const maxChapterCount = Math.max(...topChapters.map((c) => c.count));
+const SEARCH_DEBOUNCE_MS = 300;
 
 function getInitials(name: string) {
   return name
@@ -117,21 +70,6 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
-}
-
-function toStringSet(
-  keys: "all" | Iterable<unknown>,
-  all: string[],
-): Set<string> {
-  return keys === "all" ? new Set(all) : new Set([...keys].map(String));
-}
-
-function without<T>(set: Set<T>, value: T) {
-  const next = new Set(set);
-
-  next.delete(value);
-
-  return next;
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -171,195 +109,320 @@ function CopyHts({ children }: { children: string }) {
 }
 
 /* -------------------------------------------------------------------------------------------------
- * Sandbox — try the engine on anything
+ * Overview — real aggregates over the knowledge base
  * -----------------------------------------------------------------------------------------------*/
-function classify(query: string): SandboxRule {
-  const q = query.toLowerCase();
+function OverviewStats() {
+  const { data: response } = useProductsControllerStats({
+    query: { placeholderData: keepPreviousData },
+  });
+  const stats = response?.data;
 
-  return (
-    sandboxRules.find((rule) =>
-      rule.keywords.some((keyword) => q.includes(keyword)),
-    ) ?? sandboxFallback
-  );
-}
-
-function EngineSandbox() {
-  const [query, setQuery] = useState("");
-  const [isClassifying, setIsClassifying] = useState(false);
-  const [result, setResult] = useState<{
-    query: string;
-    rule: SandboxRule;
-  } | null>(null);
-
-  const handleClassify = () => {
-    const trimmed = query.trim();
-
-    if (!trimmed || isClassifying) return;
-    setIsClassifying(true);
-    setResult(null);
-    setQuery("");
-    setTimeout(() => {
-      setResult({ query: trimmed, rule: classify(trimmed) });
-      setIsClassifying(false);
-    }, 900);
-  };
+  const tiles: Array<{ info?: string; title: string; value: string }> = [
+    {
+      title: "Knowledge Base Entries",
+      value: stats?.entries.toLocaleString("en-US") ?? "—",
+    },
+    {
+      info: "Shipment lines classified straight from the knowledge base, with no re-classification needed. This is why touches per entry falls.",
+      title: "Total Reuses",
+      value: stats?.totalReuses.toLocaleString("en-US") ?? "—",
+    },
+    {
+      info: "Entries a licensed broker set or confirmed — these are trusted and reused automatically.",
+      title: "Broker-Approved",
+      value: stats?.brokerApproved.toLocaleString("en-US") ?? "—",
+    },
+    {
+      title: "Chapters Covered",
+      value: stats?.chaptersCovered.toLocaleString("en-US") ?? "—",
+    },
+  ];
 
   return (
     <Widget>
       <Widget.Header>
-        <Widget.Title className="inline-flex items-center gap-2">
-          <MagicWand className="text-muted size-4" />
-          Test the Engine
-        </Widget.Title>
-        <span className="text-muted text-xs">
-          Describe any product — the engine proposes a code
-        </span>
+        <Widget.Title>Overview</Widget.Title>
       </Widget.Header>
-      <Widget.Content className="flex flex-col gap-3">
-        <PromptInput
-          value={query}
-          onSubmit={handleClassify}
-          onValueChange={setQuery}
-        >
-          <PromptInput.Shell>
-            <PromptInput.Content>
-              <PromptInput.TextArea placeholder='Try "wireless earbuds, silicone tips, bluetooth 5.3" or "women&apos;s wool blazer"…' />
-            </PromptInput.Content>
-            <PromptInput.Toolbar>
-              <PromptInput.ToolbarStart>
-                <PromptInput.Action
-                  aria-label="Attach spec sheet"
-                  tooltip="Attach spec sheet"
-                >
-                  <Paperclip className="size-4" />
-                </PromptInput.Action>
-              </PromptInput.ToolbarStart>
-              <PromptInput.ToolbarEnd>
-                <PromptInput.Send>
-                  <ArrowUp className="size-4" />
-                </PromptInput.Send>
-              </PromptInput.ToolbarEnd>
-            </PromptInput.Toolbar>
-          </PromptInput.Shell>
-          <PromptInput.Footer>
-            The engine proposes — a licensed broker approves. Check important
-            classifications.
-          </PromptInput.Footer>
-        </PromptInput>
-
-        {isClassifying ? (
-          <span className="text-muted animate-pulse text-sm">
-            Analyzing product attributes and searching precedent…
-          </span>
-        ) : null}
-
-        {result ? (
-          <div className="bg-background/40 flex flex-col gap-2 rounded-xl border p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-muted text-xs font-medium">
-                Proposed classification for “{result.query}”
-              </span>
-              <Chip
-                color={result.rule.confidence >= 0.9 ? "success" : "warning"}
-                size="sm"
-                variant="soft"
-              >
-                <Chip.Label>
-                  {Math.round(result.rule.confidence * 100)}% confident
-                </Chip.Label>
-              </Chip>
-            </div>
-            <span className="text-foreground font-mono text-xl font-semibold tracking-tight">
-              {result.rule.hts}
+      <Widget.Content className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {tiles.map((stat) => (
+          <div key={stat.title} className="flex flex-col gap-1">
+            <span className="text-muted inline-flex items-center gap-1 text-sm font-medium">
+              {stat.title}
+              {stat.info ? (
+                <Tooltip>
+                  <Button
+                    isIconOnly
+                    aria-label={`About ${stat.title}`}
+                    className="text-muted hover:text-foreground size-5 min-h-5 min-w-5"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <CircleInfo className="size-3.5" />
+                  </Button>
+                  <Tooltip.Content className="max-w-64">
+                    {stat.info}
+                  </Tooltip.Content>
+                </Tooltip>
+              ) : null}
             </span>
-            <span className="text-muted text-sm">
-              {result.rule.htsDescription} · {result.rule.dutyRate}
+            <span className="text-foreground text-2xl font-semibold tabular-nums tracking-tight">
+              {stat.value}
             </span>
-            <ul className="text-muted mt-1 flex list-disc flex-col gap-1 pl-4 text-xs">
-              {result.rule.reasoning.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-            <div className="flex justify-end">
-              <Button size="sm" variant="ghost">
-                Send to Review Queue
-              </Button>
-            </div>
           </div>
-        ) : null}
+        ))}
       </Widget.Content>
     </Widget>
   );
 }
 
 /* -------------------------------------------------------------------------------------------------
- * ClassificationEngine
+ * Charts — knowledge base growth + the chapters it concentrates in
  * -----------------------------------------------------------------------------------------------*/
-export function ClassificationEngine() {
-  const [search, setSearch] = useState("");
-  const [clientFilter, setClientFilter] = useState<Set<string>>(new Set());
-  const [clientQuery, setClientQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "uses",
-    direction: "descending",
+function EngineCharts() {
+  // Same query key as the overview tiles — React Query dedupes the request.
+  const { data: response } = useProductsControllerStats({
+    query: { placeholderData: keepPreviousData },
   });
+  const stats = response?.data;
 
-  const allEntries = useMemo<CatalogRow[]>(() => catalogEntries, []);
+  // Trailing six months, cumulative — each point counts every product
+  // classified up to and including that month.
+  const growthSeries = useMemo(() => {
+    const growth = stats?.growth ?? [];
 
-  const allClients = useMemo(
-    () => [...new Set(allEntries.map((entry) => entry.client))].sort(),
-    [allEntries],
+    return [...Array(6)].map((_, index) => {
+      const date = subMonths(new Date(), 5 - index);
+      const key = format(date, "yyyy-MM");
+      const entries = growth
+        .filter((point) => point.month <= key)
+        .reduce((sum, point) => sum + point.added, 0);
+
+      return { entries, month: format(date, "MMM") };
+    });
+  }, [stats?.growth]);
+
+  const topChapters = stats?.topChapters ?? [];
+  const maxChapterCount = Math.max(
+    1,
+    ...topChapters.map((chapter) => chapter.count),
   );
 
-  const visibleEntries = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const result = allEntries.filter(
-      (entry) =>
-        (clientFilter.size === 0 || clientFilter.has(entry.client)) &&
-        (sourceFilter.size === 0 || sourceFilter.has(entry.source)) &&
-        (query.length === 0 ||
-          entry.product.toLowerCase().includes(query) ||
-          entry.sku.toLowerCase().includes(query) ||
-          entry.hts.includes(query) ||
-          entry.client.toLowerCase().includes(query)),
-    );
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <Widget className="lg:col-span-2">
+        <Widget.Header>
+          <Widget.Title>Catalog Growth</Widget.Title>
+          <span className="text-muted text-xs">
+            Cumulative classified products
+          </span>
+        </Widget.Header>
+        <Widget.Content>
+          <AreaChart data={growthSeries} height={220}>
+            <defs>
+              <linearGradient id="catalog-growth" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--chart-3)"
+                  stopOpacity={0.2}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--chart-3)"
+                  stopOpacity={0.02}
+                />
+              </linearGradient>
+            </defs>
+            <AreaChart.Grid vertical={false} />
+            <AreaChart.XAxis dataKey="month" tickMargin={8} />
+            <AreaChart.YAxis allowDecimals={false} width={40} />
+            <AreaChart.Area
+              dataKey="entries"
+              dot={false}
+              fill="url(#catalog-growth)"
+              name="Entries"
+              stroke="var(--chart-3)"
+              strokeWidth={2}
+              type="monotone"
+            />
+            <AreaChart.Tooltip
+              content={({ active, label, payload }) => {
+                if (!active || !payload?.length) return null;
 
-    return [...result].sort((a, b) => {
-      // Freshly learned entries always surface first.
-      if ((a.learnedNow ?? false) !== (b.learnedNow ?? false))
-        return a.learnedNow ? -1 : 1;
+                return (
+                  <ChartTooltip>
+                    <ChartTooltip.Header>{label}</ChartTooltip.Header>
+                    {payload.map((entry) => (
+                      <ChartTooltip.Item key={String(entry.dataKey)}>
+                        <ChartTooltip.Indicator
+                          color={entry.color ?? entry.stroke}
+                        />
+                        <ChartTooltip.Label>{entry.name}</ChartTooltip.Label>
+                        <ChartTooltip.Value>
+                          {Number(entry.value).toLocaleString()}
+                        </ChartTooltip.Value>
+                      </ChartTooltip.Item>
+                    ))}
+                  </ChartTooltip>
+                );
+              }}
+            />
+          </AreaChart>
+        </Widget.Content>
+      </Widget>
 
-      const col = sortDescriptor.column as string;
-      let cmp: number;
+      <Widget>
+        <Widget.Header>
+          <Widget.Title>Top Chapters</Widget.Title>
+        </Widget.Header>
+        <Widget.Content className="flex flex-col gap-3">
+          {topChapters.length === 0 ? (
+            <span className="text-muted text-sm">
+              Chapters appear as products are classified.
+            </span>
+          ) : (
+            topChapters.map((chapter) => (
+              <div key={chapter.chapter} className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-foreground min-w-0 truncate">
+                    <span className="text-muted font-mono text-xs">
+                      Ch. {chapter.chapter}
+                    </span>{" "}
+                    {HTS_CHAPTER_TITLES[chapter.chapter] ?? ""}
+                  </span>
+                  <span className="text-muted shrink-0 tabular-nums">
+                    {chapter.count}
+                  </span>
+                </div>
+                <div className="bg-default/60 h-1 w-full rounded-full">
+                  <div
+                    className="bg-accent h-1 rounded-full"
+                    style={{
+                      width: `${(chapter.count / maxChapterCount) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))
+          )}
+        </Widget.Content>
+      </Widget>
+    </div>
+  );
+}
 
-      if (col === "uses") {
-        cmp = a.uses - b.uses;
-      } else if (col === "confidence") {
-        cmp = a.confidence - b.confidence;
-      } else if (col === "lastUsed") {
-        cmp = b.lastUsedDaysAgo - a.lastUsedDaysAgo;
-      } else if (col === "client") {
-        cmp = a.client.localeCompare(b.client);
-      } else {
-        cmp = a.product.localeCompare(b.product);
+/* -------------------------------------------------------------------------------------------------
+ * ClassificationEngine — the read-only knowledge base
+ * -----------------------------------------------------------------------------------------------*/
+const routeApi = getRouteApi("/dashboard/classifications");
+
+export function ClassificationEngine() {
+  // Filters, search, and sorting live in the URL; pagination is ephemeral
+  // component state.
+  const searchParams = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
+
+  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
+  const [clientQuery, setClientQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
+
+  const clientFilter = useMemo(
+    () => new Set<string>(searchParams.clientId ?? []),
+    [searchParams.clientId],
+  );
+  const sourceFilter = useMemo(
+    () => new Set<string>(searchParams.source ?? []),
+    [searchParams.source],
+  );
+  const sortDescriptor: SortDescriptor = {
+    column: searchParams.sortBy ?? "reuseCount",
+    direction: searchParams.sortDir === "asc" ? "ascending" : "descending",
+  };
+
+  const updateSearch = useCallback(
+    (patch: Partial<ClassificationsSearch>) => {
+      navigate({
+        search: (prev) => ({ ...prev, ...patch }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  // Keep the input in sync with the URL (back/forward, shared links).
+  useEffect(() => {
+    setSearchInput(searchParams.q ?? "");
+  }, [searchParams.q]);
+
+  // Debounce typing into the URL.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((searchParams.q ?? "") !== searchInput) {
+        updateSearch({ q: searchInput || undefined });
       }
+    }, SEARCH_DEBOUNCE_MS);
 
-      if (sortDescriptor.direction === "descending") cmp *= -1;
+    return () => clearTimeout(timer);
+  }, [searchInput, searchParams.q, updateSearch]);
 
-      return cmp;
-    });
-  }, [allEntries, search, clientFilter, sourceFilter, sortDescriptor]);
+  // Any change to the URL-driven query state starts back at page 1 (covers
+  // both in-app updates and browser back/forward).
+  const filterFingerprint = JSON.stringify(searchParams);
 
-  const totalPages = Math.ceil(visibleEntries.length / rowsPerPage) || 1;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint stands in for every search param
+  useEffect(() => {
+    setPage(1);
+  }, [filterFingerprint]);
+
+  const params: ProductsControllerListParams = {
+    search: searchParams.q,
+    clientId: searchParams.clientId,
+    source: searchParams.source,
+    sortBy: searchParams.sortBy ?? "reuseCount",
+    sortDir: searchParams.sortDir ?? "desc",
+    limit: rowsPerPage,
+    offset: (page - 1) * rowsPerPage,
+  };
+
+  const {
+    data: response,
+    isFetching,
+    isPending,
+  } = useProductsControllerList(params, {
+    query: { placeholderData: keepPreviousData },
+  });
+
+  const products = response?.data.data ?? [];
+  const count = response?.data.count ?? 0;
+
+  // The client filter's options — the org's clients, alphabetical.
+  const { data: clientsResponse } = useClientsControllerFindAll({
+    limit: 100,
+    sortBy: "name",
+    sortDir: "asc",
+  });
+  const allClients = clientsResponse?.data.data ?? [];
+  const filteredClients = clientQuery
+    ? allClients.filter((client) =>
+        client.name.toLowerCase().includes(clientQuery.toLowerCase()),
+      )
+    : allClients;
+  const clientNameById = useMemo(
+    () => new Map(allClients.map((client) => [client.id, client.name])),
+    [allClients],
+  );
+
+  const hasActiveFilters =
+    !!searchParams.q || clientFilter.size > 0 || sourceFilter.size > 0;
+
+  const clearFilters = useCallback(() => {
+    setSearchInput("");
+    setClientQuery("");
+    updateSearch({ q: undefined, clientId: undefined, source: undefined });
+  }, [updateSearch]);
+
+  const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
-  const paginatedEntries = useMemo(() => {
-    const start = (safePage - 1) * rowsPerPage;
-
-    return visibleEntries.slice(start, start + rowsPerPage);
-  }, [visibleEntries, safePage, rowsPerPage]);
 
   const paginationPages = useMemo(() => {
     const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
@@ -383,53 +446,39 @@ export function ClassificationEngine() {
     return pages;
   }, [totalPages, safePage]);
 
-  const rangeStart = (safePage - 1) * rowsPerPage + 1;
-  const rangeEnd = Math.min(safePage * rowsPerPage, visibleEntries.length);
+  const rangeStart = count === 0 ? 0 : (safePage - 1) * rowsPerPage + 1;
+  const rangeEnd = Math.min(safePage * rowsPerPage, count);
 
-  const filteredClients = clientQuery
-    ? allClients.filter((client) =>
-        client.toLowerCase().includes(clientQuery.toLowerCase()),
-      )
-    : allClients;
-
-  const hasActiveFilters =
-    search.length > 0 || clientFilter.size > 0 || sourceFilter.size > 0;
-
-  const clearFilters = () => {
-    setSearch("");
-    setClientFilter(new Set());
-    setClientQuery("");
-    setSourceFilter(new Set());
-    setPage(1);
-  };
-
-  const columns = useMemo<DataGridColumn<CatalogRow>[]>(
+  const columns = useMemo<DataGridColumn<ApiProduct>[]>(
     () => [
       {
-        accessorKey: "product",
+        accessorKey: "name",
         allowsSorting: true,
-        cell: (entry) => (
-          <div className="flex min-w-0 flex-col">
+        cell: (product) => (
+          <div className="flex min-w-0 max-w-96 flex-col">
             <span className="text-foreground truncate text-sm font-medium">
-              {entry.product}
+              {product.name}
             </span>
-            <span className="text-muted truncate text-xs tabular-nums">
-              {entry.sku}
-            </span>
+            {product.sku ? (
+              <span className="text-muted truncate text-xs tabular-nums">
+                {product.sku}
+              </span>
+            ) : null}
           </div>
         ),
         header: "Product",
-        id: "product",
+        id: "name",
         isRowHeader: true,
-        maxWidth: 300,
-        minWidth: 240,
-        width: 300,
+        maxWidth: 240,
+        minWidth: 200,
+        width: 240,
       },
       {
-        accessorKey: "client",
-        allowsSorting: true,
-        cell: (entry) => (
-          <span className="block min-w-0 truncate text-sm">{entry.client}</span>
+        accessorKey: "clientId",
+        cell: (product) => (
+          <span className="block min-w-0 truncate text-sm">
+            {product.client?.name ?? "—"}
+          </span>
         ),
         header: "Client",
         id: "client",
@@ -438,39 +487,48 @@ export function ClassificationEngine() {
         width: 200,
       },
       {
-        accessorKey: "hts",
-        cell: (entry) => <CopyHts>{entry.hts}</CopyHts>,
+        accessorKey: "htsCode",
+        allowsSorting: true,
+        cell: (product) =>
+          product.htsCode ? <CopyHts>{product.htsCode}</CopyHts> : "—",
         header: "HTS Code",
-        id: "hts",
+        id: "htsCode",
         minWidth: 160,
       },
       {
         accessorKey: "dutyRate",
-        cell: (entry) => (
-          <span className="text-muted text-sm tabular-nums">
-            {entry.dutyRate}
-          </span>
-        ),
+        cell: (product) => {
+          const duty =
+            product.dutyRate?.effective ?? product.dutyRate?.general ?? null;
+
+          return (
+            <span
+              className="text-muted block min-w-0 truncate whitespace-nowrap text-sm tabular-nums"
+              title={duty ?? undefined}
+            >
+              {duty ?? "—"}
+            </span>
+          );
+        },
         header: "Duty",
         id: "duty",
-        minWidth: 80,
+        maxWidth: 260,
+        minWidth: 160,
+        width: 220,
       },
       {
         accessorKey: "source",
-        cell: (entry) =>
-          entry.learnedNow ? (
-            <Chip color="accent" size="sm" variant="soft">
-              <Chip.Label>Learned today</Chip.Label>
+        cell: (product) => {
+          const meta = sourceMeta[product.source as ProductSource];
+
+          return meta ? (
+            <Chip color={meta.chip} size="sm" variant="soft">
+              <Chip.Label>{meta.label}</Chip.Label>
             </Chip>
           ) : (
-            <Chip
-              color={sourceMeta[entry.source].chip}
-              size="sm"
-              variant="soft"
-            >
-              <Chip.Label>{sourceMeta[entry.source].label}</Chip.Label>
-            </Chip>
-          ),
+            <span className="text-muted text-sm">—</span>
+          );
+        },
         header: "Source",
         id: "source",
         minWidth: 150,
@@ -478,9 +536,11 @@ export function ClassificationEngine() {
       {
         accessorKey: "confidence",
         allowsSorting: true,
-        cell: (entry) => (
+        cell: (product) => (
           <span className="text-muted text-sm tabular-nums">
-            {Math.round(entry.confidence * 100)}%
+            {product.confidence !== null
+              ? `${Math.round(product.confidence * 100)}%`
+              : "—"}
           </span>
         ),
         header: "Confidence",
@@ -488,47 +548,33 @@ export function ClassificationEngine() {
         minWidth: 100,
       },
       {
-        accessorKey: "uses",
+        accessorKey: "reuseCount",
         align: "end",
         allowsSorting: true,
-        cell: (entry) => (
+        cell: (product) => (
           <span className="font-medium tabular-nums">
-            {entry.uses.toLocaleString("en-US")}
+            {product.reuseCount.toLocaleString("en-US")}
           </span>
         ),
-        header: "Uses",
-        id: "uses",
+        header: "Hits",
+        id: "reuseCount",
         minWidth: 80,
       },
       {
-        accessorKey: "lastUsedDaysAgo",
+        accessorKey: "lastReusedAt",
         allowsSorting: true,
-        cell: (entry) => (
+        cell: (product) => (
           <span className="text-muted whitespace-nowrap text-sm">
-            {entry.learnedNow
-              ? "just now"
-              : formatDistanceToNowStrict(
-                  subDays(new Date(), entry.lastUsedDaysAgo),
-                  { addSuffix: true },
-                )}
+            {product.lastReusedAt
+              ? formatDistanceToNowStrict(new Date(product.lastReusedAt), {
+                  addSuffix: true,
+                })
+              : "Never"}
           </span>
         ),
         header: "Last Used",
-        id: "lastUsed",
+        id: "lastReusedAt",
         minWidth: 110,
-      },
-      {
-        align: "end",
-        cell: () => (
-          <Button size="sm" variant="ghost">
-            Open
-            <ChevronRight />
-          </Button>
-        ),
-        header: "",
-        id: "actions",
-        minWidth: 90,
-        pinned: "end",
       },
     ],
     [],
@@ -548,155 +594,27 @@ export function ClassificationEngine() {
       </div>
 
       {/* Overview */}
-      <Widget>
-        <Widget.Header>
-          <Widget.Title>Overview</Widget.Title>
-        </Widget.Header>
-        <Widget.Content className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {overviewStats.map((stat) => (
-            <div key={stat.title} className="flex flex-col gap-1">
-              <span className="text-muted inline-flex items-center gap-1 text-sm font-medium">
-                {stat.title}
-                {stat.info ? (
-                  <Tooltip>
-                    <Button
-                      isIconOnly
-                      aria-label={`About ${stat.title}`}
-                      className="text-muted hover:text-foreground size-5 min-h-5 min-w-5"
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <CircleInfo className="size-3.5" />
-                    </Button>
-                    <Tooltip.Content className="max-w-64">
-                      {stat.info}
-                    </Tooltip.Content>
-                  </Tooltip>
-                ) : null}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-foreground text-2xl font-semibold tabular-nums tracking-tight">
-                  {stat.value}
-                </span>
-                <TrendChip trend={stat.trend} variant="soft">
-                  {stat.change}
-                </TrendChip>
-              </div>
-            </div>
-          ))}
-        </Widget.Content>
-      </Widget>
-
-      {/* Sandbox */}
-      <EngineSandbox />
+      <OverviewStats />
 
       {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Widget className="lg:col-span-2">
-          <Widget.Header>
-            <Widget.Title>Catalog Growth</Widget.Title>
-            <span className="text-muted text-xs">
-              Cumulative approved classifications
-            </span>
-          </Widget.Header>
-          <Widget.Content>
-            <AreaChart data={catalogGrowth} height={220}>
-              <defs>
-                <linearGradient id="catalog-growth" x1="0" x2="0" y1="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="var(--chart-3)"
-                    stopOpacity={0.2}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="var(--chart-3)"
-                    stopOpacity={0.02}
-                  />
-                </linearGradient>
-              </defs>
-              <AreaChart.Grid vertical={false} />
-              <AreaChart.XAxis dataKey="month" tickMargin={8} />
-              <AreaChart.YAxis width={40} />
-              <AreaChart.Area
-                dataKey="entries"
-                dot={false}
-                fill="url(#catalog-growth)"
-                name="Entries"
-                stroke="var(--chart-3)"
-                strokeWidth={2}
-                type="monotone"
-              />
-              <AreaChart.Tooltip
-                content={({ active, label, payload }) => {
-                  if (!active || !payload?.length) return null;
+      <EngineCharts />
 
-                  return (
-                    <ChartTooltip>
-                      <ChartTooltip.Header>{label}</ChartTooltip.Header>
-                      {payload.map((entry) => (
-                        <ChartTooltip.Item key={String(entry.dataKey)}>
-                          <ChartTooltip.Indicator
-                            color={entry.color ?? entry.stroke}
-                          />
-                          <ChartTooltip.Label>{entry.name}</ChartTooltip.Label>
-                          <ChartTooltip.Value>
-                            {Number(entry.value).toLocaleString()}
-                          </ChartTooltip.Value>
-                        </ChartTooltip.Item>
-                      ))}
-                    </ChartTooltip>
-                  );
-                }}
-              />
-            </AreaChart>
-          </Widget.Content>
-        </Widget>
-
-        <Widget>
-          <Widget.Header>
-            <Widget.Title>Top Chapters</Widget.Title>
-          </Widget.Header>
-          <Widget.Content className="flex flex-col gap-3">
-            {topChapters.map((chapter) => (
-              <div key={chapter.chapter} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-foreground min-w-0 truncate">
-                    <span className="text-muted font-mono text-xs">
-                      Ch. {chapter.chapter}
-                    </span>{" "}
-                    {chapter.label}
-                  </span>
-                  <span className="text-muted shrink-0 tabular-nums">
-                    {chapter.count}
-                  </span>
-                </div>
-                <div className="bg-default/60 h-1 w-full rounded-full">
-                  <div
-                    className="bg-accent h-1 rounded-full"
-                    style={{
-                      width: `${(chapter.count / maxChapterCount) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </Widget.Content>
-        </Widget>
-      </div>
-
-      {/* Catalog */}
+      {/* Knowledge base */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-foreground text-base font-semibold">Catalog</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-foreground text-base font-semibold">
+              Knowledge Base
+            </h2>
+            <Chip size="sm" variant="soft">
+              {count}
+            </Chip>
+          </div>
           <div className="flex items-center gap-2">
             <SearchField
-              aria-label="Search catalog"
-              value={search}
-              onChange={(value) => {
-                setSearch(value);
-                setPage(1);
-              }}
+              aria-label="Search the knowledge base"
+              value={searchInput}
+              onChange={setSearchInput}
             >
               <SearchField.Group>
                 <SearchField.SearchIcon />
@@ -733,8 +651,12 @@ export function ClassificationEngine() {
                   selectedKeys={clientFilter}
                   selectionMode="multiple"
                   onSelectionChange={(keys) => {
-                    setClientFilter(toStringSet(keys, allClients));
-                    setPage(1);
+                    const next =
+                      keys === "all"
+                        ? allClients.map((client) => client.id)
+                        : [...keys].map(String);
+
+                    updateSearch({ clientId: next.length ? next : undefined });
                   }}
                 >
                   {filteredClients.length === 0 ? (
@@ -746,29 +668,21 @@ export function ClassificationEngine() {
                       <Label>No clients match</Label>
                     </Dropdown.Item>
                   ) : (
-                    filteredClients.map((client) => {
-                      const count = allEntries.filter(
-                        (entry) => entry.client === client,
-                      ).length;
-
-                      return (
-                        <Dropdown.Item
-                          key={client}
-                          id={client}
-                          textValue={client}
-                        >
-                          <Avatar className="size-6 shrink-0">
-                            <Avatar.Fallback className="text-[10px]">
-                              {getInitials(client)}
-                            </Avatar.Fallback>
-                          </Avatar>
-                          <Label>
-                            {client} ({count})
-                          </Label>
-                          <Dropdown.ItemIndicator />
-                        </Dropdown.Item>
-                      );
-                    })
+                    filteredClients.map((client) => (
+                      <Dropdown.Item
+                        key={client.id}
+                        id={client.id}
+                        textValue={client.name}
+                      >
+                        <Avatar className="size-6 shrink-0">
+                          <Avatar.Fallback className="text-[10px]">
+                            {getInitials(client.name)}
+                          </Avatar.Fallback>
+                        </Avatar>
+                        <Label>{client.name}</Label>
+                        <Dropdown.ItemIndicator />
+                      </Dropdown.Item>
+                    ))
                   )}
                 </Dropdown.Menu>
               </Dropdown.Popover>
@@ -785,8 +699,12 @@ export function ClassificationEngine() {
                   selectedKeys={sourceFilter}
                   selectionMode="multiple"
                   onSelectionChange={(keys) => {
-                    setSourceFilter(toStringSet(keys, sourceIds));
-                    setPage(1);
+                    const next =
+                      keys === "all"
+                        ? sourceIds
+                        : ([...keys].map(String) as ProductSource[]);
+
+                    updateSearch({ source: next.length ? next : undefined });
                   }}
                 >
                   {sourceIds.map((source) => (
@@ -814,27 +732,38 @@ export function ClassificationEngine() {
         {/* Active filters */}
         {hasActiveFilters ? (
           <div className="flex flex-wrap items-center gap-2">
-            {search ? (
+            {searchParams.q ? (
               <Chip size="sm" variant="secondary">
-                <Chip.Label>Search: {search}</Chip.Label>
+                <Chip.Label>Search: {searchParams.q}</Chip.Label>
                 <button
                   aria-label="Clear search"
                   className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearchInput("");
+                    updateSearch({ q: undefined });
+                  }}
                 >
                   <Xmark className="size-3" />
                 </button>
               </Chip>
             ) : null}
-            {[...clientFilter].map((client) => (
-              <Chip key={client} size="sm" variant="secondary">
-                <Chip.Label>{client}</Chip.Label>
+            {[...clientFilter].map((clientId) => (
+              <Chip key={clientId} size="sm" variant="secondary">
+                <Chip.Label>
+                  {clientNameById.get(clientId) ?? "Client"}
+                </Chip.Label>
                 <button
-                  aria-label={`Remove ${client} filter`}
+                  aria-label="Remove client filter"
                   className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                   type="button"
-                  onClick={() => setClientFilter(without(clientFilter, client))}
+                  onClick={() => {
+                    const next = [...clientFilter].filter(
+                      (id) => id !== clientId,
+                    );
+
+                    updateSearch({ clientId: next.length ? next : undefined });
+                  }}
                 >
                   <Xmark className="size-3" />
                 </button>
@@ -843,13 +772,19 @@ export function ClassificationEngine() {
             {[...sourceFilter].map((source) => (
               <Chip key={source} size="sm" variant="secondary">
                 <Chip.Label>
-                  {sourceMeta[source as CatalogSource]?.label ?? source}
+                  {sourceMeta[source as ProductSource]?.label ?? source}
                 </Chip.Label>
                 <button
                   aria-label={`Remove ${source} filter`}
                   className="text-muted hover:text-foreground ml-0.5 inline-flex cursor-pointer items-center"
                   type="button"
-                  onClick={() => setSourceFilter(without(sourceFilter, source))}
+                  onClick={() => {
+                    const next = [...sourceFilter].filter(
+                      (s) => s !== source,
+                    ) as ProductSource[];
+
+                    updateSearch({ source: next.length ? next : undefined });
+                  }}
                 >
                   <Xmark className="size-3" />
                 </button>
@@ -861,21 +796,58 @@ export function ClassificationEngine() {
           </div>
         ) : null}
 
-        <DataGrid
-          aria-label="Classification catalog"
-          columns={columns}
-          contentClassName="min-w-[1200px]"
-          data={paginatedEntries}
-          getRowId={(entry) => entry.id}
-          renderEmptyState={() => (
-            <div className="text-muted py-8 text-center text-sm">
-              No catalog entries match your filters.
-            </div>
-          )}
-          sortDescriptor={sortDescriptor}
-          variant="primary"
-          onSortChange={setSortDescriptor}
-        />
+        {/* Table */}
+        {isPending ? (
+          <TableSkeleton rows={8} />
+        ) : (
+          <div className="relative">
+            <TableFetchingState isFetching={isFetching}>
+              <DataGrid
+                aria-label="Classification knowledge base"
+                columns={columns}
+                contentClassName="min-w-[1360px]"
+                data={products}
+                getRowId={(product) => product.id}
+                renderEmptyState={() => <div className="h-[280px]" />}
+                sortDescriptor={sortDescriptor}
+                variant="primary"
+                onSortChange={(descriptor) => {
+                  updateSearch({
+                    sortBy: descriptor.column as ProductSortColumn,
+                    sortDir:
+                      descriptor.direction === "ascending" ? "asc" : "desc",
+                  });
+                }}
+              />
+            </TableFetchingState>
+            {/* Centered over the grid instead of inside its horizontally
+                scrollable content, so it stays put when scrolling */}
+            {products.length === 0 && !isFetching && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <EmptyState className="pointer-events-auto" size="sm">
+                  <EmptyState.Header>
+                    <EmptyState.Media className="border" variant="icon">
+                      <Book />
+                    </EmptyState.Media>
+                    <EmptyState.Title>No Entries Found</EmptyState.Title>
+                    <EmptyState.Description>
+                      {hasActiveFilters
+                        ? "No classified products match your search or filters."
+                        : "Classified products land here automatically as shipments flow through the pipeline."}
+                    </EmptyState.Description>
+                  </EmptyState.Header>
+                  {hasActiveFilters ? (
+                    <EmptyState.Content className="flex-row gap-2">
+                      <Button variant="ghost" onPress={clearFilters}>
+                        Clear Filters
+                      </Button>
+                    </EmptyState.Content>
+                  ) : null}
+                </EmptyState>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Pagination footer */}
         <div className="flex items-center justify-between whitespace-nowrap text-xs">
@@ -949,9 +921,9 @@ export function ClassificationEngine() {
             </InlineSelect>
             <Separator className="!h-4" orientation="vertical" />
             <span className="text-muted tabular-nums">
-              {visibleEntries.length === 0
+              {count === 0
                 ? "0 entries"
-                : `${rangeStart}–${rangeEnd} of ${visibleEntries.length}`}
+                : `${rangeStart}–${rangeEnd} of ${count}`}
             </span>
             <div className="flex gap-2">
               <Button

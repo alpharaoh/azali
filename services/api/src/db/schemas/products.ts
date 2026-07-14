@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   doublePrecision,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -48,6 +49,13 @@ export const products = pgTable(
     classifiedAt: timestamp("classified_at", { withTimezone: true }),
     /** Who last set the classification: "agent" or "broker". */
     source: text("source"),
+    /**
+     * Times this classification was reused for a shipment line without an
+     * agent run. Denormalized — shipment deletion cascades away line items,
+     * but the hit history should survive.
+     */
+    reuseCount: integer("reuse_count").notNull().default(0),
+    lastReusedAt: timestamp("last_reused_at", { withTimezone: true }),
   },
   (table) => [
     index("products_org_client_idx").on(table.organizationId, table.clientId),
