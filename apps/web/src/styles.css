@@ -54,7 +54,7 @@ body {
 [data-theme="light"],
 [data-theme="default"] {
   /* Theme Colors */
-  --background: oklch(97.02% 0.002 237.33);
+  --background: oklch(98.8% 0.002 237.33);
   --muted: oklch(55.17% 0.004 237.33);
   --scrollbar: oklch(87.1% 0.002 237.33);
   --surface-secondary: oklch(95.24% 0.003 237.33);
