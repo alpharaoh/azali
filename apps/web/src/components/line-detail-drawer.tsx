@@ -3,7 +3,6 @@ import {
   ArrowUturnCwRight,
   Bold,
   CircleCheck,
-  FileText,
   Heading2,
   Heading3,
   Italic,
@@ -19,10 +18,11 @@ import {
   ItemCardGroup,
   RichTextEditor,
   Segment,
+  Widget,
 } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 
 import { AgentRunTrace } from "#/components/agent-run-trace";
 import { ClampedText } from "#/components/clamped-text";
@@ -263,7 +263,7 @@ function MemoEditor({
               </RichTextEditor.ToggleButton>
             </RichTextEditor.ToolbarGroup>
           </RichTextEditor.Toolbar>
-          <RichTextEditor.Content className="max-h-96 min-h-48 overflow-y-auto" />
+          <RichTextEditor.Content className="min-h-160" />
           <RichTextEditor.Footer>
             <span className="text-muted text-xs">
               Saving appends a revision to the audit record
@@ -344,24 +344,6 @@ function LineDetailContent({
   shipmentId: string;
 }) {
   const [view, setView] = useState<"overview" | "trace">("overview");
-  const memoRef = useRef<HTMLDivElement | null>(null);
-  // "View memo" from the trace view first switches back to the overview;
-  // the scroll waits until the memo section is mounted again.
-  const [pendingMemoScroll, setPendingMemoScroll] = useState(false);
-  useEffect(() => {
-    if (view === "overview" && pendingMemoScroll) {
-      setPendingMemoScroll(false);
-      memoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [view, pendingMemoScroll]);
-  const showMemo = () => {
-    if (view === "trace") {
-      setPendingMemoScroll(true);
-      setView("overview");
-    } else {
-      memoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
   const duty = line.duty;
   const dutyLabel =
     duty?.effectivePct !== null && duty?.effectivePct !== undefined
@@ -388,39 +370,33 @@ function LineDetailContent({
             {line.description}
           </Drawer.Heading>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {line.runId ? (
-            <Segment
-              selectedKey={view}
-              onSelectionChange={(key) =>
-                setView(key === "trace" ? "trace" : "overview")
-              }
-            >
-              <Segment.Item id="overview">Overview</Segment.Item>
-              <Segment.Item id="trace">
-                <Sparkles className="size-3.5" />
-                Agent trace
-              </Segment.Item>
-            </Segment>
-          ) : (
-            <span className="text-muted text-xs">
-              Reused from product memory — no audit run for this line.
-            </span>
-          )}
-          {memo ? (
-            <Button size="sm" variant="secondary" onPress={showMemo}>
-              <FileText className="size-3.5" />
-              View memo
-            </Button>
-          ) : null}
-        </div>
+        {line.runId ? (
+          <Segment
+            selectedKey={view}
+            onSelectionChange={(key) =>
+              setView(key === "trace" ? "trace" : "overview")
+            }
+          >
+            <Segment.Item id="overview">Overview</Segment.Item>
+            <Segment.Item id="trace">
+              <Sparkles className="size-3.5" />
+              Agent trace
+            </Segment.Item>
+          </Segment>
+        ) : (
+          <span className="text-muted text-xs">
+            Reused from product memory — no audit run for this line.
+          </span>
+        )}
       </Drawer.Header>
       {view === "trace" && line.runId ? (
         <Drawer.Body>
           <AgentRunTrace runId={line.runId} />
         </Drawer.Body>
       ) : (
-        <Drawer.Body className="flex flex-col gap-4">
+        // The body is a height-constrained scroll container; children must
+        // not flex-shrink or the overflow-hidden Widget collapses.
+        <Drawer.Body className="flex flex-col gap-4 [&>*]:shrink-0">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
@@ -468,19 +444,22 @@ function LineDetailContent({
           </div>
 
           {line.alternates && line.alternates.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              <span className="text-muted text-xs font-medium">
-                Alternate classifications
-              </span>
-              <AlternatesList
-                alternates={line.alternates}
-                deltaFor={(value) =>
-                  line.alternates?.find((alt) => alt.value === value)?.deltaUsd
-                }
-                selected={selectedAlternate}
-                onSelect={onSelectAlternate}
-              />
-            </div>
+            <Widget>
+              <Widget.Header>
+                <Widget.Title>Alternate classifications</Widget.Title>
+              </Widget.Header>
+              <Widget.Content>
+                <AlternatesList
+                  alternates={line.alternates}
+                  deltaFor={(value) =>
+                    line.alternates?.find((alt) => alt.value === value)
+                      ?.deltaUsd
+                  }
+                  selected={selectedAlternate}
+                  onSelect={onSelectAlternate}
+                />
+              </Widget.Content>
+            </Widget>
           ) : line.reused ? (
             <span className="text-muted text-xs">
               Reused from product memory — no alternates were scored for this
@@ -489,7 +468,7 @@ function LineDetailContent({
           ) : null}
 
           {memo ? (
-            <div ref={memoRef} className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <span className="text-muted text-xs font-medium">
                 Rationale memo
               </span>
