@@ -19,7 +19,10 @@
     "packages/*"
   ],
   "trustedDependencies": [
-    "inngest-cli"
+    "inngest-cli",
+    "heroui-pro",
+    "@heroui-pro/react",
+    "heroui-native-pro"
   ],
   "devDependencies": {
     "turbo": "^2.10.3"
