@@ -30,6 +30,7 @@ import {
   Modal,
   ScrollShadow,
   SearchField,
+  Separator,
   Skeleton,
   Spinner,
   Tabs,
@@ -42,6 +43,8 @@ import {
   ChatSource,
   ChatSources,
   HoverCard,
+  ItemCard,
+  ItemCardGroup,
   PromptInput,
   PromptSuggestion,
   Segment,
@@ -1596,32 +1599,33 @@ function LineClassificationsCard({
             </div>
           </HoverCard.Content>
         </HoverCard>
-        <div className="flex flex-col">
-          {lines.map((line) => {
-            const isFlagged = line.status === "needs_review";
+        <ItemCardGroup variant="outline">
+          {lines.map((line, index) => {
             const staged = corrections[line.lineItemId];
 
             return (
-              <button
-                key={line.lineItemId}
-                className={`hover:bg-default/40 -mx-2 flex cursor-pointer items-center justify-between gap-3 rounded-md border-b px-2 py-2 text-left transition-colors last:border-b-0 ${
-                  isFlagged ? "bg-warning/5" : ""
-                }`}
-                type="button"
-                onClick={() => onOpenLine(line)}
-              >
-                <div className="flex min-w-0 items-baseline gap-2">
-                  <span className="text-muted shrink-0 text-xs tabular-nums">
-                    #{line.lineNumber}
-                  </span>
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-foreground truncate text-sm">
+              <Fragment key={line.lineItemId}>
+                {index > 0 ? <Separator /> : null}
+                <ItemCard
+                  className="hover:bg-default/40 cursor-pointer gap-8 transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onOpenLine(line)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onOpenLine(line);
+                    }
+                  }}
+                >
+                  <ItemCard.Content>
+                    <ItemCard.Title className="line-clamp-2 whitespace-normal">
                       {line.description}
-                    </span>
-                    <span className="text-muted text-xs">
+                    </ItemCard.Title>
+                    <ItemCard.Description className="tabular-nums">
                       {[
                         line.quantity !== null
-                          ? `${line.quantity}${line.unit ? ` ${line.unit}` : ""}`
+                          ? `${line.quantity.toLocaleString("en-US")}${line.unit ? ` ${line.unit}` : ""}`
                           : null,
                         line.valueUsd !== null
                           ? formatCurrency(line.valueUsd)
@@ -1629,56 +1633,66 @@ function LineClassificationsCard({
                       ]
                         .filter(Boolean)
                         .join(" · ")}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {line.reused ? (
-                    <Chip
-                      className="bg-purple-100 text-purple-900"
-                      size="sm"
-                      variant="soft"
-                    >
-                      <Chip.Label>Reused</Chip.Label>
-                    </Chip>
-                  ) : null}
-                  {staged ? (
-                    <Chip
-                      className="bg-accent/10 text-accent"
-                      size="sm"
-                      variant="soft"
-                    >
-                      <Chip.Label className="tabular-nums">
-                        → {staged}
-                      </Chip.Label>
-                    </Chip>
-                  ) : null}
-                  {line.confidence !== null ? (
-                    <Chip
-                      color={line.confidence >= 0.95 ? "success" : "warning"}
-                      size="sm"
-                      variant="soft"
-                    >
-                      <Chip.Label>
-                        {Math.round(line.confidence * 100)}%
-                      </Chip.Label>
-                    </Chip>
-                  ) : null}
-                  <span className="text-foreground font-mono text-sm tabular-nums">
-                    {line.htsCode ?? "—"}
-                  </span>
-                  {line.duty?.amountUsd !== null &&
-                  line.duty?.amountUsd !== undefined ? (
-                    <span className="text-muted text-xs tabular-nums">
-                      {formatCurrency(line.duty.amountUsd)}
-                    </span>
-                  ) : null}
-                  <ChevronRight className="text-muted size-3.5 shrink-0" />
-                </div>
-              </button>
+                    </ItemCard.Description>
+                    {line.reused || staged ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        {line.reused ? (
+                          <Chip
+                            className="bg-purple-100 text-purple-900"
+                            size="sm"
+                            variant="soft"
+                          >
+                            <Chip.Label>Reused</Chip.Label>
+                          </Chip>
+                        ) : null}
+                        {staged ? (
+                          <Chip
+                            className="bg-accent/10 text-accent"
+                            size="sm"
+                            variant="soft"
+                          >
+                            <Chip.Label className="tabular-nums">
+                              → {staged}
+                            </Chip.Label>
+                          </Chip>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </ItemCard.Content>
+                  <ItemCard.Action>
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-foreground font-mono text-sm tabular-nums">
+                          {line.htsCode ?? "Unclassified"}
+                        </span>
+                        {line.confidence !== null ? (
+                          <Chip
+                            color={
+                              line.confidence >= 0.95 ? "success" : "warning"
+                            }
+                            size="sm"
+                            variant="soft"
+                          >
+                            <Chip.Label>
+                              {Math.round(line.confidence * 100)}% confident
+                            </Chip.Label>
+                          </Chip>
+                        ) : null}
+                        {line.duty?.amountUsd !== null &&
+                        line.duty?.amountUsd !== undefined ? (
+                          <span className="text-muted text-xs tabular-nums">
+                            Duty {formatCurrency(line.duty.amountUsd)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <ChevronRight className="text-muted size-4 shrink-0" />
+                    </div>
+                  </ItemCard.Action>
+                </ItemCard>
+              </Fragment>
             );
           })}
-        </div>
+        </ItemCardGroup>
       </Widget.Content>
     </Widget>
   );
