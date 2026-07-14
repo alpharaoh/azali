@@ -26,6 +26,7 @@ import { Fragment, useRef, useState } from "react";
 
 import { AgentRunTrace } from "#/components/agent-run-trace";
 import { ClampedText } from "#/components/clamped-text";
+import { ConfidenceChip } from "#/components/confidence-chip";
 import {
   getShipmentEventsControllerFindByShipmentQueryKey,
   useShipmentEventsControllerCreate,
@@ -413,15 +414,11 @@ function LineDetailContent({
                   </Chip>
                 ) : null}
                 {line.confidence !== null ? (
-                  <Chip
-                    color={line.confidence >= 0.95 ? "success" : "warning"}
+                  <ConfidenceChip
+                    confidence={line.confidence}
+                    label="confident"
                     size="md"
-                    variant="soft"
-                  >
-                    <Chip.Label>
-                      {Math.round(line.confidence * 100)}% confident
-                    </Chip.Label>
-                  </Chip>
+                  />
                 ) : null}
               </div>
             </div>

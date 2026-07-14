@@ -62,6 +62,7 @@ import {
 } from "date-fns";
 import type { ComponentProps, ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { ConfidenceChip } from "#/components/confidence-chip";
 import {
   AlternatesList,
   LineDetailDrawer,
@@ -1666,17 +1667,10 @@ function LineClassificationsCard({
                           {line.htsCode ?? "Unclassified"}
                         </span>
                         {line.confidence !== null ? (
-                          <Chip
-                            color={
-                              line.confidence >= 0.95 ? "success" : "warning"
-                            }
-                            size="sm"
-                            variant="soft"
-                          >
-                            <Chip.Label>
-                              {Math.round(line.confidence * 100)}% confident
-                            </Chip.Label>
-                          </Chip>
+                          <ConfidenceChip
+                            confidence={line.confidence}
+                            label="confident"
+                          />
                         ) : null}
                         {line.duty?.amountUsd !== null &&
                         line.duty?.amountUsd !== undefined ? (
@@ -1977,15 +1971,11 @@ function ReviewDetail({
                     <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
                       {item.proposal.value}
                     </span>
-                    <Chip
-                      color={item.confidence >= 0.9 ? "success" : "warning"}
+                    <ConfidenceChip
+                      confidence={item.confidence}
+                      label="confident"
                       size="md"
-                      variant="soft"
-                    >
-                      <Chip.Label>
-                        {Math.round(item.confidence * 100)}% confident
-                      </Chip.Label>
-                    </Chip>
+                    />
                   </div>
                   <ClampedText text={item.proposal.detail} />
                   {/* One quiet meta row: the money, the evidence, the artifact. */}
@@ -2095,17 +2085,7 @@ function ReviewDetail({
                             </Chip>
                           ) : null}
                           {line.confidence !== null ? (
-                            <Chip
-                              color={
-                                line.confidence >= 0.95 ? "success" : "warning"
-                              }
-                              size="sm"
-                              variant="soft"
-                            >
-                              <Chip.Label>
-                                {Math.round(line.confidence * 100)}%
-                              </Chip.Label>
-                            </Chip>
+                            <ConfidenceChip confidence={line.confidence} />
                           ) : null}
                           <span className="text-foreground font-mono text-sm tabular-nums">
                             {line.htsCode ?? "—"}
