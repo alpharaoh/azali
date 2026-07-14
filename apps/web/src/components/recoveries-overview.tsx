@@ -3,10 +3,8 @@ import {
   CircleCheck,
   CircleFill,
   Funnel,
-  MagicWand,
 } from "@gravity-ui/icons";
 import {
-  Alert,
   Button,
   Chip,
   Dropdown,
@@ -30,6 +28,7 @@ import { format, subDays, subMonths } from "date-fns";
 import { useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
+import { DemoPreviewBanner } from "#/components/demo-preview-banner";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
@@ -411,26 +410,7 @@ export function RecoveriesOverview() {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {/* Demo preview banner */}
-      <Alert status="accent">
-        <Alert.Indicator>
-          <MagicWand />
-        </Alert.Indicator>
-        <Alert.Content>
-          <Alert.Title>
-            Demo preview
-            <Chip className="ml-2" color="accent" size="sm" variant="soft">
-              <Chip.Label>Coming soon</Chip.Label>
-            </Chip>
-          </Alert.Title>
-          <Alert.Description>
-            The data on this page is illustrative — Recoveries is not yet
-            enabled for your account. Talk to your business representative to
-            unlock automated drawback, overpayment, and exclusion recovery for
-            your clients.
-          </Alert.Description>
-        </Alert.Content>
-      </Alert>
+      <DemoPreviewBanner description="The data on this page is illustrative — Recoveries is not yet enabled for your account. Talk to your business representative to unlock automated drawback, overpayment, and exclusion recovery for your clients." />
 
       {/* Header */}
       <div>

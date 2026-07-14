@@ -9,6 +9,8 @@ import { Kanban, TrendChip, Widget } from "@heroui-pro/react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useMemo } from "react";
 
+import { DemoPreviewBanner } from "#/components/demo-preview-banner";
+
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
  * -----------------------------------------------------------------------------------------------*/
@@ -253,6 +255,8 @@ export function TariffRadarOverview() {
 
   return (
     <div className="flex w-full flex-col gap-4">
+      <DemoPreviewBanner description="The data on this page is illustrative — Tariff Radar is not yet enabled for your account. Talk to your business representative to unlock automated tariff-change monitoring and impact analysis for your clients." />
+
       {/* Header */}
       <div>
         <h1 className="text-foreground text-xl font-semibold">Tariff Radar</h1>
