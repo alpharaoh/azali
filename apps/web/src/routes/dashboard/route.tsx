@@ -295,7 +295,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
 
   return (
     <div
-      className={`bg-white dark:bg-[#121212] flex items-center gap-3 border-b p-4 transition-colors duration-200 ${
+      className={`bg-background flex items-center gap-3 border-b p-4 transition-colors duration-200 ${
         isScrolled ? "border-border" : "border-transparent"
       }`}
     >

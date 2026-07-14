@@ -28,6 +28,9 @@ body,
 
 body {
   margin: 0;
+  /* Without this, the canvas falls through to the browser's color-scheme
+   * default (near-black in dark mode) instead of the theme token. */
+  background-color: var(--background);
 }
 
 /*
@@ -100,4 +103,14 @@ body {
   --segment: oklch(47% 0.005 237.33);
   --border: oklch(37.5% 0.006 237.33);
   --separator: oklch(33.5% 0.005 237.33);
+
+  /* The app canvas: the inset main panel's background. Kept separate from
+   * --surface so cards/accordions don't lighten with it. */
+  --app-canvas: oklch(31% 0.005 237.33);
+}
+
+/* HeroUI's inset sidebar variant paints the main panel with --surface;
+ * repaint just that panel with the dedicated canvas color. */
+.dark .sidebar__provider:has(.sidebar--inset) .sidebar__main {
+  background-color: var(--app-canvas);
 }
