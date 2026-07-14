@@ -20,6 +20,17 @@ export const resolveReviewSchema = z.object({
     .describe(
       'The value the broker chose instead, when action is "corrected".',
     ),
+  corrections: z
+    .array(
+      z.object({
+        lineItemId: z.string().min(1),
+        alternate: z.string().min(1),
+      }),
+    )
+    .optional()
+    .describe(
+      'Per-line HTS substitutions when action is "corrected" on a multi-line shipment; lines not listed are approved as proposed.',
+    ),
   note: z
     .string()
     .min(1)

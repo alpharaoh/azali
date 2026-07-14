@@ -118,6 +118,18 @@ export interface DutyImpact {
   alternates?: Record<string, { amountUsd: number; deltaUsd: number }>;
 }
 
+/** A runner-up code for one line — same shape the drawer's picker renders. */
+export interface ReviewLineAlternate {
+  value: string;
+  detail: string;
+  confidence: number;
+  /** Why this candidate scored what it did — and why it wasn't chosen. */
+  reason?: string;
+  /** Duty on this line under the alternate, and the change vs. the proposal. */
+  amountUsd?: number;
+  deltaUsd?: number;
+}
+
 /** One entry line of the shipment, as shown in the review's line table. */
 export interface ReviewLineItem {
   lineItemId: string;
@@ -130,6 +142,17 @@ export interface ReviewLineItem {
   confidence: number | null;
   status: string;
   reused: boolean;
+  /** Audit-record id (agent_runs) behind this line's classification. */
+  runId?: string | null;
+  /** One-paragraph rationale for this line's code. */
+  summary?: string | null;
+  /** Present on new payloads — the multi-line UI gates on this key. */
+  duty?: {
+    effectivePct: number | null;
+    label: string | null;
+    amountUsd: number | null;
+  };
+  alternates?: ReviewLineAlternate[];
 }
 
 export interface ReviewItem {
@@ -195,4 +218,48 @@ export type DecisionAction = "approved" | "corrected" | "info-requested";
 export interface Decision {
   action: DecisionAction;
   alternate?: string;
+  /** Multi-line reviews: the per-line substitutions behind a correction. */
+  corrections?: LineCorrection[];
+}
+
+/** A staged per-line substitution, keyed for the resolve call. */
+export interface LineCorrection {
+  lineItemId: string;
+  alternate: string;
+}
+
+/**
+ * Multi-line mode: several lines, each carrying its own classification
+ * detail (the `duty` key marks the enriched payload shape). Old events and
+ * single-line shipments render the classic headline view.
+ */
+export function isMultiLineReview(item: ReviewItem): boolean {
+  const lines = item.lineItems ?? [];
+  return lines.length > 1 && lines.every((line) => line.duty !== undefined);
+}
+
+/**
+ * Shipment-level duty totals over the lines with an ad-valorem amount,
+ * honoring in-flight alternate selections. Lines whose duty can't be priced
+ * (specific rates, missing value) are counted in `unpricedCount`.
+ */
+export function dutyTotals(
+  lines: ReviewLineItem[],
+  corrections: Record<string, string>,
+) {
+  const priced = lines.filter(
+    (line) => line.duty?.amountUsd != null && line.valueUsd != null,
+  );
+  const amountUsd = priced.reduce((sum, line) => {
+    const chosen = line.alternates?.find(
+      (alt) => alt.value === corrections[line.lineItemId],
+    );
+    return sum + (chosen?.amountUsd ?? line.duty?.amountUsd ?? 0);
+  }, 0);
+  const valueUsd = priced.reduce((sum, line) => sum + (line.valueUsd ?? 0), 0);
+  return {
+    amountUsd,
+    effectivePct: valueUsd > 0 ? (amountUsd / valueUsd) * 100 : null,
+    unpricedCount: lines.length - priced.length,
+  };
 }

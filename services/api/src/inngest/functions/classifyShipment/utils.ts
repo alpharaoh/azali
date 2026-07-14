@@ -1,4 +1,4 @@
-import type { LineItemStatus } from "@/db/schema";
+import { LineItemStatus } from "@/db/schema";
 import type {
   ClassificationResult,
   ClassificationShipmentFacts,
@@ -82,9 +82,16 @@ export function buildReviewPayload(
     };
   }
 
+  const flaggedCount = lines.filter(
+    (line) => line.status === LineItemStatus.NeedsReview,
+  ).length;
+
   return {
     reviewType: "classification",
-    question: `Which HTS code applies to ${headline.description.slice(0, 90)}?`,
+    question:
+      lines.length > 1
+        ? `Review ${flaggedCount} flagged classification${flaggedCount === 1 ? "" : "s"} across ${lines.length} line items`
+        : `Which HTS code applies to ${headline.description.slice(0, 90)}?`,
     confidence: result.confidence,
     deadlineAt,
     // The uncertain line this review resolves.
@@ -115,18 +122,51 @@ export function buildReviewPayload(
         : {}),
     },
     // The whole shipment's lines — the review renders the full picture.
-    lineItems: lines.map((line) => ({
-      lineItemId: line.lineItemId,
-      lineNumber: line.lineNumber,
-      description: line.description,
-      quantity: line.quantity,
-      unit: line.unit,
-      valueUsd: line.valueCents === null ? null : line.valueCents / 100,
-      htsCode: line.htsCode,
-      confidence: line.confidence,
-      status: line.status,
-      reused: line.reused,
-    })),
+    // Each line carries its own duty, alternates, and audit run so the
+    // broker can drill into any classification, not just the headline.
+    lineItems: lines.map((line) => {
+      const valueUsd = line.valueCents === null ? null : line.valueCents / 100;
+      const amountUsd =
+        valueUsd !== null && line.effectivePct !== null
+          ? Math.round((valueUsd * line.effectivePct) / 100)
+          : null;
+      return {
+        lineItemId: line.lineItemId,
+        lineNumber: line.lineNumber,
+        description: line.description,
+        quantity: line.quantity,
+        unit: line.unit,
+        valueUsd,
+        htsCode: line.htsCode,
+        confidence: line.confidence,
+        status: line.status,
+        reused: line.reused,
+        runId: line.runId,
+        summary: line.result?.summary ?? line.htsDescription ?? null,
+        duty: {
+          effectivePct: line.effectivePct,
+          label: line.effective,
+          amountUsd,
+        },
+        alternates: (line.result?.alternates ?? []).map((alternate) => {
+          const altAmountUsd =
+            valueUsd !== null && alternate.effectiveDutyPct !== null
+              ? Math.round((valueUsd * alternate.effectiveDutyPct) / 100)
+              : null;
+          return {
+            value: alternate.code,
+            detail: alternate.effectiveDutyRate
+              ? `${alternate.description} — duty ${alternate.effectiveDutyRate}`
+              : alternate.description,
+            confidence: alternate.confidence,
+            reason: alternate.reason,
+            ...(altAmountUsd !== null && amountUsd !== null
+              ? { amountUsd: altAmountUsd, deltaUsd: altAmountUsd - amountUsd }
+              : {}),
+          };
+        }),
+      };
+    }),
     alternates: result.alternates.map((alternate) => ({
       value: alternate.code,
       detail: alternate.effectiveDutyRate

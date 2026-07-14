@@ -1084,6 +1084,13 @@ export const ResolveReviewDtoAction = {
   info_requested: 'info_requested',
 } as const;
 
+export type ResolveReviewDtoCorrectionsItem = {
+  /** @minLength 1 */
+  lineItemId: string;
+  /** @minLength 1 */
+  alternate: string;
+};
+
 export interface ResolveReviewDto {
   /** approved accepts the AI proposal; corrected substitutes the broker's answer; info_requested keeps the shipment in the review queue pending more information. */
   action: ResolveReviewDtoAction;
@@ -1092,6 +1099,8 @@ export interface ResolveReviewDto {
    * @minLength 1
    */
   alternate?: string;
+  /** Per-line HTS substitutions when action is "corrected" on a multi-line shipment; lines not listed are approved as proposed. */
+  corrections?: ResolveReviewDtoCorrectionsItem[];
   /**
    * Broker note recorded on the review_resolved event.
    * @minLength 1

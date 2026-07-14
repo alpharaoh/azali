@@ -30,7 +30,6 @@ import {
   Modal,
   ScrollShadow,
   SearchField,
-  Separator,
   Skeleton,
   Spinner,
   Tabs,
@@ -43,8 +42,6 @@ import {
   ChatSource,
   ChatSources,
   HoverCard,
-  ItemCard,
-  ItemCardGroup,
   PromptInput,
   PromptSuggestion,
   Segment,
@@ -53,8 +50,6 @@ import {
   Widget,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { AgentRunTrace } from "@/components/agent-run-trace";
-import { ClampedText } from "@/components/clamped-text";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   addHours,
@@ -64,7 +59,10 @@ import {
 } from "date-fns";
 import type { ComponentProps, ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-
+import {
+  AlternatesList,
+  LineDetailDrawer,
+} from "#/components/line-detail-drawer";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { TableFetchingState } from "#/components/table-loading";
 import { clientLogos } from "#/data/client-logos";
@@ -99,6 +97,7 @@ import type {
   Decision,
   DecisionAction,
   DocumentLine,
+  LineCorrection,
   ReviewDocument,
   ReviewItem,
   ReviewItemType,
@@ -106,7 +105,9 @@ import type {
   TracePhase,
   TraceStepKind,
 } from "#/lib/review-types";
-import { docSlug } from "#/lib/review-types";
+import { docSlug, dutyTotals, isMultiLineReview } from "#/lib/review-types";
+import { AgentRunTrace } from "@/components/agent-run-trace";
+import { ClampedText } from "@/components/clamped-text";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -134,8 +135,12 @@ function formatCurrency(value: number) {
 }
 
 function decisionLabel(decision: Decision) {
-  if (decision.action === "corrected")
+  if (decision.action === "corrected") {
+    if (decision.corrections?.length) {
+      return `Corrected → ${decision.corrections.length} line${decision.corrections.length === 1 ? "" : "s"}`;
+    }
     return `Corrected → ${decision.alternate}`;
+  }
   if (decision.action === "info-requested") return "Info requested";
 
   return "Approved";
@@ -1350,8 +1355,65 @@ function Composer({
 }
 
 /** The full reasoning transcript — the Agent Trace tab. Real runs render
- * straight from the canonical audit record; seeded demos keep their phases. */
-function TraceSection({ item }: { item: ReviewItem }) {
+ * straight from the canonical audit record; seeded demos keep their phases.
+ * Multi-line reviews get a line selector — each line has its own run. */
+function TraceSection({
+  item,
+  onTraceLineChange,
+  traceLine,
+}: {
+  item: ReviewItem;
+  onTraceLineChange: (lineNumber: number) => void;
+  traceLine: number | null;
+}) {
+  if (isMultiLineReview(item)) {
+    const lines = item.lineItems ?? [];
+    const active =
+      lines.find((line) => line.lineNumber === traceLine) ??
+      lines.find((line) => line.status === "needs_review") ??
+      lines[0];
+
+    return (
+      <div className="flex flex-col gap-3">
+        <Tabs
+          className="w-fit max-w-full"
+          selectedKey={String(active?.lineNumber)}
+          variant="secondary"
+          onSelectionChange={(key) => onTraceLineChange(Number(key))}
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Line item traces" className="w-fit">
+              {lines.map((line) => (
+                <Tabs.Tab
+                  key={line.lineNumber}
+                  className="w-fit max-w-56 shrink-0"
+                  id={String(line.lineNumber)}
+                >
+                  <Chip className="mr-1.5 shrink-0" size="sm" variant="soft">
+                    <Chip.Label className="tabular-nums">
+                      {line.lineNumber}
+                    </Chip.Label>
+                  </Chip>
+                  <span className="min-w-0 truncate whitespace-nowrap">
+                    {line.description}
+                  </span>
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+        {active?.runId ? (
+          <AgentRunTrace key={active.runId} runId={active.runId} />
+        ) : (
+          <span className="text-muted text-sm">
+            No audit run for this line — its classification was reused from
+            product memory.
+          </span>
+        )}
+      </div>
+    );
+  }
   if (item.traceRunId) {
     return <AgentRunTrace runId={item.traceRunId} />;
   }
@@ -1464,6 +1526,164 @@ function TraceSection({ item }: { item: ReviewItem }) {
   );
 }
 
+/** Multi-line overview — the decision card aggregates every line: shipment
+ * duty totals up top, one drillable row per line. */
+function LineClassificationsCard({
+  corrections,
+  item,
+  onOpenLine,
+}: {
+  corrections: Record<string, string>;
+  item: ReviewItem;
+  onOpenLine: (line: ReviewLineItem) => void;
+}) {
+  const lines = item.lineItems ?? [];
+  const totals = dutyTotals(lines, corrections);
+  const flaggedCount = lines.filter(
+    (line) => line.status === "needs_review",
+  ).length;
+
+  return (
+    <Widget>
+      <Widget.Header>
+        <Widget.Title>Line classifications</Widget.Title>
+        <span className="text-muted text-xs">
+          {lines.length} lines · {flaggedCount} flagged
+        </span>
+      </Widget.Header>
+      <Widget.Content className="flex flex-col gap-3">
+        <HoverCard closeDelay={100} openDelay={150}>
+          <HoverCard.Trigger className="inline-flex w-fit">
+            <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
+              <span className="text-foreground text-sm font-semibold tabular-nums">
+                Total duty {formatCurrency(totals.amountUsd)}
+              </span>
+              {totals.effectivePct !== null ? (
+                <span className="text-muted text-xs">
+                  {totals.effectivePct.toFixed(1)}% effective
+                </span>
+              ) : null}
+            </span>
+          </HoverCard.Trigger>
+          <HoverCard.Content className="p-3" placement="top">
+            <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
+              {lines.map((line) => {
+                const chosen = line.alternates?.find(
+                  (alt) => alt.value === corrections[line.lineItemId],
+                );
+                const code = chosen?.value ?? line.htsCode ?? "—";
+                const amountUsd =
+                  chosen?.amountUsd ?? line.duty?.amountUsd ?? null;
+                const pct = chosen ? null : (line.duty?.effectivePct ?? null);
+
+                return (
+                  <span key={line.lineItemId} className="text-muted">
+                    #{line.lineNumber} {code}
+                    {pct !== null ? ` · ${pct}%` : ""}
+                    {amountUsd !== null
+                      ? ` ≈ ${formatCurrency(amountUsd)}`
+                      : " · not ad-valorem"}
+                  </span>
+                );
+              })}
+              {totals.unpricedCount > 0 ? (
+                <span className="text-muted">
+                  Total excludes {totals.unpricedCount} line
+                  {totals.unpricedCount === 1 ? "" : "s"} without ad-valorem
+                  duty
+                </span>
+              ) : null}
+            </div>
+          </HoverCard.Content>
+        </HoverCard>
+        <div className="flex flex-col">
+          {lines.map((line) => {
+            const isFlagged = line.status === "needs_review";
+            const staged = corrections[line.lineItemId];
+
+            return (
+              <button
+                key={line.lineItemId}
+                className={`hover:bg-default/40 -mx-2 flex cursor-pointer items-center justify-between gap-3 rounded-md border-b px-2 py-2 text-left transition-colors last:border-b-0 ${
+                  isFlagged ? "bg-warning/5" : ""
+                }`}
+                type="button"
+                onClick={() => onOpenLine(line)}
+              >
+                <div className="flex min-w-0 items-baseline gap-2">
+                  <span className="text-muted shrink-0 text-xs tabular-nums">
+                    #{line.lineNumber}
+                  </span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-foreground truncate text-sm">
+                      {line.description}
+                    </span>
+                    <span className="text-muted text-xs">
+                      {[
+                        line.quantity !== null
+                          ? `${line.quantity}${line.unit ? ` ${line.unit}` : ""}`
+                          : null,
+                        line.valueUsd !== null
+                          ? formatCurrency(line.valueUsd)
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {line.reused ? (
+                    <Chip
+                      className="bg-purple-100 text-purple-900"
+                      size="sm"
+                      variant="soft"
+                    >
+                      <Chip.Label>Reused</Chip.Label>
+                    </Chip>
+                  ) : null}
+                  {staged ? (
+                    <Chip
+                      className="bg-accent/10 text-accent"
+                      size="sm"
+                      variant="soft"
+                    >
+                      <Chip.Label className="tabular-nums">
+                        → {staged}
+                      </Chip.Label>
+                    </Chip>
+                  ) : null}
+                  {line.confidence !== null ? (
+                    <Chip
+                      color={line.confidence >= 0.95 ? "success" : "warning"}
+                      size="sm"
+                      variant="soft"
+                    >
+                      <Chip.Label>
+                        {Math.round(line.confidence * 100)}%
+                      </Chip.Label>
+                    </Chip>
+                  ) : null}
+                  <span className="text-foreground font-mono text-sm tabular-nums">
+                    {line.htsCode ?? "—"}
+                  </span>
+                  {line.duty?.amountUsd !== null &&
+                  line.duty?.amountUsd !== undefined ? (
+                    <span className="text-muted text-xs tabular-nums">
+                      {formatCurrency(line.duty.amountUsd)}
+                    </span>
+                  ) : null}
+                  <ChevronRight className="text-muted size-3.5 shrink-0" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Widget.Content>
+    </Widget>
+  );
+}
+
 /* -------------------------------------------------------------------------------------------------
  * Detail pane — email-detail structure: toolbar · scrollable body · pinned action bar
  * -----------------------------------------------------------------------------------------------*/
@@ -1493,12 +1713,29 @@ function ReviewDetail({
   onAddNote: (body: string) => void;
   onBack: () => void;
   onNavigate: (direction: -1 | 1) => void;
-  onResolve: (action: DecisionAction, alternate?: string) => void;
+  onResolve: (
+    action: DecisionAction,
+    alternate?: string,
+    corrections?: LineCorrection[],
+  ) => void;
   position: number;
   total: number;
 }) {
   const [alternate, setAlternate] = useState<string | null>(null);
   const [view, setView] = useState<"overview" | "trace">("overview");
+  // Multi-line mode — every line carries its own classification detail, so
+  // the overview aggregates and each line drills into a drawer.
+  const multiLine = isMultiLineReview(item);
+  /** Staged per-line substitutions: lineItemId → chosen alternate code. */
+  const [corrections, setCorrections] = useState<Record<string, string>>({});
+  const correctionEntries: LineCorrection[] = Object.entries(corrections).map(
+    ([lineItemId, alternateValue]) => ({
+      lineItemId,
+      alternate: alternateValue,
+    }),
+  );
+  const [openLine, setOpenLine] = useState<ReviewLineItem | null>(null);
+  const [traceLine, setTraceLine] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const threads = useReviewThreads();
@@ -1561,6 +1798,17 @@ function ReviewDetail({
     (ReviewDocument & { kind: "pdf" }) | null
   >(null);
   const [isMemoOpen, setMemoOpen] = useState(false);
+  // A drilled-into line's own rationale memo (memos are emitted per line);
+  // the latest revision wins, mirroring the headline memo above.
+  const memoForLine = (line: ReviewLineItem) =>
+    [...item.documents]
+      .reverse()
+      .find(
+        (document): document is ReviewDocument & { kind: "pdf" } =>
+          document.kind === "pdf" &&
+          isMemoDoc(document) &&
+          new RegExp(`Line ${line.lineNumber}(\\D|$)`).test(document.name),
+      );
 
   const handleAddNote = () => {
     const body = draft.trim();
@@ -1688,92 +1936,103 @@ function ReviewDetail({
         </div>
         {view === "overview" ? (
           <div className="flex select-text flex-col gap-4 pb-4">
-            {/* Proposal */}
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>{item.proposal.label}</Widget.Title>
-                {memoDocument ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onPress={() => setMemoOpen(true)}
-                  >
-                    <FileText className="size-3.5" />
-                    View memo
-                  </Button>
-                ) : null}
-              </Widget.Header>
-              <Widget.Content className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
-                    {item.proposal.value}
-                  </span>
-                  <Chip
-                    color={item.confidence >= 0.9 ? "success" : "warning"}
-                    size="md"
-                    variant="soft"
-                  >
-                    <Chip.Label>
-                      {Math.round(item.confidence * 100)}% confident
-                    </Chip.Label>
-                  </Chip>
-                </div>
-                <ClampedText text={item.proposal.detail} />
-                {/* One quiet meta row: the money, the evidence, the artifact. */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {item.dutyImpact ? (
-                    <HoverCard closeDelay={100} openDelay={150}>
-                      <HoverCard.Trigger className="inline-flex w-fit">
-                        <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
-                          <span className="text-foreground text-sm font-semibold tabular-nums">
-                            Duty{" "}
-                            {formatCurrency(item.dutyImpact.proposed.amountUsd)}
-                          </span>
-                          <span className="text-muted text-xs">
-                            {item.dutyImpact.proposed.rate}
-                          </span>
-                        </span>
-                      </HoverCard.Trigger>
-                      <HoverCard.Content className="p-3" placement="top">
-                        <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
-                          {item.dutyImpact.proposed.breakdown.map((line) => (
-                            <span key={line} className="text-muted">
-                              {line}
-                            </span>
-                          ))}
-                        </div>
-                      </HoverCard.Content>
-                    </HoverCard>
-                  ) : null}
-                  {item.citations.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-muted text-xs">Based on</span>
-                      {item.citations.slice(0, 2).map((citation) => (
-                        <CitationPill
-                          key={citation.ref}
-                          citation={citation}
-                          document={findCitedDocument(item, citation)}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  {responseDraft ? (
+            {/* Decision card — one proposal, or the all-lines aggregate */}
+            {multiLine ? (
+              <LineClassificationsCard
+                corrections={corrections}
+                item={item}
+                onOpenLine={setOpenLine}
+              />
+            ) : (
+              <Widget>
+                <Widget.Header>
+                  <Widget.Title>{item.proposal.label}</Widget.Title>
+                  {memoDocument ? (
                     <Button
                       size="sm"
                       variant="ghost"
-                      onPress={() => setEditingDraft(responseDraft)}
+                      onPress={() => setMemoOpen(true)}
                     >
-                      <Pencil className="size-3.5" />
-                      Review response draft
+                      <FileText className="size-3.5" />
+                      View memo
                     </Button>
                   ) : null}
-                </div>
-              </Widget.Content>
-            </Widget>
+                </Widget.Header>
+                <Widget.Content className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-foreground text-xl font-semibold tabular-nums tracking-tight">
+                      {item.proposal.value}
+                    </span>
+                    <Chip
+                      color={item.confidence >= 0.9 ? "success" : "warning"}
+                      size="md"
+                      variant="soft"
+                    >
+                      <Chip.Label>
+                        {Math.round(item.confidence * 100)}% confident
+                      </Chip.Label>
+                    </Chip>
+                  </div>
+                  <ClampedText text={item.proposal.detail} />
+                  {/* One quiet meta row: the money, the evidence, the artifact. */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {item.dutyImpact ? (
+                      <HoverCard closeDelay={100} openDelay={150}>
+                        <HoverCard.Trigger className="inline-flex w-fit">
+                          <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
+                            <span className="text-foreground text-sm font-semibold tabular-nums">
+                              Duty{" "}
+                              {formatCurrency(
+                                item.dutyImpact.proposed.amountUsd,
+                              )}
+                            </span>
+                            <span className="text-muted text-xs">
+                              {item.dutyImpact.proposed.rate}
+                            </span>
+                          </span>
+                        </HoverCard.Trigger>
+                        <HoverCard.Content className="p-3" placement="top">
+                          <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
+                            {item.dutyImpact.proposed.breakdown.map((line) => (
+                              <span key={line} className="text-muted">
+                                {line}
+                              </span>
+                            ))}
+                          </div>
+                        </HoverCard.Content>
+                      </HoverCard>
+                    ) : null}
+                    {item.citations.length > 0 ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-muted text-xs">Based on</span>
+                        {item.citations.slice(0, 2).map((citation) => (
+                          <CitationPill
+                            key={citation.ref}
+                            citation={citation}
+                            document={findCitedDocument(item, citation)}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {responseDraft ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onPress={() => setEditingDraft(responseDraft)}
+                      >
+                        <Pencil className="size-3.5" />
+                        Review response draft
+                      </Button>
+                    ) : null}
+                  </div>
+                </Widget.Content>
+              </Widget>
+            )}
 
             {/* Entry lines — every line's code at a glance; the reviewed
-                line is highlighted. */}
-            {item.lineItems && item.lineItems.length > 0 ? (
+                line is highlighted. Multi-line mode folds these rows into
+                the decision card above. */}
+            {!multiLine && item.lineItems && item.lineItems.length > 0 ? (
               <Widget>
                 <Widget.Header>
                   <Widget.Title>Line items</Widget.Title>
@@ -1824,9 +2083,7 @@ function ReviewDetail({
                           {line.confidence !== null ? (
                             <Chip
                               color={
-                                line.confidence >= 0.95
-                                  ? "success"
-                                  : "warning"
+                                line.confidence >= 0.95 ? "success" : "warning"
                               }
                               size="sm"
                               variant="soft"
@@ -1847,95 +2104,23 @@ function ReviewDetail({
               </Widget>
             ) : null}
 
-            {/* Alternates — their own card, out of the decision's way */}
-            {item.alternates && item.alternates.length > 0 ? (
+            {/* Alternates — their own card, out of the decision's way.
+                Multi-line mode surfaces each line's own alternates in the
+                line's drawer instead. */}
+            {!multiLine && item.alternates && item.alternates.length > 0 ? (
               <Widget>
                 <Widget.Header>
                   <Widget.Title>Alternate classifications</Widget.Title>
                 </Widget.Header>
                 <Widget.Content>
-                  <ItemCardGroup variant="outline">
-                    {item.alternates.map((alt, index) => {
-                      const isSelected = alternate === alt.value;
-                      const impact = item.dutyImpact?.alternates?.[alt.value];
-
-                      return (
-                        <Fragment key={alt.value}>
-                          {index > 0 ? <Separator /> : null}
-                          <ItemCard>
-                            <ItemCard.Content>
-                              <ItemCard.Title className="whitespace-normal tabular-nums">
-                                {alt.value}
-                              </ItemCard.Title>
-                              {/* The component truncates by default — let the
-                                      detail wrap instead. */}
-                              <ItemCard.Description className="whitespace-normal leading-relaxed">
-                                {alt.detail}
-                              </ItemCard.Description>
-                              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                                <Chip color="default" size="sm" variant="soft">
-                                  <Chip.Label>
-                                    {Math.round(alt.confidence * 100)}%
-                                    confident
-                                  </Chip.Label>
-                                </Chip>
-                                {impact ? (
-                                  <span
-                                    className={`text-xs font-medium tabular-nums ${
-                                      impact.deltaUsd > 0
-                                        ? "text-danger"
-                                        : impact.deltaUsd < 0
-                                          ? "text-success"
-                                          : "text-muted"
-                                    }`}
-                                  >
-                                    {impact.deltaUsd === 0
-                                      ? "$0 duty change"
-                                      : `${impact.deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(impact.deltaUsd))} duty`}
-                                  </span>
-                                ) : null}
-                                {alt.reason ? (
-                                  <HoverCard closeDelay={100} openDelay={150}>
-                                    <HoverCard.Trigger className="inline-flex w-fit">
-                                      <span className="text-muted cursor-help text-xs underline decoration-dashed underline-offset-2">
-                                        Why not?
-                                      </span>
-                                    </HoverCard.Trigger>
-                                    <HoverCard.Content
-                                      className="max-w-xs p-3"
-                                      placement="top"
-                                    >
-                                      <p className="text-muted text-xs leading-relaxed">
-                                        {alt.reason}
-                                      </p>
-                                    </HoverCard.Content>
-                                  </HoverCard>
-                                ) : null}
-                              </div>
-                            </ItemCard.Content>
-                            <ItemCard.Action>
-                              <Button
-                                size="sm"
-                                variant={isSelected ? "primary" : "outline"}
-                                onPress={() =>
-                                  setAlternate(isSelected ? null : alt.value)
-                                }
-                              >
-                                {isSelected ? (
-                                  <>
-                                    <CircleCheck className="size-3.5" />
-                                    Selected
-                                  </>
-                                ) : (
-                                  "Choose alternative"
-                                )}
-                              </Button>
-                            </ItemCard.Action>
-                          </ItemCard>
-                        </Fragment>
-                      );
-                    })}
-                  </ItemCardGroup>
+                  <AlternatesList
+                    alternates={item.alternates}
+                    deltaFor={(value) =>
+                      item.dutyImpact?.alternates?.[value]?.deltaUsd
+                    }
+                    selected={alternate}
+                    onSelect={setAlternate}
+                  />
                 </Widget.Content>
               </Widget>
             ) : null}
@@ -2088,7 +2273,11 @@ function ReviewDetail({
           </div>
         ) : (
           <div className="flex select-text flex-col gap-5 pb-4">
-            <TraceSection item={item} />
+            <TraceSection
+              item={item}
+              traceLine={traceLine}
+              onTraceLineChange={setTraceLine}
+            />
 
             {/* Conversation — interrogate the agent; answers join the audit record */}
             <div className="flex flex-col gap-3">
@@ -2176,19 +2365,38 @@ function ReviewDetail({
             Request Info
           </Button>
         ) : null}
-        <Button
-          variant="primary"
-          size="lg"
-          onPress={() =>
-            onResolve(
-              alternate ? "corrected" : "approved",
-              alternate ?? undefined,
-            )
-          }
-        >
-          <CircleCheck />
-          {alternate ? `Approve ${alternate}` : item.approveLabel}
-        </Button>
+        {multiLine ? (
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={() =>
+              onResolve(
+                correctionEntries.length ? "corrected" : "approved",
+                undefined,
+                correctionEntries.length ? correctionEntries : undefined,
+              )
+            }
+          >
+            <CircleCheck />
+            {correctionEntries.length
+              ? `Approve with ${correctionEntries.length} correction${correctionEntries.length === 1 ? "" : "s"}`
+              : "Approve all lines"}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={() =>
+              onResolve(
+                alternate ? "corrected" : "approved",
+                alternate ?? undefined,
+              )
+            }
+          >
+            <CircleCheck />
+            {alternate ? `Approve ${alternate}` : item.approveLabel}
+          </Button>
+        )}
       </div>
 
       <ResponseDraftModal
@@ -2206,6 +2414,29 @@ function ReviewDetail({
           isOpen={isMemoOpen}
           shipmentId={item.id}
           onOpenChange={setMemoOpen}
+        />
+      ) : null}
+      {multiLine ? (
+        <LineDetailDrawer
+          line={openLine}
+          memo={openLine ? (memoForLine(openLine) ?? null) : null}
+          selectedAlternate={
+            openLine ? (corrections[openLine.lineItemId] ?? null) : null
+          }
+          shipmentId={item.id}
+          onOpenChange={(open) => {
+            if (!open) setOpenLine(null);
+          }}
+          onSelectAlternate={(value) => {
+            if (!openLine) return;
+            setCorrections((current) => {
+              if (value === null) {
+                const { [openLine.lineItemId]: _, ...rest } = current;
+                return rest;
+              }
+              return { ...current, [openLine.lineItemId]: value };
+            });
+          }}
         />
       ) : null}
     </div>
@@ -2518,7 +2749,11 @@ export function ReviewQueue() {
     if (next) setSelectedId(next.id);
   };
 
-  const handleResolve = (action: DecisionAction, alternate?: string) => {
+  const handleResolve = (
+    action: DecisionAction,
+    alternate?: string,
+    corrections?: LineCorrection[],
+  ) => {
     if (!displayItem) return;
     const item = displayItem;
     const next =
@@ -2531,6 +2766,7 @@ export function ReviewQueue() {
         data: {
           action: action === "info-requested" ? "info_requested" : action,
           ...(alternate && { alternate }),
+          ...(corrections?.length && { corrections }),
         },
         id: item.id,
       })
@@ -2550,7 +2786,9 @@ export function ReviewQueue() {
         action === "approved"
           ? `Approved ${item.reference}`
           : action === "corrected"
-            ? `Corrected ${item.reference} → ${alternate}`
+            ? corrections?.length
+              ? `Corrected ${item.reference} — ${corrections.length} line${corrections.length === 1 ? "" : "s"}`
+              : `Corrected ${item.reference} → ${alternate}`
             : `Requested more info for ${item.reference}`,
     });
 
@@ -2558,7 +2796,7 @@ export function ReviewQueue() {
     if (action !== "info-requested") {
       setResolved((current) => [
         ...current,
-        { decision: { action, alternate }, item },
+        { decision: { action, alternate, corrections }, item },
       ]);
       setSelectedId(next?.id ?? null);
       if (!next) setIsMobileDetailOpen(false);

@@ -170,9 +170,14 @@ export class ShipmentsService {
       );
     }
 
+    const correctedSuffix = dto.corrections?.length
+      ? ` → ${dto.corrections.length} line${dto.corrections.length === 1 ? "" : "s"}`
+      : dto.alternate
+        ? ` → ${dto.alternate}`
+        : "";
     const titles: Record<ReviewResolutionAction, string> = {
       [ReviewResolutionAction.Approved]: "Review approved",
-      [ReviewResolutionAction.Corrected]: `Review corrected${dto.alternate ? ` → ${dto.alternate}` : ""}`,
+      [ReviewResolutionAction.Corrected]: `Review corrected${correctedSuffix}`,
       [ReviewResolutionAction.InfoRequested]: "More information requested",
     };
 
@@ -186,6 +191,7 @@ export class ShipmentsService {
       payload: {
         action: dto.action,
         ...(dto.alternate && { alternate: dto.alternate }),
+        ...(dto.corrections?.length && { corrections: dto.corrections }),
         ...(dto.note && { note: dto.note }),
       },
     });
@@ -234,21 +240,26 @@ export class ShipmentsService {
     });
     if (lines.length === 0) return;
 
-    for (const line of lines) {
-      const isReviewedLine = line.id === payload?.lineItemId;
+    // Per-line substitutions; the legacy single-alternate form corrects the
+    // reviewed (headline) line.
+    const substitutions = new Map<string, string>(
+      dto.corrections?.map((c) => [c.lineItemId, c.alternate]) ?? [],
+    );
+    if (substitutions.size === 0 && dto.alternate && payload?.lineItemId) {
+      substitutions.set(payload.lineItemId, dto.alternate);
+    }
 
-      if (
-        isReviewedLine &&
-        dto.action === ReviewResolutionAction.Corrected &&
-        dto.alternate
-      ) {
+    for (const line of lines) {
+      const alternate = substitutions.get(line.id);
+
+      if (dto.action === ReviewResolutionAction.Corrected && alternate) {
         await updateShipmentLineItem(line.id, organizationId, {
-          htsCode: dto.alternate,
+          htsCode: alternate,
           status: LineItemStatus.Corrected,
         });
         if (line.productId) {
           await updateProduct(line.productId, organizationId, {
-            htsCode: dto.alternate,
+            htsCode: alternate,
             confidence: 1,
             classifiedAt: new Date(),
             source: "broker",
