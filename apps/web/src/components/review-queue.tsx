@@ -1543,63 +1543,13 @@ function LineClassificationsCard({
 }) {
   const lines = item.lineItems ?? [];
   const totals = dutyTotals(lines, corrections);
-  const flaggedCount = lines.filter(
-    (line) => line.status === "needs_review",
-  ).length;
 
   return (
     <Widget>
       <Widget.Header>
         <Widget.Title>Line classifications</Widget.Title>
-        <span className="text-muted text-xs">
-          {lines.length} lines · {flaggedCount} flagged
-        </span>
       </Widget.Header>
-      <Widget.Content className="flex flex-col gap-3">
-        <HoverCard closeDelay={100} openDelay={150}>
-          <HoverCard.Trigger className="inline-flex w-fit">
-            <span className="border-border-secondary inline-flex cursor-default items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5">
-              <span className="text-foreground text-sm font-semibold tabular-nums">
-                Total duty {formatCurrency(totals.amountUsd)}
-              </span>
-              {totals.effectivePct !== null ? (
-                <span className="text-muted text-xs">
-                  {totals.effectivePct.toFixed(1)}% effective
-                </span>
-              ) : null}
-            </span>
-          </HoverCard.Trigger>
-          <HoverCard.Content className="p-3" placement="top">
-            <div className="flex flex-col gap-1 font-mono text-xs leading-relaxed">
-              {lines.map((line) => {
-                const chosen = line.alternates?.find(
-                  (alt) => alt.value === corrections[line.lineItemId],
-                );
-                const code = chosen?.value ?? line.htsCode ?? "—";
-                const amountUsd =
-                  chosen?.amountUsd ?? line.duty?.amountUsd ?? null;
-                const pct = chosen ? null : (line.duty?.effectivePct ?? null);
-
-                return (
-                  <span key={line.lineItemId} className="text-muted">
-                    #{line.lineNumber} {code}
-                    {pct !== null ? ` · ${pct}%` : ""}
-                    {amountUsd !== null
-                      ? ` ≈ ${formatCurrency(amountUsd)}`
-                      : " · not ad-valorem"}
-                  </span>
-                );
-              })}
-              {totals.unpricedCount > 0 ? (
-                <span className="text-muted">
-                  Total excludes {totals.unpricedCount} line
-                  {totals.unpricedCount === 1 ? "" : "s"} without ad-valorem
-                  duty
-                </span>
-              ) : null}
-            </div>
-          </HoverCard.Content>
-        </HoverCard>
+      <Widget.Content>
         <ItemCardGroup variant="outline">
           {lines.map((line, index) => {
             const staged = corrections[line.lineItemId];
@@ -1687,6 +1637,35 @@ function LineClassificationsCard({
             );
           })}
         </ItemCardGroup>
+        {/* Receipt-style totals — quiet, borderless, below the lines. */}
+        <div className="flex flex-col gap-1 px-1 pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted text-xs">Total value</span>
+            <span className="text-foreground text-xs tabular-nums">
+              {formatCurrency(totals.totalValueUsd)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted text-xs">Total duty</span>
+            <span className="text-foreground text-xs font-semibold tabular-nums">
+              {formatCurrency(totals.amountUsd)}
+            </span>
+          </div>
+          {totals.effectivePct !== null ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted text-xs">Effective duty rate</span>
+              <span className="text-foreground text-xs tabular-nums">
+                {totals.effectivePct.toFixed(1)}%
+              </span>
+            </div>
+          ) : null}
+          {totals.unpricedCount > 0 ? (
+            <span className="text-muted text-xs">
+              Duty total excludes {totals.unpricedCount} line
+              {totals.unpricedCount === 1 ? "" : "s"} without ad-valorem duty
+            </span>
+          ) : null}
+        </div>
       </Widget.Content>
     </Widget>
   );
@@ -1938,8 +1917,7 @@ function ReviewDetail({
             {item.question}
           </h1>
           <span className="text-muted text-xs">
-            {item.client} · {item.reference} ·{" "}
-            {formatCurrency(item.shipmentValue)} shipment
+            {item.client} · {item.reference}
           </span>
         </div>
         {view === "overview" ? (

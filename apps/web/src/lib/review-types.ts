@@ -260,6 +260,8 @@ export function dutyTotals(
   return {
     amountUsd,
     effectivePct: valueUsd > 0 ? (amountUsd / valueUsd) * 100 : null,
+    /** Commercial value across every line, priced or not. */
+    totalValueUsd: lines.reduce((sum, line) => sum + (line.valueUsd ?? 0), 0),
     unpricedCount: lines.length - priced.length,
   };
 }
