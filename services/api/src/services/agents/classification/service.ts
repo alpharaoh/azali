@@ -36,6 +36,7 @@ const log = createLogger("classification-agent");
 export interface ClassificationShipmentFacts {
   id: string;
   reference: string;
+  clientId: string;
   clientName: string | null;
   originCountry: string;
   valueCents: number;
@@ -181,7 +182,7 @@ export class ClassificationAgentService {
         tools: {
           ...htsTools,
           ...crossRulingsTools,
-          ...createKnowledgeBaseTools(organizationId),
+          ...createKnowledgeBaseTools(organizationId, shipment.clientId),
           // Provider-executed on Anthropic's side — results carry real URLs.
           webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
           submitClassification,

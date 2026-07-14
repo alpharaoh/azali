@@ -18,6 +18,7 @@ import { LineItemStatus } from "@/db/schemas/shipmentLineItems";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 import { inngest } from "@/inngest/client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
+import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
 import type { CreateShipmentDto } from "./dto/create-shipment.dto";
 import type { ListShipmentsDto } from "./dto/list-shipments.dto";
 import {
@@ -258,12 +259,17 @@ export class ShipmentsService {
           status: LineItemStatus.Corrected,
         });
         if (line.productId) {
-          await updateProduct(line.productId, organizationId, {
+          const product = await updateProduct(line.productId, organizationId, {
             htsCode: alternate,
+            // The old description/duty belong to the rejected code — null
+            // them rather than let a reuse carry a mismatched snapshot.
+            htsDescription: null,
+            dutyRate: null,
             confidence: 1,
             classifiedAt: new Date(),
             source: "broker",
           });
+          await indexProductClassification(product);
         }
         continue;
       }
@@ -278,10 +284,11 @@ export class ShipmentsService {
         // Approving the review confirms every line the broker saw in the
         // table — their products become broker-verified and reusable.
         if (line.productId) {
-          await updateProduct(line.productId, organizationId, {
+          const product = await updateProduct(line.productId, organizationId, {
             source: "broker",
             classifiedAt: new Date(),
           });
+          await indexProductClassification(product);
         }
       }
     }

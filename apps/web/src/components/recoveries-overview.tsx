@@ -3,8 +3,10 @@ import {
   CircleCheck,
   CircleFill,
   Funnel,
+  MagicWand,
 } from "@gravity-ui/icons";
 import {
+  Alert,
   Button,
   Chip,
   Dropdown,
@@ -409,6 +411,27 @@ export function RecoveriesOverview() {
 
   return (
     <div className="flex w-full flex-col gap-4">
+      {/* Demo preview banner */}
+      <Alert status="accent">
+        <Alert.Indicator>
+          <MagicWand />
+        </Alert.Indicator>
+        <Alert.Content>
+          <Alert.Title>
+            Demo preview
+            <Chip className="ml-2" color="accent" size="sm" variant="soft">
+              <Chip.Label>Coming soon</Chip.Label>
+            </Chip>
+          </Alert.Title>
+          <Alert.Description>
+            The data on this page is illustrative — Recoveries is not yet
+            enabled for your account. Talk to your business representative to
+            unlock automated drawback, overpayment, and exclusion recovery for
+            your clients.
+          </Alert.Description>
+        </Alert.Content>
+      </Alert>
+
       {/* Header */}
       <div>
         <h1 className="text-foreground text-xl font-semibold">Recoveries</h1>

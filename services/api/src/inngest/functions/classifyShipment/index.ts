@@ -18,6 +18,7 @@ import {
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
+import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
 import { inngest } from "../../client";
 import { matchOrCreateProduct } from "../ingestShipmentDocuments/utils";
 import { buildReviewPayload, type LineOutcome, type LineSlim } from "./utils";
@@ -297,11 +298,17 @@ export const classifyShipment = () => {
               : LineItemStatus.Classified,
           });
           if (line.productId) {
-            await updateProduct(line.productId, organizationId, {
-              ...snapshot,
-              classifiedAt: new Date(),
-              source: "agent",
-            });
+            const product = await updateProduct(
+              line.productId,
+              organizationId,
+              {
+                ...snapshot,
+                classifiedAt: new Date(),
+                source: "agent",
+              },
+            );
+            // The verdict becomes searchable precedent for future runs.
+            await indexProductClassification(product);
           }
         });
 

@@ -19,6 +19,7 @@ import {
   ShipmentStage,
   ShipmentStatus,
 } from "@/db/schema";
+import { KNOWLEDGE_RECORD_TYPES } from "@/services/external/pinecone/classificationRecord";
 import type { KnowledgeDocument } from "@/services/external/pinecone/service";
 import { BlobStorageService } from "@/services/external/s3/service";
 import {
@@ -263,14 +264,14 @@ export async function createShipmentFromSynthesis(
       clientId,
       reference,
       stage: ShipmentStage.Intake,
-    status: ShipmentStatus.Autopilot,
-    originCountry: synthesis.originCountry ?? "unknown",
-    originPort: synthesis.originPort,
-    portOfEntry: synthesis.portOfEntry ?? "unknown",
-    transportMode: synthesis.transportMode ?? "ocean",
-    conveyance: synthesis.conveyance,
-    etaAt: synthesis.etaAt ? new Date(synthesis.etaAt) : null,
-    valueCents: Math.round((synthesis.valueUsd ?? 0) * 100),
+      status: ShipmentStatus.Autopilot,
+      originCountry: synthesis.originCountry ?? "unknown",
+      originPort: synthesis.originPort,
+      portOfEntry: synthesis.portOfEntry ?? "unknown",
+      transportMode: synthesis.transportMode ?? "ocean",
+      conveyance: synthesis.conveyance,
+      etaAt: synthesis.etaAt ? new Date(synthesis.etaAt) : null,
+      valueCents: Math.round((synthesis.valueUsd ?? 0) * 100),
       incoterm: synthesis.incoterm,
       summary: { description: synthesis.summary },
     });
@@ -281,7 +282,12 @@ export async function createShipmentFromSynthesis(
   try {
     created = await insertWith(baseReference);
   } catch (error) {
-    const message = error instanceof Error ? (error.cause instanceof Error ? error.cause.message : error.message) : "";
+    const message =
+      error instanceof Error
+        ? error.cause instanceof Error
+          ? error.cause.message
+          : error.message
+        : "";
     if (!/shipments_org_reference_uidx|duplicate key/i.test(message)) {
       throw error;
     }
@@ -385,6 +391,7 @@ export function knowledgeRecord(
       ),
     ].join("\n"),
     metadata: {
+      type: KNOWLEDGE_RECORD_TYPES.document,
       shipmentId,
       category: item.category,
       fileName: item.fileName,
