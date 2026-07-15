@@ -7,6 +7,10 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
+export function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 /** "Meridian Home Brands" → "MH" — avatar fallback initials. */
 export function getInitials(name: string) {
   return name

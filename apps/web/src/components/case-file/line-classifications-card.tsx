@@ -9,12 +9,11 @@ import {
 } from "@heroui-pro/react";
 import { Fragment } from "react";
 import { ConfidenceChip } from "#/components/confidence-chip";
-import { dutyTotals, type ReviewLineItem } from "#/lib/review-types";
 import { formatCurrency } from "#/lib/format";
+import { dutyTotals, type ReviewLineItem } from "#/lib/review-types";
 
 /** What a not-yet-classified line is doing right now (detail page live view). */
 export type LineActivity = "classifying" | "queued";
-
 
 const NO_CORRECTIONS: Record<string, string> = {};
 

@@ -11,19 +11,19 @@ import { Avatar, Button, Chip, Skeleton, Spinner, Tabs } from "@heroui/react";
 import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import { DocumentViewerModal } from "#/components/case-file/document-viewer-modal";
+import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
 import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
+import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import {
+  ActivitySkeleton,
+  EventTimelineItem,
+} from "#/components/case-file/timeline-items";
 import {
   StageTracker,
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
-import { DocumentViewerModal } from "#/components/case-file/document-viewer-modal";
-import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
-import {
-  ActivitySkeleton,
-  EventTimelineItem,
-} from "#/components/case-file/timeline-items";
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentDocumentsResponseDtoDocumentsItem } from "#/generated/api";
 import {

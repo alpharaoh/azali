@@ -31,9 +31,8 @@ import {
   getShipmentEventsControllerFindByShipmentQueryKey,
   useShipmentEventsControllerCreate,
 } from "#/generated/api";
-import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
 import { formatCurrency } from "#/lib/format";
-
+import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
 
 /* -------------------------------------------------------------------------------------------------
  * Alternates — the runner-up codes with duty deltas and a choose action.

@@ -13,10 +13,10 @@ import type { ComponentType, SVGProps } from "react";
 import { useEffect, useRef } from "react";
 import crossLogo from "#/assets/cross-logo.png";
 import htsBadge from "#/assets/htsus.svg";
-import { useRealtimeConnected } from "#/lib/realtime";
+import { ClampedText } from "#/components/clamped-text";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "#/generated/api";
 import { useAgentRunsControllerFind } from "#/generated/api";
-import { ClampedText } from "#/components/clamped-text";
+import { useRealtimeConnected } from "#/lib/realtime";
 
 /* -------------------------------------------------------------------------------------------------
  * The agent trace, rendered directly from the canonical audit record
