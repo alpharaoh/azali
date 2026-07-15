@@ -10,17 +10,11 @@ import {
 import { Fragment } from "react";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import { dutyTotals, type ReviewLineItem } from "#/lib/review-types";
+import { formatCurrency } from "#/lib/format";
 
 /** What a not-yet-classified line is doing right now (detail page live view). */
 export type LineActivity = "classifying" | "queued";
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
 const NO_CORRECTIONS: Record<string, string> = {};
 

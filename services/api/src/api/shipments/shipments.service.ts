@@ -294,7 +294,8 @@ export class ShipmentsService {
     }
   }
 
-  /** The shipment's entry lines with their classifications. */
+  /** The shipment's entry lines with their full classification snapshot —
+   * the line row is the single source of per-line truth. */
   async lines(organizationId: string, id: string) {
     await this.findOne(organizationId, id);
     const { data } = await listShipmentLineItems({
@@ -302,22 +303,45 @@ export class ShipmentsService {
       shipmentId: id,
     });
     return {
-      lines: data.map((line) => ({
-        id: line.id,
-        lineNumber: line.lineNumber,
-        description: line.description,
-        sku: line.sku,
-        quantity: line.quantity,
-        unit: line.unit,
-        totalValueUsd:
-          line.totalValueCents === null ? null : line.totalValueCents / 100,
-        originCountry: line.originCountry,
-        htsCode: line.htsCode,
-        confidence: line.confidence,
-        status: line.status,
-        reusedFromProduct: line.reusedFromProduct,
-        productId: line.productId,
-      })),
+      lines: data.map((line) => {
+        const dutyRate = line.dutyRate as {
+          effective?: string | null;
+          effectivePct?: number | null;
+        } | null;
+        const effectivePct = dutyRate?.effectivePct ?? null;
+        return {
+          id: line.id,
+          lineNumber: line.lineNumber,
+          description: line.description,
+          sku: line.sku,
+          quantity: line.quantity,
+          unit: line.unit,
+          totalValueUsd:
+            line.totalValueCents === null ? null : line.totalValueCents / 100,
+          originCountry: line.originCountry,
+          htsCode: line.htsCode,
+          confidence: line.confidence,
+          status: line.status,
+          reusedFromProduct: line.reusedFromProduct,
+          productId: line.productId,
+          runId: line.classificationRunId,
+          summary: line.summary ?? line.htsDescription,
+          duty:
+            line.htsCode === null
+              ? null
+              : {
+                  effectivePct,
+                  label: dutyRate?.effective ?? null,
+                  amountUsd:
+                    effectivePct !== null && line.totalValueCents !== null
+                      ? Math.round(
+                          (line.totalValueCents / 100) * (effectivePct / 100),
+                        )
+                      : null,
+                },
+          alternates: line.alternates,
+        };
+      }),
     };
   }
 

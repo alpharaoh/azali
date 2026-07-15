@@ -159,6 +159,44 @@ export class ListShipmentLinesResponseDto extends createZodDto(
             .boolean()
             .describe("True when the code came from the product library."),
           productId: z.string().nullable().describe("The linked product."),
+          runId: z
+            .string()
+            .nullable()
+            .describe("The agent run behind this classification."),
+          summary: z
+            .string()
+            .nullable()
+            .describe("One-paragraph rationale for the chosen code."),
+          duty: z
+            .object({
+              effectivePct: z.number().nullable(),
+              label: z
+                .string()
+                .nullable()
+                .describe('Short rate label, e.g. "7.5% effective".'),
+              amountUsd: z
+                .number()
+                .nullable()
+                .describe("Ad-valorem duty on this line in whole USD."),
+            })
+            .nullable()
+            .describe("Duty snapshot; null until the line is classified."),
+          alternates: z
+            .array(
+              z.object({
+                value: z.string().describe("The runner-up HTS code."),
+                detail: z.string(),
+                confidence: z.number(),
+                reason: z.string().optional(),
+                amountUsd: z.number().optional(),
+                deltaUsd: z
+                  .number()
+                  .optional()
+                  .describe("Duty change vs the chosen code, in USD."),
+              }),
+            )
+            .nullable()
+            .describe("Runner-up codes, frozen at classification time."),
         }),
       )
       .describe("The shipment's entry lines, in line order."),

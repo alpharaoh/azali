@@ -24,7 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import { Fragment, useRef, useState } from "react";
 
-import { AgentRunTrace } from "#/components/agent-run-trace";
+import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import {
@@ -32,14 +32,8 @@ import {
   useShipmentEventsControllerCreate,
 } from "#/generated/api";
 import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
+import { formatCurrency } from "#/lib/format";
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Alternates — the runner-up codes with duty deltas and a choose action.

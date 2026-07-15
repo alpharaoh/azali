@@ -34,7 +34,9 @@ function ShipmentDetailPage() {
 
   return (
     <div className="p-4 pt-2">
-      <ShipmentDetail shipmentId={shipmentId} />
+      {/* Keyed so all per-shipment view state resets when navigating
+          between shipments. */}
+      <ShipmentDetail key={shipmentId} shipmentId={shipmentId} />
     </div>
   );
 }

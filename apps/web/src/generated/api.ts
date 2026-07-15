@@ -1124,6 +1124,36 @@ export interface ResolveReviewDto {
   note?: string;
 }
 
+/**
+ * Duty snapshot; null until the line is classified.
+ * @nullable
+ */
+export type ListShipmentLinesResponseDtoLinesItemDuty = {
+  /** @nullable */
+  effectivePct: number | null;
+  /**
+   * Short rate label, e.g. "7.5% effective".
+   * @nullable
+   */
+  label: string | null;
+  /**
+   * Ad-valorem duty on this line in whole USD.
+   * @nullable
+   */
+  amountUsd: number | null;
+} | null;
+
+export type ListShipmentLinesResponseDtoLinesItemAlternatesItem = {
+  /** The runner-up HTS code. */
+  value: string;
+  detail: string;
+  confidence: number;
+  reason?: string;
+  amountUsd?: number;
+  /** Duty change vs the chosen code, in USD. */
+  deltaUsd?: number;
+};
+
 export type ListShipmentLinesResponseDtoLinesItem = {
   /** Line item id. */
   id: string;
@@ -1166,6 +1196,26 @@ export type ListShipmentLinesResponseDtoLinesItem = {
    * @nullable
    */
   productId: string | null;
+  /**
+   * The agent run behind this classification.
+   * @nullable
+   */
+  runId: string | null;
+  /**
+   * One-paragraph rationale for the chosen code.
+   * @nullable
+   */
+  summary: string | null;
+  /**
+   * Duty snapshot; null until the line is classified.
+   * @nullable
+   */
+  duty: ListShipmentLinesResponseDtoLinesItemDuty;
+  /**
+   * Runner-up codes, frozen at classification time.
+   * @nullable
+   */
+  alternates: ListShipmentLinesResponseDtoLinesItemAlternatesItem[] | null;
 };
 
 export interface ListShipmentLinesResponseDto {

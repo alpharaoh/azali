@@ -1,7 +1,7 @@
 import { ArrowUpRightFromSquare } from "@gravity-ui/icons";
 import { Modal, Spinner } from "@heroui/react";
 import { useState } from "react";
-import { receivedAgo } from "#/components/review/timeline-items";
+import { receivedAgo } from "#/components/case-file/timeline-items";
 import type { DocumentLine, ReviewDocument } from "#/lib/review-types";
 
 export function DocumentLineRow({ line }: { line: DocumentLine }) {

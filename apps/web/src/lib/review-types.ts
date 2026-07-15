@@ -239,6 +239,24 @@ export function isMultiLineReview(item: ReviewItem): boolean {
 }
 
 /**
+ * A line's rationale memo — memos are per-line documents named
+ * "Rationale Memo — Line N · …"; the latest revision wins.
+ */
+export function findLineMemo(
+  documents: ReviewDocument[],
+  lineNumber: number,
+): (ReviewDocument & { kind: "pdf" }) | undefined {
+  return [...documents]
+    .reverse()
+    .find(
+      (document): document is ReviewDocument & { kind: "pdf" } =>
+        document.kind === "pdf" &&
+        /rationale memo/i.test(document.name) &&
+        new RegExp(`Line ${lineNumber}(\\D|$)`).test(document.name),
+    );
+}
+
+/**
  * Shipment-level duty totals over the lines with an ad-valorem amount,
  * honoring in-flight alternate selections. Lines whose duty can't be priced
  * (specific rates, missing value) are counted in `unpricedCount`.

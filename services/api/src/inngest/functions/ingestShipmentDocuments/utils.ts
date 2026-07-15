@@ -3,6 +3,7 @@ import { propagateAttributes } from "@langfuse/tracing";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { insertProduct } from "@/db/queries/insert/insertProduct";
+import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocument";
 import { insertShipmentLineItems } from "@/db/queries/insert/insertShipmentLineItems";
 import { listClients } from "@/db/queries/select/many/listClients";
@@ -254,14 +255,52 @@ export async function resolveClient(
   return { clientId: created.id, created: true };
 }
 
+/**
+ * The shipment row that exists BEFORE anything is known about the cargo —
+ * created at upload time so the pipeline is visible (and watchable) from
+ * second zero. Every placeholder value here is overwritten by
+ * `updateShipmentFromSynthesis` below once extraction lands; until then the
+ * row is recognizable by `clientId === null` + a non-null processingState.
+ */
+export async function createPlaceholderShipment({
+  organizationId,
+  userId,
+  fileCount,
+}: {
+  organizationId: string;
+  userId: string;
+  fileCount: number;
+}) {
+  const shipment = await insertShipment({
+    organizationId,
+    userId,
+    clientId: null,
+    reference: placeholderReference(),
+    stage: ShipmentStage.Intake,
+    status: ShipmentStatus.Autopilot,
+    originCountry: "unknown",
+    portOfEntry: "unknown",
+    transportMode: "ocean",
+    valueCents: 0,
+    summary: {
+      description: `Processing ${fileCount} document${fileCount === 1 ? "" : "s"}`,
+    },
+    processingState: "Extracting documents",
+  });
+  if (!shipment) throw new Error("Shipment insert returned no row");
+  return shipment;
+}
+
+const placeholderReference = () =>
+  `SHP-${randomUUID().slice(0, 8).toUpperCase()}`;
+
 /** Fill the pre-created shipment in with the synthesized facts. */
 export async function updateShipmentFromSynthesis(
   context: IngestContext,
   synthesis: ShipmentSynthesis,
   clientId: string,
 ): Promise<{ id: string; reference: string }> {
-  const baseReference =
-    synthesis.reference ?? `SHP-${randomUUID().slice(0, 8).toUpperCase()}`;
+  const baseReference = synthesis.reference ?? placeholderReference();
 
   const updateWith = (reference: string) =>
     updateShipment(context.shipmentId, context.organizationId, {

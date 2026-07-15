@@ -2,24 +2,19 @@ import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import type { DocumentExtraction } from "@/db/schema";
-import {
-  ShipmentDocumentStatus,
-  ShipmentStage,
-  ShipmentStatus,
-} from "@/db/schema";
+import { ShipmentDocumentStatus } from "@/db/schema";
 import { env } from "@/env";
 import { inngest } from "@/inngest/client";
 import {
   SHIPMENT_DOCUMENTS_UPLOADED_EVENT,
   type ShipmentDocumentsUploadedEvent,
 } from "@/inngest/functions/ingestShipmentDocuments";
+import { createPlaceholderShipment } from "@/inngest/functions/ingestShipmentDocuments/utils";
 import { BlobStorageService } from "@/services/external/s3/service";
 import type { IngestDocumentsDto } from "./dto/ingest-documents.dto";
 import type { UploadDocumentsDto } from "./dto/upload-documents.dto";
@@ -72,25 +67,11 @@ export class ShipmentDocumentsService {
 
     // Pre-create the shipment so it is visible (and watchable) from the
     // moment of upload — ingestion fills in the real facts as it works.
-    const shipment = await insertShipment({
+    const shipment = await createPlaceholderShipment({
       organizationId,
       userId,
-      clientId: null,
-      reference: `SHP-${randomUUID().slice(0, 8).toUpperCase()}`,
-      stage: ShipmentStage.Intake,
-      status: ShipmentStatus.Autopilot,
-      originCountry: "unknown",
-      portOfEntry: "unknown",
-      transportMode: "ocean",
-      valueCents: 0,
-      summary: {
-        description: `Processing ${dto.files.length} document${dto.files.length === 1 ? "" : "s"}`,
-      },
-      processingState: "Extracting documents",
+      fileCount: dto.files.length,
     });
-    if (!shipment) {
-      throw new InternalServerErrorException("Shipment insert returned no row");
-    }
 
     const payload: ShipmentDocumentsUploadedEvent["data"] = {
       organizationId,

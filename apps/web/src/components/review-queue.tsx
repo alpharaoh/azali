@@ -55,23 +55,24 @@ import {
 } from "date-fns";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import {
   AlternatesList,
   LineDetailDrawer,
-} from "#/components/line-detail-drawer";
+} from "#/components/case-file/line-detail-drawer";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import {
   DocumentLineRow,
   DocumentViewerModal,
-} from "#/components/review/document-viewer-modal";
-import { LineClassificationsCard } from "#/components/review/line-classifications-card";
+} from "#/components/case-file/document-viewer-modal";
+import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
 import {
   ActivitySkeleton,
   EventTimelineItem,
   receivedAgo,
   type TimelineItemPassthrough,
-} from "#/components/review/timeline-items";
+} from "#/components/case-file/timeline-items";
 import { TableFetchingState } from "#/components/table-loading";
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
@@ -85,6 +86,7 @@ import {
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
 import { BROKER_NOTE_TYPE } from "#/lib/event-kinds";
+import { formatCurrency, getInitials } from "#/lib/format";
 import type { ThreadMessage } from "#/lib/review-chat";
 import { addThreadMessage, useReviewThreads } from "#/lib/review-chat";
 import type { ReviewSearch } from "#/lib/review-queue-loader";
@@ -106,8 +108,8 @@ import type {
 import { docSlug, isMultiLineReview } from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
 import { useShipmentRealtime } from "#/lib/use-realtime-cache";
-import { AgentRunTrace } from "@/components/agent-run-trace";
-import { ClampedText } from "@/components/clamped-text";
+import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
+import { ClampedText } from "#/components/clamped-text";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -126,14 +128,6 @@ const typeMeta: Record<
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
-
 function decisionLabel(decision: Decision) {
   if (decision.action === "corrected") {
     if (decision.corrections?.length) {
@@ -144,14 +138,6 @@ function decisionLabel(decision: Decision) {
   if (decision.action === "info-requested") return "Info requested";
 
   return "Approved";
-}
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
 }
 
 type DeadlineTone = "danger" | "default" | "warning";
@@ -1083,46 +1069,19 @@ function TraceSection({
       lines.find((line) => line.lineNumber === traceLine) ??
       lines.find((line) => line.status === "needs_review") ??
       lines[0];
+    const runIdForLine = Object.fromEntries(
+      lines
+        .filter((line) => line.runId)
+        .map((line) => [line.lineNumber, line.runId as string]),
+    );
 
     return (
-      <div className="flex flex-col gap-3">
-        <Tabs
-          className="w-fit max-w-full"
-          selectedKey={String(active?.lineNumber)}
-          variant="secondary"
-          onSelectionChange={(key) => onTraceLineChange(Number(key))}
-        >
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="Line item traces" className="w-fit">
-              {lines.map((line) => (
-                <Tabs.Tab
-                  key={line.lineNumber}
-                  className="w-fit max-w-56 shrink-0"
-                  id={String(line.lineNumber)}
-                >
-                  <Chip className="mr-1.5 shrink-0" size="sm" variant="soft">
-                    <Chip.Label className="tabular-nums">
-                      {line.lineNumber}
-                    </Chip.Label>
-                  </Chip>
-                  <span className="min-w-0 truncate whitespace-nowrap">
-                    {line.description}
-                  </span>
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
-        </Tabs>
-        {active?.runId ? (
-          <AgentRunTrace key={active.runId} runId={active.runId} />
-        ) : (
-          <span className="text-muted text-sm">
-            No audit run for this line — its classification was reused from
-            product memory.
-          </span>
-        )}
-      </div>
+      <LineTraceTabs
+        activeLineNumber={active?.lineNumber}
+        lines={lines}
+        runIdForLine={runIdForLine}
+        onSelect={onTraceLineChange}
+      />
     );
   }
   if (item.traceRunId) {

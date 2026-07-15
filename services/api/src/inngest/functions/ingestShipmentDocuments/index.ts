@@ -1,6 +1,6 @@
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
-import { updateShipment } from "@/db/queries/update/updateShipment";
 import type { ShipmentDocumentCategory } from "@/db/schema";
+import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { KnowledgeBaseService } from "@/services/external/pinecone/service";
 import { inngest } from "../../client";
@@ -10,7 +10,6 @@ import {
   createLineItems,
   documentReceivedEvent,
   type ExtractedDocument,
-  errorMessage,
   extractDocument,
   factsExtractedEvent,
   knowledgeRecord,
@@ -71,17 +70,13 @@ export const ingestShipmentDocuments = () => {
           { shipmentId, err: error },
           "ingestion failed after retries — clearing processing state",
         );
-        await updateShipment(shipmentId, organizationId, {
-          processingState: null,
-        });
-        await insertShipmentEvent({
+        await recordProcessingFailure({
           organizationId,
           userId,
           shipmentId,
           type: "ingest_failed",
-          actor: "system",
           title: "Document processing failed",
-          payload: { error: errorMessage(error) },
+          error,
         });
       },
     },
@@ -198,21 +193,17 @@ export const ingestShipmentDocuments = () => {
           { batchId: context.batchId, fileCount: files.length },
           "no documents extracted — marking the shipment failed",
         );
-        await step.run("mark-ingest-failed", async () => {
-          await updateShipment(shipmentId, organizationId, {
-            processingState: null,
-          });
-          await insertShipmentEvent({
+        await step.run("mark-ingest-failed", () =>
+          recordProcessingFailure({
             organizationId,
             userId,
             shipmentId,
             type: "ingest_failed",
-            actor: "system",
             title:
               "Document processing failed — nothing could be extracted from the uploaded files",
-            payload: { failedCount: documents.length },
-          });
-        });
+            error: `${documents.length} document(s) failed extraction`,
+          }),
+        );
         return { shipmentId, extracted: 0, failed: documents.length };
       }
 

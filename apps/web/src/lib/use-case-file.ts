@@ -9,7 +9,6 @@ import {
 import type {
   ActivityEvent,
   ReviewDocument,
-  ReviewLineItem,
   TracePhase,
   TraceStepKind,
 } from "#/lib/review-types";
@@ -31,13 +30,8 @@ export interface CaseFile {
   trace: TracePhase[];
   /** The last agent run seen — the headline line's audit record. */
   traceRunId?: string;
-  /** Every agent run seen (one per classified line), oldest → newest. */
-  traceRuns: Array<{ runId: string; lineNumber?: number }>;
   facts?: CaseFileFacts;
   notes: Array<{ id: string; body: string; occurredAt: string }>;
-  /** Rich per-line data (duty, alternates, summary, runId) from the latest
-   * review_requested payload — present once classification flagged review. */
-  reviewLineItems?: ReviewLineItem[];
   isPending: boolean;
 }
 
@@ -66,7 +60,6 @@ export function useCaseFile(shipmentId: string | undefined): CaseFile {
     // Agent trace — one event per step, grouped by payload.phase. Real
     // agent runs instead carry a runId pointing at the audit record.
     const trace: TracePhase[] = [];
-    const traceRuns: Array<{ runId: string; lineNumber?: number }> = [];
     let traceRunId: string | undefined;
 
     for (const event of events.filter((e) => eventPlane(e.type) === "trace")) {
@@ -77,16 +70,9 @@ export function useCaseFile(shipmentId: string | undefined): CaseFile {
         data?: string[];
         citationRef?: string;
         runId?: string;
-        lineNumber?: number;
       };
       if (typeof payload.runId === "string") {
         traceRunId = payload.runId;
-        traceRuns.push({
-          runId: payload.runId,
-          ...(typeof payload.lineNumber === "number"
-            ? { lineNumber: payload.lineNumber }
-            : {}),
-        });
         continue;
       }
       const label = payload.phase ?? "Trace";
@@ -156,21 +142,13 @@ export function useCaseFile(shipmentId: string | undefined): CaseFile {
         occurredAt: event.occurredAt,
       }));
 
-    // The latest review request carries the richest per-line snapshot.
-    const reviewLineItems = (
-      events.filter((event) => event.type === "review_requested").at(-1)
-        ?.payload as { lineItems?: ReviewLineItem[] } | undefined
-    )?.lineItems;
-
     return {
       activityEvents,
       documents,
       facts,
       notes,
-      reviewLineItems,
       trace,
       traceRunId,
-      traceRuns,
     };
   }, [eventsResponse]);
 

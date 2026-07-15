@@ -15,13 +15,19 @@ import {
   ShipmentStage,
   ShipmentStatus,
 } from "@/db/schema";
+import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
 import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
 import { inngest } from "../../client";
 import { matchOrCreateProduct } from "../ingestShipmentDocuments/utils";
-import { buildReviewPayload, type LineOutcome, type LineSlim } from "./utils";
+import {
+  buildLineAlternates,
+  buildReviewPayload,
+  type LineOutcome,
+  type LineSlim,
+} from "./utils";
 
 export const SHIPMENT_CLASSIFY_REQUESTED_EVENT =
   "shipment/classify.requested" as const;
@@ -63,19 +69,13 @@ export const classifyShipment = () => {
           { shipmentId, err: error },
           "classification failed after retries — clearing processing state",
         );
-        await updateShipment(shipmentId, organizationId, {
-          processingState: null,
-        });
-        await insertShipmentEvent({
+        await recordProcessingFailure({
           organizationId,
           userId,
           shipmentId,
           type: "classification_failed",
-          actor: "system",
           title: "Classification failed",
-          payload: {
-            error: error instanceof Error ? error.message : String(error),
-          },
+          error,
         });
       },
     },
@@ -117,7 +117,13 @@ export const classifyShipment = () => {
           "shipment has no client — skipping classification",
         );
         await step.run("clear-state-no-client", () =>
-          updateShipment(shipmentId, organizationId, { processingState: null }),
+          recordProcessingFailure({
+            organizationId,
+            userId,
+            shipmentId,
+            type: "classification_failed",
+            title: "Classification could not run — no importer was resolved",
+          }),
         );
         return { shipmentId, classified: false, reason: "no_client" };
       }
@@ -141,7 +147,14 @@ export const classifyShipment = () => {
           "no extracted documents — skipping classification",
         );
         await step.run("clear-state-no-documents", () =>
-          updateShipment(shipmentId, organizationId, { processingState: null }),
+          recordProcessingFailure({
+            organizationId,
+            userId,
+            shipmentId,
+            type: "classification_failed",
+            title:
+              "Classification could not run — no extracted documents on file",
+          }),
         );
         return {
           shipmentId,
@@ -349,6 +362,8 @@ export const classifyShipment = () => {
           };
           await updateShipmentLineItem(line.id, organizationId, {
             ...snapshot,
+            summary: result.summary,
+            alternates: buildLineAlternates(result, line.totalValueCents),
             reusedFromProduct: false,
             status: flagged
               ? LineItemStatus.NeedsReview

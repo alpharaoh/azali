@@ -48,6 +48,7 @@ import {
 import { HTS_CHAPTER_TITLES } from "#/lib/hts-chapters";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClassificationsSearch } from "#/routes/dashboard/classifications";
+import { getInitials } from "#/lib/format";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -64,13 +65,6 @@ const sourceIds = Object.keys(sourceMeta) as ProductSource[];
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-}
 
 /* -------------------------------------------------------------------------------------------------
  * CopyText — inline copyable HTS code

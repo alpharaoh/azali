@@ -7,7 +7,11 @@ import {
   type InsertAgentRunItem,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { realtimeBus } from "@/realtime/bus";
+import {
+  publishRunFinished,
+  publishRunItem,
+  publishRunStarted,
+} from "@/realtime/publish";
 
 const log = createLogger("agent-recorder");
 
@@ -17,24 +21,12 @@ const log = createLogger("agent-recorder");
  */
 const MAX_CONTENT_BYTES = 64_000;
 
-/** Live-stream frames are clamped harder than the DB row — the client
- * refetches the authoritative record when the run finishes. */
-const MAX_WIRE_BYTES = 8_192;
-
 function clampOutput(output: unknown): Record<string, unknown> {
   const serialized = JSON.stringify(output);
   if (serialized && serialized.length > MAX_CONTENT_BYTES) {
     return { preview: serialized.slice(0, MAX_CONTENT_BYTES), truncated: true };
   }
   return { output };
-}
-
-function clampForWire(content: Record<string, unknown>) {
-  const serialized = JSON.stringify(content);
-  if (serialized && serialized.length > MAX_WIRE_BYTES) {
-    return { preview: serialized.slice(0, MAX_WIRE_BYTES), truncated: true };
-  }
-  return content;
 }
 
 export interface StartAgentRunParams {
@@ -85,7 +77,7 @@ export class AgentRunRecorder {
         traceId: params.traceId ?? null,
       });
       if (params.shipmentId) {
-        realtimeBus.emit("run.started", {
+        publishRunStarted({
           organizationId: params.organizationId,
           shipmentId: params.shipmentId,
           runId: run.id,
@@ -151,19 +143,11 @@ export class AgentRunRecorder {
     try {
       const [inserted] = await insertAgentRunItems([row]);
       if (inserted && this.shipmentId) {
-        realtimeBus.emit("run.item", {
+        publishRunItem({
           organizationId: this.organizationId,
           shipmentId: this.shipmentId,
           runId: this.runId,
-          item: {
-            id: inserted.id,
-            stepIndex: inserted.stepIndex,
-            itemIndex: inserted.itemIndex,
-            kind: inserted.kind,
-            toolName: inserted.toolName,
-            toolCallId: inserted.toolCallId,
-            content: clampForWire(inserted.content),
-          },
+          item: inserted,
         });
       }
     } catch (error) {
@@ -247,7 +231,7 @@ export class AgentRunRecorder {
       // The run DID end even if the audit update failed — watchers must
       // stop spinning either way.
       if (this.shipmentId) {
-        realtimeBus.emit("run.finished", {
+        publishRunFinished({
           organizationId: this.organizationId,
           shipmentId: this.shipmentId,
           runId: this.runId,

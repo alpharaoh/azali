@@ -43,6 +43,7 @@ import { countryName } from "#/lib/countries";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { PipelineSearch } from "#/routes/dashboard/pipeline";
 import { pipelineListParams } from "#/routes/dashboard/pipeline";
+import { formatCurrency, getInitials } from "#/lib/format";
 
 const SEARCH_DEBOUNCE_MS = 300;
 /** Slider ceiling in dollars — fixed so the range control is stable. */
@@ -210,21 +211,7 @@ function without<T>(set: Set<T>, value: T) {
   return next;
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Stage tracker — the CI-run segments (shared with the shipment detail page)

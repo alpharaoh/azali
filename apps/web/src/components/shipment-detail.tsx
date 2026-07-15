@@ -10,37 +10,34 @@ import {
 import { Avatar, Button, Chip, Skeleton, Spinner, Tabs } from "@heroui/react";
 import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { AgentRunTrace } from "#/components/agent-run-trace";
-import { LineDetailDrawer } from "#/components/line-detail-drawer";
+import { useState } from "react";
+import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
 import {
   StageTracker,
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
-import { DocumentViewerModal } from "#/components/review/document-viewer-modal";
-import {
-  type LineActivity,
-  LineClassificationsCard,
-} from "#/components/review/line-classifications-card";
+import { DocumentViewerModal } from "#/components/case-file/document-viewer-modal";
+import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
 import {
   ActivitySkeleton,
   EventTimelineItem,
-} from "#/components/review/timeline-items";
+} from "#/components/case-file/timeline-items";
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentDocumentsResponseDtoDocumentsItem } from "#/generated/api";
 import {
   useShipmentDocumentsControllerList,
   useShipmentsControllerFindOne,
-  useShipmentsControllerLines,
 } from "#/generated/api";
 import type {
   DocumentLine,
   ReviewDocument,
   ReviewLineItem,
 } from "#/lib/review-types";
+import { findLineMemo } from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
-import { useShipmentRealtime } from "#/lib/use-realtime-cache";
+import { useShipmentLines } from "#/lib/use-shipment-lines";
 
 /* -------------------------------------------------------------------------------------------------
  * Per-shipment detail page — fully usable WHILE the pipeline is processing:
@@ -157,12 +154,8 @@ function DocumentPreviewCard({
 
 export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const navigate = useNavigate();
-  // Joins the shipment's socket room and streams updates into the caches
-  // the queries below read from.
-  const { runsByLine, runStatuses } = useShipmentRealtime(shipmentId);
 
   const { data: shipmentResponse } = useShipmentsControllerFindOne(shipmentId);
-  const { data: linesResponse } = useShipmentsControllerLines(shipmentId);
   const { data: documentsResponse } =
     useShipmentDocumentsControllerList(shipmentId);
   const caseFile = useCaseFile(shipmentId);
@@ -171,43 +164,15 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const documents = documentsResponse?.data.documents;
   const processing = shipment?.processingState ?? null;
 
-  // runId per line: live run.started events first, then agent_trace events
-  // (covers a mid-run reload), oldest last so the latest run wins.
-  const runIdForLine = useMemo(() => {
-    const map: Record<number, string> = {};
-    for (const entry of caseFile.traceRuns) {
-      if (entry.lineNumber !== undefined) map[entry.lineNumber] = entry.runId;
-    }
-    return { ...map, ...runsByLine };
-  }, [caseFile.traceRuns, runsByLine]);
-
-  // The lines endpoint is the durable source; the latest review payload
-  // layers on the rich per-line detail (duty, alternates, summary) that
-  // powers the drill-down drawer.
-  const lines: ReviewLineItem[] = useMemo(() => {
-    const rich = new Map(
-      (caseFile.reviewLineItems ?? []).map((line) => [line.lineItemId, line]),
-    );
-    return (linesResponse?.data.lines ?? []).map((line) => {
-      const extra = rich.get(line.id);
-      return {
-        lineItemId: line.id,
-        lineNumber: line.lineNumber,
-        description: line.description,
-        quantity: line.quantity,
-        unit: line.unit,
-        valueUsd: line.totalValueUsd,
-        htsCode: line.htsCode,
-        confidence: line.confidence,
-        status: line.status,
-        reused: line.reusedFromProduct,
-        runId: extra?.runId ?? runIdForLine[line.lineNumber] ?? null,
-        summary: extra?.summary ?? null,
-        ...(extra?.duty ? { duty: extra.duty } : {}),
-        ...(extra?.alternates ? { alternates: extra.alternates } : {}),
-      };
-    });
-  }, [linesResponse, caseFile.reviewLineItems, runIdForLine]);
+  // The lines endpoint is the single source of per-line truth; the hook
+  // layers on the live run map from the shipment's socket room.
+  const {
+    lines,
+    isLoaded: linesLoaded,
+    runIdForLine,
+    activityByLine,
+    runningLineNumber,
+  } = useShipmentLines(shipmentId, processing !== null);
 
   // Drill-down drawer — read-only outside the review flow.
   const [openLine, setOpenLine] = useState<ReviewLineItem | null>(null);
@@ -215,52 +180,18 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const [viewerDocument, setViewerDocument] = useState<
     (ReviewDocument & { kind: "pdf"; src?: string }) | null
   >(null);
-  const memoForLine = (line: ReviewLineItem) =>
-    [...caseFile.documents]
-      .reverse()
-      .find(
-        (document): document is ReviewDocument & { kind: "pdf" } =>
-          document.kind === "pdf" &&
-          /rationale memo/i.test(document.name) &&
-          new RegExp(`Line ${line.lineNumber}(\\D|$)`).test(document.name),
-      );
-
-  // What each unclassified line is doing right now.
-  const activityByLine: Record<number, LineActivity> = useMemo(() => {
-    const map: Record<number, LineActivity> = {};
-    if (!processing) return map;
-    for (const line of lines) {
-      if (line.htsCode) continue;
-      const runId = runsByLine[line.lineNumber];
-      map[line.lineNumber] =
-        runId && runStatuses[runId] === "running" ? "classifying" : "queued";
-    }
-    return map;
-  }, [lines, processing, runsByLine, runStatuses]);
-
-  const tracedLines = lines.filter(
-    (line) => runIdForLine[line.lineNumber] || !line.reused,
-  );
 
   const [section, setSection] = useState<Section>("documents");
 
   // Follow the classification as it moves through the lines — unless the
-  // broker picked a tab themselves.
+  // broker picked a tab themselves. (The route keys this component by
+  // shipmentId, so all of this state resets per shipment.)
   const [manualTraceLine, setManualTraceLine] = useState<number | null>(null);
-  const runningLine = Object.entries(runsByLine).find(
-    ([, runId]) => runStatuses[runId] === "running",
-  )?.[0];
   const activeTraceLine =
     manualTraceLine ??
-    (runningLine !== undefined ? Number(runningLine) : undefined) ??
-    tracedLines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
-    tracedLines[0]?.lineNumber;
-  // Reset manual selection when navigating to another shipment.
-  useEffect(() => setManualTraceLine(null), []);
-
-  const activeRunId =
-    activeTraceLine !== undefined ? runIdForLine[activeTraceLine] : undefined;
-  const activeLine = lines.find((line) => line.lineNumber === activeTraceLine);
+    runningLineNumber ??
+    lines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
+    lines[0]?.lineNumber;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
@@ -373,7 +304,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       ) : null}
 
       {/* Line classifications — THE summary, always visible above the tabs */}
-      {linesResponse === undefined ? (
+      {!linesLoaded ? (
         <Widget>
           <Widget.Header>
             <Widget.Title>Line classifications</Widget.Title>
@@ -459,7 +390,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
 
         {/* Agent trace — live while classification runs */}
         <Tabs.Panel className="flex flex-col gap-3 pt-3" id="trace">
-          {linesResponse === undefined ? (
+          {!linesLoaded ? (
             <Skeleton className="h-24 rounded-lg" />
           ) : lines.length === 0 ? (
             <span className="text-muted text-sm">
@@ -468,61 +399,13 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 : "No classification runs on file."}
             </span>
           ) : (
-            <>
-              {lines.length > 1 ? (
-                <Tabs
-                  selectedKey={String(activeTraceLine ?? "")}
-                  variant="secondary"
-                  onSelectionChange={(key) => setManualTraceLine(Number(key))}
-                >
-                  <Tabs.ListContainer>
-                    <Tabs.List aria-label="Line item traces" className="w-fit">
-                      {lines.map((line) => (
-                        <Tabs.Tab
-                          key={line.lineNumber}
-                          className="w-fit max-w-56 shrink-0"
-                          id={String(line.lineNumber)}
-                        >
-                          <Chip
-                            className="mr-1.5 shrink-0"
-                            size="sm"
-                            variant="soft"
-                          >
-                            <Chip.Label className="tabular-nums">
-                              {line.lineNumber}
-                            </Chip.Label>
-                          </Chip>
-                          <span className="min-w-0 truncate whitespace-nowrap">
-                            {line.description}
-                          </span>
-                          <Tabs.Indicator />
-                        </Tabs.Tab>
-                      ))}
-                    </Tabs.List>
-                  </Tabs.ListContainer>
-                </Tabs>
-              ) : null}
-              {activeRunId ? (
-                <AgentRunTrace key={activeRunId} runId={activeRunId} />
-              ) : activeLine?.reused ? (
-                <span className="text-muted text-sm">
-                  Reused from product memory — this line's classification came
-                  from an earlier broker-verified decision, so there is no fresh
-                  audit run.
-                </span>
-              ) : processing ? (
-                <span className="inline-flex items-center gap-2 py-1">
-                  <Sparkles className="text-muted size-4" />
-                  <TextShimmer className="text-sm">
-                    The agent will start on this line shortly…
-                  </TextShimmer>
-                </span>
-              ) : (
-                <span className="text-muted text-sm">
-                  No audit run recorded for this line.
-                </span>
-              )}
-            </>
+            <LineTraceTabs
+              activeLineNumber={activeTraceLine}
+              isProcessing={processing !== null}
+              lines={lines}
+              runIdForLine={runIdForLine}
+              onSelect={setManualTraceLine}
+            />
           )}
         </Tabs.Panel>
 
@@ -553,7 +436,11 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       {/* Per-line drill-down — read-only here; corrections live in review */}
       <LineDetailDrawer
         line={openLine}
-        memo={openLine ? (memoForLine(openLine) ?? null) : null}
+        memo={
+          openLine
+            ? (findLineMemo(caseFile.documents, openLine.lineNumber) ?? null)
+            : null
+        }
         shipmentId={shipmentId}
         onOpenChange={(open) => {
           if (!open) setOpenLine(null);

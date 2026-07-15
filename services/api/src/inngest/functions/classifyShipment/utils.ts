@@ -44,6 +44,44 @@ export function parseAdValoremRate(rate: string): number | null {
   return match ? Number(match[1]) / 100 : null;
 }
 
+/** Ad-valorem duty in whole USD for a line, or null when unpriceable. */
+export function lineDutyUsd(
+  valueCents: number | null,
+  effectivePct: number | null,
+): number | null {
+  if (valueCents === null || effectivePct === null) return null;
+  return Math.round((valueCents / 100) * (effectivePct / 100));
+}
+
+/**
+ * The runner-up codes in the shape both the line-item row and the review
+ * payload store: display-ready detail plus the duty delta against the
+ * chosen code, priced on this line's value.
+ */
+export function buildLineAlternates(
+  result: ClassificationResult,
+  valueCents: number | null,
+) {
+  const chosenAmountUsd = lineDutyUsd(
+    valueCents,
+    result.dutyRate.effectivePct,
+  );
+  return result.alternates.map((alternate) => {
+    const amountUsd = lineDutyUsd(valueCents, alternate.effectiveDutyPct);
+    return {
+      value: alternate.code,
+      detail: alternate.effectiveDutyRate
+        ? `${alternate.description} — duty ${alternate.effectiveDutyRate}`
+        : alternate.description,
+      confidence: alternate.confidence,
+      reason: alternate.reason,
+      ...(amountUsd !== null && chosenAmountUsd !== null
+        ? { amountUsd, deltaUsd: amountUsd - chosenAmountUsd }
+        : {}),
+    };
+  });
+}
+
 export function buildReviewPayload(
   headline: LineOutcome & { result: ClassificationResult },
   lines: LineOutcome[],
@@ -124,49 +162,28 @@ export function buildReviewPayload(
     // The whole shipment's lines — the review renders the full picture.
     // Each line carries its own duty, alternates, and audit run so the
     // broker can drill into any classification, not just the headline.
-    lineItems: lines.map((line) => {
-      const valueUsd = line.valueCents === null ? null : line.valueCents / 100;
-      const amountUsd =
-        valueUsd !== null && line.effectivePct !== null
-          ? Math.round((valueUsd * line.effectivePct) / 100)
-          : null;
-      return {
-        lineItemId: line.lineItemId,
-        lineNumber: line.lineNumber,
-        description: line.description,
-        quantity: line.quantity,
-        unit: line.unit,
-        valueUsd,
-        htsCode: line.htsCode,
-        confidence: line.confidence,
-        status: line.status,
-        reused: line.reused,
-        runId: line.runId,
-        summary: line.result?.summary ?? line.htsDescription ?? null,
-        duty: {
-          effectivePct: line.effectivePct,
-          label: line.effective,
-          amountUsd,
-        },
-        alternates: (line.result?.alternates ?? []).map((alternate) => {
-          const altAmountUsd =
-            valueUsd !== null && alternate.effectiveDutyPct !== null
-              ? Math.round((valueUsd * alternate.effectiveDutyPct) / 100)
-              : null;
-          return {
-            value: alternate.code,
-            detail: alternate.effectiveDutyRate
-              ? `${alternate.description} — duty ${alternate.effectiveDutyRate}`
-              : alternate.description,
-            confidence: alternate.confidence,
-            reason: alternate.reason,
-            ...(altAmountUsd !== null && amountUsd !== null
-              ? { amountUsd: altAmountUsd, deltaUsd: altAmountUsd - amountUsd }
-              : {}),
-          };
-        }),
-      };
-    }),
+    lineItems: lines.map((line) => ({
+      lineItemId: line.lineItemId,
+      lineNumber: line.lineNumber,
+      description: line.description,
+      quantity: line.quantity,
+      unit: line.unit,
+      valueUsd: line.valueCents === null ? null : line.valueCents / 100,
+      htsCode: line.htsCode,
+      confidence: line.confidence,
+      status: line.status,
+      reused: line.reused,
+      runId: line.runId,
+      summary: line.result?.summary ?? line.htsDescription ?? null,
+      duty: {
+        effectivePct: line.effectivePct,
+        label: line.effective,
+        amountUsd: lineDutyUsd(line.valueCents, line.effectivePct),
+      },
+      alternates: line.result
+        ? buildLineAlternates(line.result, line.valueCents)
+        : [],
+    })),
     alternates: result.alternates.map((alternate) => ({
       value: alternate.code,
       detail: alternate.effectiveDutyRate
