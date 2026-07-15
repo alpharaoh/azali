@@ -59,8 +59,9 @@ export function AlternatesList({
   }>;
   /** Duty change in USD if this code were chosen; undefined hides the delta. */
   deltaFor: (value: string) => number | undefined;
-  onSelect: (value: string | null) => void;
-  selected: string | null;
+  /** Omit for a read-only list (outside the review flow). */
+  onSelect?: (value: string | null) => void;
+  selected?: string | null;
 }) {
   return (
     <ItemCardGroup variant="outline">
@@ -121,22 +122,24 @@ export function AlternatesList({
                   ) : null}
                 </div>
               </ItemCard.Content>
-              <ItemCard.Action>
-                <Button
-                  size="sm"
-                  variant={isSelected ? "primary" : "outline"}
-                  onPress={() => onSelect(isSelected ? null : alt.value)}
-                >
-                  {isSelected ? (
-                    <>
-                      <CircleCheck className="size-3.5" />
-                      Selected
-                    </>
-                  ) : (
-                    "Choose alternative"
-                  )}
-                </Button>
-              </ItemCard.Action>
+              {onSelect ? (
+                <ItemCard.Action>
+                  <Button
+                    size="sm"
+                    variant={isSelected ? "primary" : "outline"}
+                    onPress={() => onSelect(isSelected ? null : alt.value)}
+                  >
+                    {isSelected ? (
+                      <>
+                        <CircleCheck className="size-3.5" />
+                        Selected
+                      </>
+                    ) : (
+                      "Choose alternative"
+                    )}
+                  </Button>
+                </ItemCard.Action>
+              ) : null}
             </ItemCard>
           </Fragment>
         );
@@ -304,8 +307,9 @@ export function LineDetailDrawer({
   /** This line's rationale memo document, when one is in the case file. */
   memo: (ReviewDocument & { kind: "pdf" }) | null;
   onOpenChange: (open: boolean) => void;
-  onSelectAlternate: (value: string | null) => void;
-  selectedAlternate: string | null;
+  /** Omit for a read-only drawer (outside the review flow). */
+  onSelectAlternate?: (value: string | null) => void;
+  selectedAlternate?: string | null;
   shipmentId: string;
 }) {
   return (
@@ -340,8 +344,8 @@ function LineDetailContent({
 }: {
   line: ReviewLineItem;
   memo: (ReviewDocument & { kind: "pdf" }) | null;
-  onSelectAlternate: (value: string | null) => void;
-  selectedAlternate: string | null;
+  onSelectAlternate?: (value: string | null) => void;
+  selectedAlternate?: string | null;
   shipmentId: string;
 }) {
   const [view, setView] = useState<"overview" | "trace">("overview");

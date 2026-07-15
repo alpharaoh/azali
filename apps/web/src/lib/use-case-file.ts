@@ -9,6 +9,7 @@ import {
 import type {
   ActivityEvent,
   ReviewDocument,
+  ReviewLineItem,
   TracePhase,
   TraceStepKind,
 } from "#/lib/review-types";
@@ -34,6 +35,9 @@ export interface CaseFile {
   traceRuns: Array<{ runId: string; lineNumber?: number }>;
   facts?: CaseFileFacts;
   notes: Array<{ id: string; body: string; occurredAt: string }>;
+  /** Rich per-line data (duty, alternates, summary, runId) from the latest
+   * review_requested payload — present once classification flagged review. */
+  reviewLineItems?: ReviewLineItem[];
   isPending: boolean;
 }
 
@@ -152,11 +156,18 @@ export function useCaseFile(shipmentId: string | undefined): CaseFile {
         occurredAt: event.occurredAt,
       }));
 
+    // The latest review request carries the richest per-line snapshot.
+    const reviewLineItems = (
+      events.filter((event) => event.type === "review_requested").at(-1)
+        ?.payload as { lineItems?: ReviewLineItem[] } | undefined
+    )?.lineItems;
+
     return {
       activityEvents,
       documents,
       facts,
       notes,
+      reviewLineItems,
       trace,
       traceRunId,
       traceRuns,

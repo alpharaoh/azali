@@ -66,6 +66,13 @@ export function eventMarker(event: ActivityEvent): {
         "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     };
   }
+  if (event.icon === "ai") {
+    return {
+      Icon: Sparkles,
+      className:
+        "border-indigo-500/40 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+    };
+  }
 
   return { Icon: PaperPlane, className: "" };
 }

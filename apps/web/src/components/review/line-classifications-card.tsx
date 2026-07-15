@@ -62,25 +62,28 @@ export function LineClassificationsCard({
         <ItemCardGroup variant="outline">
           {lines.map((line, index) => {
             const staged = corrections[line.lineItemId];
+            // Drill-down only once the line actually HAS a classification.
+            const openLine =
+              onOpenLine && line.htsCode ? onOpenLine : undefined;
 
             return (
               <Fragment key={line.lineItemId}>
                 {index > 0 ? <Separator /> : null}
                 <ItemCard
                   className={`gap-8 ${
-                    onOpenLine
+                    openLine
                       ? "hover:bg-default/40 cursor-pointer transition-colors"
                       : ""
                   }`}
-                  {...(onOpenLine
+                  {...(openLine
                     ? {
                         role: "button" as const,
                         tabIndex: 0,
-                        onClick: () => onOpenLine(line),
+                        onClick: () => openLine(line),
                         onKeyDown: (event: React.KeyboardEvent) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            onOpenLine(line);
+                            openLine(line);
                           }
                         },
                       }
@@ -161,7 +164,7 @@ export function LineClassificationsCard({
                           </span>
                         ) : null}
                       </div>
-                      {onOpenLine ? (
+                      {openLine ? (
                         <ChevronRight className="text-muted size-4 shrink-0" />
                       ) : null}
                     </div>

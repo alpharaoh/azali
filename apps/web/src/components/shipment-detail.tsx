@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowUpRightFromSquare,
   CircleExclamation,
   FileText,
   ListUl,
@@ -11,11 +12,13 @@ import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AgentRunTrace } from "#/components/agent-run-trace";
+import { LineDetailDrawer } from "#/components/line-detail-drawer";
 import {
   StageTracker,
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
+import { DocumentViewerModal } from "#/components/review/document-viewer-modal";
 import {
   type LineActivity,
   LineClassificationsCard,
@@ -31,7 +34,11 @@ import {
   useShipmentsControllerFindOne,
   useShipmentsControllerLines,
 } from "#/generated/api";
-import type { ReviewLineItem } from "#/lib/review-types";
+import type {
+  DocumentLine,
+  ReviewDocument,
+  ReviewLineItem,
+} from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
 import { useShipmentRealtime } from "#/lib/use-realtime-cache";
 
@@ -44,71 +51,107 @@ import { useShipmentRealtime } from "#/lib/use-realtime-cache";
 
 type Section = "documents" | "trace" | "activity";
 
-function DocumentCard({
+/** Adapt an API document row to the shape the shared viewer renders. */
+function toViewerDocument(
+  document: ListShipmentDocumentsResponseDtoDocumentsItem,
+): ReviewDocument & { kind: "pdf"; src?: string } {
+  return {
+    kind: "pdf",
+    name: document.fileName,
+    meta: `${document.category.replace(/_/g, " ")}${
+      document.pageCount
+        ? ` · ${document.pageCount} page${document.pageCount === 1 ? "" : "s"}`
+        : ""
+    }`,
+    receivedHoursAgo:
+      (Date.now() - new Date(document.createdAt).getTime()) / 3_600_000,
+    lines: (document.extraction?.fields ?? []) as DocumentLine[],
+    summary: document.extraction?.summary ?? undefined,
+    src: document.fileUrl,
+    previewUrl: document.previewUrl,
+  };
+}
+
+/** One document tile — first-page preview on a soft mat, hover to view.
+ * Same preview treatment as the review workspace's document pane. */
+function DocumentPreviewCard({
   document,
+  onOpen,
 }: {
   document: ListShipmentDocumentsResponseDtoDocumentsItem;
+  onOpen: () => void;
 }) {
+  const [isPreviewLoaded, setPreviewLoaded] = useState(false);
+  const pending = document.status === "pending";
+
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <FileText className="text-muted size-4 shrink-0" />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-foreground truncate text-sm font-medium">
-              {document.fileName}
-            </span>
-            <span className="text-muted text-xs">
-              {document.category.replace(/_/g, " ")}
-              {document.pageCount
-                ? ` · ${document.pageCount} page${document.pageCount === 1 ? "" : "s"}`
-                : ""}
-            </span>
-          </div>
-        </div>
-        {document.status === "pending" ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5">
+    <button
+      className="group flex flex-col gap-2 text-left"
+      type="button"
+      onClick={onOpen}
+    >
+      <div className="bg-default/40 relative flex h-44 w-full items-center justify-center overflow-hidden rounded-lg border p-1">
+        {document.previewUrl ? (
+          <>
+            {!isPreviewLoaded && (
+              <span className="absolute inset-0 flex items-center justify-center">
+                <Spinner aria-label="Loading document preview" size="sm" />
+              </span>
+            )}
+            <img
+              alt=""
+              aria-hidden
+              className={`pointer-events-none h-full max-h-full w-auto max-w-full rounded-sm bg-white object-contain object-top shadow-sm transition-opacity duration-200 ${
+                isPreviewLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              src={document.previewUrl}
+              onLoad={() => setPreviewLoaded(true)}
+            />
+          </>
+        ) : (
+          <FileText className="text-muted size-8" />
+        )}
+        {document.pageCount ? (
+          <span className="bg-background/80 text-muted absolute right-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums backdrop-blur-sm">
+            1 of {document.pageCount}
+          </span>
+        ) : null}
+        {pending ? (
+          <span className="bg-background/70 absolute inset-0 flex items-center justify-center gap-1.5 backdrop-blur-[2px]">
             <Spinner size="sm" />
             <TextShimmer className="text-xs">Reading…</TextShimmer>
           </span>
-        ) : document.status === "failed" ? (
-          <Chip color="danger" size="sm" variant="soft">
+        ) : (
+          <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
+            <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
+              <ArrowUpRightFromSquare className="size-3.5" />
+              View document
+            </span>
+          </span>
+        )}
+        {document.status === "failed" ? (
+          <Chip
+            className="absolute left-2 top-2"
+            color="danger"
+            size="sm"
+            variant="soft"
+          >
             <Chip.Label>Extraction failed</Chip.Label>
           </Chip>
-        ) : (
-          <Chip color="success" size="sm" variant="soft">
-            <Chip.Label>Extracted</Chip.Label>
-          </Chip>
-        )}
+        ) : null}
       </div>
-      {document.status === "extracted" && document.extraction ? (
-        <div className="flex min-w-0 gap-3">
-          {document.previewUrl ? (
-            <img
-              alt={`${document.fileName} preview`}
-              className="h-20 w-auto shrink-0 rounded-md border object-cover object-top"
-              src={document.previewUrl}
-            />
-          ) : null}
-          <div className="flex min-w-0 flex-col gap-1">
-            {document.extraction.summary ? (
-              <p className="text-muted m-0 line-clamp-2 text-xs leading-relaxed">
-                {document.extraction.summary}
-              </p>
-            ) : null}
-            <div className="flex min-w-0 flex-col gap-0.5 font-mono text-xs">
-              {(document.extraction.fields ?? [])
-                .slice(0, 2)
-                .map((field: { label: string; value: string }) => (
-                  <span key={field.label} className="text-muted truncate">
-                    {field.label}: {field.value}
-                  </span>
-                ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
+      <div className="flex min-w-0 flex-col px-0.5">
+        <span className="text-foreground truncate text-sm font-medium">
+          {document.fileName}
+        </span>
+        <span className="text-muted truncate text-xs">
+          {document.category.replace(/_/g, " ")}
+          {document.pageCount
+            ? ` · ${document.pageCount} page${document.pageCount === 1 ? "" : "s"}`
+            : ""}
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -128,11 +171,26 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const documents = documentsResponse?.data.documents;
   const processing = shipment?.processingState ?? null;
 
-  // The lines endpoint is the durable source; the card renders its slim
-  // review shape.
-  const lines: ReviewLineItem[] = useMemo(
-    () =>
-      (linesResponse?.data.lines ?? []).map((line) => ({
+  // runId per line: live run.started events first, then agent_trace events
+  // (covers a mid-run reload), oldest last so the latest run wins.
+  const runIdForLine = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const entry of caseFile.traceRuns) {
+      if (entry.lineNumber !== undefined) map[entry.lineNumber] = entry.runId;
+    }
+    return { ...map, ...runsByLine };
+  }, [caseFile.traceRuns, runsByLine]);
+
+  // The lines endpoint is the durable source; the latest review payload
+  // layers on the rich per-line detail (duty, alternates, summary) that
+  // powers the drill-down drawer.
+  const lines: ReviewLineItem[] = useMemo(() => {
+    const rich = new Map(
+      (caseFile.reviewLineItems ?? []).map((line) => [line.lineItemId, line]),
+    );
+    return (linesResponse?.data.lines ?? []).map((line) => {
+      const extra = rich.get(line.id);
+      return {
         lineItemId: line.id,
         lineNumber: line.lineNumber,
         description: line.description,
@@ -143,9 +201,29 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         confidence: line.confidence,
         status: line.status,
         reused: line.reusedFromProduct,
-      })),
-    [linesResponse],
-  );
+        runId: extra?.runId ?? runIdForLine[line.lineNumber] ?? null,
+        summary: extra?.summary ?? null,
+        ...(extra?.duty ? { duty: extra.duty } : {}),
+        ...(extra?.alternates ? { alternates: extra.alternates } : {}),
+      };
+    });
+  }, [linesResponse, caseFile.reviewLineItems, runIdForLine]);
+
+  // Drill-down drawer — read-only outside the review flow.
+  const [openLine, setOpenLine] = useState<ReviewLineItem | null>(null);
+  // Full-document viewer (real PDF + the AI's reading).
+  const [viewerDocument, setViewerDocument] = useState<
+    (ReviewDocument & { kind: "pdf"; src?: string }) | null
+  >(null);
+  const memoForLine = (line: ReviewLineItem) =>
+    [...caseFile.documents]
+      .reverse()
+      .find(
+        (document): document is ReviewDocument & { kind: "pdf" } =>
+          document.kind === "pdf" &&
+          /rationale memo/i.test(document.name) &&
+          new RegExp(`Line ${line.lineNumber}(\\D|$)`).test(document.name),
+      );
 
   // What each unclassified line is doing right now.
   const activityByLine: Record<number, LineActivity> = useMemo(() => {
@@ -159,16 +237,6 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
     }
     return map;
   }, [lines, processing, runsByLine, runStatuses]);
-
-  // runId per line: live run.started events first, then agent_trace events
-  // (covers a mid-run reload), oldest last so the latest run wins.
-  const runIdForLine = useMemo(() => {
-    const map: Record<number, string> = {};
-    for (const entry of caseFile.traceRuns) {
-      if (entry.lineNumber !== undefined) map[entry.lineNumber] = entry.runId;
-    }
-    return { ...map, ...runsByLine };
-  }, [caseFile.traceRuns, runsByLine]);
 
   const tracedLines = lines.filter(
     (line) => runIdForLine[line.lineNumber] || !line.reused,
@@ -319,6 +387,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         <LineClassificationsCard
           activityByLine={activityByLine}
           lines={lines}
+          onOpenLine={setOpenLine}
         />
       ) : (
         <Widget>
@@ -360,12 +429,14 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           </Tabs.List>
         </Tabs.ListContainer>
 
-        {/* Documents — compact two-up grid, no vertical sprawl */}
+        {/* Documents — preview-image tiles, three across; click opens the
+            full viewer (real PDF + the AI's complete reading) */}
         <Tabs.Panel className="pt-3" id="documents">
           {documents === undefined ? (
-            <div className="grid gap-2 lg:grid-cols-2">
-              <Skeleton className="h-24 rounded-lg" />
-              <Skeleton className="h-24 rounded-lg" />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <Skeleton className="h-44 rounded-lg" />
+              <Skeleton className="h-44 rounded-lg" />
+              <Skeleton className="h-44 rounded-lg" />
             </div>
           ) : documents.length === 0 ? (
             <span className="text-muted text-sm">
@@ -374,9 +445,13 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 : "No documents on file."}
             </span>
           ) : (
-            <div className="grid gap-2 lg:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {documents.map((document) => (
-                <DocumentCard key={document.id} document={document} />
+                <DocumentPreviewCard
+                  key={document.id}
+                  document={document}
+                  onOpen={() => setViewerDocument(toViewerDocument(document))}
+                />
               ))}
             </div>
           )}
@@ -474,6 +549,26 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           )}
         </Tabs.Panel>
       </Tabs>
+
+      {/* Per-line drill-down — read-only here; corrections live in review */}
+      <LineDetailDrawer
+        line={openLine}
+        memo={openLine ? (memoForLine(openLine) ?? null) : null}
+        shipmentId={shipmentId}
+        onOpenChange={(open) => {
+          if (!open) setOpenLine(null);
+        }}
+      />
+
+      {viewerDocument ? (
+        <DocumentViewerModal
+          document={viewerDocument}
+          isOpen={Boolean(viewerDocument)}
+          onOpenChange={(open) => {
+            if (!open) setViewerDocument(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
