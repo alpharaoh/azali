@@ -65,10 +65,23 @@ export interface RealtimeEvents {
 }
 
 let socket: Socket | null = null;
-/** shipmentId → number of mounted subscribers (rooms are ref-counted so
- * overlapping pages — e.g. review + detail during a navigation — never
- * tear each other's subscription down). */
-const subscribed = new Map<string, number>();
+/** shipmentId → mounted subscribers + their join callbacks (rooms are
+ * ref-counted so overlapping pages — e.g. review + detail during a
+ * navigation — never tear each other's subscription down). */
+const subscribed = new Map<
+  string,
+  { count: number; joined: Set<() => void> }
+>();
+
+/** Ask the server to join the room; the ack fires once membership is
+ * CONFIRMED, so callers can refetch anything emitted before the join. */
+function emitSubscribe(s: Socket, shipmentId: string) {
+  s.emit("shipment.subscribe", { shipmentId }, () => {
+    const entry = subscribed.get(shipmentId);
+    if (!entry) return;
+    for (const onJoined of entry.joined) onJoined();
+  });
+}
 
 export function getRealtimeSocket(): Socket {
   if (!socket) {
@@ -79,8 +92,10 @@ export function getRealtimeSocket(): Socket {
     });
     socket.on("connect", () => {
       // Re-join every tracked room after any (re)connect.
+      const s = socket;
+      if (!s) return;
       for (const shipmentId of subscribed.keys()) {
-        socket?.emit("shipment.subscribe", { shipmentId });
+        emitSubscribe(s, shipmentId);
       }
     });
   }
@@ -136,45 +151,44 @@ export function useRealtimeReconnect(handler: () => void) {
   }, []);
 }
 
-/** Fires on EVERY connect, including the first. On a hard refresh the page's
- * queries fetch before the socket has joined its rooms — events emitted in
- * that gap are lost, so callers refetch once the stream is actually live. */
-export function useRealtimeConnect(handler: () => void) {
-  const ref = useRef(handler);
-  ref.current = handler;
-  useEffect(() => {
-    const s = getRealtimeSocket();
-    const onConnect = () => ref.current();
-    s.on("connect", onConnect);
-    return () => {
-      s.off("connect", onConnect);
-    };
-  }, []);
-}
+/**
+ * Join a shipment's room for the lifetime of the calling component.
+ *
+ * `onJoined` fires every time room membership is confirmed (first join and
+ * every rejoin after a reconnect). The page's queries fetch BEFORE the join
+ * completes, so anything the pipeline emitted in that window never reached
+ * this client — the callback is where callers refetch to close the gap.
+ */
+export function useShipmentChannel(
+  shipmentId: string | undefined,
+  onJoined?: () => void,
+) {
+  const joinedRef = useRef(onJoined);
+  joinedRef.current = onJoined;
 
-/** Join a shipment's room for the lifetime of the calling component. */
-export function useShipmentChannel(shipmentId: string | undefined) {
   useEffect(() => {
     if (!shipmentId) return;
     const s = getRealtimeSocket();
-    const count = (subscribed.get(shipmentId) ?? 0) + 1;
-    subscribed.set(shipmentId, count);
-    if (count === 1 && s.connected) {
-      s.emit("shipment.subscribe", { shipmentId });
+    const onJoinedStable = () => joinedRef.current?.();
+    const entry = subscribed.get(shipmentId) ?? {
+      count: 0,
+      joined: new Set<() => void>(),
+    };
+    entry.count += 1;
+    entry.joined.add(onJoinedStable);
+    subscribed.set(shipmentId, entry);
+    if (entry.count === 1 && s.connected) {
+      emitSubscribe(s, shipmentId);
     }
     return () => {
-      const next = (subscribed.get(shipmentId) ?? 1) - 1;
-      if (next <= 0) {
+      const current = subscribed.get(shipmentId);
+      if (!current) return;
+      current.count -= 1;
+      current.joined.delete(onJoinedStable);
+      if (current.count <= 0) {
         subscribed.delete(shipmentId);
         if (s.connected) s.emit("shipment.unsubscribe", { shipmentId });
-      } else {
-        subscribed.set(shipmentId, next);
       }
     };
   }, [shipmentId]);
-}
-
-/** The shipment rooms currently subscribed — reconnect healing sweeps these. */
-export function subscribedShipmentIds(): string[] {
-  return [...subscribed.keys()];
 }

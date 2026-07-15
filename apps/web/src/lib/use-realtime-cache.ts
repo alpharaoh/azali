@@ -15,8 +15,6 @@ import {
   getShipmentsControllerLinesQueryKey,
 } from "#/generated/api";
 import {
-  subscribedShipmentIds,
-  useRealtimeConnect,
   useRealtimeEvent,
   useRealtimeReconnect,
   useShipmentChannel,
@@ -48,24 +46,11 @@ export function useRealtimeDashboard() {
 
   useRealtimeEvent("shipment.changed", invalidateLists);
 
-  // Heal whatever was missed while the socket was down: list views plus
-  // every per-shipment surface currently subscribed.
+  // Heal the list views after an outage. Per-shipment surfaces heal
+  // themselves — every rejoin's ack triggers the refetch in
+  // useShipmentRealtime below.
   useRealtimeReconnect(() => {
     invalidateLists();
-    for (const shipmentId of subscribedShipmentIds()) {
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentEventsControllerFindByShipmentQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentDocumentsControllerListQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentsControllerLinesQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getAgentRunsControllerListQueryKey(shipmentId),
-      });
-    }
     void queryClient.invalidateQueries({ queryKey: ["/v1/runs"] });
   });
 }
@@ -82,13 +67,13 @@ type LinesResponse = shipmentsControllerLinesResponse;
  */
 export function useShipmentRealtime(shipmentId: string | undefined) {
   const queryClient = useQueryClient();
-  useShipmentChannel(shipmentId);
 
-  // Close the fetch→join gap: on a hard refresh the page's initial fetches
-  // race the socket handshake, and anything the pipeline emitted in between
-  // never reaches this client. Once the room is actually joined, refetch
-  // this shipment's surfaces so the page reflects the DB at join time.
-  useRealtimeConnect(() => {
+  // Close the fetch→join gap: the page's queries fetch BEFORE room
+  // membership is confirmed (hard refresh, SPA navigation right after an
+  // upload, reconnects) — anything the pipeline emitted in that window
+  // never reached this client. The join ack is the moment the stream is
+  // provably live, so refetch this shipment's surfaces right then.
+  useShipmentChannel(shipmentId, () => {
     if (!shipmentId) return;
     void queryClient.invalidateQueries({
       queryKey: [`/v1/shipments/${shipmentId}`],
