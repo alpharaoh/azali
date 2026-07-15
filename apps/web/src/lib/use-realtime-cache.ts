@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { throttle } from "lodash-es";
 import { useMemo, useState } from "react";
 import type {
   agentRunsControllerFindResponse,
@@ -20,31 +21,6 @@ import {
   useRealtimeReconnect,
   useShipmentChannel,
 } from "#/lib/realtime";
-
-/** Trailing-edge throttle with an allowed leading call — the load-bearing
- * piece that turns event bursts into at most ~2 refetches per second. */
-function throttle(fn: () => void, ms: number) {
-  let last = 0;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  return () => {
-    const now = Date.now();
-    if (now - last >= ms) {
-      last = now;
-      fn();
-      return;
-    }
-    if (!timer) {
-      timer = setTimeout(
-        () => {
-          timer = undefined;
-          last = Date.now();
-          fn();
-        },
-        ms - (now - last),
-      );
-    }
-  };
-}
 
 /**
  * Org-wide realtime wiring — mount ONCE in the dashboard layout. Any

@@ -3,6 +3,9 @@ import { IoAdapter } from "@nestjs/platform-socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
 import type { ServerOptions } from "socket.io";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("realtime-redis");
 
 /**
  * socket.io adapter that relays room broadcasts across API instances via
@@ -31,10 +34,10 @@ export class RedisIoAdapter extends IoAdapter {
     // Without these, a dropped Redis connection raises an unhandled
     // "error" event and kills the process mid-flight.
     pubClient.on("error", (error) =>
-      console.error("[realtime] redis pub error:", error.message),
+      log.error({ err: error }, "redis pub connection error"),
     );
     subClient.on("error", (error) =>
-      console.error("[realtime] redis sub error:", error.message),
+      log.error({ err: error }, "redis sub connection error"),
     );
     try {
       await Promise.all([pubClient.connect(), subClient.connect()]);
