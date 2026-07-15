@@ -433,7 +433,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
             full viewer (real PDF + the AI's complete reading) */}
         <Tabs.Panel className="pt-3" id="documents">
           {documents === undefined ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <Skeleton className="h-44 rounded-lg" />
               <Skeleton className="h-44 rounded-lg" />
               <Skeleton className="h-44 rounded-lg" />
@@ -445,7 +445,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 : "No documents on file."}
             </span>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {documents.map((document) => (
                 <DocumentPreviewCard
                   key={document.id}
