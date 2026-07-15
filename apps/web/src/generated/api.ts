@@ -671,8 +671,11 @@ export interface ShipmentResponseDto {
   organizationId: string;
   /** Id of the user who created the shipment. */
   userId: string;
-  /** Id of the client this shipment belongs to. */
-  clientId: string;
+  /**
+   * Id of the client this shipment belongs to; null while intake is still resolving it.
+   * @nullable
+   */
+  clientId: string | null;
   /**
    * The owning client, embedded so lists can be rendered without a separate clients request.
    * @nullable
@@ -689,6 +692,11 @@ export interface ShipmentResponseDto {
   stage: ShipmentResponseDtoStage;
   /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ShipmentResponseDtoStatus;
+  /**
+   * Human-readable current pipeline step (e.g. "Classifying line 2 of 3"); null when nothing is running.
+   * @nullable
+   */
+  processingState: string | null;
   /**
    * Deadline of the pending review; null when nothing is pending.
    * @nullable
@@ -821,8 +829,11 @@ export type ListShipmentsResponseDtoDataItem = {
   organizationId: string;
   /** Id of the user who created the shipment. */
   userId: string;
-  /** Id of the client this shipment belongs to. */
-  clientId: string;
+  /**
+   * Id of the client this shipment belongs to; null while intake is still resolving it.
+   * @nullable
+   */
+  clientId: string | null;
   /**
    * The owning client, embedded so lists can be rendered without a separate clients request.
    * @nullable
@@ -839,6 +850,11 @@ export type ListShipmentsResponseDtoDataItem = {
   stage: ListShipmentsResponseDtoDataItemStage;
   /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ListShipmentsResponseDtoDataItemStatus;
+  /**
+   * Human-readable current pipeline step (e.g. "Classifying line 2 of 3"); null when nothing is running.
+   * @nullable
+   */
+  processingState: string | null;
   /**
    * Deadline of the pending review; null when nothing is pending.
    * @nullable
@@ -1406,6 +1422,8 @@ export interface IngestDocumentsDto {
 export interface IngestDocumentsResponseDto {
   /** Ids of the ingestion runs started for this batch. */
   eventIds: string[];
+  /** Id of the shipment pre-created for this batch — it exists (and is watchable) from this moment, while ingestion fills it in. */
+  shipmentId: string;
 }
 
 /**

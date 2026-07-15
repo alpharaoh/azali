@@ -3,11 +3,11 @@ import { propagateAttributes } from "@langfuse/tracing";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { insertProduct } from "@/db/queries/insert/insertProduct";
-import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocument";
 import { insertShipmentLineItems } from "@/db/queries/insert/insertShipmentLineItems";
 import { listClients } from "@/db/queries/select/many/listClients";
 import { listProducts } from "@/db/queries/select/many/listProducts";
+import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentDocument } from "@/db/queries/update/updateShipmentDocument";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
 import {
@@ -33,6 +33,8 @@ export interface IngestContext {
   userId: string;
   /** The ingestion run id — groups the batch's traces into one session. */
   batchId: string;
+  /** The shipment pre-created at upload time that this batch fills in. */
+  shipmentId: string;
 }
 
 export interface UploadedFile {
@@ -73,7 +75,9 @@ const previewKeyFor = (storageKey: string) =>
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
 
-/** Insert the audit row for one uploaded file (idempotent on storage key). */
+/** Insert the audit row for one uploaded file (idempotent on storage key).
+ * Rows attach to the pre-created shipment immediately, so the shipment page
+ * shows its documents while they are still being read. */
 export async function createDocumentRow(
   context: IngestContext,
   file: UploadedFile,
@@ -81,6 +85,7 @@ export async function createDocumentRow(
   const row = await insertShipmentDocument({
     organizationId: context.organizationId,
     userId: context.userId,
+    shipmentId: context.shipmentId,
     fileName: file.fileName,
     status: ShipmentDocumentStatus.Pending,
     contentType: file.contentType,
@@ -249,7 +254,8 @@ export async function resolveClient(
   return { clientId: created.id, created: true };
 }
 
-export async function createShipmentFromSynthesis(
+/** Fill the pre-created shipment in with the synthesized facts. */
+export async function updateShipmentFromSynthesis(
   context: IngestContext,
   synthesis: ShipmentSynthesis,
   clientId: string,
@@ -257,10 +263,8 @@ export async function createShipmentFromSynthesis(
   const baseReference =
     synthesis.reference ?? `SHP-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-  const insertWith = (reference: string) =>
-    insertShipment({
-      organizationId: context.organizationId,
-      userId: context.userId,
+  const updateWith = (reference: string) =>
+    updateShipment(context.shipmentId, context.organizationId, {
       clientId,
       reference,
       stage: ShipmentStage.Intake,
@@ -274,13 +278,15 @@ export async function createShipmentFromSynthesis(
       valueCents: Math.round((synthesis.valueUsd ?? 0) * 100),
       incoterm: synthesis.incoterm,
       summary: { description: synthesis.summary },
+      processingState: "Analyzing shipment",
     });
 
   // Repeat orders reuse invoice numbers — on collision, suffix and retry.
-  // Catching the violation (rather than check-then-insert) stays atomic.
-  let created: Awaited<ReturnType<typeof insertShipment>>;
+  // Catching the violation (rather than check-then-update) stays atomic;
+  // the unique index fires on UPDATE exactly as it did on INSERT.
+  let updated: Awaited<ReturnType<typeof updateShipment>>;
   try {
-    created = await insertWith(baseReference);
+    updated = await updateWith(baseReference);
   } catch (error) {
     const message =
       error instanceof Error
@@ -291,23 +297,13 @@ export async function createShipmentFromSynthesis(
     if (!/shipments_org_reference_uidx|duplicate key/i.test(message)) {
       throw error;
     }
-    created = await insertWith(
+    updated = await updateWith(
       `${baseReference}-${randomUUID().slice(0, 4).toUpperCase()}`,
     );
   }
-  if (!created) throw new Error("Shipment insert returned no row");
+  if (!updated) throw new Error("Pre-created shipment row not found");
 
-  return { id: created.id, reference: created.reference };
-}
-
-export async function attachDocument(
-  context: IngestContext,
-  documentId: string,
-  shipmentId: string,
-): Promise<void> {
-  await updateShipmentDocument(documentId, context.organizationId, {
-    shipmentId,
-  });
+  return { id: updated.id, reference: updated.reference };
 }
 
 /** Event payload in the exact shape the review UI renders. */

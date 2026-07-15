@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type InsertShipmentDocument, shipmentDocuments } from "@/db/schema";
+import { realtimeBus } from "@/realtime/bus";
 
 export const insertShipmentDocument = async (
   values: InsertShipmentDocument,
@@ -13,7 +14,20 @@ export const insertShipmentDocument = async (
     .onConflictDoNothing({ target: shipmentDocuments.storageKey })
     .returning();
 
-  if (entry[0]) return entry[0];
+  const row = entry[0];
+  if (row?.shipmentId) {
+    realtimeBus.emit("document.changed", {
+      organizationId: row.organizationId,
+      shipmentId: row.shipmentId,
+      document: {
+        id: row.id,
+        name: row.fileName,
+        status: row.status,
+        failureReason: row.failureReason,
+      },
+    });
+  }
+  if (row) return row;
 
   const existing = await db
     .select()

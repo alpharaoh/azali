@@ -141,6 +141,7 @@ export class ClassificationAgentService {
       organizationId,
       userId,
       shipmentId: shipment.id,
+      lineNumber: lineItem.lineNumber,
       agent: "classification",
       model: CLASSIFICATION_MODEL,
       promptName: systemPrompt.prompt ? CLASSIFICATION_PROMPT_NAME : null,

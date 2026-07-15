@@ -2,12 +2,18 @@ import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
+import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import type { DocumentExtraction } from "@/db/schema";
-import { ShipmentDocumentStatus } from "@/db/schema";
+import {
+  ShipmentDocumentStatus,
+  ShipmentStage,
+  ShipmentStatus,
+} from "@/db/schema";
 import { env } from "@/env";
 import { inngest } from "@/inngest/client";
 import {
@@ -64,9 +70,32 @@ export class ShipmentDocumentsService {
       );
     }
 
+    // Pre-create the shipment so it is visible (and watchable) from the
+    // moment of upload — ingestion fills in the real facts as it works.
+    const shipment = await insertShipment({
+      organizationId,
+      userId,
+      clientId: null,
+      reference: `SHP-${randomUUID().slice(0, 8).toUpperCase()}`,
+      stage: ShipmentStage.Intake,
+      status: ShipmentStatus.Autopilot,
+      originCountry: "unknown",
+      portOfEntry: "unknown",
+      transportMode: "ocean",
+      valueCents: 0,
+      summary: {
+        description: `Processing ${dto.files.length} document${dto.files.length === 1 ? "" : "s"}`,
+      },
+      processingState: "Extracting documents",
+    });
+    if (!shipment) {
+      throw new InternalServerErrorException("Shipment insert returned no row");
+    }
+
     const payload: ShipmentDocumentsUploadedEvent["data"] = {
       organizationId,
       userId,
+      shipmentId: shipment.id,
       bucket: env.AWS_S3_BUCKET,
       files: dto.files,
     };
@@ -76,7 +105,7 @@ export class ShipmentDocumentsService {
       data: payload,
     });
 
-    return { eventIds: result.ids };
+    return { eventIds: result.ids, shipmentId: shipment.id };
   }
 
   async list(organizationId: string, shipmentId: string) {

@@ -8,10 +8,12 @@ import {
   Sparkles,
 } from "@gravity-ui/icons";
 import { Chip, Link, Skeleton } from "@heroui/react";
-import { ChainOfThought } from "@heroui-pro/react";
+import { ChainOfThought, ChatLoader, TextShimmer } from "@heroui-pro/react";
 import type { ComponentType, SVGProps } from "react";
+import { useEffect, useRef } from "react";
 import crossLogo from "#/assets/cross-logo.png";
 import htsBadge from "#/assets/htsus.svg";
+import { useRealtimeConnected } from "#/lib/realtime";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "@/generated/api";
 import { useAgentRunsControllerFind } from "@/generated/api";
 import { ClampedText } from "./clamped-text";
@@ -358,8 +360,61 @@ function TraceSkeleton() {
   );
 }
 
+/** Present-tense label for what the agent is doing right now, derived from
+ * the last persisted item (an unanswered research action, or thinking). */
+function tailLabel(
+  items: RunItem[],
+  resultsByCallId: Map<string, RunItem>,
+): string {
+  const last = items[items.length - 1];
+  if (
+    last?.kind === "tool_call" &&
+    last.toolName !== "submitClassification" &&
+    (!last.toolCallId || !resultsByCallId.has(last.toolCallId))
+  ) {
+    const label = TOOL_META[last.toolName ?? ""]?.label;
+    // "Searched the tariff schedule" → "Searching the tariff schedule…"
+    if (label) {
+      return `${label
+        .replace(/^Searched/, "Searching")
+        .replace(/^Browsed/, "Browsing")
+        .replace(/^Read/, "Reading")}…`;
+    }
+    return "Researching…";
+  }
+  return "Thinking…";
+}
+
 export function AgentRunTrace({ runId }: { runId: string }) {
-  const { data, isLoading } = useAgentRunsControllerFind(runId);
+  const connected = useRealtimeConnected();
+  const { data, isLoading } = useAgentRunsControllerFind(runId, {
+    query: {
+      // Live items normally arrive over the websocket; while it is down,
+      // poll a running run so the trace still advances.
+      refetchInterval: (query) =>
+        query.state.data?.data.run.status === "running" && !connected
+          ? 3000
+          : false,
+    },
+  });
+
+  // Follow the live tail only when the reader is already at the bottom —
+  // never yank the page away from someone reading an earlier pass.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const itemCount = data?.data.items.length ?? 0;
+  const running = data?.data.run.status === "running";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: itemCount is the trigger — re-check the tail whenever a new item lands
+  useEffect(() => {
+    if (!running) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const distance =
+      sentinel.getBoundingClientRect().top -
+      (window.innerHeight || document.documentElement.clientHeight);
+    if (distance < 150) {
+      sentinel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [itemCount, running]);
 
   if (isLoading) return <TraceSkeleton />;
 
@@ -382,16 +437,26 @@ export function AgentRunTrace({ runId }: { runId: string }) {
   const passes = [...new Set(items.map((item) => item.stepIndex))].sort(
     (a, b) => a - b,
   );
+  const isRunning = run.status === "running";
+  const liveActionCount = items.filter(
+    (item) => item.kind === "tool_call",
+  ).length;
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="inline-flex items-center gap-1.5">
           <Sparkles className="text-muted size-3.5" />
-          <span className="text-muted text-sm">
-            Thought for {formatDuration(run.durationMs)} · {run.toolCallCount}{" "}
-            research {run.toolCallCount === 1 ? "action" : "actions"}
-          </span>
+          {isRunning ? (
+            <TextShimmer className="text-sm">
+              {`Working — ${liveActionCount} research ${liveActionCount === 1 ? "action" : "actions"} so far`}
+            </TextShimmer>
+          ) : (
+            <span className="text-muted text-sm">
+              Thought for {formatDuration(run.durationMs)} · {run.toolCallCount}{" "}
+              research {run.toolCallCount === 1 ? "action" : "actions"}
+            </span>
+          )}
         </span>
         {run.status === "failed" ? (
           <Chip color="danger" size="sm" variant="soft">
@@ -588,6 +653,16 @@ export function AgentRunTrace({ runId }: { runId: string }) {
           );
         })}
       </div>
+
+      {isRunning ? (
+        <div className="flex items-center gap-2 py-1.5">
+          <ChatLoader.Dots size="sm" />
+          <TextShimmer className="text-xs">
+            {tailLabel(items, resultsByCallId)}
+          </TextShimmer>
+        </div>
+      ) : null}
+      <div ref={sentinelRef} aria-hidden="true" />
     </div>
   );
 }

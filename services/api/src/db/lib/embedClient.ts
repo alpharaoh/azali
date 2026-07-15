@@ -13,10 +13,16 @@ export interface EmbeddedClient {
  * don't need a second clients request just to label rows. Deleted clients are
  * still resolved — their name remains useful on historical shipments.
  */
-export async function embedClients<T extends { clientId: string }>(
+export async function embedClients<T extends { clientId: string | null }>(
   rows: T[],
 ): Promise<Array<T & { client: EmbeddedClient | null }>> {
-  const ids = [...new Set(rows.map((row) => row.clientId))];
+  const ids = [
+    ...new Set(
+      rows
+        .map((row) => row.clientId)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
   const found = ids.length
     ? await db
         .select({ id: clients.id, name: clients.name, image: clients.image })
@@ -27,11 +33,11 @@ export async function embedClients<T extends { clientId: string }>(
 
   return rows.map((row) => ({
     ...row,
-    client: byId.get(row.clientId) ?? null,
+    client: row.clientId ? (byId.get(row.clientId) ?? null) : null,
   }));
 }
 
-export async function embedClient<T extends { clientId: string }>(
+export async function embedClient<T extends { clientId: string | null }>(
   row: T | undefined,
 ): Promise<(T & { client: EmbeddedClient | null }) | undefined> {
   if (!row) return undefined;

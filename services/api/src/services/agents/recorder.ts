@@ -7,6 +7,7 @@ import {
   type InsertAgentRunItem,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { realtimeBus } from "@/realtime/bus";
 
 const log = createLogger("agent-recorder");
 
@@ -16,6 +17,10 @@ const log = createLogger("agent-recorder");
  */
 const MAX_CONTENT_BYTES = 64_000;
 
+/** Live-stream frames are clamped harder than the DB row — the client
+ * refetches the authoritative record when the run finishes. */
+const MAX_WIRE_BYTES = 8_192;
+
 function clampOutput(output: unknown): Record<string, unknown> {
   const serialized = JSON.stringify(output);
   if (serialized && serialized.length > MAX_CONTENT_BYTES) {
@@ -24,10 +29,20 @@ function clampOutput(output: unknown): Record<string, unknown> {
   return { output };
 }
 
+function clampForWire(content: Record<string, unknown>) {
+  const serialized = JSON.stringify(content);
+  if (serialized && serialized.length > MAX_WIRE_BYTES) {
+    return { preview: serialized.slice(0, MAX_WIRE_BYTES), truncated: true };
+  }
+  return content;
+}
+
 export interface StartAgentRunParams {
   organizationId: string;
   userId: string;
   shipmentId?: string | null;
+  /** The shipment line this run classifies — travels on run.started. */
+  lineNumber?: number | null;
   agent: string;
   model: string;
   promptName?: string | null;
@@ -51,6 +66,8 @@ export class AgentRunRecorder {
     readonly runId: string | null,
     private readonly organizationId: string,
     private readonly userId: string,
+    private readonly shipmentId: string | null,
+    private readonly lineNumber: number | null,
   ) {}
 
   static async start(params: StartAgentRunParams): Promise<AgentRunRecorder> {
@@ -67,13 +84,33 @@ export class AgentRunRecorder {
         input: params.input,
         traceId: params.traceId ?? null,
       });
-      return new AgentRunRecorder(run.id, params.organizationId, params.userId);
+      if (params.shipmentId) {
+        realtimeBus.emit("run.started", {
+          organizationId: params.organizationId,
+          shipmentId: params.shipmentId,
+          runId: run.id,
+          lineNumber: params.lineNumber ?? null,
+        });
+      }
+      return new AgentRunRecorder(
+        run.id,
+        params.organizationId,
+        params.userId,
+        params.shipmentId ?? null,
+        params.lineNumber ?? null,
+      );
     } catch (error) {
       log.error(
         { err: error, agent: params.agent, shipmentId: params.shipmentId },
         "failed to start run record — continuing without audit trail",
       );
-      return new AgentRunRecorder(null, params.organizationId, params.userId);
+      return new AgentRunRecorder(
+        null,
+        params.organizationId,
+        params.userId,
+        params.shipmentId ?? null,
+        params.lineNumber ?? null,
+      );
     }
   }
 
@@ -112,7 +149,23 @@ export class AgentRunRecorder {
     };
 
     try {
-      await insertAgentRunItems([row]);
+      const [inserted] = await insertAgentRunItems([row]);
+      if (inserted && this.shipmentId) {
+        realtimeBus.emit("run.item", {
+          organizationId: this.organizationId,
+          shipmentId: this.shipmentId,
+          runId: this.runId,
+          item: {
+            id: inserted.id,
+            stepIndex: inserted.stepIndex,
+            itemIndex: inserted.itemIndex,
+            kind: inserted.kind,
+            toolName: inserted.toolName,
+            toolCallId: inserted.toolCallId,
+            content: clampForWire(inserted.content),
+          },
+        });
+      }
     } catch (error) {
       log.error(
         { err: error, runId: this.runId, stepIndex: this.stepIndex, itemIndex },
@@ -190,6 +243,18 @@ export class AgentRunRecorder {
         { err: error, runId: this.runId, status: values.status },
         "failed to finalize audit run row",
       );
+    } finally {
+      // The run DID end even if the audit update failed — watchers must
+      // stop spinning either way.
+      if (this.shipmentId) {
+        realtimeBus.emit("run.finished", {
+          organizationId: this.organizationId,
+          shipmentId: this.shipmentId,
+          runId: this.runId,
+          status:
+            values.status === AgentRunStatus.Completed ? "completed" : "failed",
+        });
+      }
     }
   }
 }

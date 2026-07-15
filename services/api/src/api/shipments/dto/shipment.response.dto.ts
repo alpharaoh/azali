@@ -15,7 +15,12 @@ export const shipmentSchema = z.object({
     .describe("When the shipment was deleted; null for active shipments."),
   organizationId: z.string().describe("Owning organization id."),
   userId: z.string().describe("Id of the user who created the shipment."),
-  clientId: z.string().describe("Id of the client this shipment belongs to."),
+  clientId: z
+    .string()
+    .nullable()
+    .describe(
+      "Id of the client this shipment belongs to; null while intake is still resolving it.",
+    ),
   client: z
     .object({
       id: z.string().describe("Client id."),
@@ -42,6 +47,12 @@ export const shipmentSchema = z.object({
     .enum(ShipmentStatus)
     .describe(
       "Operational status: autopilot, needs_review, awaiting_cbp, or released.",
+    ),
+  processingState: z
+    .string()
+    .nullable()
+    .describe(
+      'Human-readable current pipeline step (e.g. "Classifying line 2 of 3"); null when nothing is running.',
     ),
   reviewDeadlineAt: z.iso
     .datetime()

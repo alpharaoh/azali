@@ -36,15 +36,20 @@ export const shipments = pgTable(
   {
     ...getDefaultColumns(),
     ...getDefaultOwnershipColumns(),
-    clientId: text("client_id")
-      .notNull()
-      .references(() => clients.id, { onDelete: "cascade" }),
+    // Nullable: the row is pre-created at document upload, before the
+    // client is known — synthesis resolves and fills it in.
+    clientId: text("client_id").references(() => clients.id, {
+      onDelete: "cascade",
+    }),
     reference: text("reference").notNull(),
     entryNumber: text("entry_number"),
     stage: shipmentStage("stage").notNull().default(ShipmentStage.Intake),
     status: shipmentStatus("status")
       .notNull()
       .default(ShipmentStatus.Autopilot),
+    // Human-readable current pipeline step ("Extracting documents",
+    // "Classifying line 2 of 3"); null when nothing is running.
+    processingState: text("processing_state"),
     // Denormalized from the open review_requested event so the review queue
     // can sort/filter without digging into event payloads.
     reviewDeadlineAt: timestamp("review_deadline_at", { withTimezone: true }),

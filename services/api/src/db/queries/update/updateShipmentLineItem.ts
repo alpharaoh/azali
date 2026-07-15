@@ -1,6 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { type InsertShipmentLineItem, shipmentLineItems } from "@/db/schema";
+import { realtimeBus } from "@/realtime/bus";
 
 export const updateShipmentLineItem = async (
   id: string,
@@ -19,5 +20,19 @@ export const updateShipmentLineItem = async (
     )
     .returning();
 
-  return entry[0];
+  const row = entry[0];
+  if (row) {
+    realtimeBus.emit("line.changed", {
+      organizationId: row.organizationId,
+      shipmentId: row.shipmentId,
+      line: {
+        id: row.id,
+        lineNumber: row.lineNumber,
+        status: row.status,
+        htsCode: row.htsCode,
+        confidence: row.confidence,
+      },
+    });
+  }
+  return row;
 };

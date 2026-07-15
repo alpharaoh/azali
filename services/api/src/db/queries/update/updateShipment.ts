@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { embedClient } from "@/db/lib/embedClient";
 import { type InsertShipment, shipments } from "@/db/schema";
+import { realtimeBus } from "@/realtime/bus";
 
 export const updateShipment = async (
   id: string,
@@ -20,5 +21,11 @@ export const updateShipment = async (
     )
     .returning();
 
+  if (entry[0]) {
+    realtimeBus.emit("shipment.changed", {
+      organizationId,
+      shipmentId: entry[0].id,
+    });
+  }
   return embedClient(entry[0]);
 };

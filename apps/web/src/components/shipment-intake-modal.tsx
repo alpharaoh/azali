@@ -1,5 +1,7 @@
 import { Button, Chip, Modal, toast } from "@heroui/react";
 import { DropZone, Stepper } from "@heroui-pro/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -155,6 +157,8 @@ export function ShipmentIntakeModal({
 }) {
   const uploadDocuments = useShipmentDocumentsControllerUpload();
   const ingestDocuments = useShipmentDocumentsControllerIngest();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
   const [filesByCategory, setFilesByCategory] = useState(emptyFileMap);
@@ -229,7 +233,7 @@ export function ShipmentIntakeModal({
         }),
       );
 
-      await ingestDocuments.mutateAsync({
+      const { data: ingest } = await ingestDocuments.mutateAsync({
         data: {
           files: data.uploads.map((upload, index) => ({
             key: upload.key,
@@ -240,6 +244,8 @@ export function ShipmentIntakeModal({
           })),
         },
       });
+
+      return ingest;
     })();
 
     setIsUploading(true);
@@ -251,15 +257,24 @@ export function ShipmentIntakeModal({
           entries.length === 1
             ? "Uploading document..."
             : `Uploading ${entries.length} documents...`,
-        success: "Documents uploaded. Shipment process started.",
+        success: "Documents uploaded — opening the shipment…",
       },
     );
 
     run
-      .then(() => {
+      .then((ingest) => {
         onOpenChange(false);
         setStep(0);
         setFilesByCategory(emptyFileMap());
+        // Belt-and-braces list refresh in case the socket event races
+        // the navigation.
+        void queryClient.invalidateQueries({ queryKey: ["/v1/shipments"] });
+        // The shipment exists from this moment — take the broker straight
+        // to it and let the page fill in live.
+        void navigate({
+          params: { shipmentId: ingest.shipmentId },
+          to: "/dashboard/shipments/$shipmentId",
+        });
       })
       .catch(() => {
         // The toast reports the failure; keep the modal open so nothing is lost.

@@ -7,14 +7,12 @@ import {
   Box,
   Boxes3,
   ChevronLeft,
-  ChevronRight,
   CircleCheck,
   CircleDollar,
   Envelope,
   FileCheck,
   FileText,
   ListCheck,
-  PaperPlane,
   Pencil,
   Person,
   Receipt,
@@ -30,7 +28,6 @@ import {
   Modal,
   ScrollShadow,
   SearchField,
-  Separator,
   Skeleton,
   Spinner,
   Tabs,
@@ -43,8 +40,6 @@ import {
   ChatSource,
   ChatSources,
   HoverCard,
-  ItemCard,
-  ItemCardGroup,
   PromptInput,
   PromptSuggestion,
   Segment,
@@ -58,9 +53,8 @@ import {
   addHours,
   differenceInHours,
   formatDistanceToNowStrict,
-  subHours,
 } from "date-fns";
-import type { ComponentProps, ComponentType, ReactNode, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import {
@@ -68,6 +62,13 @@ import {
   LineDetailDrawer,
 } from "#/components/line-detail-drawer";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
+import { LineClassificationsCard } from "#/components/review/line-classifications-card";
+import {
+  ActivitySkeleton,
+  EventTimelineItem,
+  receivedAgo,
+  type TimelineItemPassthrough,
+} from "#/components/review/timeline-items";
 import { TableFetchingState } from "#/components/table-loading";
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
@@ -75,18 +76,12 @@ import {
   getShipmentEventsControllerFindByShipmentQueryKey,
   useShipmentEventsControllerCreate,
   useShipmentEventsControllerFindAll,
-  useShipmentEventsControllerFindByShipment,
   useShipmentsControllerFindAll,
   useShipmentsControllerResolve,
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
-import {
-  ACTIVITY_EXCLUDED_TYPES,
-  BROKER_NOTE_TYPE,
-  eventPlane,
-  FACTS_EVENT_TYPE,
-} from "#/lib/event-kinds";
+import { BROKER_NOTE_TYPE } from "#/lib/event-kinds";
 import type { ThreadMessage } from "#/lib/review-chat";
 import { addThreadMessage, useReviewThreads } from "#/lib/review-chat";
 import type { ReviewSearch } from "#/lib/review-queue-loader";
@@ -95,7 +90,6 @@ import {
   reviewListParams,
 } from "#/lib/review-queue-loader";
 import type {
-  ActivityEvent,
   Citation,
   CitationKind,
   Decision,
@@ -106,10 +100,10 @@ import type {
   ReviewItem,
   ReviewItemType,
   ReviewLineItem,
-  TracePhase,
-  TraceStepKind,
 } from "#/lib/review-types";
-import { docSlug, dutyTotals, isMultiLineReview } from "#/lib/review-types";
+import { docSlug, isMultiLineReview } from "#/lib/review-types";
+import { useCaseFile } from "#/lib/use-case-file";
+import { useShipmentRealtime } from "#/lib/use-realtime-cache";
 import { AgentRunTrace } from "@/components/agent-run-trace";
 import { ClampedText } from "@/components/clamped-text";
 
@@ -399,12 +393,6 @@ function QueueRow({
 /* -------------------------------------------------------------------------------------------------
  * Shipment fact + document previews
  * -----------------------------------------------------------------------------------------------*/
-function receivedAgo(hoursAgo: number) {
-  return formatDistanceToNowStrict(subHours(new Date(), hoursAgo), {
-    addSuffix: true,
-  });
-}
-
 function ShipmentFact({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 items-baseline gap-1.5">
@@ -433,61 +421,6 @@ function DocumentLineRow({ line }: { line: DocumentLine }) {
       </span>
     </div>
   );
-}
-
-/**
- * Timeline injects `_index`/`_isLast` into its direct children — forward them
- * so the connector line stops at the last node.
- */
-type TimelineItemPassthrough = Partial<ComponentProps<typeof Timeline.Item>>;
-
-/**
- * Colour + icon for a timeline marker, derived from what the event means:
- * CBP correspondence is purple, classification is blue, milestones
- * (filed/released) are green, agent work is indigo, plain mail stays neutral.
- * Documents keep their neutral markers.
- */
-function eventMarker(event: ActivityEvent): {
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  className: string;
-} {
-  if (/\bcbp\b|form 2[89]/i.test(event.title)) {
-    return {
-      Icon: Envelope,
-      className:
-        "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
-    };
-  }
-  if (event.icon === "user") {
-    return {
-      Icon: Person,
-      className:
-        "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400",
-    };
-  }
-  if (/classif/i.test(event.title)) {
-    return {
-      Icon: Tag,
-      className:
-        "border-blue-500/40 bg-blue-500/15 text-blue-600 dark:text-blue-400",
-    };
-  }
-  if (event.icon === "check") {
-    return {
-      Icon: CircleCheck,
-      className:
-        "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-    };
-  }
-  if (event.icon === "ai") {
-    return {
-      Icon: Sparkles,
-      className:
-        "border-indigo-500/40 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-    };
-  }
-
-  return { Icon: PaperPlane, className: "" };
 }
 
 const citationMeta: Record<
@@ -688,72 +621,6 @@ function ThreadTimelineItem({
   );
 }
 
-function EventTimelineItem({
-  event,
-  onViewMemo,
-  onViewTrace,
-  ...rest
-}: {
-  event: ActivityEvent;
-  onViewMemo?: () => void;
-  onViewTrace?: () => void;
-} & TimelineItemPassthrough) {
-  const { Icon, className: markerClassName } = eventMarker(event);
-
-  return (
-    <Timeline.Item align="start" status={event.status ?? "default"} {...rest}>
-      <Timeline.Marker
-        aria-hidden="true"
-        className={`size-6 ${markerClassName}`}
-      >
-        <Icon className="size-3.5" />
-      </Timeline.Marker>
-      <Timeline.Content className="gap-0.5">
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h3 className="text-foreground m-0 min-w-0 truncate text-xs font-medium leading-5">
-            {event.title}
-          </h3>
-          <time className="text-muted shrink-0 text-xs leading-5">
-            {receivedAgo(event.occurredHoursAgo)}
-          </time>
-        </div>
-        {event.detail ? (
-          <p
-            className="text-muted m-0 line-clamp-1 text-xs leading-5"
-            title={event.detail}
-          >
-            {event.detail}
-          </p>
-        ) : null}
-        <div className="flex items-center gap-4.5">
-          {event.steps && onViewTrace ? (
-            <button
-              className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
-              type="button"
-              onClick={onViewTrace}
-            >
-              <Sparkles className="size-3" />
-              View agent trace
-              <ChevronRight className="size-3" />
-            </button>
-          ) : null}
-          {event.memo && onViewMemo ? (
-            <button
-              className="text-muted hover:text-foreground mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs transition-colors"
-              type="button"
-              onClick={onViewMemo}
-            >
-              <FileText className="size-3" />
-              View memo
-              <ChevronRight className="size-3" />
-            </button>
-          ) : null}
-        </div>
-      </Timeline.Content>
-    </Timeline.Item>
-  );
-}
-
 function DocumentsTimelineItem({
   documents,
   onEditDraft,
@@ -848,51 +715,6 @@ function SingleDocumentTimelineItem({
         <DocumentBody document={document} onEditDraft={onEditDraft} />
       </Timeline.Content>
     </Timeline.Item>
-  );
-}
-
-/**
- * First-load placeholder for the case file: the tabbed documents item
- * (tabs bar, document pane, extraction) followed by a few event rows.
- */
-function ActivitySkeleton() {
-  return (
-    <div
-      aria-busy="true"
-      aria-label="Loading the file"
-      className="flex flex-col gap-7"
-      role="status"
-    >
-      <div className="flex gap-3">
-        <Skeleton className="size-6 shrink-0 rounded-full" />
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex gap-2">
-            <Skeleton className="h-7 w-24 rounded-lg" />
-            <Skeleton className="h-7 w-28 rounded-lg" />
-            <Skeleton className="h-7 w-24 rounded-lg" />
-          </div>
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Skeleton className="h-56 rounded-lg" />
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-3 w-5/6 rounded" />
-              <Skeleton className="h-3 w-2/3 rounded" />
-              <Skeleton className="h-36 rounded-lg" />
-              <Skeleton className="mt-1 h-8 w-32 rounded-lg" />
-            </div>
-          </div>
-        </div>
-      </div>
-      {Array.from({ length: 3 }, (_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-        <div key={index} className="flex gap-3">
-          <Skeleton className="size-6 shrink-0 rounded-full" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
-            <Skeleton className="h-3.5 w-1/2 rounded" />
-            <Skeleton className="h-3 w-3/4 rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -1530,147 +1352,6 @@ function TraceSection({
   );
 }
 
-/** Multi-line overview — the decision card aggregates every line: shipment
- * duty totals up top, one drillable row per line. */
-function LineClassificationsCard({
-  corrections,
-  item,
-  onOpenLine,
-}: {
-  corrections: Record<string, string>;
-  item: ReviewItem;
-  onOpenLine: (line: ReviewLineItem) => void;
-}) {
-  const lines = item.lineItems ?? [];
-  const totals = dutyTotals(lines, corrections);
-
-  return (
-    <Widget>
-      <Widget.Header>
-        <Widget.Title>Line classifications</Widget.Title>
-      </Widget.Header>
-      <Widget.Content>
-        <ItemCardGroup variant="outline">
-          {lines.map((line, index) => {
-            const staged = corrections[line.lineItemId];
-
-            return (
-              <Fragment key={line.lineItemId}>
-                {index > 0 ? <Separator /> : null}
-                <ItemCard
-                  className="hover:bg-default/40 cursor-pointer gap-8 transition-colors"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onOpenLine(line)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onOpenLine(line);
-                    }
-                  }}
-                >
-                  <ItemCard.Content>
-                    <ItemCard.Title className="line-clamp-2 whitespace-normal">
-                      {line.description}
-                    </ItemCard.Title>
-                    <ItemCard.Description className="tabular-nums">
-                      {[
-                        line.quantity !== null
-                          ? `${line.quantity.toLocaleString("en-US")}${line.unit ? ` ${line.unit}` : ""}`
-                          : null,
-                        line.valueUsd !== null
-                          ? formatCurrency(line.valueUsd)
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </ItemCard.Description>
-                    {line.reused || staged ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                        {line.reused ? (
-                          <Chip
-                            className="bg-purple-100 text-purple-900"
-                            size="sm"
-                            variant="soft"
-                          >
-                            <Chip.Label>Reused</Chip.Label>
-                          </Chip>
-                        ) : null}
-                        {staged ? (
-                          <Chip
-                            className="bg-accent/10 text-accent"
-                            size="sm"
-                            variant="soft"
-                          >
-                            <Chip.Label className="tabular-nums">
-                              → {staged}
-                            </Chip.Label>
-                          </Chip>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </ItemCard.Content>
-                  <ItemCard.Action>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-foreground font-mono text-sm tabular-nums">
-                          {line.htsCode ?? "Unclassified"}
-                        </span>
-                        {line.confidence !== null ? (
-                          <ConfidenceChip
-                            confidence={line.confidence}
-                            label="confident"
-                          />
-                        ) : null}
-                        {line.duty?.amountUsd !== null &&
-                        line.duty?.amountUsd !== undefined ? (
-                          <span className="text-muted text-xs tabular-nums">
-                            Duty {formatCurrency(line.duty.amountUsd)}
-                          </span>
-                        ) : null}
-                      </div>
-                      <ChevronRight className="text-muted size-4 shrink-0" />
-                    </div>
-                  </ItemCard.Action>
-                </ItemCard>
-              </Fragment>
-            );
-          })}
-        </ItemCardGroup>
-        {/* Receipt-style totals — quiet, borderless, below the lines. */}
-        <div className="flex flex-col gap-1 px-1 pt-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-muted text-xs">Total value</span>
-            <span className="text-foreground text-xs tabular-nums">
-              {formatCurrency(totals.totalValueUsd)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-muted text-xs">Total duty</span>
-            <span className="text-foreground text-xs font-semibold tabular-nums">
-              {formatCurrency(totals.amountUsd)}
-            </span>
-          </div>
-          {totals.effectivePct !== null ? (
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted text-xs">Effective duty rate</span>
-              <span className="text-foreground text-xs tabular-nums">
-                {totals.effectivePct.toFixed(1)}%
-              </span>
-            </div>
-          ) : null}
-          {totals.unpricedCount > 0 ? (
-            <span className="text-muted text-xs">
-              Duty total excludes {totals.unpricedCount} line
-              {totals.unpricedCount === 1 ? "" : "s"} without ad-valorem duty
-            </span>
-          ) : null}
-        </div>
-      </Widget.Content>
-    </Widget>
-  );
-}
-
 /* -------------------------------------------------------------------------------------------------
  * Detail pane — email-detail structure: toolbar · scrollable body · pinned action bar
  * -----------------------------------------------------------------------------------------------*/
@@ -1926,7 +1607,7 @@ function ReviewDetail({
             {multiLine ? (
               <LineClassificationsCard
                 corrections={corrections}
-                item={item}
+                lines={item.lineItems ?? []}
                 onOpenLine={setOpenLine}
               />
             ) : (
@@ -2503,7 +2184,7 @@ export function ReviewQueue() {
 
     return () => clearTimeout(timer);
     // biome-ignore lint/correctness/useExhaustiveDependencies: navigate identity is unstable
-  }, [searchInput, searchParams.q]);
+  }, [searchInput, searchParams.q, navigate]);
 
   const deadlineFor = (item: ReviewItem) =>
     deadlines.get(item.id) ?? addHours(new Date(), item.deadlineHoursFromNow);
@@ -2537,116 +2218,10 @@ export function ReviewQueue() {
     : -1;
 
   // One fetch for the whole case file — split by event type at the edge.
-  const { data: eventsResponse, isPending: isFileLoading } =
-    useShipmentEventsControllerFindByShipment(
-      displayItem?.id ?? "",
-      { limit: 200 },
-      { query: { enabled: Boolean(displayItem) } },
-    );
-
-  const live = useMemo(() => {
-    // API returns occurredAt desc; the record reads oldest-first.
-    const events = [...(eventsResponse?.data.data ?? [])].reverse();
-    const now = Date.now();
-    const hoursAgo = (occurredAt: string) =>
-      (now - new Date(occurredAt).getTime()) / 3_600_000;
-
-    // Agent trace — one event per step, grouped by payload.phase. Real
-    // agent runs instead carry a runId pointing at the audit record.
-    const trace: TracePhase[] = [];
-    let traceRunId: string | undefined;
-
-    for (const event of events.filter((e) => eventPlane(e.type) === "trace")) {
-      const payload = event.payload as {
-        phase?: string;
-        kind?: TraceStepKind;
-        detail?: string;
-        data?: string[];
-        citationRef?: string;
-      };
-      if (typeof (payload as { runId?: string }).runId === "string") {
-        traceRunId = (payload as { runId?: string }).runId;
-        continue;
-      }
-      const label = payload.phase ?? "Trace";
-      const step = {
-        kind: payload.kind ?? "read",
-        title: event.title,
-        detail: payload.detail ?? "",
-        ...(payload.data && { data: payload.data }),
-        ...(payload.citationRef && { citationRef: payload.citationRef }),
-      };
-      const last = trace[trace.length - 1];
-
-      if (last?.label === label) last.steps.push(step);
-      else trace.push({ label, steps: [step] });
-    }
-
-    // Documents — payloads mirror the ReviewDocument shape.
-    const documents: ReviewDocument[] = events
-      .filter((event) => eventPlane(event.type) === "document")
-      .map(
-        (event) =>
-          ({
-            ...(event.payload as unknown as ReviewDocument),
-            receivedHoursAgo: hoursAgo(event.occurredAt),
-          }) as ReviewDocument,
-      );
-
-    // Generic activity rows for the timeline.
-    const activityEvents: ActivityEvent[] = events
-      .filter(
-        (event) =>
-          eventPlane(event.type) === "milestone" &&
-          !ACTIVITY_EXCLUDED_TYPES.has(event.type),
-      )
-      .map((event) => {
-        const payload = event.payload as {
-          detail?: string;
-          steps?: string[];
-          status?: string;
-          icon?: ActivityEvent["icon"];
-          memo?: boolean;
-        };
-
-        return {
-          title: event.title,
-          detail: payload.detail,
-          steps: payload.steps,
-          occurredHoursAgo: hoursAgo(event.occurredAt),
-          icon: payload.icon ?? (event.actor === "ai" ? "ai" : "check"),
-          memo: payload.memo,
-          status: payload.status as ActivityEvent["status"],
-        };
-      });
-
-    // Structured shipment facts (latest extraction wins).
-    const factsEvent = events
-      .filter((event) => event.type === FACTS_EVENT_TYPE)
-      .at(-1);
-    const facts = factsEvent?.payload.facts as
-      | {
-          originCountry?: string;
-          originPort?: string | null;
-          portOfEntry?: string;
-          transportMode?: string;
-          conveyance?: string | null;
-          incoterm?: string | null;
-          entryType?: string | null;
-        }
-      | undefined;
-
-    // Broker notes — part of the audit record.
-    const notes = events
-      .filter((event) => event.type === BROKER_NOTE_TYPE)
-      .map((event) => ({
-        id: event.id,
-        body: String((event.payload as { body?: string }).body ?? event.title),
-        occurredAt: event.occurredAt,
-      }));
-
-    return { activityEvents, documents, facts, notes, trace, traceRunId };
-  }, [eventsResponse]);
+  // Live updates stream into this query's cache over the websocket.
+  const live = useCaseFile(displayItem?.id);
+  const isFileLoading = Boolean(displayItem) && live.isPending;
+  useShipmentRealtime(displayItem?.id);
 
   const detailItem = displayItem
     ? {
