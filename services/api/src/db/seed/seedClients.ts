@@ -6,13 +6,14 @@
  */
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { ClientAutonomy, ClientStatus } from "@/db/schemas/clients";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("seed");
 
 const [organizationId, userId] = process.argv.slice(2);
 
 if (!organizationId || !userId) {
-  console.error(
-    "Usage: bun src/db/seed/seedClients.ts <organizationId> <userId>",
-  );
+  log.error("Usage: bun src/db/seed/seedClients.ts <organizationId> <userId>");
   process.exit(1);
 }
 
@@ -413,10 +414,10 @@ for (const [i, company] of companies.entries()) {
     createdAt: randomDate(i * 13 + 7),
   });
 
-  console.log(`seeded: ${created?.name} (${created?.id})`);
+  log.info(`seeded: ${created?.name} (${created?.id})`);
 }
 
-console.log(
+log.info(
   `\nDone — ${companies.length} clients seeded for org ${organizationId}`,
 );
 process.exit(0);

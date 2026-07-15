@@ -12,13 +12,16 @@ import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import * as schema from "@/db/schema";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
+import { createLogger } from "@/lib/logger";
 import { REVIEW_OVERVIEW } from "./data/reviewOverview";
 import { REVIEW_TRACES } from "./data/reviewTraces";
+
+const log = createLogger("seed");
 
 const [organizationId, userId] = process.argv.slice(2);
 
 if (!organizationId || !userId) {
-  console.error(
+  log.error(
     "Usage: bun src/db/seed/seedShipments.ts <organizationId> <userId>",
   );
   process.exit(1);
@@ -870,9 +873,7 @@ const clientIdByName = new Map(clientRows.map((row) => [row.name, row.id]));
 
 const missing = clientNames.filter((name) => !clientIdByName.has(name));
 if (missing.length) {
-  console.error(
-    `Missing clients (run seedClients first): ${missing.join(", ")}`,
-  );
+  log.error(`Missing clients (run seedClients first): ${missing.join(", ")}`);
   process.exit(1);
 }
 
@@ -1088,12 +1089,10 @@ for (const seed of seeds) {
     });
   }
 
-  console.log(
+  log.info(
     `seeded: ${seed.reference} (${seed.clientName}) — ${seed.stage}/${seed.status}`,
   );
 }
 
-console.log(
-  `\nDone — ${seeds.length} shipments seeded for org ${organizationId}`,
-);
+log.info(`\nDone — ${seeds.length} shipments seeded for org ${organizationId}`);
 process.exit(0);
