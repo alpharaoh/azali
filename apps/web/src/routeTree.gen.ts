@@ -21,6 +21,7 @@ import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients
 import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
 import { Route as DashboardAutopilotRouteImport } from './routes/dashboard/autopilot'
 import { Route as DashboardReviewIndexRouteImport } from './routes/dashboard/review/index'
+import { Route as DashboardShipmentsShipmentIdRouteImport } from './routes/dashboard/shipments/$shipmentId'
 import { Route as DashboardReviewItemIdRouteImport } from './routes/dashboard/review/$itemId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -84,6 +85,12 @@ const DashboardReviewIndexRoute = DashboardReviewIndexRouteImport.update({
   path: '/review/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardShipmentsShipmentIdRoute =
+  DashboardShipmentsShipmentIdRouteImport.update({
+    id: '/shipments/$shipmentId',
+    path: '/shipments/$shipmentId',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 const DashboardReviewItemIdRoute = DashboardReviewItemIdRouteImport.update({
   id: '/review/$itemId',
   path: '/review/$itemId',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
   '/dashboard/review/': typeof DashboardReviewIndexRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
   '/dashboard/review': typeof DashboardReviewIndexRoute
 }
 export interface FileRoutesById {
@@ -133,6 +142,7 @@ export interface FileRoutesById {
   '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
+  '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
   '/dashboard/review/': typeof DashboardReviewIndexRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/dashboard/tariff-radar'
     | '/dashboard/'
     | '/dashboard/review/$itemId'
+    | '/dashboard/shipments/$shipmentId'
     | '/dashboard/review/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/dashboard/tariff-radar'
     | '/dashboard'
     | '/dashboard/review/$itemId'
+    | '/dashboard/shipments/$shipmentId'
     | '/dashboard/review'
   id:
     | '__root__'
@@ -179,6 +191,7 @@ export interface FileRouteTypes {
     | '/dashboard/tariff-radar'
     | '/dashboard/'
     | '/dashboard/review/$itemId'
+    | '/dashboard/shipments/$shipmentId'
     | '/dashboard/review/'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardReviewIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/shipments/$shipmentId': {
+      id: '/dashboard/shipments/$shipmentId'
+      path: '/shipments/$shipmentId'
+      fullPath: '/dashboard/shipments/$shipmentId'
+      preLoaderRoute: typeof DashboardShipmentsShipmentIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/review/$itemId': {
       id: '/dashboard/review/$itemId'
       path: '/review/$itemId'
@@ -294,6 +314,7 @@ interface DashboardRouteRouteChildren {
   DashboardTariffRadarRoute: typeof DashboardTariffRadarRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardReviewItemIdRoute: typeof DashboardReviewItemIdRoute
+  DashboardShipmentsShipmentIdRoute: typeof DashboardShipmentsShipmentIdRoute
   DashboardReviewIndexRoute: typeof DashboardReviewIndexRoute
 }
 
@@ -307,6 +328,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardTariffRadarRoute: DashboardTariffRadarRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardReviewItemIdRoute: DashboardReviewItemIdRoute,
+  DashboardShipmentsShipmentIdRoute: DashboardShipmentsShipmentIdRoute,
   DashboardReviewIndexRoute: DashboardReviewIndexRoute,
 }
 

@@ -1,5 +1,8 @@
 import type { SelectProduct } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
 import { KnowledgeBaseService, type KnowledgeDocument } from "./service";
+
+const log = createLogger("knowledge-base");
 
 /** Record types stored in the knowledge-base index, filterable on search. */
 export const KNOWLEDGE_RECORD_TYPES = {
@@ -72,9 +75,9 @@ export async function indexProductClassification(
       documents: [record],
     });
   } catch (error) {
-    console.error(
-      `Failed to index classification record for product ${product.id}`,
-      error,
+    log.error(
+      { err: error, productId: product.id },
+      "failed to index classification record",
     );
   }
 }

@@ -671,8 +671,11 @@ export interface ShipmentResponseDto {
   organizationId: string;
   /** Id of the user who created the shipment. */
   userId: string;
-  /** Id of the client this shipment belongs to. */
-  clientId: string;
+  /**
+   * Id of the client this shipment belongs to; null while intake is still resolving it.
+   * @nullable
+   */
+  clientId: string | null;
   /**
    * The owning client, embedded so lists can be rendered without a separate clients request.
    * @nullable
@@ -689,6 +692,11 @@ export interface ShipmentResponseDto {
   stage: ShipmentResponseDtoStage;
   /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ShipmentResponseDtoStatus;
+  /**
+   * Human-readable current pipeline step (e.g. "Classifying line 2 of 3"); null when nothing is running.
+   * @nullable
+   */
+  processingState: string | null;
   /**
    * Deadline of the pending review; null when nothing is pending.
    * @nullable
@@ -821,8 +829,11 @@ export type ListShipmentsResponseDtoDataItem = {
   organizationId: string;
   /** Id of the user who created the shipment. */
   userId: string;
-  /** Id of the client this shipment belongs to. */
-  clientId: string;
+  /**
+   * Id of the client this shipment belongs to; null while intake is still resolving it.
+   * @nullable
+   */
+  clientId: string | null;
   /**
    * The owning client, embedded so lists can be rendered without a separate clients request.
    * @nullable
@@ -839,6 +850,11 @@ export type ListShipmentsResponseDtoDataItem = {
   stage: ListShipmentsResponseDtoDataItemStage;
   /** Operational status: autopilot, needs_review, awaiting_cbp, or released. */
   status: ListShipmentsResponseDtoDataItemStatus;
+  /**
+   * Human-readable current pipeline step (e.g. "Classifying line 2 of 3"); null when nothing is running.
+   * @nullable
+   */
+  processingState: string | null;
   /**
    * Deadline of the pending review; null when nothing is pending.
    * @nullable
@@ -1108,6 +1124,36 @@ export interface ResolveReviewDto {
   note?: string;
 }
 
+/**
+ * Duty snapshot; null until the line is classified.
+ * @nullable
+ */
+export type ListShipmentLinesResponseDtoLinesItemDuty = {
+  /** @nullable */
+  effectivePct: number | null;
+  /**
+   * Short rate label, e.g. "7.5% effective".
+   * @nullable
+   */
+  label: string | null;
+  /**
+   * Ad-valorem duty on this line in whole USD.
+   * @nullable
+   */
+  amountUsd: number | null;
+} | null;
+
+export type ListShipmentLinesResponseDtoLinesItemAlternatesItem = {
+  /** The runner-up HTS code. */
+  value: string;
+  detail: string;
+  confidence: number;
+  reason?: string;
+  amountUsd?: number;
+  /** Duty change vs the chosen code, in USD. */
+  deltaUsd?: number;
+};
+
 export type ListShipmentLinesResponseDtoLinesItem = {
   /** Line item id. */
   id: string;
@@ -1150,6 +1196,26 @@ export type ListShipmentLinesResponseDtoLinesItem = {
    * @nullable
    */
   productId: string | null;
+  /**
+   * The agent run behind this classification.
+   * @nullable
+   */
+  runId: string | null;
+  /**
+   * One-paragraph rationale for the chosen code.
+   * @nullable
+   */
+  summary: string | null;
+  /**
+   * Duty snapshot; null until the line is classified.
+   * @nullable
+   */
+  duty: ListShipmentLinesResponseDtoLinesItemDuty;
+  /**
+   * Runner-up codes, frozen at classification time.
+   * @nullable
+   */
+  alternates: ListShipmentLinesResponseDtoLinesItemAlternatesItem[] | null;
 };
 
 export interface ListShipmentLinesResponseDto {
@@ -1406,6 +1472,8 @@ export interface IngestDocumentsDto {
 export interface IngestDocumentsResponseDto {
   /** Ids of the ingestion runs started for this batch. */
   eventIds: string[];
+  /** Id of the shipment pre-created for this batch — it exists (and is watchable) from this moment, while ingestion fills it in. */
+  shipmentId: string;
 }
 
 /**

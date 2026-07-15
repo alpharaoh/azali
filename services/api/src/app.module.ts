@@ -16,6 +16,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { env } from "./env";
 import { auth } from "./lib/auth";
+import { RealtimeModule } from "./realtime/realtime.module";
 
 @Module({
   imports: [
@@ -51,7 +52,10 @@ import { auth } from "./lib/auth";
             // to the unmatched suffix; originalUrl keeps the full path.
             const url =
               (req as { originalUrl?: string }).originalUrl ?? req.url;
-            return url?.split("?")[0] === "/v1/inngest";
+            const path = url?.split("?")[0] ?? "";
+            // engine.io transport requests are equally chatty (the socket
+            // namespace is logical — the HTTP path is always /socket.io).
+            return path === "/v1/inngest" || path.startsWith("/socket.io");
           },
         },
       },
@@ -64,6 +68,7 @@ import { auth } from "./lib/auth";
     ShipmentDocumentsModule,
     AgentRunsModule,
     ProductsModule,
+    RealtimeModule,
   ],
   controllers: [AppController, UsersController],
   providers: [

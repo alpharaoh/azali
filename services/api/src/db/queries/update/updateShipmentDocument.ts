@@ -1,6 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { type InsertShipmentDocument, shipmentDocuments } from "@/db/schema";
+import { publishDocumentChanged } from "@/realtime/publish";
 
 export const updateShipmentDocument = async (
   id: string,
@@ -19,5 +20,8 @@ export const updateShipmentDocument = async (
     )
     .returning();
 
-  return entry[0];
+  const row = entry[0];
+  if (row?.shipmentId)
+    publishDocumentChanged({ ...row, shipmentId: row.shipmentId });
+  return row;
 };

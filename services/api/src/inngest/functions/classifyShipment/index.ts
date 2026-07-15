@@ -15,13 +15,19 @@ import {
   ShipmentStage,
   ShipmentStatus,
 } from "@/db/schema";
+import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
 import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
 import { inngest } from "../../client";
 import { matchOrCreateProduct } from "../ingestShipmentDocuments/utils";
-import { buildReviewPayload, type LineOutcome, type LineSlim } from "./utils";
+import {
+  buildLineAlternates,
+  buildReviewPayload,
+  type LineOutcome,
+  type LineSlim,
+} from "./utils";
 
 export const SHIPMENT_CLASSIFY_REQUESTED_EVENT =
   "shipment/classify.requested" as const;
@@ -37,6 +43,8 @@ export type ShipmentClassifyRequestedEvent = {
 /** Lines below this confidence go to broker review. */
 const REVIEW_THRESHOLD = 0.95;
 const REVIEW_DEADLINE_HOURS = 6;
+/** Simultaneous per-line agent runs within one shipment. */
+const LINE_CONCURRENCY = 3;
 
 /**
  * Classifies each of a shipment's line items into its 10-digit HTS code with
@@ -52,6 +60,24 @@ export const classifyShipment = () => {
       retries: 1,
       concurrency: [{ key: "event.data.organizationId", limit: 2 }],
       triggers: [{ event: SHIPMENT_CLASSIFY_REQUESTED_EVENT }],
+      // Retries exhausted — stop showing the shipment as processing and
+      // land the failure on its timeline.
+      onFailure: async ({ event, error, logger }) => {
+        const { organizationId, userId, shipmentId } = event.data.event
+          .data as ShipmentClassifyRequestedEvent["data"];
+        logger.error(
+          { shipmentId, err: error },
+          "classification failed after retries — clearing processing state",
+        );
+        await recordProcessingFailure({
+          organizationId,
+          userId,
+          shipmentId,
+          type: "classification_failed",
+          title: "Classification failed",
+          error,
+        });
+      },
     },
     async ({ event, step, logger }) => {
       const { organizationId, userId, shipmentId } =
@@ -62,7 +88,7 @@ export const classifyShipment = () => {
         "classification run started",
       );
 
-      const shipment = await step.run("load-shipment", async () => {
+      const loaded = await step.run("load-shipment", async () => {
         const row = await selectShipment(shipmentId, organizationId);
         if (!row) return null;
         return {
@@ -75,13 +101,33 @@ export const classifyShipment = () => {
           summary: row.summary,
         };
       });
-      if (!shipment) {
+      if (!loaded) {
         logger.warn(
           { shipmentId },
           "shipment not found — skipping classification",
         );
         return { shipmentId, classified: false, reason: "shipment_not_found" };
       }
+      // A pre-created shipment whose ingest never resolved a client cannot
+      // be classified — the knowledge base and product library are
+      // client-scoped.
+      if (loaded.clientId === null) {
+        logger.warn(
+          { shipmentId },
+          "shipment has no client — skipping classification",
+        );
+        await step.run("clear-state-no-client", () =>
+          recordProcessingFailure({
+            organizationId,
+            userId,
+            shipmentId,
+            type: "classification_failed",
+            title: "Classification could not run — no importer was resolved",
+          }),
+        );
+        return { shipmentId, classified: false, reason: "no_client" };
+      }
+      const shipment = { ...loaded, clientId: loaded.clientId };
 
       const documents = await step.run("load-documents", async () => {
         const { data } = await listShipmentDocuments({
@@ -99,6 +145,16 @@ export const classifyShipment = () => {
         logger.warn(
           { shipmentId },
           "no extracted documents — skipping classification",
+        );
+        await step.run("clear-state-no-documents", () =>
+          recordProcessingFailure({
+            organizationId,
+            userId,
+            shipmentId,
+            type: "classification_failed",
+            title:
+              "Classification could not run — no extracted documents on file",
+          }),
         );
         return {
           shipmentId,
@@ -147,7 +203,12 @@ export const classifyShipment = () => {
             },
           ]);
           const match = await matchOrCreateProduct(
-            { organizationId, userId, batchId: event.id ?? "classify" },
+            {
+              organizationId,
+              userId,
+              batchId: event.id ?? "classify",
+              shipmentId,
+            },
             shipment.clientId,
             {
               id: row.id,
@@ -176,9 +237,19 @@ export const classifyShipment = () => {
       );
 
       const base = { organizationId, userId, shipmentId, actor: "ai" as const };
-      const outcomes: LineOutcome[] = [];
 
-      for (const line of lines) {
+      await step.run("state-classifying", () =>
+        updateShipment(shipmentId, organizationId, {
+          processingState:
+            lines.length === 1
+              ? "Classifying 1 line item"
+              : `Classifying ${lines.length} line items`,
+        }),
+      );
+
+      /** One line's full pipeline: reuse-or-classify, apply, record. The
+       * steps WITHIN a line stay ordered; lines run concurrently. */
+      const classifyLine = async (line: LineSlim): Promise<LineOutcome> => {
         // 1. Product memory — a trusted existing classification is reused
         //    without an agent run.
         const reuse = await step.run(`reuse-${line.lineNumber}`, async () => {
@@ -240,7 +311,7 @@ export const classifyShipment = () => {
             },
             "line classification reused from product memory",
           );
-          outcomes.push({
+          return {
             lineItemId: line.id,
             lineNumber: line.lineNumber,
             description: line.description,
@@ -259,8 +330,7 @@ export const classifyShipment = () => {
                 : LineItemStatus.Classified,
             runId: reuse.runId,
             result: null,
-          });
-          continue;
+          };
         }
 
         // 2. Fresh agent run for this product. One atomic step by design —
@@ -292,6 +362,8 @@ export const classifyShipment = () => {
           };
           await updateShipmentLineItem(line.id, organizationId, {
             ...snapshot,
+            summary: result.summary,
+            alternates: buildLineAlternates(result, line.totalValueCents),
             reusedFromProduct: false,
             status: flagged
               ? LineItemStatus.NeedsReview
@@ -367,7 +439,7 @@ export const classifyShipment = () => {
           "line classified",
         );
 
-        outcomes.push({
+        return {
           lineItemId: line.id,
           lineNumber: line.lineNumber,
           description: line.description,
@@ -385,8 +457,28 @@ export const classifyShipment = () => {
             : LineItemStatus.Classified,
           runId,
           result,
-        });
-      }
+        };
+      };
+
+      // Lines classify CONCURRENTLY — a small worker pool caps simultaneous
+      // agent runs so a many-line invoice doesn't slam the model API, while
+      // 2-5 line shipments run fully parallel. Step ids are unique per line,
+      // so Inngest replays stay deterministic regardless of interleaving.
+      const queue = [...lines];
+      const settled: LineOutcome[] = [];
+      await Promise.all(
+        Array.from(
+          { length: Math.min(LINE_CONCURRENCY, queue.length) },
+          async () => {
+            for (;;) {
+              const line = queue.shift();
+              if (!line) return;
+              settled.push(await classifyLine(line));
+            }
+          },
+        ),
+      );
+      const outcomes = settled.sort((a, b) => a.lineNumber - b.lineNumber);
 
       // Aggregate — the lowest-confidence uncertain line headlines review.
       const flaggedLines = outcomes
@@ -426,6 +518,7 @@ export const classifyShipment = () => {
         await updateShipment(shipmentId, organizationId, {
           stage: ShipmentStage.Classification,
           dutyCents,
+          processingState: null,
           ...(needsReview
             ? {
                 status: ShipmentStatus.NeedsReview,

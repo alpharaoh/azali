@@ -30,6 +30,7 @@ import type { SortDescriptor } from "react-aria-components";
 
 import { DemoPreviewBanner } from "#/components/demo-preview-banner";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
+import { formatCurrency } from "#/lib/format";
 
 /* -------------------------------------------------------------------------------------------------
  * Types & Data
@@ -200,13 +201,6 @@ const statusColorMap: Record<ClaimStatus, "success" | "warning" | "accent"> = {
   Refunded: "success",
 };
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
 function formatDate(date: Date) {
   return format(date, "MMM d, yyyy");

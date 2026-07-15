@@ -14,7 +14,7 @@ import { products } from "@/db/schemas/products";
 import { shipments } from "@/db/schemas/shipments";
 import { getDefaultColumns } from "@/db/utils/getDefaultColumns";
 import { getDefaultOwnershipColumns } from "@/db/utils/getDefaultOwnershipColumns";
-import { jsonbObject } from "@/db/utils/jsonbObject";
+import { jsonbArray, jsonbObject } from "@/db/utils/jsonbObject";
 
 export enum LineItemStatus {
   Pending = "pending",
@@ -58,6 +58,11 @@ export const shipmentLineItems = pgTable(
     htsDescription: text("hts_description"),
     confidence: doublePrecision("confidence"),
     dutyRate: jsonbObject("duty_rate"),
+    /** One-paragraph rationale for the chosen code. */
+    summary: text("summary"),
+    /** Runner-up codes ({value, detail, confidence, reason, amountUsd?,
+     * deltaUsd?}), frozen at classification time like the fields above. */
+    alternates: jsonbArray("alternates"),
     classificationRunId: text("classification_run_id").references(
       () => agentRuns.id,
       { onDelete: "set null" },

@@ -20,9 +20,10 @@ import {
   SearchField,
   Separator,
   Slider,
+  Spinner,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
-import { DataGrid, InlineSelect, Widget } from "@heroui-pro/react";
+import { DataGrid, InlineSelect, TextShimmer, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
@@ -30,10 +31,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { ShipmentIntakeModal } from "#/components/shipment-intake-modal";
-import {
-  TableFetchingState,
-  TableSkeleton,
-} from "#/components/table-loading";
+import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
+import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   useClientsControllerFindAll,
@@ -41,10 +40,10 @@ import {
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
-import { clientLogos } from "#/data/client-logos";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { PipelineSearch } from "#/routes/dashboard/pipeline";
 import { pipelineListParams } from "#/routes/dashboard/pipeline";
+import { formatCurrency, getInitials } from "#/lib/format";
 
 const SEARCH_DEBOUNCE_MS = 300;
 /** Slider ceiling in dollars — fixed so the range control is stable. */
@@ -87,9 +86,14 @@ function ShipIcon({ className }: { className?: string }) {
 /* -------------------------------------------------------------------------------------------------
  * Derivation — a shipment's live state comes straight from the API
  * -----------------------------------------------------------------------------------------------*/
-type ShipmentStatus = "autopilot" | "awaiting" | "blocked" | "released";
+export type ShipmentDisplayStatus =
+  | "autopilot"
+  | "awaiting"
+  | "blocked"
+  | "released";
+type ShipmentStatus = ShipmentDisplayStatus;
 
-const statusFromApi: Record<ApiShipment["status"], ShipmentStatus> = {
+export const statusFromApi: Record<ApiShipment["status"], ShipmentStatus> = {
   autopilot: "autopilot",
   awaiting_cbp: "awaiting",
   needs_review: "blocked",
@@ -114,6 +118,8 @@ interface Row {
   duty: number;
   /** Null when nothing is actionable (filed / awaiting CBP / released). */
   priority: Priority | null;
+  /** Human-readable current pipeline step; null when nothing is running. */
+  processingState: string | null;
 }
 
 const stageOrder: PipelineStage[] = [
@@ -169,7 +175,7 @@ const priorityMeta: Record<
   4: { chip: "default", label: "P4" },
 };
 
-const statusMeta: Record<
+export const statusMeta: Record<
   ShipmentStatus,
   { chip: "accent" | "default" | "success" | "warning"; label: string }
 > = {
@@ -205,26 +211,12 @@ function without<T>(set: Set<T>, value: T) {
   return next;
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-}
 
 /* -------------------------------------------------------------------------------------------------
- * Stage tracker — the CI-run segments
+ * Stage tracker — the CI-run segments (shared with the shipment detail page)
  * -----------------------------------------------------------------------------------------------*/
-function StageTracker({
+export function StageTracker({
   stage,
   status,
 }: {
@@ -332,15 +324,17 @@ export function PipelineBoard() {
 
   // DataGrid column ids ↔ server sort keys. The "client" column shows the
   // reference under the client name, so it sorts by reference.
-  const sortByForColumn: Record<string, NonNullable<PipelineSearch["sortBy"]>> =
-    {
-      arrives: "etaAt",
-      client: "reference",
-      priority: "priority",
-      stage: "stage",
-      status: "status",
-      value: "valueCents",
-    };
+  const sortByForColumn: Record<
+    string,
+    NonNullable<PipelineSearch["sortBy"]>
+  > = {
+    arrives: "etaAt",
+    client: "reference",
+    priority: "priority",
+    stage: "stage",
+    status: "status",
+    value: "valueCents",
+  };
   const columnForSortBy: Record<string, string> = {
     createdAt: "priority",
     etaAt: "arrives",
@@ -413,6 +407,7 @@ export function PipelineBoard() {
         value,
         duty: shipment.dutyCents / 100,
         priority: priorityFor(shipment.stage, status, arrivesInHours, value),
+        processingState: shipment.processingState,
       };
     });
   }, [shipmentsResponse]);
@@ -563,12 +558,22 @@ export function PipelineBoard() {
       },
       {
         allowsSorting: true,
-        cell: (row) => (
-          <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
-            <CircleFill width={6} />
-            <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
-          </Chip>
-        ),
+        cell: (row) =>
+          row.processingState ? (
+            <Chip color="accent" size="sm" variant="soft">
+              <Chip.Label className="inline-flex items-center gap-1.5">
+                <Spinner size="sm" className="size-3" />
+                <TextShimmer className="text-xs">
+                  {row.processingState}
+                </TextShimmer>
+              </Chip.Label>
+            </Chip>
+          ) : (
+            <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
+              <CircleFill width={6} />
+              <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
+            </Chip>
+          ),
         header: "Status",
         id: "status",
         minWidth: 130,
@@ -659,7 +664,16 @@ export function PipelineBoard() {
               Review
             </Button>
           ) : (
-            <Button size="sm" variant="ghost">
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() =>
+                navigate({
+                  params: { shipmentId: row.id },
+                  to: "/dashboard/shipments/$shipmentId",
+                })
+              }
+            >
               Open
               <ChevronRight />
             </Button>

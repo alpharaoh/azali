@@ -32,6 +32,11 @@ export const ingestDocumentsResponseSchema = z.object({
   eventIds: z
     .array(z.string())
     .describe("Ids of the ingestion runs started for this batch."),
+  shipmentId: z
+    .string()
+    .describe(
+      "Id of the shipment pre-created for this batch — it exists (and is watchable) from this moment, while ingestion fills it in.",
+    ),
 });
 
 export class IngestDocumentsResponseDto extends createZodDto(

@@ -14,6 +14,7 @@ import {
   SHIPMENT_DOCUMENTS_UPLOADED_EVENT,
   type ShipmentDocumentsUploadedEvent,
 } from "@/inngest/functions/ingestShipmentDocuments";
+import { createPlaceholderShipment } from "@/inngest/functions/ingestShipmentDocuments/utils";
 import { BlobStorageService } from "@/services/external/s3/service";
 import type { IngestDocumentsDto } from "./dto/ingest-documents.dto";
 import type { UploadDocumentsDto } from "./dto/upload-documents.dto";
@@ -64,9 +65,18 @@ export class ShipmentDocumentsService {
       );
     }
 
+    // Pre-create the shipment so it is visible (and watchable) from the
+    // moment of upload — ingestion fills in the real facts as it works.
+    const shipment = await createPlaceholderShipment({
+      organizationId,
+      userId,
+      fileCount: dto.files.length,
+    });
+
     const payload: ShipmentDocumentsUploadedEvent["data"] = {
       organizationId,
       userId,
+      shipmentId: shipment.id,
       bucket: env.AWS_S3_BUCKET,
       files: dto.files,
     };
@@ -76,7 +86,7 @@ export class ShipmentDocumentsService {
       data: payload,
     });
 
-    return { eventIds: result.ids };
+    return { eventIds: result.ids, shipmentId: shipment.id };
   }
 
   async list(organizationId: string, shipmentId: string) {

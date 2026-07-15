@@ -24,22 +24,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import { Fragment, useRef, useState } from "react";
 
-import { AgentRunTrace } from "#/components/agent-run-trace";
+import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import {
   getShipmentEventsControllerFindByShipmentQueryKey,
   useShipmentEventsControllerCreate,
 } from "#/generated/api";
+import { formatCurrency } from "#/lib/format";
 import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    currency: "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Alternates — the runner-up codes with duty deltas and a choose action.
@@ -59,8 +52,9 @@ export function AlternatesList({
   }>;
   /** Duty change in USD if this code were chosen; undefined hides the delta. */
   deltaFor: (value: string) => number | undefined;
-  onSelect: (value: string | null) => void;
-  selected: string | null;
+  /** Omit for a read-only list (outside the review flow). */
+  onSelect?: (value: string | null) => void;
+  selected?: string | null;
 }) {
   return (
     <ItemCardGroup variant="outline">
@@ -121,22 +115,24 @@ export function AlternatesList({
                   ) : null}
                 </div>
               </ItemCard.Content>
-              <ItemCard.Action>
-                <Button
-                  size="sm"
-                  variant={isSelected ? "primary" : "outline"}
-                  onPress={() => onSelect(isSelected ? null : alt.value)}
-                >
-                  {isSelected ? (
-                    <>
-                      <CircleCheck className="size-3.5" />
-                      Selected
-                    </>
-                  ) : (
-                    "Choose alternative"
-                  )}
-                </Button>
-              </ItemCard.Action>
+              {onSelect ? (
+                <ItemCard.Action>
+                  <Button
+                    size="sm"
+                    variant={isSelected ? "primary" : "outline"}
+                    onPress={() => onSelect(isSelected ? null : alt.value)}
+                  >
+                    {isSelected ? (
+                      <>
+                        <CircleCheck className="size-3.5" />
+                        Selected
+                      </>
+                    ) : (
+                      "Choose alternative"
+                    )}
+                  </Button>
+                </ItemCard.Action>
+              ) : null}
             </ItemCard>
           </Fragment>
         );
@@ -304,8 +300,9 @@ export function LineDetailDrawer({
   /** This line's rationale memo document, when one is in the case file. */
   memo: (ReviewDocument & { kind: "pdf" }) | null;
   onOpenChange: (open: boolean) => void;
-  onSelectAlternate: (value: string | null) => void;
-  selectedAlternate: string | null;
+  /** Omit for a read-only drawer (outside the review flow). */
+  onSelectAlternate?: (value: string | null) => void;
+  selectedAlternate?: string | null;
   shipmentId: string;
 }) {
   return (
@@ -340,8 +337,8 @@ function LineDetailContent({
 }: {
   line: ReviewLineItem;
   memo: (ReviewDocument & { kind: "pdf" }) | null;
-  onSelectAlternate: (value: string | null) => void;
-  selectedAlternate: string | null;
+  onSelectAlternate?: (value: string | null) => void;
+  selectedAlternate?: string | null;
   shipmentId: string;
 }) {
   const [view, setView] = useState<"overview" | "trace">("overview");

@@ -1,14 +1,13 @@
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import type { ShipmentDocumentCategory } from "@/db/schema";
+import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { KnowledgeBaseService } from "@/services/external/pinecone/service";
 import { inngest } from "../../client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 import {
-  attachDocument,
   createDocumentRow,
   createLineItems,
-  createShipmentFromSynthesis,
   documentReceivedEvent,
   type ExtractedDocument,
   extractDocument,
@@ -22,6 +21,7 @@ import {
   savePreview,
   shipmentCreatedEvent,
   synthesizeShipmentFacts,
+  updateShipmentFromSynthesis,
 } from "./utils";
 
 export const SHIPMENT_DOCUMENTS_UPLOADED_EVENT =
@@ -31,6 +31,8 @@ export type ShipmentDocumentsUploadedEvent = {
   data: {
     organizationId: string;
     userId: string;
+    /** The shipment pre-created at upload time that this batch fills in. */
+    shipmentId: string;
     bucket: string;
     files: Array<{
       key: string;
@@ -59,14 +61,33 @@ export const ingestShipmentDocuments = () => {
       retries: 2,
       concurrency: [{ key: "event.data.organizationId", limit: 2 }],
       triggers: [{ event: SHIPMENT_DOCUMENTS_UPLOADED_EVENT }],
+      // Retries exhausted — the shipment must not look like it is still
+      // processing, and the failure must land on its timeline.
+      onFailure: async ({ event, error, logger }) => {
+        const { organizationId, userId, shipmentId } = event.data.event
+          .data as ShipmentDocumentsUploadedEvent["data"];
+        logger.error(
+          { shipmentId, err: error },
+          "ingestion failed after retries — clearing processing state",
+        );
+        await recordProcessingFailure({
+          organizationId,
+          userId,
+          shipmentId,
+          type: "ingest_failed",
+          title: "Document processing failed",
+          error,
+        });
+      },
     },
     async ({ event, step, logger }) => {
-      const { organizationId, userId, files } =
+      const { organizationId, userId, shipmentId, files } =
         event.data as ShipmentDocumentsUploadedEvent["data"];
       const context = {
         organizationId,
         userId,
         batchId: event.id ?? "unbatched",
+        shipmentId,
       };
 
       logger.info(
@@ -170,9 +191,20 @@ export const ingestShipmentDocuments = () => {
       if (extracted.length === 0) {
         logger.warn(
           { batchId: context.batchId, fileCount: files.length },
-          "no documents extracted — stopping without a shipment",
+          "no documents extracted — marking the shipment failed",
         );
-        return { shipmentId: null, extracted: 0, failed: documents.length };
+        await step.run("mark-ingest-failed", () =>
+          recordProcessingFailure({
+            organizationId,
+            userId,
+            shipmentId,
+            type: "ingest_failed",
+            title:
+              "Document processing failed — nothing could be extracted from the uploaded files",
+            error: `${documents.length} document(s) failed extraction`,
+          }),
+        );
+        return { shipmentId, extracted: 0, failed: documents.length };
       }
 
       // 3. Derive the shipment: facts → client → shipment → attach documents.
@@ -205,12 +237,12 @@ export const ingestShipmentDocuments = () => {
           : "client matched",
       );
 
-      const shipment = await step.run("create-shipment", () =>
-        createShipmentFromSynthesis(context, synthesis, client.clientId),
+      const shipment = await step.run("update-shipment-from-synthesis", () =>
+        updateShipmentFromSynthesis(context, synthesis, client.clientId),
       );
       logger.info(
         { shipmentId: shipment.id, reference: shipment.reference },
-        "shipment created",
+        "shipment facts applied",
       );
 
       // Entry lines from the invoice (or packing list, or one synthetic
@@ -246,14 +278,6 @@ export const ingestShipmentDocuments = () => {
           match.created ? "product created" : "product matched",
         );
       }
-      await Promise.all(
-        documents.map((document) =>
-          step.run(`attach-document-${document.id}`, () =>
-            attachDocument(context, document.id, shipment.id),
-          ),
-        ),
-      );
-
       // 4. Timeline events — the same shapes the review UI already renders.
       await Promise.all([
         ...extracted.map((item) =>
