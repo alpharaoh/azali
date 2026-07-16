@@ -7,7 +7,7 @@ import {
   Magnifier,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Chip, Link, Skeleton } from "@heroui/react";
+import { Chip, Link, ScrollShadow, Skeleton } from "@heroui/react";
 import { ChainOfThought, ChatLoader, TextShimmer } from "@heroui-pro/react";
 import type { ComponentType, SVGProps } from "react";
 import { useEffect, useRef } from "react";
@@ -230,45 +230,49 @@ function matchHeadline(text: string): string {
 
 /** Prior classifications / document hits, as cards instead of raw JSON. */
 function KnowledgeMatchList({ matches }: { matches: KnowledgeMatch[] }) {
-  const top = matches.slice(0, 3);
-
   return (
-    <div className="bg-surface flex flex-col overflow-hidden rounded-lg border">
-      {top.map((match, index) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: matches have no stable id
-          key={index}
-          className="flex flex-col gap-1 border-b p-2.5 last:border-b-0"
-        >
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {match.htsCode ? (
-              <span className="text-foreground font-mono text-xs tabular-nums">
-                {match.htsCode}
+    <div className="bg-surface overflow-hidden rounded-lg border">
+      <ScrollShadow className="flex max-h-64 flex-col overflow-y-auto">
+        {matches.map((match, index) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: matches have no stable id
+            key={index}
+            className="flex items-center gap-3 border-b p-2.5 last:border-b-0"
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {match.htsCode ? (
+                  <span className="text-foreground font-mono text-xs tabular-nums">
+                    {match.htsCode}
+                  </span>
+                ) : null}
+                {typeof match.confidence === "number" ? (
+                  <ConfidenceChip
+                    confidence={match.confidence}
+                    label="confident"
+                  />
+                ) : null}
+                {match.sameClient ? (
+                  <Chip color="accent" size="sm" variant="soft">
+                    <Chip.Label>This importer</Chip.Label>
+                  </Chip>
+                ) : null}
+              </div>
+              <p className="text-muted m-0 line-clamp-2 text-xs leading-relaxed">
+                {matchHeadline(match.text)}
+              </p>
+            </div>
+            <div className="flex size-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border">
+              <span className="text-foreground text-sm font-semibold leading-none tabular-nums">
+                {Math.round(match.score * 100)}%
               </span>
-            ) : null}
-            {typeof match.confidence === "number" ? (
-              <ConfidenceChip confidence={match.confidence} label="confident" />
-            ) : null}
-            {match.sameClient ? (
-              <Chip color="accent" size="sm" variant="soft">
-                <Chip.Label>This importer</Chip.Label>
-              </Chip>
-            ) : null}
-            <span className="text-muted ml-auto text-[10px] tabular-nums">
-              {Math.round(match.score * 100)}% match
-            </span>
+              <span className="text-muted text-[9px] uppercase leading-none tracking-wide">
+                match
+              </span>
+            </div>
           </div>
-          <p className="text-muted m-0 line-clamp-2 text-xs leading-relaxed">
-            {matchHeadline(match.text)}
-          </p>
-        </div>
-      ))}
-      {matches.length > top.length ? (
-        <span className="text-muted border-t px-2.5 py-1.5 text-[11px]">
-          +{matches.length - top.length} more{" "}
-          {matches.length - top.length === 1 ? "match" : "matches"}
-        </span>
-      ) : null}
+        ))}
+      </ScrollShadow>
     </div>
   );
 }
