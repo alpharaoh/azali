@@ -1,8 +1,6 @@
 import { LineItemStatus } from "@/db/schema";
-import type {
-  ClassificationResult,
-  ClassificationShipmentFacts,
-} from "@/services/agents/classification/service";
+import type { ClassificationResult } from "@/services/agents/classification/schema";
+import type { ClassificationShipmentFacts } from "@/services/agents/classification/service";
 
 /** Slim line projection that travels between steps. */
 export interface LineSlim {

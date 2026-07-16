@@ -382,36 +382,32 @@ export function ShipmentIntakeModal({
                             : ""
                         }`}
                       >
-                        {filesByCategory[activeDocStep.id].map(
-                          (file, index) => (
-                            <DropZone.FileItem
-                              key={`${file.name}-${index}`}
-                              className="items-center gap-2 p-1.5"
-                            >
-                              <DropZone.FileFormatIcon
-                                className="h-7 w-[22px]"
-                                color={
-                                  FORMAT_COLORS[fileFormat(file.name)] ?? "gray"
-                                }
-                                format={fileFormat(file.name)}
-                              />
-                              <DropZone.FileInfo className="flex-row items-baseline gap-1.5">
-                                <DropZone.FileName className="text-xs">
-                                  {file.name}
-                                </DropZone.FileName>
-                                <DropZone.FileMeta className="shrink-0">
-                                  {formatBytes(file.size)}
-                                </DropZone.FileMeta>
-                              </DropZone.FileInfo>
-                              <DropZone.FileRemoveTrigger
-                                className="[&_svg]:size-3.5"
-                                onPress={() =>
-                                  removeFile(activeDocStep.id, file)
-                                }
-                              />
-                            </DropZone.FileItem>
-                          ),
-                        )}
+                        {filesByCategory[activeDocStep.id].map((file) => (
+                          <DropZone.FileItem
+                            key={`${file.name}-${file.size}-${file.lastModified}`}
+                            className="items-center gap-2 p-1.5"
+                          >
+                            <DropZone.FileFormatIcon
+                              className="h-7 w-[22px]"
+                              color={
+                                FORMAT_COLORS[fileFormat(file.name)] ?? "gray"
+                              }
+                              format={fileFormat(file.name)}
+                            />
+                            <DropZone.FileInfo className="flex-row items-baseline gap-1.5">
+                              <DropZone.FileName className="text-xs">
+                                {file.name}
+                              </DropZone.FileName>
+                              <DropZone.FileMeta className="shrink-0">
+                                {formatBytes(file.size)}
+                              </DropZone.FileMeta>
+                            </DropZone.FileInfo>
+                            <DropZone.FileRemoveTrigger
+                              className="[&_svg]:size-3.5"
+                              onPress={() => removeFile(activeDocStep.id, file)}
+                            />
+                          </DropZone.FileItem>
+                        ))}
                       </DropZone.FileList>
                     </DropZone>
                   </>

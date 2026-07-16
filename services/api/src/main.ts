@@ -50,7 +50,12 @@ async function bootstrap() {
     .route({
       method: ["GET", "POST", "PUT"],
       url: "/v1/inngest",
-      handler: serve({ client: inngest, functions: inngestFunctions }),
+      // inngest's handler is generic over its own Querystring shape (and a
+      // different fastify copy), so it can't satisfy the route signature.
+      handler: serve({
+        client: inngest,
+        functions: inngestFunctions,
+      }) as never,
     });
 
   await app.listen(process.env.PORT ?? 3001, "0.0.0.0");

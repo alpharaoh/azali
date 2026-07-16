@@ -227,6 +227,7 @@ function renderDraftInline(node: DraftNode, key: number): ReactNode {
 }
 
 function renderDraftBlocks(nodes: DraftNode[]): ReactNode {
+  // biome-ignore-start lint/suspicious/noArrayIndexKey: draft nodes carry no stable ids and the list is render-only
   return nodes.map((node, index) => {
     const inline = (node.content ?? []).map(renderDraftInline);
 
@@ -261,6 +262,7 @@ function renderDraftBlocks(nodes: DraftNode[]): ReactNode {
         return <p key={index}>{inline}</p>;
     }
   });
+  // biome-ignore-end lint/suspicious/noArrayIndexKey: draft nodes carry no stable ids
 }
 
 function DraftDocumentPreview({

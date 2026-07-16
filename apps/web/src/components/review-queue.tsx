@@ -66,15 +66,15 @@ const deadlineTextClass: Record<DeadlineTone, string> = {
 /** First-load placeholder mirroring the QueueRow layout. */
 function QueueSkeleton() {
   return (
-    <ul aria-label="Loading review queue" className="flex flex-col gap-0.5">
+    <ul aria-label="Loading review queue" className="flex flex-col gap-1">
       {Array.from({ length: 5 }, (_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-        <li key={index} className="flex items-start gap-3 rounded-2xl p-3">
+        <li key={index} className="flex items-start gap-3.5 rounded-2xl p-4">
           <Skeleton className="size-8 shrink-0 rounded-full" />
           <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
             <Skeleton className="h-3.5 w-2/3 rounded" />
             <Skeleton className="h-3 w-full rounded" />
-            <Skeleton className="h-3 w-1/3 rounded" />
+            <Skeleton className="h-3 w-1/2 rounded" />
           </div>
         </li>
       ))}
@@ -103,22 +103,39 @@ function QueueRow({
     <li>
       <button
         aria-current={isActive ? "true" : undefined}
-        className={`relative flex w-full cursor-pointer items-start gap-3 rounded-2xl p-3 text-left transition-colors ${
+        className={`relative flex w-full cursor-pointer items-start gap-3.5 rounded-2xl p-4 text-left transition-colors ${
           isActive ? "bg-default/60" : "hover:bg-default/40"
         }`}
         type="button"
         onClick={onSelect}
       >
-        <Avatar className="size-9 shrink-0">
-          <Avatar.Image src={item.logo} />
-          <Avatar.Fallback>{getInitials(item.client)}</Avatar.Fallback>
-        </Avatar>
+        <div className="relative shrink-0">
+          <Avatar className="size-9">
+            <Avatar.Image src={item.logo} />
+            <Avatar.Fallback>{getInitials(item.client)}</Avatar.Fallback>
+          </Avatar>
+          <span
+            className="bg-background absolute -bottom-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border"
+            title={typeMeta[item.type].label}
+          >
+            <TypeIcon className="text-muted size-3" />
+          </span>
+        </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-foreground truncate text-sm font-medium leading-tight">
-              {item.client}
-            </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-foreground truncate text-sm font-medium leading-tight">
+                {item.client}
+              </span>
+              {item.noticeForm ? (
+                <Chip color="danger" size="sm" variant="soft">
+                  <Chip.Label className="font-semibold">
+                    {item.noticeForm}
+                  </Chip.Label>
+                </Chip>
+              ) : null}
+            </div>
             <div className="flex shrink-0 items-center gap-2">
               <span
                 className={`whitespace-nowrap text-xs leading-tight ${deadlineTextClass[tone]}`}
@@ -134,30 +151,9 @@ function QueueRow({
             </div>
           </div>
 
-          <span className="text-foreground truncate text-xs font-medium leading-tight">
+          <span className="text-muted line-clamp-2 text-xs leading-snug">
             {item.question}
           </span>
-
-          <span className="text-muted truncate text-xs leading-tight">
-            {item.proposal.value} — {item.proposal.detail}
-          </span>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {item.noticeForm ? (
-              <Chip color="danger" size="sm" variant="soft">
-                <Chip.Label className="font-semibold">
-                  {item.noticeForm}
-                </Chip.Label>
-              </Chip>
-            ) : null}
-            <Chip size="sm" variant="soft">
-              <TypeIcon className="size-3" />
-              <Chip.Label>{typeMeta[item.type].label}</Chip.Label>
-            </Chip>
-            <Chip size="sm" variant="soft">
-              <Chip.Label className="tabular-nums">{item.reference}</Chip.Label>
-            </Chip>
-          </div>
         </div>
       </button>
     </li>
@@ -251,7 +247,6 @@ export function ReviewQueue() {
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: navigate identity is unstable
   }, [searchInput, searchParams.q, navigate]);
 
   const deadlineFor = (item: ReviewItem) =>
@@ -479,7 +474,7 @@ export function ReviewQueue() {
               </div>
             ) : (
               <TableFetchingState isFetching={isFetching}>
-                <ul className="flex flex-col gap-0.5">
+                <ul className="flex flex-col gap-1">
                   {visiblePending.map((item) => (
                     <QueueRow
                       key={item.id}

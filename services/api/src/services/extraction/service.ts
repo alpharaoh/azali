@@ -53,10 +53,7 @@ const extractionSchema = z.object({
           .nullable()
           .describe("Unit of measure as printed, e.g. PCE, SET, CTN."),
         unitValueUsd: z.number().nullable().describe("Unit price in USD."),
-        totalValueUsd: z
-          .number()
-          .nullable()
-          .describe("Line total in USD."),
+        totalValueUsd: z.number().nullable().describe("Line total in USD."),
         originCountry: z
           .string()
           .nullable()

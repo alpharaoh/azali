@@ -27,7 +27,7 @@ import { DataGrid, InlineSelect, TextShimmer, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { ShipmentIntakeModal } from "#/components/shipment-intake-modal";
@@ -273,12 +273,15 @@ export function PipelineBoard() {
 
   const [isIntakeOpen, setIntakeOpen] = useState(false);
 
-  const updateSearch = (patch: Partial<PipelineSearch>) => {
-    routeNavigate({
-      replace: true,
-      search: (prev) => ({ ...prev, ...patch }),
-    });
-  };
+  const updateSearch = useCallback(
+    (patch: Partial<PipelineSearch>) => {
+      routeNavigate({
+        replace: true,
+        search: (prev) => ({ ...prev, ...patch }),
+      });
+    },
+    [routeNavigate],
+  );
 
   // Keep the input in sync with the URL (back/forward, shared links).
   useEffect(() => {
@@ -294,8 +297,7 @@ export function PipelineBoard() {
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: updateSearch is stable enough for this effect
-  }, [searchInput, searchParams.q]);
+  }, [searchInput, searchParams.q, updateSearch]);
 
   // Any change to the URL-driven query state starts back at page 1.
   const filterFingerprint = JSON.stringify(searchParams);
@@ -563,7 +565,7 @@ export function PipelineBoard() {
         cell: (row) =>
           row.processingState ? (
             <Chip color="accent" size="sm" variant="soft">
-              <Chip.Label className="inline-flex items-center gap-1.5">
+              <Chip.Label className="inline-flex items-center gap-1.5 h-5.25">
                 <Spinner size="sm" className="size-3" />
                 <TextShimmer className="text-xs">
                   {row.processingState}

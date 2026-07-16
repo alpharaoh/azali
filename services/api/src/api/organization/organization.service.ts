@@ -15,7 +15,8 @@ function slugify(name: string) {
       .normalize("NFKD")
       // Apostrophes and quotes disappear ("Akaam's" → "akaams"), and stray
       // combining marks from NFKD go with them.
-      .replace(/['’‘"“”̀-ͯ]/g, "")
+      .replace(/['’‘"“”]/g, "")
+      .replace(/[\u{0300}-\u{036F}]/gu, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || "org"
   );

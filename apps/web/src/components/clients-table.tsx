@@ -40,7 +40,6 @@ import {
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { useLocalStorage } from "usehooks-ts";
@@ -60,6 +59,7 @@ import {
   useClientsControllerRemove,
   useClientsControllerUpdate,
 } from "#/generated/api";
+import { getCountryFlag } from "#/lib/country-flag";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClientsSearch } from "#/routes/dashboard/clients";
 
@@ -219,7 +219,7 @@ function CopyText({ children }: { children: string }) {
  * OriginCell — flag + country name
  * -----------------------------------------------------------------------------------------------*/
 function OriginCell({ code }: { code: string }) {
-  const Flag = flags[code.toUpperCase() as keyof typeof flags];
+  const Flag = getCountryFlag(code);
 
   return (
     <span className="inline-flex items-center gap-2">
@@ -577,7 +577,7 @@ export function ClientsTable() {
     ];
 
     return allCols.filter((c) => visibleColumnSet.has(c.id));
-  }, [visibleColumnSet]);
+  }, [visibleColumnSet, openEditForm]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInput(value);

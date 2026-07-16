@@ -1,16 +1,8 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
+import { ShipmentDocumentCategory } from "@/db/schema";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from "./upload-documents.dto";
-
-/** The intake document set — mirrors what arrives with a typical entry. */
-export const documentCategories = [
-  "commercial_invoice",
-  "packing_list",
-  "bill_of_lading",
-  "arrival_notice",
-  "other",
-] as const;
 
 export const ingestDocumentsSchema = z.object({
   files: z
@@ -34,8 +26,8 @@ export const ingestDocumentsSchema = z.object({
           .max(MAX_UPLOAD_BYTES)
           .describe("File size in bytes."),
         category: z
-          .enum(documentCategories)
-          .default("other")
+          .enum(ShipmentDocumentCategory)
+          .default(ShipmentDocumentCategory.Other)
           .describe(
             "Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other.",
           ),

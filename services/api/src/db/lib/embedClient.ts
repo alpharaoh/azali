@@ -18,9 +18,7 @@ export async function embedClients<T extends { clientId: string | null }>(
 ): Promise<Array<T & { client: EmbeddedClient | null }>> {
   const ids = [
     ...new Set(
-      rows
-        .map((row) => row.clientId)
-        .filter((id): id is string => id !== null),
+      rows.map((row) => row.clientId).filter((id): id is string => id !== null),
     ),
   ];
   const found = ids.length

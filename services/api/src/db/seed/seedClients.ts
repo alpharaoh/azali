@@ -395,29 +395,36 @@ function randomBondNumber(seed: number): string {
   return `99${num}`.slice(0, 9);
 }
 
-for (const [i, company] of companies.entries()) {
-  const created = await insertClient({
-    organizationId,
-    userId,
-    name: company.name,
-    image: logo(company.domain),
-    iorNumber: randomIorNumber(i * 13 + 1),
-    bondNumber: randomBondNumber(i * 17 + 5),
-    primaryOrigin: company.origin,
-    industry: company.industry,
-    autonomy:
-      seededRandom(i * 7 + 4) < 0.45
-        ? ClientAutonomy.Autopilot
-        : ClientAutonomy.Supervised,
-    status: company.paused ? ClientStatus.Paused : ClientStatus.Active,
-    portsOfEntry: company.ports,
-    createdAt: randomDate(i * 13 + 7),
-  });
+async function main() {
+  for (const [i, company] of companies.entries()) {
+    const created = await insertClient({
+      organizationId,
+      userId,
+      name: company.name,
+      image: logo(company.domain),
+      iorNumber: randomIorNumber(i * 13 + 1),
+      bondNumber: randomBondNumber(i * 17 + 5),
+      primaryOrigin: company.origin,
+      industry: company.industry,
+      autonomy:
+        seededRandom(i * 7 + 4) < 0.45
+          ? ClientAutonomy.Autopilot
+          : ClientAutonomy.Supervised,
+      status: company.paused ? ClientStatus.Paused : ClientStatus.Active,
+      portsOfEntry: company.ports,
+      createdAt: randomDate(i * 13 + 7),
+    });
 
-  log.info(`seeded: ${created?.name} (${created?.id})`);
+    log.info(`seeded: ${created?.name} (${created?.id})`);
+  }
+
+  log.info(
+    `\nDone — ${companies.length} clients seeded for org ${organizationId}`,
+  );
+  process.exit(0);
 }
 
-log.info(
-  `\nDone — ${companies.length} clients seeded for org ${organizationId}`,
-);
-process.exit(0);
+main().catch((error) => {
+  log.error(error);
+  process.exit(1);
+});

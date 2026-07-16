@@ -439,7 +439,7 @@ export class ClassificationAgentService {
             usages.push(await stream.totalUsage);
           }
 
-          let output = submitted;
+          let output: ClassificationResult | null = submitted;
           let usage = usages.reduce(
             (sum, entry) => ({
               inputTokens: (sum.inputTokens ?? 0) + (entry.inputTokens ?? 0),

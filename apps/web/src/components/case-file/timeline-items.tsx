@@ -152,11 +152,10 @@ export function EventTimelineItem({
  */
 export function ActivitySkeleton() {
   return (
-    <div
+    <output
       aria-busy="true"
       aria-label="Loading the file"
       className="flex flex-col gap-7"
-      role="status"
     >
       <div className="flex gap-3">
         <Skeleton className="size-6 shrink-0 rounded-full" />
@@ -187,6 +186,6 @@ export function ActivitySkeleton() {
           </div>
         </div>
       ))}
-    </div>
+    </output>
   );
 }

@@ -318,19 +318,19 @@ function LoginPage() {
 
         <p className="text-muted mt-auto text-xs">
           By signing in, you agree to our{" "}
-          <a
-            href="#"
+          <button
+            type="button"
             className="hover:text-foreground underline transition-colors"
           >
             Terms
-          </a>{" "}
+          </button>{" "}
           &amp;{" "}
-          <a
-            href="#"
+          <button
+            type="button"
             className="hover:text-foreground underline transition-colors"
           >
             Privacy Policy
-          </a>
+          </button>
           .
         </p>
       </div>

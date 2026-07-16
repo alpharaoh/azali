@@ -44,8 +44,10 @@ export const auth = betterAuth({
           const now = new Date();
           const orgId = crypto.randomUUID();
           const baseSlug =
-            user.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ??
-            "workspace";
+            user.email
+              .split("@")[0]
+              ?.toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-") ?? "workspace";
           const firstName =
             user.name.trim().split(/\s+/)[0] || user.email.split("@")[0];
 

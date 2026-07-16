@@ -17,7 +17,6 @@ import {
 } from "@heroui/react";
 import { RadioButtonGroup } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
-import * as flags from "country-flag-icons/react/3x2";
 import { useMemo, useState } from "react";
 import { Collection } from "react-aria-components";
 import { PORT_GROUPS } from "#/data/ports";
@@ -31,6 +30,7 @@ import {
   useClientsControllerUpdate,
 } from "#/generated/api";
 import { COUNTRY_ITEMS, countryName } from "#/lib/countries";
+import { getCountryFlag } from "#/lib/country-flag";
 
 /* -------------------------------------------------------------------------------------------------
  * Reference data
@@ -274,7 +274,7 @@ function ClientForm({
           <ComboBox.Popover>
             <ListBox>
               {(item: (typeof COUNTRY_ITEMS)[number]) => {
-                const Flag = flags[item.code as keyof typeof flags];
+                const Flag = getCountryFlag(item.code);
 
                 return (
                   <ListBox.Item
@@ -350,7 +350,7 @@ function ClientForm({
             <ComboBox.Popover>
               <ListBox<(typeof portGroups)[number]>>
                 {(group) => {
-                  const Flag = flags[group.id as keyof typeof flags];
+                  const Flag = getCountryFlag(group.id);
 
                   return (
                     <ListBox.Section id={group.id}>
