@@ -1,5 +1,5 @@
-import { ChevronRight } from "@gravity-ui/icons";
-import { Chip, Separator } from "@heroui/react";
+import { ChevronRight, Sparkles } from "@gravity-ui/icons";
+import { Button, Chip, Separator } from "@heroui/react";
 import {
   ChatLoader,
   ItemCard,
@@ -29,6 +29,7 @@ export function LineClassificationsCard({
   corrections = NO_CORRECTIONS,
   lines,
   onOpenLine,
+  onViewTrace,
   title = "Line classifications",
 }: {
   /** Live per-line state while classification is still running. */
@@ -37,6 +38,8 @@ export function LineClassificationsCard({
   corrections?: Record<string, string>;
   lines: ReviewLineItem[];
   onOpenLine?: (line: ReviewLineItem) => void;
+  /** Jump to a line's live agent trace while it is being classified. */
+  onViewTrace?: (lineNumber: number) => void;
   title?: string;
 }) {
   const totals = dutyTotals(lines, corrections);
@@ -133,6 +136,16 @@ export function LineClassificationsCard({
                             <TextShimmer className="text-xs">
                               Classifying…
                             </TextShimmer>
+                            {onViewTrace ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onPress={() => onViewTrace(line.lineNumber)}
+                              >
+                                <Sparkles className="size-3.5" />
+                                View trace
+                              </Button>
+                            ) : null}
                           </span>
                         ) : !line.htsCode &&
                           activityByLine?.[line.lineNumber] === "queued" ? (

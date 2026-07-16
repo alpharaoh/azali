@@ -333,6 +333,10 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
               activityByLine={activityByLine}
               lines={lines}
               onOpenLine={setOpenLine}
+              onViewTrace={(lineNumber) => {
+                setSection("trace");
+                setManualTraceLine(lineNumber);
+              }}
             />
           ) : (
             <Widget>
