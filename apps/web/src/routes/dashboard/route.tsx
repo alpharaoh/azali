@@ -35,6 +35,7 @@ import {
   useUsersControllerGetProfile,
 } from "#/generated/api";
 import { sessionQueryOptions, signOutAndRedirect } from "#/lib/auth";
+import { getInitials } from "#/lib/format";
 import { toggleTheme } from "#/lib/theme";
 
 export const Route = createFileRoute("/dashboard")({
@@ -413,14 +414,4 @@ function DashboardLayout() {
       <Outlet />
     </AppLayout>
   );
-}
-
-function getInitials(name?: string | null) {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
 }

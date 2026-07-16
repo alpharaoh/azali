@@ -365,7 +365,7 @@ export class ClassificationAgentService {
                 ...callOptions,
               });
               toolCallsSeen = await consume(stream);
-              usages.push(await stream.totalUsage);
+              usages.push(await stream.usage);
               break;
             } catch (error) {
               const text =
@@ -436,10 +436,12 @@ export class ClassificationAgentService {
               ...callOptions,
             });
             await consume(stream);
-            usages.push(await stream.totalUsage);
+            usages.push(await stream.usage);
           }
 
-          let output: ClassificationResult | null = submitted;
+          // The cast resets control-flow narrowing: `submitted` is assigned
+          // inside the stream consumer, which tsc's linear analysis misses.
+          let output = submitted as ClassificationResult | null;
           let usage = usages.reduce(
             (sum, entry) => ({
               inputTokens: (sum.inputTokens ?? 0) + (entry.inputTokens ?? 0),
@@ -524,12 +526,11 @@ export class ClassificationAgentService {
             usage = {
               ...usage,
               inputTokens:
-                (usage.inputTokens ?? 0) + (repair.totalUsage.inputTokens ?? 0),
+                (usage.inputTokens ?? 0) + (repair.usage.inputTokens ?? 0),
               outputTokens:
-                (usage.outputTokens ?? 0) +
-                (repair.totalUsage.outputTokens ?? 0),
+                (usage.outputTokens ?? 0) + (repair.usage.outputTokens ?? 0),
               totalTokens:
-                (usage.totalTokens ?? 0) + (repair.totalUsage.totalTokens ?? 0),
+                (usage.totalTokens ?? 0) + (repair.usage.totalTokens ?? 0),
             };
           }
 

@@ -12,10 +12,21 @@ export function capitalize(value: string) {
 }
 
 /** "Meridian Home Brands" → "MH" — avatar fallback initials. */
-export function getInitials(name: string) {
+export function getInitials(name?: string | null) {
+  if (!name) return "?";
   return name
     .split(" ")
     .slice(0, 2)
     .map((part) => part[0])
-    .join("");
+    .join("")
+    .toUpperCase();
+}
+
+/** "Mar 4, 2026" — table-friendly date. */
+export function formatDate(date: Date | string) {
+  return new Date(date).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }

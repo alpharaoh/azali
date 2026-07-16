@@ -60,6 +60,8 @@ import {
   useClientsControllerUpdate,
 } from "#/generated/api";
 import { getCountryFlag } from "#/lib/country-flag";
+import { capitalize, formatDate } from "#/lib/format";
+import { useDebouncedUrlSearch } from "#/lib/use-debounced-url-search";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClientsSearch } from "#/routes/dashboard/clients";
 
@@ -85,7 +87,6 @@ function countryName(code: string) {
 }
 
 const MAX_VISIBLE_PORTS = 3;
-const SEARCH_DEBOUNCE_MS = 300;
 
 const ALL_COLUMNS = [
   "name",
@@ -121,18 +122,6 @@ const COLUMN_LABELS: Array<{ id: string; label: string }> = [
   { id: "createdAt", label: "Client Since" },
   { id: "portsOfEntry", label: "Ports of Entry" },
 ];
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function csvValue(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
@@ -263,7 +252,6 @@ export function ClientsTable() {
   const searchParams = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
 
-  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
@@ -295,21 +283,14 @@ export function ClientsTable() {
     [navigate],
   );
 
-  // Keep the input in sync with the URL (back/forward, shared links).
-  useEffect(() => {
-    setSearchInput(searchParams.q ?? "");
-  }, [searchParams.q]);
-
-  // Debounce typing into the URL.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((searchParams.q ?? "") !== searchInput) {
-        updateSearch({ q: searchInput || undefined });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, searchParams.q, updateSearch]);
+  const commitSearch = useCallback(
+    (q: string | undefined) => updateSearch({ q }),
+    [updateSearch],
+  );
+  const [searchInput, setSearchInput] = useDebouncedUrlSearch(
+    searchParams.q,
+    commitSearch,
+  );
 
   // Any change to the URL-driven query state starts back at page 1 (covers
   // both in-app updates and browser back/forward).
@@ -350,7 +331,7 @@ export function ClientsTable() {
   const clearFilters = useCallback(() => {
     setSearchInput("");
     updateSearch({ q: undefined, status: undefined, autonomy: undefined });
-  }, [updateSearch]);
+  }, [updateSearch, setSearchInput]);
 
   const handleDelete = useCallback(
     async (ids: string[]) => {
@@ -579,9 +560,12 @@ export function ClientsTable() {
     return allCols.filter((c) => visibleColumnSet.has(c.id));
   }, [visibleColumnSet, openEditForm]);
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchInput(value);
-  }, []);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInput(value);
+    },
+    [setSearchInput],
+  );
 
   const selectionCount =
     selectedKeys === "all"

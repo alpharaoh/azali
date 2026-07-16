@@ -11,7 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { DeadlineTone } from "#/components/review/review-detail";
 import {
   deadlineTone,
@@ -38,12 +38,11 @@ import type {
   ReviewItem,
 } from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
+import { useDebouncedUrlSearch } from "#/lib/use-debounced-url-search";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
  * -----------------------------------------------------------------------------------------------*/
-
-const SEARCH_DEBOUNCE_MS = 300;
 
 function decisionLabel(decision: Decision) {
   if (decision.action === "corrected") {
@@ -197,7 +196,6 @@ export function ReviewQueue() {
     useLiveReviewItems(searchParams);
   const { data: statsResponse } = useShipmentsControllerStats();
   const resolveReviewMutation = useShipmentsControllerResolve();
-  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   // Selection lives in the path (/dashboard/review/<shipmentId>) so queue
   // items are deep-linkable from the pipeline board and shareable.
   const selectedId = params.itemId ?? null;
@@ -226,28 +224,19 @@ export function ReviewQueue() {
     Array<{ decision: Decision; item: ReviewItem }>
   >([]);
 
-  // Keep the input in sync with the URL (back/forward, shared links).
-  useEffect(() => {
-    setSearchInput(searchParams.q ?? "");
-  }, [searchParams.q]);
-
-  // Debounce typing into the URL; the server does the searching.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((searchParams.q ?? "") !== searchInput) {
-        navigate({
-          replace: true,
-          search: (prev: ReviewSearch) => ({
-            ...prev,
-            q: searchInput || undefined,
-          }),
-          to: ".",
-        });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, searchParams.q, navigate]);
+  const commitSearch = useCallback(
+    (q: string | undefined) =>
+      navigate({
+        replace: true,
+        search: (prev: ReviewSearch) => ({ ...prev, q }),
+        to: ".",
+      }),
+    [navigate],
+  );
+  const [searchInput, setSearchInput] = useDebouncedUrlSearch(
+    searchParams.q,
+    commitSearch,
+  );
 
   const deadlineFor = (item: ReviewItem) =>
     deadlines.get(item.id) ?? addHours(new Date(), item.deadlineHoursFromNow);

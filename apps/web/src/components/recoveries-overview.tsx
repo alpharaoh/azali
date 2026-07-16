@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { DemoPreviewBanner } from "#/components/demo-preview-banner";
-import { formatCurrency } from "#/lib/format";
+import { formatCurrency, formatDate } from "#/lib/format";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 
 /* -------------------------------------------------------------------------------------------------
@@ -200,10 +200,6 @@ const statusColorMap: Record<ClaimStatus, "success" | "warning" | "accent"> = {
   Identified: "warning",
   Refunded: "success",
 };
-
-function formatDate(date: Date) {
-  return format(date, "MMM d, yyyy");
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Row action — status-dependent next step

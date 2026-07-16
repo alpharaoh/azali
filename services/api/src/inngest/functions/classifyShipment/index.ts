@@ -561,13 +561,16 @@ export const classifyShipment = () => {
       }
 
       if (headline?.result) {
+        // Capture the narrowed result before the step closure — narrowing on
+        // `headline.result` doesn't survive into the callback.
+        const reviewHeadline = { ...headline, result: headline.result };
         await step.run("record-review", () =>
           insertShipmentEvent({
             ...base,
             type: "review_requested",
-            title: `Line ${headline.lineNumber} classification needs broker review`,
+            title: `Line ${reviewHeadline.lineNumber} classification needs broker review`,
             payload: buildReviewPayload(
-              { ...headline, result: headline.result },
+              reviewHeadline,
               outcomes,
               shipment,
               deadlineAt,

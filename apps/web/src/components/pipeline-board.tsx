@@ -41,11 +41,11 @@ import {
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
 import { formatCurrency, getInitials } from "#/lib/format";
+import { useDebouncedUrlSearch } from "#/lib/use-debounced-url-search";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { PipelineSearch } from "#/routes/dashboard/pipeline";
 import { pipelineListParams } from "#/routes/dashboard/pipeline";
 
-const SEARCH_DEBOUNCE_MS = 300;
 /** Slider ceiling in dollars — fixed so the range control is stable. */
 const MAX_SHIPMENT_VALUE = 500_000;
 
@@ -262,7 +262,6 @@ export function PipelineBoard() {
   const navigate = useNavigate();
   const searchParams = routeApi.useSearch();
   const routeNavigate = routeApi.useNavigate();
-  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   const [clientQuery, setClientQuery] = useState("");
   // Slider position while dragging; committed to the URL on release.
   const [pendingRange, setPendingRange] = useState<[number, number] | null>(
@@ -283,21 +282,14 @@ export function PipelineBoard() {
     [routeNavigate],
   );
 
-  // Keep the input in sync with the URL (back/forward, shared links).
-  useEffect(() => {
-    setSearchInput(searchParams.q ?? "");
-  }, [searchParams.q]);
-
-  // Debounce typing into the URL.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((searchParams.q ?? "") !== searchInput) {
-        updateSearch({ q: searchInput || undefined });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, searchParams.q, updateSearch]);
+  const commitSearch = useCallback(
+    (q: string | undefined) => updateSearch({ q }),
+    [updateSearch],
+  );
+  const [searchInput, setSearchInput] = useDebouncedUrlSearch(
+    searchParams.q,
+    commitSearch,
+  );
 
   // Any change to the URL-driven query state starts back at page 1.
   const filterFingerprint = JSON.stringify(searchParams);
