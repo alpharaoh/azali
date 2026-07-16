@@ -11,10 +11,8 @@ import { serve } from "inngest/fastify";
 import { Logger } from "nestjs-pino";
 import { cleanupOpenApiDoc } from "nestjs-zod";
 import { AppModule } from "./app.module";
-import { env } from "./env";
 import { inngest } from "./inngest/client";
 import { getInngestFunctions } from "./inngest/functions";
-import { RedisIoAdapter } from "./realtime/redis-io.adapter";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -40,16 +38,6 @@ async function bootstrap() {
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   app.setGlobalPrefix("v1");
-
-  // Realtime websocket transport. With REDIS_URL, room broadcasts relay
-  // across horizontally-scaled instances; without it, in-memory (dev).
-  const ioAdapter = new RedisIoAdapter(
-    app.getHttpAdapter().getInstance().server,
-  );
-  if (env.REDIS_URL) {
-    await ioAdapter.connectToRedis(env.REDIS_URL);
-  }
-  app.useWebSocketAdapter(ioAdapter);
 
   const logger = app.get(Logger);
   app.useLogger(logger);

@@ -22,7 +22,11 @@ export function ClampedText({
   }, [text]);
 
   const clamp =
-    lines === 3 ? "line-clamp-3" : lines === 4 ? "line-clamp-4" : "line-clamp-5";
+    lines === 3
+      ? "line-clamp-3"
+      : lines === 4
+        ? "line-clamp-4"
+        : "line-clamp-5";
 
   return (
     <div className="max-w-prose">

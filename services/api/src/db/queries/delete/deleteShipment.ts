@@ -2,7 +2,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { embedClient } from "@/db/lib/embedClient";
 import { shipments } from "@/db/schema";
-import { publishShipmentChanged } from "@/realtime/publish";
 
 export const deleteShipment = async (id: string, organizationId: string) => {
   const entry = await db
@@ -17,6 +16,5 @@ export const deleteShipment = async (id: string, organizationId: string) => {
     )
     .returning();
 
-  if (entry[0]) publishShipmentChanged(entry[0]);
   return embedClient(entry[0]);
 };

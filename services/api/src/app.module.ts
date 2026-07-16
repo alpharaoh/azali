@@ -16,7 +16,6 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { env } from "./env";
 import { auth } from "./lib/auth";
-import { RealtimeModule } from "./realtime/realtime.module";
 
 @Module({
   imports: [
@@ -68,7 +67,6 @@ import { RealtimeModule } from "./realtime/realtime.module";
     ShipmentDocumentsModule,
     AgentRunsModule,
     ProductsModule,
-    RealtimeModule,
   ],
   controllers: [AppController, UsersController],
   providers: [

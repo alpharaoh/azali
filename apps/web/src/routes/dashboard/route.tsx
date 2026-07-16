@@ -36,7 +36,6 @@ import {
 } from "#/generated/api";
 import { sessionQueryOptions, signOutAndRedirect } from "#/lib/auth";
 import { toggleTheme } from "#/lib/theme";
-import { useRealtimeDashboard } from "#/lib/use-realtime-cache";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -394,9 +393,6 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
 function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
-  // Live pipeline: shipment changes stream in over the websocket and
-  // refresh whichever list views are mounted (throttled).
-  useRealtimeDashboard();
   const activeItem = ALL_ITEMS.find((item) => pathname.startsWith(item.href));
   // The review queue is a full-height two-pane workspace — give it the
   // navbar's vertical real estate.

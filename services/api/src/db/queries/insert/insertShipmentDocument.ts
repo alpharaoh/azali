@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type InsertShipmentDocument, shipmentDocuments } from "@/db/schema";
-import { publishDocumentChanged } from "@/realtime/publish";
 
 export const insertShipmentDocument = async (
   values: InsertShipmentDocument,
@@ -14,11 +13,7 @@ export const insertShipmentDocument = async (
     .onConflictDoNothing({ target: shipmentDocuments.storageKey })
     .returning();
 
-  const row = entry[0];
-  if (row?.shipmentId) {
-    publishDocumentChanged({ ...row, shipmentId: row.shipmentId });
-  }
-  if (row) return row;
+  if (entry[0]) return entry[0];
 
   const existing = await db
     .select()

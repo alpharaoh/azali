@@ -38,7 +38,6 @@ import type {
   ReviewItem,
 } from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
-import { useShipmentRealtime } from "#/lib/use-realtime-cache";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -287,10 +286,9 @@ export function ReviewQueue() {
     : -1;
 
   // One fetch for the whole case file — split by event type at the edge.
-  // Live updates stream into this query's cache over the websocket.
+  // Review items are settled shipments, so no polling is needed here.
   const live = useCaseFile(displayItem?.id);
   const isFileLoading = Boolean(displayItem) && live.isPending;
-  useShipmentRealtime(displayItem?.id);
 
   const detailItem = displayItem
     ? {

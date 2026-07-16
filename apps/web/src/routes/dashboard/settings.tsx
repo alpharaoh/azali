@@ -16,8 +16,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import type { OrganizationResponseDto } from "#/generated/api";
 import {
-  getOrganizationControllerGetCurrentQueryOptions,
   getOrganizationControllerGetCurrentQueryKey,
+  getOrganizationControllerGetCurrentQueryOptions,
   useOrganizationControllerGetCurrent,
   useOrganizationControllerUpdate,
 } from "#/generated/api";
@@ -153,7 +153,12 @@ function OrganizationForm({
         description="Your company website, shown to clients."
         label="Website"
       >
-        <TextField fullWidth name="website" value={website} onChange={setWebsite}>
+        <TextField
+          fullWidth
+          name="website"
+          value={website}
+          onChange={setWebsite}
+        >
           <Label className="sr-only">Website</Label>
           <Input inputMode="url" placeholder="https://example.com" />
         </TextField>
@@ -196,7 +201,11 @@ function OrganizationForm({
           onChange={(value) => setFilerCode(value.toUpperCase())}
         >
           <Label className="sr-only">CBP Filer Code</Label>
-          <Input className="max-w-32 font-mono uppercase" maxLength={3} placeholder="ABC" />
+          <Input
+            className="max-w-32 font-mono uppercase"
+            maxLength={3}
+            placeholder="ABC"
+          />
           <Description>
             Assigned by CBP when your brokerage license was issued.
           </Description>

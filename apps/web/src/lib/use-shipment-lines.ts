@@ -5,7 +5,7 @@ import {
   useShipmentsControllerLines,
 } from "#/generated/api";
 import type { ReviewLineAlternate, ReviewLineItem } from "#/lib/review-types";
-import { useShipmentRealtime } from "#/lib/use-realtime-cache";
+import { PROCESSING_POLL_MS } from "#/lib/use-case-file";
 
 export type RunStatus = "running" | "completed" | "failed";
 
@@ -14,15 +14,18 @@ export type RunStatus = "running" | "completed" | "failed";
  * queries — the lines endpoint (the row carries the full classification
  * snapshot: code, confidence, duty, alternates, summary, runId) and the
  * runs list (which run works which line, and whether it is still running).
- * The socket room only refreshes those queries, so the picture is identical
- * whether you watched the run live, opened the page mid-run, or refreshed.
+ * While the pipeline runs, both poll on an interval (interval refetches
+ * never cancel in-flight requests) — so the picture is identical whether
+ * you watched the run live, opened the page mid-run, or refreshed.
  */
 export function useShipmentLines(shipmentId: string, isProcessing: boolean) {
-  // Joins the shipment's socket room and wires its stream into the caches
-  // the queries below read from.
-  useShipmentRealtime(shipmentId);
-  const { data: linesResponse } = useShipmentsControllerLines(shipmentId);
-  const { data: runsResponse } = useAgentRunsControllerList(shipmentId);
+  const poll = isProcessing ? PROCESSING_POLL_MS : false;
+  const { data: linesResponse } = useShipmentsControllerLines(shipmentId, {
+    query: { refetchInterval: poll },
+  });
+  const { data: runsResponse } = useAgentRunsControllerList(shipmentId, {
+    query: { refetchInterval: poll },
+  });
 
   const lines: ReviewLineItem[] = useMemo(
     () =>

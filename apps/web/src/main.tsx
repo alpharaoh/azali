@@ -20,9 +20,7 @@ function RouterError() {
       <p className="text-foreground text-sm font-medium">
         Something went wrong while loading Azali.
       </p>
-      <p className="text-muted text-xs">
-        Check your connection and try again.
-      </p>
+      <p className="text-muted text-xs">Check your connection and try again.</p>
       <Button size="sm" onPress={() => window.location.reload()}>
         Reload
       </Button>

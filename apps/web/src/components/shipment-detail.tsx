@@ -35,13 +35,13 @@ import type {
   ReviewLineItem,
 } from "#/lib/review-types";
 import { findLineMemo } from "#/lib/review-types";
-import { useCaseFile } from "#/lib/use-case-file";
+import { PROCESSING_POLL_MS, useCaseFile } from "#/lib/use-case-file";
 import { useShipmentLines } from "#/lib/use-shipment-lines";
 
 /* -------------------------------------------------------------------------------------------------
  * Per-shipment detail page — fully usable WHILE the pipeline is processing:
  * documents appear as they extract, lines as they classify, and the agent
- * trace streams in live over the websocket. Once processing settles it
+ * trace fills in live (polled while the pipeline runs). Once settled it
  * reads as the shipment's standing record.
  * -----------------------------------------------------------------------------------------------*/
 
@@ -154,17 +154,29 @@ function DocumentPreviewCard({
 export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const navigate = useNavigate();
 
-  const { data: shipmentResponse } = useShipmentsControllerFindOne(shipmentId);
-  const { data: documentsResponse } =
-    useShipmentDocumentsControllerList(shipmentId);
-  const caseFile = useCaseFile(shipmentId);
-
+  // The row self-gates its poll: keep polling until it exists AND is no
+  // longer processing (covers landing here seconds after the upload).
+  const { data: shipmentResponse } = useShipmentsControllerFindOne(shipmentId, {
+    query: {
+      refetchInterval: (query) =>
+        !query.state.data || query.state.data.data.processingState !== null
+          ? PROCESSING_POLL_MS
+          : false,
+    },
+  });
   const shipment = shipmentResponse?.data;
-  const documents = documentsResponse?.data.documents;
   const processing = shipment?.processingState ?? null;
+  const poll = processing !== null ? PROCESSING_POLL_MS : false;
+
+  const { data: documentsResponse } = useShipmentDocumentsControllerList(
+    shipmentId,
+    { query: { refetchInterval: poll } },
+  );
+  const caseFile = useCaseFile(shipmentId, poll);
+  const documents = documentsResponse?.data.documents;
 
   // The lines endpoint is the single source of per-line truth; the hook
-  // layers on the live run map from the shipment's socket room.
+  // layers on the run map from the runs list, polled while processing.
   const {
     lines,
     isLoaded: linesLoaded,
@@ -261,7 +273,9 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
               {statusMeta[statusFromApi[shipment.status]].label}
             </Chip.Label>
           </Chip>
-        ) : null}
+        ) : (
+          <Skeleton className="h-7 w-32 rounded-full" />
+        )}
       </div>
 
       {/* Review CTA — classification flagged lines for the broker */}

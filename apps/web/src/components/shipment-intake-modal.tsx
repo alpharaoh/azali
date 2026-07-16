@@ -266,7 +266,7 @@ export function ShipmentIntakeModal({
         onOpenChange(false);
         setStep(0);
         setFilesByCategory(emptyFileMap());
-        // Belt-and-braces list refresh in case the socket event races
+        // Refresh the pipeline list so the new row is there on back-nav.
         // the navigation.
         void queryClient.invalidateQueries({ queryKey: ["/v1/shipments"] });
         // The shipment exists from this moment — take the broker straight

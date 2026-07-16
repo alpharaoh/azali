@@ -35,19 +35,26 @@ export interface CaseFile {
   isPending: boolean;
 }
 
+/** How often live surfaces poll while the pipeline is working a shipment.
+ * Interval refetches never cancel an in-flight request, so this is safe at
+ * any server latency — the next tick simply waits its turn. */
+export const PROCESSING_POLL_MS = 2_000;
+
 /**
  * The shipment's case file: one fetch of its event stream, demultiplexed by
  * event plane into documents, activity, agent traces, structured facts, and
  * broker notes. Shared by the review workspace and the shipment detail
- * page; live updates arrive by appending into this query's cache
- * (see use-realtime-cache.ts) — the memo recomputes automatically.
+ * page; pass `pollMs` while the pipeline is running to keep it live.
  */
-export function useCaseFile(shipmentId: string | undefined): CaseFile {
+export function useCaseFile(
+  shipmentId: string | undefined,
+  pollMs: number | false = false,
+): CaseFile {
   const { data: eventsResponse, isPending } =
     useShipmentEventsControllerFindByShipment(
       shipmentId ?? "",
       { limit: 200 },
-      { query: { enabled: Boolean(shipmentId) } },
+      { query: { enabled: Boolean(shipmentId), refetchInterval: pollMs } },
     );
 
   const file = useMemo(() => {

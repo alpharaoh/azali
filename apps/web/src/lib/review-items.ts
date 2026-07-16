@@ -98,12 +98,16 @@ export function useLiveReviewItems(search: ReviewSearch) {
     isFetching,
     isPending,
   } = useShipmentsControllerFindAll(reviewListParams(search), {
-    query: { placeholderData: keepPreviousData },
+    // Poll so freshly-flagged shipments join the queue without a refresh.
+    query: { placeholderData: keepPreviousData, refetchInterval: 10_000 },
   });
-  const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll({
-    limit: 200,
-    type: ["review_requested"],
-  });
+  const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll(
+    {
+      limit: 200,
+      type: ["review_requested"],
+    },
+    { query: { refetchInterval: 10_000 } },
+  );
 
   const derived = useMemo(() => {
     const shipments = shipmentsResponse?.data.data ?? [];

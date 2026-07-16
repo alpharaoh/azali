@@ -16,7 +16,6 @@ import htsBadge from "#/assets/htsus.svg";
 import { ClampedText } from "#/components/clamped-text";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "#/generated/api";
 import { useAgentRunsControllerFind } from "#/generated/api";
-import { useRealtimeConnected } from "#/lib/realtime";
 
 /* -------------------------------------------------------------------------------------------------
  * The agent trace, rendered directly from the canonical audit record
@@ -386,15 +385,12 @@ function tailLabel(
 }
 
 export function AgentRunTrace({ runId }: { runId: string }) {
-  const connected = useRealtimeConnected();
   const { data, isLoading } = useAgentRunsControllerFind(runId, {
     query: {
-      // Live items normally arrive over the websocket; while it is down,
-      // poll a running run so the trace still advances.
+      // Poll while the run is live (interval refetches never cancel an
+      // in-flight request); a settled run is immutable, so stop entirely.
       refetchInterval: (query) =>
-        query.state.data?.data.run.status === "running" && !connected
-          ? 3000
-          : false,
+        query.state.data?.data.run.status === "running" ? 2000 : false,
     },
   });
 

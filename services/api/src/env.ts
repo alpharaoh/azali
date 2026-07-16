@@ -24,7 +24,6 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   // Optional — realtime broadcasts stay in-process without it; required
   // only when the API is horizontally scaled.
-  REDIS_URL: z.string().optional(),
   // Optional — tracing is simply disabled when the keys are absent.
   LANGFUSE_PUBLIC_KEY: z.string().optional(),
   LANGFUSE_SECRET_KEY: z.string().optional(),

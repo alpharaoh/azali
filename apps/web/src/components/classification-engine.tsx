@@ -45,10 +45,10 @@ import {
   useProductsControllerList,
   useProductsControllerStats,
 } from "#/generated/api";
+import { getInitials } from "#/lib/format";
 import { HTS_CHAPTER_TITLES } from "#/lib/hts-chapters";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClassificationsSearch } from "#/routes/dashboard/classifications";
-import { getInitials } from "#/lib/format";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -64,7 +64,6 @@ const sourceMeta: Record<
 const sourceIds = Object.keys(sourceMeta) as ProductSource[];
 
 const SEARCH_DEBOUNCE_MS = 300;
-
 
 /* -------------------------------------------------------------------------------------------------
  * CopyText — inline copyable HTS code

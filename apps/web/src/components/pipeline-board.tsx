@@ -40,10 +40,10 @@ import {
   useShipmentsControllerStats,
 } from "#/generated/api";
 import { countryName } from "#/lib/countries";
+import { formatCurrency, getInitials } from "#/lib/format";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { PipelineSearch } from "#/routes/dashboard/pipeline";
 import { pipelineListParams } from "#/routes/dashboard/pipeline";
-import { formatCurrency, getInitials } from "#/lib/format";
 
 const SEARCH_DEBOUNCE_MS = 300;
 /** Slider ceiling in dollars — fixed so the range control is stable. */
@@ -211,8 +211,6 @@ function without<T>(set: Set<T>, value: T) {
   return next;
 }
 
-
-
 /* -------------------------------------------------------------------------------------------------
  * Stage tracker — the CI-run segments (shared with the shipment detail page)
  * -----------------------------------------------------------------------------------------------*/
@@ -369,9 +367,13 @@ export function PipelineBoard() {
     isFetching,
     isPending,
   } = useShipmentsControllerFindAll(listParams, {
-    query: { placeholderData: keepPreviousData },
+    // Poll so new uploads and processing-state changes surface without a
+    // manual refresh; keepPreviousData keeps the refetches invisible.
+    query: { placeholderData: keepPreviousData, refetchInterval: 10_000 },
   });
-  const { data: statsResponse } = useShipmentsControllerStats();
+  const { data: statsResponse } = useShipmentsControllerStats({
+    query: { refetchInterval: 10_000 },
+  });
 
   // The client filter needs the full client list; rows don't (the API embeds
   // the client on each shipment). Fetch it only once the filter is used.

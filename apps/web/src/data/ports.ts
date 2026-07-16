@@ -51,7 +51,13 @@ const GROUPS: PortGroup[] = [
   { code: "AR", ports: ["Buenos Aires"] },
   {
     code: "AU",
-    ports: ["Sydney (Botany)", "Melbourne", "Brisbane", "Fremantle", "Adelaide"],
+    ports: [
+      "Sydney (Botany)",
+      "Melbourne",
+      "Brisbane",
+      "Fremantle",
+      "Adelaide",
+    ],
   },
   { code: "AO", ports: ["Luanda"] },
   { code: "BD", ports: ["Chittagong"] },

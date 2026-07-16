@@ -28,8 +28,8 @@ import {
   Pagination,
   SearchField,
   Separator,
-  toast,
   Tooltip,
+  toast,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import {
@@ -39,17 +39,13 @@ import {
   InlineSelect,
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-
-import {
-  TableFetchingState,
-  TableSkeleton,
-} from "#/components/table-loading";
 import { getRouteApi } from "@tanstack/react-router";
 import * as flags from "country-flag-icons/react/3x2";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { useLocalStorage } from "usehooks-ts";
 import { ClientFormDrawer } from "#/components/client-form-drawer";
+import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
 import { clientLogos } from "#/data/client-logos";
 import type {
   ListClientsResponseDtoDataItem as ApiClient,
@@ -774,9 +770,7 @@ export function ClientsTable() {
               selectionMode="multiple"
               onSelectionChange={(keys) => {
                 setStoredColumns(
-                  keys === "all"
-                    ? [...ALL_COLUMNS]
-                    : [...keys].map(String),
+                  keys === "all" ? [...ALL_COLUMNS] : [...keys].map(String),
                 );
               }}
             >
@@ -868,58 +862,59 @@ export function ClientsTable() {
       {isPending ? (
         <TableSkeleton rows={8} />
       ) : (
-      <div className="relative">
-        <TableFetchingState isFetching={isFetching}>
-        <DataGrid
-          allowsColumnResize
-          showSelectionCheckboxes
-          aria-label="Clients"
-          columns={columns}
-          contentClassName="min-w-[1500px]"
-          data={clients}
-          getRowId={(item) => item.id}
-          renderEmptyState={() => <div className="h-[280px]" />}
-          selectedKeys={selectedKeys}
-          selectionMode="multiple"
-          sortDescriptor={sortDescriptor}
-          variant="primary"
-          onSelectionChange={setSelectedKeys}
-          onSortChange={(descriptor) => {
-            updateSearch({
-              sortBy: descriptor.column as ClientSortColumn,
-              sortDir: descriptor.direction === "ascending" ? "asc" : "desc",
-            });
-          }}
-        />
-        </TableFetchingState>
-        {/* Centered over the grid instead of inside its horizontally
+        <div className="relative">
+          <TableFetchingState isFetching={isFetching}>
+            <DataGrid
+              allowsColumnResize
+              showSelectionCheckboxes
+              aria-label="Clients"
+              columns={columns}
+              contentClassName="min-w-[1500px]"
+              data={clients}
+              getRowId={(item) => item.id}
+              renderEmptyState={() => <div className="h-[280px]" />}
+              selectedKeys={selectedKeys}
+              selectionMode="multiple"
+              sortDescriptor={sortDescriptor}
+              variant="primary"
+              onSelectionChange={setSelectedKeys}
+              onSortChange={(descriptor) => {
+                updateSearch({
+                  sortBy: descriptor.column as ClientSortColumn,
+                  sortDir:
+                    descriptor.direction === "ascending" ? "asc" : "desc",
+                });
+              }}
+            />
+          </TableFetchingState>
+          {/* Centered over the grid instead of inside its horizontally
             scrollable content, so it stays put when scrolling */}
-        {clients.length === 0 && !isFetching && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <EmptyState className="pointer-events-auto" size="sm">
-              <EmptyState.Header>
-                <EmptyState.Media className="border" variant="icon">
-                  <Persons />
-                </EmptyState.Media>
-                <EmptyState.Title>No Clients Found</EmptyState.Title>
-                <EmptyState.Description>
-                  No clients match your search or filters. Try adjusting them,
-                  or add a new client.
-                </EmptyState.Description>
-              </EmptyState.Header>
-              <EmptyState.Content className="flex-row gap-2">
-                <Button variant="ghost" onPress={clearFilters}>
-                  Clear Filters
-                </Button>
-                <Button variant="outline" onPress={openCreateForm}>
-                  <Plus />
-                  Add Client
-                </Button>
-              </EmptyState.Content>
-            </EmptyState>
-          </div>
-        )}
-      </div>
+          {clients.length === 0 && !isFetching && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <EmptyState className="pointer-events-auto" size="sm">
+                <EmptyState.Header>
+                  <EmptyState.Media className="border" variant="icon">
+                    <Persons />
+                  </EmptyState.Media>
+                  <EmptyState.Title>No Clients Found</EmptyState.Title>
+                  <EmptyState.Description>
+                    No clients match your search or filters. Try adjusting them,
+                    or add a new client.
+                  </EmptyState.Description>
+                </EmptyState.Header>
+                <EmptyState.Content className="flex-row gap-2">
+                  <Button variant="ghost" onPress={clearFilters}>
+                    Clear Filters
+                  </Button>
+                  <Button variant="outline" onPress={openCreateForm}>
+                    <Plus />
+                    Add Client
+                  </Button>
+                </EmptyState.Content>
+              </EmptyState>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Pagination footer */}
