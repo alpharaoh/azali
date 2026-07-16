@@ -114,3 +114,11 @@ body {
 .dark .sidebar__provider:has(.sidebar--inset) .sidebar__main {
   background-color: var(--app-canvas);
 }
+
+/* Timeline only marks `data-last` on direct Timeline.Item children — our
+ * wrapper components (EventTimelineItem etc.) never receive the injected
+ * prop, so the connector line would run past the final node. Mirror the
+ * library's own rule, keyed off :last-child instead. */
+.timeline__item:last-child .timeline__connector:not([data-force]) {
+  display: none;
+}

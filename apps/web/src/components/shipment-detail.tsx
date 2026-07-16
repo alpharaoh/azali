@@ -3,7 +3,6 @@ import {
   ArrowUpRightFromSquare,
   CircleExclamation,
   FileText,
-  ListUl,
   ShieldExclamation,
   Sparkles,
 } from "@gravity-ui/icons";
@@ -46,7 +45,7 @@ import { useShipmentLines } from "#/lib/use-shipment-lines";
  * reads as the shipment's standing record.
  * -----------------------------------------------------------------------------------------------*/
 
-type Section = "documents" | "trace" | "activity";
+type Section = "documents" | "trace";
 
 /** Adapt an API document row to the shape the shared viewer renders. */
 function toViewerDocument(
@@ -194,10 +193,10 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
     lines[0]?.lineNumber;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      {/* Header — identity left, live state right */}
+    <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4">
+      {/* Header — identity + pipeline progress left, live state far right */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Button
             isIconOnly
             aria-label="Back to pipeline"
@@ -228,6 +227,12 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                   {shipment.client?.name ?? "Resolving importer…"}
                 </span>
               </div>
+              <div className="ml-3 border-l pl-6">
+                <StageTracker
+                  stage={shipment.stage}
+                  status={statusFromApi[shipment.status]}
+                />
+              </div>
             </>
           ) : (
             <div className="flex items-center gap-3">
@@ -239,32 +244,24 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-4">
-          {shipment ? (
-            <StageTracker
-              stage={shipment.stage}
-              status={statusFromApi[shipment.status]}
-            />
-          ) : null}
-          {processing ? (
-            <Chip color="accent" size="md" variant="soft">
-              <Chip.Label className="inline-flex items-center gap-2">
-                <Spinner size="sm" />
-                <TextShimmer className="text-xs">{processing}</TextShimmer>
-              </Chip.Label>
-            </Chip>
-          ) : shipment ? (
-            <Chip
-              color={statusMeta[statusFromApi[shipment.status]].chip}
-              size="md"
-              variant="soft"
-            >
-              <Chip.Label>
-                {statusMeta[statusFromApi[shipment.status]].label}
-              </Chip.Label>
-            </Chip>
-          ) : null}
-        </div>
+        {processing ? (
+          <Chip color="accent" size="md" variant="soft">
+            <Chip.Label className="inline-flex items-center gap-2">
+              <Spinner size="sm" />
+              <TextShimmer className="text-xs">{processing}</TextShimmer>
+            </Chip.Label>
+          </Chip>
+        ) : shipment ? (
+          <Chip
+            color={statusMeta[statusFromApi[shipment.status]].chip}
+            size="md"
+            variant="soft"
+          >
+            <Chip.Label>
+              {statusMeta[statusFromApi[shipment.status]].label}
+            </Chip.Label>
+          </Chip>
+        ) : null}
       </div>
 
       {/* Review CTA — classification flagged lines for the broker */}
@@ -298,140 +295,151 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         <div className="border-danger/40 bg-danger/5 flex items-center gap-2 rounded-xl border p-3">
           <CircleExclamation className="text-danger size-4" />
           <span className="text-foreground text-sm">
-            Processing hit a failure — see the Activity tab for details.
+            Processing hit a failure — see the activity timeline for details.
           </span>
         </div>
       ) : null}
 
-      {/* Line classifications — THE summary, always visible above the tabs */}
-      {!linesLoaded ? (
-        <Widget>
+      {/* Main content left, the shipment's running record on the right */}
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* Line classifications — THE summary, always visible above the tabs */}
+          {!linesLoaded ? (
+            <Widget>
+              <Widget.Header>
+                <Widget.Title>Line classifications</Widget.Title>
+              </Widget.Header>
+              <Widget.Content className="flex flex-col gap-2">
+                <Skeleton className="h-14 rounded-lg" />
+                <Skeleton className="h-14 rounded-lg" />
+              </Widget.Content>
+            </Widget>
+          ) : lines.length > 0 ? (
+            <LineClassificationsCard
+              activityByLine={activityByLine}
+              lines={lines}
+              onOpenLine={setOpenLine}
+            />
+          ) : (
+            <Widget>
+              <Widget.Header>
+                <Widget.Title>Line classifications</Widget.Title>
+              </Widget.Header>
+              <Widget.Content>
+                <span className="text-muted text-sm">
+                  {processing
+                    ? "Entry lines appear once the commercial invoice is read…"
+                    : "No entry lines on file."}
+                </span>
+              </Widget.Content>
+            </Widget>
+          )}
+
+          {/* Everything else lives in tabs — no endless scroll */}
+          <Tabs
+            selectedKey={section}
+            onSelectionChange={(key) => setSection(String(key) as Section)}
+          >
+            <Tabs.ListContainer>
+              <Tabs.List
+                aria-label="Shipment record sections"
+                className="w-fit"
+              >
+                <Tabs.Tab className="w-fit" id="documents">
+                  <FileText className="mr-1.5 size-3.5" />
+                  Documents{documents?.length ? ` (${documents.length})` : ""}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+                <Tabs.Tab className="w-fit" id="trace">
+                  <Sparkles className="mr-1.5 size-3.5" />
+                  Agent trace
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+
+            {/* Documents — preview-image tiles, three across; click opens the
+            full viewer (real PDF + the AI's complete reading) */}
+            <Tabs.Panel className="pt-3" id="documents">
+              {documents === undefined ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Skeleton className="h-44 rounded-lg" />
+                  <Skeleton className="h-44 rounded-lg" />
+                  <Skeleton className="h-44 rounded-lg" />
+                </div>
+              ) : documents.length === 0 ? (
+                <span className="text-muted text-sm">
+                  {processing
+                    ? "Registering uploaded documents…"
+                    : "No documents on file."}
+                </span>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {documents.map((document) => (
+                    <DocumentPreviewCard
+                      key={document.id}
+                      document={document}
+                      onOpen={() =>
+                        setViewerDocument(toViewerDocument(document))
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </Tabs.Panel>
+
+            {/* Agent trace — live while classification runs */}
+            <Tabs.Panel className="flex flex-col gap-3 pt-3" id="trace">
+              {!linesLoaded ? (
+                <Skeleton className="h-24 rounded-lg" />
+              ) : lines.length === 0 ? (
+                <span className="text-muted text-sm">
+                  {processing
+                    ? "The agent starts once the entry lines are extracted…"
+                    : "No classification runs on file."}
+                </span>
+              ) : (
+                <LineTraceTabs
+                  activeLineNumber={activeTraceLine}
+                  isProcessing={processing !== null}
+                  lines={lines}
+                  runIdForLine={runIdForLine}
+                  onSelect={setManualTraceLine}
+                />
+              )}
+            </Tabs.Panel>
+          </Tabs>
+        </div>
+
+        {/* Activity — the shipment's running record, always in view. The
+            sticky offset clears the 4rem sticky navbar plus a breath. */}
+        <Widget className="min-w-0 xl:sticky xl:top-20">
           <Widget.Header>
-            <Widget.Title>Line classifications</Widget.Title>
-          </Widget.Header>
-          <Widget.Content className="flex flex-col gap-2">
-            <Skeleton className="h-14 rounded-lg" />
-            <Skeleton className="h-14 rounded-lg" />
-          </Widget.Content>
-        </Widget>
-      ) : lines.length > 0 ? (
-        <LineClassificationsCard
-          activityByLine={activityByLine}
-          lines={lines}
-          onOpenLine={setOpenLine}
-        />
-      ) : (
-        <Widget>
-          <Widget.Header>
-            <Widget.Title>Line classifications</Widget.Title>
+            <Widget.Title>Activity</Widget.Title>
           </Widget.Header>
           <Widget.Content>
-            <span className="text-muted text-sm">
-              {processing
-                ? "Entry lines appear once the commercial invoice is read…"
-                : "No entry lines on file."}
-            </span>
+            {caseFile.isPending ? (
+              <ActivitySkeleton />
+            ) : caseFile.activityEvents.length === 0 ? (
+              <span className="text-muted text-sm">
+                {processing
+                  ? "The record starts as soon as extraction lands…"
+                  : "No activity recorded yet."}
+              </span>
+            ) : (
+              <Timeline>
+                {[...caseFile.activityEvents].reverse().map((event, index) => (
+                  <EventTimelineItem
+                    // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
+                    key={index}
+                    event={event}
+                  />
+                ))}
+              </Timeline>
+            )}
           </Widget.Content>
         </Widget>
-      )}
-
-      {/* Everything else lives in tabs — no endless scroll */}
-      <Tabs
-        selectedKey={section}
-        onSelectionChange={(key) => setSection(String(key) as Section)}
-      >
-        <Tabs.ListContainer>
-          <Tabs.List aria-label="Shipment record sections" className="w-fit">
-            <Tabs.Tab className="w-fit" id="documents">
-              <FileText className="mr-1.5 size-3.5" />
-              Documents{documents?.length ? ` (${documents.length})` : ""}
-              <Tabs.Indicator />
-            </Tabs.Tab>
-            <Tabs.Tab className="w-fit" id="trace">
-              <Sparkles className="mr-1.5 size-3.5" />
-              Agent trace
-              <Tabs.Indicator />
-            </Tabs.Tab>
-            <Tabs.Tab className="w-fit" id="activity">
-              <ListUl className="mr-1.5 size-3.5" />
-              Activity
-              <Tabs.Indicator />
-            </Tabs.Tab>
-          </Tabs.List>
-        </Tabs.ListContainer>
-
-        {/* Documents — preview-image tiles, three across; click opens the
-            full viewer (real PDF + the AI's complete reading) */}
-        <Tabs.Panel className="pt-3" id="documents">
-          {documents === undefined ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="h-44 rounded-lg" />
-              <Skeleton className="h-44 rounded-lg" />
-              <Skeleton className="h-44 rounded-lg" />
-            </div>
-          ) : documents.length === 0 ? (
-            <span className="text-muted text-sm">
-              {processing
-                ? "Registering uploaded documents…"
-                : "No documents on file."}
-            </span>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {documents.map((document) => (
-                <DocumentPreviewCard
-                  key={document.id}
-                  document={document}
-                  onOpen={() => setViewerDocument(toViewerDocument(document))}
-                />
-              ))}
-            </div>
-          )}
-        </Tabs.Panel>
-
-        {/* Agent trace — live while classification runs */}
-        <Tabs.Panel className="flex flex-col gap-3 pt-3" id="trace">
-          {!linesLoaded ? (
-            <Skeleton className="h-24 rounded-lg" />
-          ) : lines.length === 0 ? (
-            <span className="text-muted text-sm">
-              {processing
-                ? "The agent starts once the entry lines are extracted…"
-                : "No classification runs on file."}
-            </span>
-          ) : (
-            <LineTraceTabs
-              activeLineNumber={activeTraceLine}
-              isProcessing={processing !== null}
-              lines={lines}
-              runIdForLine={runIdForLine}
-              onSelect={setManualTraceLine}
-            />
-          )}
-        </Tabs.Panel>
-
-        {/* Activity — the shipment's timeline */}
-        <Tabs.Panel className="pt-3" id="activity">
-          {caseFile.isPending ? (
-            <ActivitySkeleton />
-          ) : caseFile.activityEvents.length === 0 ? (
-            <span className="text-muted text-sm">
-              {processing
-                ? "The record starts as soon as extraction lands…"
-                : "No activity recorded yet."}
-            </span>
-          ) : (
-            <Timeline>
-              {[...caseFile.activityEvents].reverse().map((event, index) => (
-                <EventTimelineItem
-                  // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
-                  key={index}
-                  event={event}
-                />
-              ))}
-            </Timeline>
-          )}
-        </Tabs.Panel>
-      </Tabs>
+      </div>
 
       {/* Per-line drill-down — read-only here; corrections live in review */}
       <LineDetailDrawer

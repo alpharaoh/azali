@@ -1,11 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { throttle } from "lodash-es";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type {
   agentRunsControllerFindResponse,
   ListShipmentEventsResponseDtoDataItem,
   shipmentEventsControllerFindByShipmentResponse,
-  shipmentsControllerLinesResponse,
 } from "#/generated/api";
 import {
   getAgentRunsControllerFindQueryKey,
@@ -15,8 +14,6 @@ import {
   getShipmentsControllerLinesQueryKey,
 } from "#/generated/api";
 import {
-  subscribedShipmentIds,
-  useRealtimeConnect,
   useRealtimeEvent,
   useRealtimeReconnect,
   useShipmentChannel,
@@ -48,47 +45,34 @@ export function useRealtimeDashboard() {
 
   useRealtimeEvent("shipment.changed", invalidateLists);
 
-  // Heal whatever was missed while the socket was down: list views plus
-  // every per-shipment surface currently subscribed.
+  // Heal the list views after an outage. Per-shipment surfaces heal
+  // themselves — every rejoin's ack triggers the refetch in
+  // useShipmentRealtime below.
   useRealtimeReconnect(() => {
     invalidateLists();
-    for (const shipmentId of subscribedShipmentIds()) {
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentEventsControllerFindByShipmentQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentDocumentsControllerListQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getShipmentsControllerLinesQueryKey(shipmentId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getAgentRunsControllerListQueryKey(shipmentId),
-      });
-    }
     void queryClient.invalidateQueries({ queryKey: ["/v1/runs"] });
   });
 }
 
 type EventsResponse = shipmentEventsControllerFindByShipmentResponse;
 type RunResponse = agentRunsControllerFindResponse;
-type LinesResponse = shipmentsControllerLinesResponse;
 
 /**
  * Per-shipment realtime wiring: joins the shipment's socket room and
  * translates its stream into targeted cache writes — appends where the
  * payload is complete, invalidations where the REST shape is richer.
- * Returns the live run bookkeeping the detail page renders from.
+ * Pure cache plumbing: components render from the queries, never from
+ * socket payloads directly.
  */
 export function useShipmentRealtime(shipmentId: string | undefined) {
   const queryClient = useQueryClient();
-  useShipmentChannel(shipmentId);
 
-  // Close the fetch→join gap: on a hard refresh the page's initial fetches
-  // race the socket handshake, and anything the pipeline emitted in between
-  // never reaches this client. Once the room is actually joined, refetch
-  // this shipment's surfaces so the page reflects the DB at join time.
-  useRealtimeConnect(() => {
+  // Close the fetch→join gap: the page's queries fetch BEFORE room
+  // membership is confirmed (hard refresh, SPA navigation right after an
+  // upload, reconnects) — anything the pipeline emitted in that window
+  // never reached this client. The join ack is the moment the stream is
+  // provably live, so refetch this shipment's surfaces right then.
+  useShipmentChannel(shipmentId, () => {
     if (!shipmentId) return;
     void queryClient.invalidateQueries({
       queryKey: [`/v1/shipments/${shipmentId}`],
@@ -107,20 +91,23 @@ export function useShipmentRealtime(shipmentId: string | undefined) {
     });
   });
 
-  /** lineNumber → runId, learned from run.started as classification moves
-   * through the lines. */
-  const [runsByLine, setRunsByLine] = useState<Record<number, string>>({});
-  /** runId → status, so "thinking" affordances stop the moment a run ends. */
-  const [runStatuses, setRunStatuses] = useState<
-    Record<string, "running" | "completed" | "failed">
-  >({});
-
   const invalidateDocuments = useMemo(
     () =>
       throttle(() => {
         if (!shipmentId) return;
         void queryClient.invalidateQueries({
           queryKey: getShipmentDocumentsControllerListQueryKey(shipmentId),
+        });
+      }, 500),
+    [queryClient, shipmentId],
+  );
+
+  const invalidateLines = useMemo(
+    () =>
+      throttle(() => {
+        if (!shipmentId) return;
+        void queryClient.invalidateQueries({
+          queryKey: getShipmentsControllerLinesQueryKey(shipmentId),
         });
       }, 500),
     [queryClient, shipmentId],
@@ -197,24 +184,24 @@ export function useShipmentRealtime(shipmentId: string | undefined) {
     );
   });
 
-  useRealtimeEvent("run.started", ({ shipmentId: sid, runId, lineNumber }) => {
+  // The runs-list query is the durable source of which run works which
+  // line (see useShipmentLines) — live run events just refresh it.
+  useRealtimeEvent("run.started", ({ shipmentId: sid }) => {
     if (sid !== shipmentId) return;
-    setRunStatuses((current) => ({ ...current, [runId]: "running" }));
-    if (lineNumber !== null) {
-      setRunsByLine((current) => ({ ...current, [lineNumber]: runId }));
-    }
     void queryClient.invalidateQueries({
       queryKey: getAgentRunsControllerListQueryKey(sid),
     });
   });
 
   // The wire stream is clamped (~8KB/item) — refetch the authoritative
-  // record once the run ends.
-  useRealtimeEvent("run.finished", ({ shipmentId: sid, runId, status }) => {
+  // record once the run ends, and refresh the list so statuses settle.
+  useRealtimeEvent("run.finished", ({ shipmentId: sid, runId }) => {
     if (sid !== shipmentId) return;
-    setRunStatuses((current) => ({ ...current, [runId]: status }));
     void queryClient.invalidateQueries({
       queryKey: getAgentRunsControllerFindQueryKey(runId),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: getAgentRunsControllerListQueryKey(sid),
     });
   });
 
@@ -225,34 +212,12 @@ export function useShipmentRealtime(shipmentId: string | undefined) {
     invalidateDocuments();
   });
 
-  // Lines patch in place by id; unknown ids (created after the fetch)
-  // fall back to a refetch.
-  useRealtimeEvent("line.changed", ({ shipmentId: sid, line }) => {
+  // The wire payload is deliberately slim (id/status/code/confidence) while
+  // the row carries much more (duty, alternates, summary, runId) — a
+  // partial patch would silently freeze everything it omits, so refetch the
+  // one small endpoint and stay authoritative. Throttled like documents.
+  useRealtimeEvent("line.changed", ({ shipmentId: sid }) => {
     if (sid !== shipmentId) return;
-    let known = false;
-    queryClient.setQueryData<LinesResponse>(
-      getShipmentsControllerLinesQueryKey(sid),
-      (old) => {
-        if (!old) return old;
-        const lines = old.data.lines.map((entry) => {
-          if (entry.id !== line.id) return entry;
-          known = true;
-          return {
-            ...entry,
-            status: line.status,
-            htsCode: line.htsCode,
-            confidence: line.confidence,
-          };
-        });
-        return known ? { ...old, data: { lines } } : old;
-      },
-    );
-    if (!known) {
-      void queryClient.invalidateQueries({
-        queryKey: [`/v1/shipments/${sid}/lines`],
-      });
-    }
+    invalidateLines();
   });
-
-  return { runsByLine, runStatuses };
 }

@@ -6,10 +6,15 @@ import { selectShipment } from "@/db/queries/select/one/selectShipment";
 import type { SelectAgentRun, SelectAgentRunItem } from "@/db/schema";
 
 function toRunSummary(run: SelectAgentRun) {
+  // Classification runs record their line in the input snapshot — surface
+  // it so the UI can map runs to lines without depending on live events.
+  const lineItem = (run.input as { lineItem?: { lineNumber?: number } })
+    .lineItem;
   return {
     id: run.id,
     agent: run.agent,
     status: run.status,
+    lineNumber: lineItem?.lineNumber ?? null,
     promptName: run.promptName,
     promptVersion: run.promptVersion,
     result: run.result,

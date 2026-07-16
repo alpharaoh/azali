@@ -1543,6 +1543,11 @@ export type ListAgentRunsResponseDtoRunsItem = {
   /** running (in progress), completed, or failed. */
   status: string;
   /**
+   * The shipment line a classification run worked; null for non-line runs.
+   * @nullable
+   */
+  lineNumber: number | null;
+  /**
    * The managed prompt used, when applicable.
    * @nullable
    */
@@ -1604,6 +1609,11 @@ export type AgentRunDetailResponseDtoRun = {
   agent: string;
   /** running (in progress), completed, or failed. */
   status: string;
+  /**
+   * The shipment line a classification run worked; null for non-line runs.
+   * @nullable
+   */
+  lineNumber: number | null;
   /**
    * The managed prompt used, when applicable.
    * @nullable
