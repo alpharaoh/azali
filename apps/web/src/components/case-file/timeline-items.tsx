@@ -21,8 +21,11 @@ export function receivedAgo(hoursAgo: number) {
 }
 
 /**
- * Timeline injects `_index`/`_isLast` into its direct children — forward them
- * so the connector line stops at the last node.
+ * Extra Timeline.Item props forwarded through our wrapper components.
+ * NOTE: Timeline injects `_index`/`_isLast` only into direct children that
+ * are literally `Timeline.Item` — wrappers like these never receive them,
+ * so last-node connector trimming is handled by the `:last-child` rule in
+ * styles.css instead.
  */
 export type TimelineItemPassthrough = Partial<
   ComponentProps<typeof Timeline.Item>

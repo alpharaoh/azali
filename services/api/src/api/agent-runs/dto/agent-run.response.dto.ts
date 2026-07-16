@@ -5,6 +5,12 @@ const agentRunSummarySchema = z.object({
   id: z.string().describe("Run id."),
   agent: z.string().describe("Which AI workflow ran, e.g. classification."),
   status: z.string().describe("running (in progress), completed, or failed."),
+  lineNumber: z
+    .number()
+    .nullable()
+    .describe(
+      "The shipment line a classification run worked; null for non-line runs.",
+    ),
   promptName: z
     .string()
     .nullable()
