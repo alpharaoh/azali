@@ -753,7 +753,7 @@ export function AutopilotLog() {
                 <InlineSelect.Value />
                 <InlineSelect.Indicator />
               </InlineSelect.Trigger>
-              <InlineSelect.Popover className="w-[80px]">
+              <InlineSelect.Popover className="w-20">
                 <ListBox>
                   {ROWS_PER_PAGE_OPTIONS.map((option) => (
                     <ListBox.Item
