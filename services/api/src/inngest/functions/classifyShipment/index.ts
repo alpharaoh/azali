@@ -567,7 +567,7 @@ export const classifyShipment = () => {
             type: "review_requested",
             title: `Line ${headline.lineNumber} classification needs broker review`,
             payload: buildReviewPayload(
-              headline,
+              { ...headline, result: headline.result },
               outcomes,
               shipment,
               deadlineAt,

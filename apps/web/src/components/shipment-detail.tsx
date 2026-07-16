@@ -258,7 +258,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         </div>
         {processing ? (
           <Chip color="accent" size="md" variant="soft">
-            <Chip.Label className="inline-flex items-center gap-2">
+            <Chip.Label className="inline-flex items-center gap-2 h-5.25">
               <Spinner size="sm" />
               <TextShimmer className="text-xs">{processing}</TextShimmer>
             </Chip.Label>
