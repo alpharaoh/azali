@@ -22,13 +22,15 @@ import {
 } from "./prompt";
 import {
   type ClassificationResult,
+  calibrationViolations,
   classificationResultSchema,
 } from "./schema";
 
 const CLASSIFICATION_MODEL = "claude-opus-4-8";
 /** Used when the primary model's endpoint is overloaded. */
 const FALLBACK_MODEL = "claude-sonnet-4-6";
-const MAX_STEPS = 24;
+/** Sized for the Tier-3 research ladder (~35 tool calls, batched). */
+const MAX_STEPS = 40;
 const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
 
 const log = createLogger("classification-agent");
@@ -451,23 +453,28 @@ export class ClassificationAgentService {
             },
           );
 
-          // If the loop ended without a valid submission, give the model one
-          // repair turn — its research is still in context, and the forced
+          // If the loop ended without a valid submission — or with one that
+          // breaks the calibration rubric's hard rules — give the model one
+          // repair turn: its research is still in context, and the forced
           // tool choice guarantees a structured submission this time.
-          if (!output || !isValidHtsCode(output.htsCode)) {
+          const violations = output ? calibrationViolations(output) : [];
+          if (!output || !isValidHtsCode(output.htsCode) || violations.length) {
             log.warn(
               {
                 runId: recorder.runId,
                 htsCode: output?.htsCode ?? null,
+                calibrationViolations: violations,
               },
-              "no valid submission from the loop — running a repair turn",
+              "no rubric-consistent submission from the loop — running a repair turn",
             );
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
               content: {
                 text: output
-                  ? `[repair] the submitted answer had an invalid HTS code ("${output.htsCode}") — requesting a corrected submission`
+                  ? violations.length
+                    ? `[repair] the submission violates the calibration rubric — requesting a corrected submission:\n- ${violations.join("\n- ")}`
+                    : `[repair] the submitted answer had an invalid HTS code ("${output.htsCode}") — requesting a corrected submission`
                   : "[repair] the run ended without a submitted classification — requesting the submission",
               },
             });
@@ -481,8 +488,11 @@ export class ClassificationAgentService {
                 ...messages,
                 {
                   role: "user",
-                  content:
-                    "Call submitClassification now with your complete final answer — real values throughout, based on the research above.",
+                  content: violations.length
+                    ? `Your submission violates the calibration rubric:\n- ${violations.join(
+                        "\n- ",
+                      )}\n\nCall submitClassification again with a corrected, rubric-consistent answer based on the research above. Fix the calibration accounting — do not change the classification itself unless a violation genuinely requires it.`
+                    : "Call submitClassification now with your complete final answer — real values throughout, based on the research above.",
                 },
               ],
               tools: { submitClassification },
@@ -527,6 +537,23 @@ export class ClassificationAgentService {
             throw new Error(
               "Agent did not produce a valid classification even after a repair turn — rejecting the run",
             );
+          }
+
+          // A repair turn that still breaks the rubric is not fatal — the
+          // classification stands, but the miscalibration goes on the audit
+          // record for the broker.
+          const residual = calibrationViolations(output);
+          if (residual.length) {
+            log.warn(
+              { runId: recorder.runId, calibrationViolations: residual },
+              "submission retains calibration violations after the repair turn",
+            );
+            await recorder.recordItem({
+              kind: AgentRunItemKind.Text,
+              content: {
+                text: `[calibration] the final submission still violates the rubric — flagged for broker attention:\n- ${residual.join("\n- ")}`,
+              },
+            });
           }
 
           return { output, usage };

@@ -18,6 +18,8 @@ import { LineItemStatus } from "@/db/schemas/shipmentLineItems";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 import { inngest } from "@/inngest/client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
+import { createLogger } from "@/lib/logger";
+import { confidenceBandForScore } from "@/services/agents/classification/schema";
 import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
 import type { CreateShipmentDto } from "./dto/create-shipment.dto";
 import type { ListShipmentsDto } from "./dto/list-shipments.dto";
@@ -45,6 +47,46 @@ function statusForStage(stage: ShipmentStage): ShipmentStatus {
   if (stage === ShipmentStage.Released) return ShipmentStatus.Released;
   if (stage === ShipmentStage.Filed) return ShipmentStatus.AwaitingCbp;
   return ShipmentStatus.Autopilot;
+}
+
+const calibrationLog = createLogger("classification-calibration");
+
+/**
+ * The calibration eval hook: every broker verification emits one
+ * (confidence, verified outcome) pair, scraped downstream into reliability
+ * diagrams / Brier scores per rubric band. Watch two signals: the
+ * 0.83–0.92 band's hit rate (target >= 85%) and whether 0.50–0.67 holds the
+ * genuinely contested cases rather than lazily-researched routine ones.
+ */
+function recordCalibrationOutcome(
+  line: {
+    id: string;
+    htsCode: string | null;
+    confidence: number | null;
+    classificationRunId: string | null;
+    reusedFromProduct: boolean | null;
+  },
+  shipmentId: string,
+  verifiedHts: string,
+) {
+  // Reused lines carry a confidence minted by an earlier run — logging them
+  // again would double-count that run's calibration.
+  if (line.reusedFromProduct || line.htsCode === null) return;
+  if (line.confidence === null) return;
+  calibrationLog.info(
+    {
+      event: "classification_calibration_outcome",
+      shipmentId,
+      lineItemId: line.id,
+      runId: line.classificationRunId,
+      proposedHts: line.htsCode,
+      verifiedHts,
+      confidence: line.confidence,
+      band: confidenceBandForScore(line.confidence),
+      correct: verifiedHts === line.htsCode,
+    },
+    "classification calibration outcome",
+  );
 }
 
 function toInsertValues<T extends { etaAt?: string | null }>(dto: T) {
@@ -254,6 +296,7 @@ export class ShipmentsService {
       const alternate = substitutions.get(line.id);
 
       if (dto.action === ReviewResolutionAction.Corrected && alternate) {
+        recordCalibrationOutcome(line, shipmentId, alternate);
         await updateShipmentLineItem(line.id, organizationId, {
           htsCode: alternate,
           status: LineItemStatus.Corrected,
@@ -278,6 +321,9 @@ export class ShipmentsService {
         line.status === LineItemStatus.Classified ||
         line.status === LineItemStatus.NeedsReview
       ) {
+        if (line.htsCode) {
+          recordCalibrationOutcome(line, shipmentId, line.htsCode);
+        }
         await updateShipmentLineItem(line.id, organizationId, {
           status: LineItemStatus.Approved,
         });

@@ -369,18 +369,16 @@ export const classifyShipment = () => {
               ? LineItemStatus.NeedsReview
               : LineItemStatus.Classified,
           });
+          // The product snapshot updates now, but the verdict is NOT yet
+          // indexed as knowledge-base precedent — that happens only when
+          // the shipment clears review (autopilot below, or broker
+          // approval in resolveReview).
           if (line.productId) {
-            const product = await updateProduct(
-              line.productId,
-              organizationId,
-              {
-                ...snapshot,
-                classifiedAt: new Date(),
-                source: "agent",
-              },
-            );
-            // The verdict becomes searchable precedent for future runs.
-            await indexProductClassification(product);
+            await updateProduct(line.productId, organizationId, {
+              ...snapshot,
+              classifiedAt: new Date(),
+              source: "agent",
+            });
           }
         });
 
@@ -537,6 +535,30 @@ export const classifyShipment = () => {
           },
         });
       });
+
+      // Fresh verdicts become searchable knowledge-base precedent ONLY once
+      // the shipment moves on without human review — autopilot's approval.
+      // Flagged shipments index nothing here; broker approval or correction
+      // (resolveReview) is what publishes their lines to the knowledge base.
+      if (!needsReview) {
+        await step.run("index-approved-classifications", async () => {
+          const productIds = new Set(
+            outcomes
+              .filter((outcome) => !outcome.reused)
+              .map(
+                (outcome) =>
+                  lines.find((line) => line.id === outcome.lineItemId)
+                    ?.productId,
+              )
+              .filter((id): id is string => id !== null && id !== undefined),
+          );
+          for (const productId of productIds) {
+            const product = await selectProduct(productId, organizationId);
+            await indexProductClassification(product);
+          }
+          return { indexed: productIds.size };
+        });
+      }
 
       if (headline?.result) {
         await step.run("record-review", () =>

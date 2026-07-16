@@ -62,10 +62,7 @@ export function buildLineAlternates(
   result: ClassificationResult,
   valueCents: number | null,
 ) {
-  const chosenAmountUsd = lineDutyUsd(
-    valueCents,
-    result.dutyRate.effectivePct,
-  );
+  const chosenAmountUsd = lineDutyUsd(valueCents, result.dutyRate.effectivePct);
   return result.alternates.map((alternate) => {
     const amountUsd = lineDutyUsd(valueCents, alternate.effectiveDutyPct);
     return {
@@ -131,6 +128,14 @@ export function buildReviewPayload(
         ? `Review ${flaggedCount} flagged classification${flaggedCount === 1 ? "" : "s"} across ${lines.length} line items`
         : `Which HTS code applies to ${headline.description.slice(0, 90)}?`,
     confidence: result.confidence,
+    confidenceBand: result.confidenceBand,
+    researchTier: result.researchTier,
+    // The named risks behind the score — the broker sees exactly what keeps
+    // this below auto-approval, each with its flip consequence.
+    residualRisks: result.residualRisks,
+    // Present on genuinely contested calls: the conservative filing +
+    // binding-ruling + recovery play the agent recommends.
+    ...(result.recommendation ? { recommendation: result.recommendation } : {}),
     deadlineAt,
     // The uncertain line this review resolves.
     lineItemId: headline.lineItemId,
