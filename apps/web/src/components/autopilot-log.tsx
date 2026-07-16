@@ -37,7 +37,7 @@ import {
   subDays,
 } from "date-fns";
 import type { ComponentType, SVGProps } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
 import {
@@ -282,169 +282,152 @@ export function AutopilotLog() {
     { limit: 100 },
     { query: { placeholderData: keepPreviousData } },
   );
-  const shipmentById = useMemo(() => {
-    const map = new Map<string, { clientName?: string; reference: string }>();
+  const shipmentById = new Map<
+    string,
+    { clientName?: string; reference: string }
+  >();
 
-    for (const shipment of shipmentsResponse?.data.data ?? []) {
-      map.set(shipment.id, {
-        clientName: shipment.client?.name,
-        reference: shipment.reference,
-      });
-    }
-
-    return map;
-  }, [shipmentsResponse]);
-
-  const actions = useMemo<Row[]>(() => {
-    return (eventsResponse?.data.data ?? []).map((event) => {
-      const shipment = shipmentById.get(event.shipmentId);
-      const confidence = (event.payload as { confidence?: number }).confidence;
-
-      return {
-        id: event.id,
-        type: bucketForEvent(event.type, event.payload),
-        title: event.title,
-        client: shipment?.clientName ?? "Unknown client",
-        reference: shipment?.reference ?? "—",
-        confidence,
-        occurredAt: new Date(event.occurredAt),
-      };
+  for (const shipment of shipmentsResponse?.data.data ?? []) {
+    shipmentById.set(shipment.id, {
+      clientName: shipment.client?.name,
+      reference: shipment.reference,
     });
-  }, [eventsResponse, shipmentById]);
+  }
 
-  const overviewStats = useMemo(() => {
-    const now = Date.now();
-    const today = actions.filter(
-      (action) => now - action.occurredAt.getTime() < 24 * 3_600_000,
-    ).length;
-    const filed = actions.filter((action) => action.type === "filing").length;
-    const withConfidence = actions.filter(
-      (action) => action.confidence !== undefined,
-    );
-    const avgConfidence = withConfidence.length
-      ? withConfidence.reduce(
-          (sum, action) => sum + (action.confidence ?? 0),
-          0,
-        ) / withConfidence.length
-      : 0;
+  const actions: Row[] = (eventsResponse?.data.data ?? []).map((event) => {
+    const shipment = shipmentById.get(event.shipmentId);
+    const confidence = (event.payload as { confidence?: number }).confidence;
 
-    const shipments = shipmentsResponse?.data.data ?? [];
-    const autoRate = shipments.length
-      ? 1 -
-        shipments.filter((shipment) => shipment.status === "needs_review")
-          .length /
-          shipments.length
-      : 0;
+    return {
+      id: event.id,
+      type: bucketForEvent(event.type, event.payload),
+      title: event.title,
+      client: shipment?.clientName ?? "Unknown client",
+      reference: shipment?.reference ?? "—",
+      confidence,
+      occurredAt: new Date(event.occurredAt),
+    };
+  });
 
-    return [
-      { title: "Actions (24h)", value: String(today) },
-      {
-        info: "Share of shipments moving without a human touch. The rest are in the Review Queue.",
-        title: "Auto-Handled Rate",
-        value: `${(autoRate * 100).toFixed(1)}%`,
-      },
-      { title: "Filing Actions", value: String(filed) },
-      {
-        info: "Average model confidence across autonomous actions that report one.",
-        title: "Avg Confidence",
-        value: `${(avgConfidence * 100).toFixed(1)}%`,
-      },
-    ];
-  }, [actions, shipmentsResponse]);
+  const now = Date.now();
+  const today = actions.filter(
+    (action) => now - action.occurredAt.getTime() < 24 * 3_600_000,
+  ).length;
+  const filed = actions.filter((action) => action.type === "filing").length;
+  const withConfidence = actions.filter(
+    (action) => action.confidence !== undefined,
+  );
+  const avgConfidence = withConfidence.length
+    ? withConfidence.reduce(
+        (sum, action) => sum + (action.confidence ?? 0),
+        0,
+      ) / withConfidence.length
+    : 0;
 
-  const dailyActions = useMemo(() => {
-    const days = Array.from({ length: 7 }, (_, index) => {
-      const date = subDays(new Date(), 6 - index);
+  const shipments = shipmentsResponse?.data.data ?? [];
+  const autoRate = shipments.length
+    ? 1 -
+      shipments.filter((shipment) => shipment.status === "needs_review")
+        .length /
+        shipments.length
+    : 0;
 
-      return {
-        classification: 0,
-        day: format(date, "EEE"),
-        extraction: 0,
-        filing: 0,
-        offset: 6 - index,
-        reconciliation: 0,
-      };
-    });
+  const overviewStats = [
+    { title: "Actions (24h)", value: String(today) },
+    {
+      info: "Share of shipments moving without a human touch. The rest are in the Review Queue.",
+      title: "Auto-Handled Rate",
+      value: `${(autoRate * 100).toFixed(1)}%`,
+    },
+    { title: "Filing Actions", value: String(filed) },
+    {
+      info: "Average model confidence across autonomous actions that report one.",
+      title: "Avg Confidence",
+      value: `${(avgConfidence * 100).toFixed(1)}%`,
+    },
+  ];
 
-    for (const action of actions) {
-      const offset = differenceInCalendarDays(new Date(), action.occurredAt);
-      const bucket = days.find((day) => day.offset === offset);
-      if (bucket) bucket[action.type] += 1;
-    }
+  const dailyActions = Array.from({ length: 7 }, (_, index) => {
+    const date = subDays(new Date(), 6 - index);
 
-    return days;
-  }, [actions]);
+    return {
+      classification: 0,
+      day: format(date, "EEE"),
+      extraction: 0,
+      filing: 0,
+      offset: 6 - index,
+      reconciliation: 0,
+    };
+  });
 
-  const weeklyByType = useMemo(
-    () =>
-      typeIds.map((type) => ({
-        color: typeMeta[type].color,
-        name: typeMeta[type].label,
-        value: actions.filter((action) => action.type === type).length,
-      })),
-    [actions],
+  for (const action of actions) {
+    const offset = differenceInCalendarDays(new Date(), action.occurredAt);
+    const bucket = dailyActions.find((day) => day.offset === offset);
+    if (bucket) bucket[action.type] += 1;
+  }
+
+  const weeklyByType = typeIds.map((type) => ({
+    color: typeMeta[type].color,
+    name: typeMeta[type].label,
+    value: actions.filter((action) => action.type === type).length,
+  }));
+
+  const query = search.trim().toLowerCase();
+  const filteredActions = actions.filter(
+    (action) =>
+      (typeFilter.size === 0 || typeFilter.has(action.type)) &&
+      (query.length === 0 ||
+        action.title.toLowerCase().includes(query) ||
+        action.client.toLowerCase().includes(query) ||
+        action.reference.toLowerCase().includes(query)),
   );
 
-  const visibleActions = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const result = actions.filter(
-      (action) =>
-        (typeFilter.size === 0 || typeFilter.has(action.type)) &&
-        (query.length === 0 ||
-          action.title.toLowerCase().includes(query) ||
-          action.client.toLowerCase().includes(query) ||
-          action.reference.toLowerCase().includes(query)),
-    );
+  const visibleActions = [...filteredActions].sort((a, b) => {
+    const col = sortDescriptor.column as string;
+    let cmp: number;
 
-    return [...result].sort((a, b) => {
-      const col = sortDescriptor.column as string;
-      let cmp: number;
+    if (col === "when") {
+      cmp = b.occurredAt.getTime() - a.occurredAt.getTime();
+    } else if (col === "confidence") {
+      cmp = (a.confidence ?? 0) - (b.confidence ?? 0);
+    } else if (col === "type") {
+      cmp = a.type.localeCompare(b.type);
+    } else {
+      cmp = a.client.localeCompare(b.client);
+    }
 
-      if (col === "when") {
-        cmp = b.occurredAt.getTime() - a.occurredAt.getTime();
-      } else if (col === "confidence") {
-        cmp = (a.confidence ?? 0) - (b.confidence ?? 0);
-      } else if (col === "type") {
-        cmp = a.type.localeCompare(b.type);
-      } else {
-        cmp = a.client.localeCompare(b.client);
-      }
+    if (sortDescriptor.direction === "descending") cmp *= -1;
 
-      if (sortDescriptor.direction === "descending") cmp *= -1;
-
-      return cmp;
-    });
-  }, [actions, search, typeFilter, sortDescriptor]);
+    return cmp;
+  });
 
   const totalPages = Math.ceil(visibleActions.length / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
-  const paginatedActions = useMemo(() => {
-    const start = (safePage - 1) * rowsPerPage;
+  const pageStart = (safePage - 1) * rowsPerPage;
+  const paginatedActions = visibleActions.slice(
+    pageStart,
+    pageStart + rowsPerPage,
+  );
 
-    return visibleActions.slice(start, start + rowsPerPage);
-  }, [visibleActions, safePage, rowsPerPage]);
+  const paginationPages: Array<{ key: string; value: number | "ellipsis" }> =
+    [];
 
-  const paginationPages = useMemo(() => {
-    const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+  } else {
+    paginationPages.push({ key: "p-1", value: 1 });
+    if (safePage > 3)
+      paginationPages.push({ key: "e-start", value: "ellipsis" });
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++)
-        pages.push({ key: `p-${i}`, value: i });
-    } else {
-      pages.push({ key: "p-1", value: 1 });
-      if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
-      const start = Math.max(2, safePage - 1);
-      const end = Math.min(totalPages - 1, safePage + 1);
-
-      for (let i = start; i <= end; i++)
-        pages.push({ key: `p-${i}`, value: i });
-      if (safePage < totalPages - 2)
-        pages.push({ key: "e-end", value: "ellipsis" });
-      pages.push({ key: `p-${totalPages}`, value: totalPages });
-    }
-
-    return pages;
-  }, [totalPages, safePage]);
+    for (let i = start; i <= end; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+    if (safePage < totalPages - 2)
+      paginationPages.push({ key: "e-end", value: "ellipsis" });
+    paginationPages.push({ key: `p-${totalPages}`, value: totalPages });
+  }
 
   const rangeStart = (safePage - 1) * rowsPerPage + 1;
   const rangeEnd = Math.min(safePage * rowsPerPage, visibleActions.length);

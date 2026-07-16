@@ -27,7 +27,7 @@ import { DataGrid, InlineSelect, TextShimmer, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { ShipmentIntakeModal } from "#/components/shipment-intake-modal";
@@ -272,20 +272,14 @@ export function PipelineBoard() {
 
   const [isIntakeOpen, setIntakeOpen] = useState(false);
 
-  const updateSearch = useCallback(
-    (patch: Partial<PipelineSearch>) => {
-      routeNavigate({
-        replace: true,
-        search: (prev) => ({ ...prev, ...patch }),
-      });
-    },
-    [routeNavigate],
-  );
+  const updateSearch = (patch: Partial<PipelineSearch>) => {
+    routeNavigate({
+      replace: true,
+      search: (prev) => ({ ...prev, ...patch }),
+    });
+  };
 
-  const commitSearch = useCallback(
-    (q: string | undefined) => updateSearch({ q }),
-    [updateSearch],
-  );
+  const commitSearch = (q: string | undefined) => updateSearch({ q });
   const [searchInput, setSearchInput] = useDebouncedUrlSearch(
     searchParams.q,
     commitSearch,
@@ -299,14 +293,8 @@ export function PipelineBoard() {
     setPage(1);
   }, [filterFingerprint]);
 
-  const clientFilter = useMemo(
-    () => new Set<string>(searchParams.client ?? []),
-    [searchParams.client],
-  );
-  const statusFilter = useMemo(
-    () => new Set<string>(searchParams.status ?? []),
-    [searchParams.status],
-  );
+  const clientFilter = new Set<string>(searchParams.client ?? []);
+  const statusFilter = new Set<string>(searchParams.status ?? []);
   const effectiveRange: [number, number] = pendingRange ?? [
     searchParams.valueMin ?? 0,
     searchParams.valueMax ?? MAX_SHIPMENT_VALUE,
@@ -377,64 +365,53 @@ export function PipelineBoard() {
     { query: { enabled: isClientMenuOpen || clientFilter.size > 0 } },
   );
 
-  const rows = useMemo<Row[]>(() => {
-    const shipments = shipmentsResponse?.data.data ?? [];
+  const shipments = shipmentsResponse?.data.data ?? [];
 
-    return shipments.map((shipment) => {
-      const clientName = shipment.client?.name ?? "Unknown client";
-      const status = statusFromApi[shipment.status];
-      const arrivesInHours = shipment.etaAt
-        ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
-        : 0;
-      const value = shipment.valueCents / 100;
+  const rows: Row[] = shipments.map((shipment) => {
+    const clientName = shipment.client?.name ?? "Unknown client";
+    const status = statusFromApi[shipment.status];
+    const arrivesInHours = shipment.etaAt
+      ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
+      : 0;
+    const value = shipment.valueCents / 100;
 
-      return {
-        id: shipment.id,
-        reference: shipment.reference,
-        client: clientName,
-        logo: shipment.client?.image ?? clientLogos[clientName],
-        origin: shipment.originPort ?? countryName(shipment.originCountry),
-        port: shipment.portOfEntry,
-        isAir: shipment.transportMode === "air",
-        conveyance: shipment.conveyance,
-        stage: shipment.stage,
-        status,
-        arrivesInHours,
-        value,
-        duty: shipment.dutyCents / 100,
-        priority: priorityFor(shipment.stage, status, arrivesInHours, value),
-        processingState: shipment.processingState,
-      };
-    });
-  }, [shipmentsResponse]);
+    return {
+      id: shipment.id,
+      reference: shipment.reference,
+      client: clientName,
+      logo: shipment.client?.image ?? clientLogos[clientName],
+      origin: shipment.originPort ?? countryName(shipment.originCountry),
+      port: shipment.portOfEntry,
+      isAir: shipment.transportMode === "air",
+      conveyance: shipment.conveyance,
+      stage: shipment.stage,
+      status,
+      arrivesInHours,
+      value,
+      duty: shipment.dutyCents / 100,
+      priority: priorityFor(shipment.stage, status, arrivesInHours, value),
+      processingState: shipment.processingState,
+    };
+  });
 
   const totalCount = shipmentsResponse?.data.count ?? 0;
 
-  const allClients = useMemo(
-    () =>
-      (clientsResponse?.data.data ?? []).map((client) => ({
-        id: client.id,
-        name: client.name,
-        logo: client.image ?? clientLogos[client.name],
-      })),
-    [clientsResponse],
-  );
+  const allClients = (clientsResponse?.data.data ?? []).map((client) => ({
+    id: client.id,
+    name: client.name,
+    logo: client.image ?? clientLogos[client.name],
+  }));
 
-  const stats = useMemo(() => {
-    const byStatus = statsResponse?.data.byStatus;
-
-    if (!byStatus) {
-      return { active: 0, autopilot: 0, blocked: 0, released: 0 };
-    }
-
-    return {
-      active:
-        byStatus.autopilot + byStatus.needs_review + byStatus.awaiting_cbp,
-      autopilot: byStatus.autopilot + byStatus.awaiting_cbp,
-      blocked: byStatus.needs_review,
-      released: byStatus.released,
-    };
-  }, [statsResponse]);
+  const byStatus = statsResponse?.data.byStatus;
+  const stats = byStatus
+    ? {
+        active:
+          byStatus.autopilot + byStatus.needs_review + byStatus.awaiting_cbp,
+        autopilot: byStatus.autopilot + byStatus.awaiting_cbp,
+        blocked: byStatus.needs_review,
+        released: byStatus.released,
+      }
+    : { active: 0, autopilot: 0, blocked: 0, released: 0 };
 
   const statusActive = statusFilter.size > 0;
 
@@ -442,27 +419,24 @@ export function PipelineBoard() {
   const safePage = Math.min(page, totalPages);
   const paginatedRows = rows;
 
-  const paginationPages = useMemo(() => {
-    const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+  const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++)
-        pages.push({ key: `p-${i}`, value: i });
-    } else {
-      pages.push({ key: "p-1", value: 1 });
-      if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
-      const start = Math.max(2, safePage - 1);
-      const end = Math.min(totalPages - 1, safePage + 1);
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++)
+      pages.push({ key: `p-${i}`, value: i });
+  } else {
+    pages.push({ key: "p-1", value: 1 });
+    if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
 
-      for (let i = start; i <= end; i++)
-        pages.push({ key: `p-${i}`, value: i });
-      if (safePage < totalPages - 2)
-        pages.push({ key: "e-end", value: "ellipsis" });
-      pages.push({ key: `p-${totalPages}`, value: totalPages });
-    }
+    for (let i = start; i <= end; i++) pages.push({ key: `p-${i}`, value: i });
+    if (safePage < totalPages - 2)
+      pages.push({ key: "e-end", value: "ellipsis" });
+    pages.push({ key: `p-${totalPages}`, value: totalPages });
+  }
 
-    return pages;
-  }, [totalPages, safePage]);
+  const paginationPages = pages;
 
   const rangeStart = (safePage - 1) * rowsPerPage + 1;
   const rangeEnd = Math.min(safePage * rowsPerPage, totalCount);
@@ -492,196 +466,193 @@ export function PipelineBoard() {
       )
     : allClients;
 
-  const columns = useMemo<DataGridColumn<Row>[]>(
-    () => [
-      {
-        accessorKey: "client",
-        allowsSorting: true,
-        cell: (row) => (
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar size="sm">
-              <Avatar.Image src={row.logo} />
-              <Avatar.Fallback>{getInitials(row.client)}</Avatar.Fallback>
-            </Avatar>
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate whitespace-nowrap text-sm font-medium">
-                {row.client}
-              </span>
-              <span className="text-muted text-xs tabular-nums">
-                {row.reference}
-              </span>
-            </div>
+  const columns: DataGridColumn<Row>[] = [
+    {
+      accessorKey: "client",
+      allowsSorting: true,
+      cell: (row) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar size="sm">
+            <Avatar.Image src={row.logo} />
+            <Avatar.Fallback>{getInitials(row.client)}</Avatar.Fallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate whitespace-nowrap text-sm font-medium">
+              {row.client}
+            </span>
+            <span className="text-muted text-xs tabular-nums">
+              {row.reference}
+            </span>
           </div>
-        ),
-        header: "Shipment",
-        id: "client",
-        isRowHeader: true,
-        minWidth: 260,
-        pinned: "start",
-      },
-      {
-        cell: (row) => {
-          const ModeIcon = row.isAir ? Plane : ShipIcon;
-          const description = row.conveyance;
-          return (
-            <div className="flex items-start gap-2">
-              <ModeIcon className="text-muted mt-0.5 size-4 shrink-0" />
-              <div className="flex flex-col">
-                <span className="flex items-center gap-1 whitespace-nowrap text-sm">
-                  {row.origin}
-                  <ArrowRight className="text-muted size-3" />
-                  {row.port}
+        </div>
+      ),
+      header: "Shipment",
+      id: "client",
+      isRowHeader: true,
+      minWidth: 260,
+      pinned: "start",
+    },
+    {
+      cell: (row) => {
+        const ModeIcon = row.isAir ? Plane : ShipIcon;
+        const description = row.conveyance;
+        return (
+          <div className="flex items-start gap-2">
+            <ModeIcon className="text-muted mt-0.5 size-4 shrink-0" />
+            <div className="flex flex-col">
+              <span className="flex items-center gap-1 whitespace-nowrap text-sm">
+                {row.origin}
+                <ArrowRight className="text-muted size-3" />
+                {row.port}
+              </span>
+              {description && (
+                <span className="text-muted truncate text-xs">
+                  {description}
                 </span>
-                {description && (
-                  <span className="text-muted truncate text-xs">
-                    {description}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        },
-        header: "Route",
-        id: "route",
-        minWidth: 220,
-      },
-      {
-        allowsSorting: true,
-        cell: (row) => <StageTracker stage={row.stage} status={row.status} />,
-        header: "Stage",
-        id: "stage",
-        minWidth: 190,
-      },
-      {
-        allowsSorting: true,
-        cell: (row) =>
-          row.processingState ? (
-            <Chip color="accent" size="sm" variant="soft">
-              <Chip.Label className="inline-flex items-center gap-1.5 h-5.25">
-                <Spinner size="sm" className="size-3" />
-                <TextShimmer className="text-xs">
-                  {row.processingState}
-                </TextShimmer>
-              </Chip.Label>
-            </Chip>
-          ) : (
-            <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
-              <CircleFill width={6} />
-              <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
-            </Chip>
-          ),
-        header: "Status",
-        id: "status",
-        minWidth: 130,
-      },
-      {
-        accessorKey: "priority",
-        allowsSorting: true,
-        cell: (row) =>
-          row.priority === null ? (
-            <span className="text-muted text-sm">—</span>
-          ) : (
-            <Chip
-              color={priorityMeta[row.priority].chip}
-              size="sm"
-              variant="soft"
-            >
-              <Chip.Label className="font-semibold tabular-nums">
-                {priorityMeta[row.priority].label}
-              </Chip.Label>
-            </Chip>
-          ),
-        header: "Priority",
-        headerClassName: "whitespace-nowrap",
-        id: "priority",
-        minWidth: 110,
-      },
-      {
-        allowsSorting: true,
-        cell: (row) => {
-          const urgent =
-            row.arrivesInHours >= 0 &&
-            row.arrivesInHours <= 12 &&
-            row.status !== "released";
-
-          return (
-            <span
-              className={`whitespace-nowrap text-sm ${
-                urgent
-                  ? "text-danger font-medium"
-                  : row.arrivesInHours < 0
-                    ? "text-muted"
-                    : ""
-              }`}
-            >
-              {formatDistanceToNowStrict(
-                addHours(new Date(), row.arrivesInHours),
-                { addSuffix: true },
               )}
-            </span>
-          );
-        },
-        header: "Arrives",
-        id: "arrives",
-        minWidth: 120,
-      },
-      {
-        align: "end",
-        allowsSorting: true,
-        cell: (row) => (
-          <div className="flex flex-col items-end">
-            <span className="font-medium tabular-nums">
-              {formatCurrency(row.value)}
-            </span>
-            <span className="text-muted whitespace-nowrap text-xs tabular-nums">
-              duty {formatCurrency(row.duty)}
-            </span>
+            </div>
           </div>
+        );
+      },
+      header: "Route",
+      id: "route",
+      minWidth: 220,
+    },
+    {
+      allowsSorting: true,
+      cell: (row) => <StageTracker stage={row.stage} status={row.status} />,
+      header: "Stage",
+      id: "stage",
+      minWidth: 190,
+    },
+    {
+      allowsSorting: true,
+      cell: (row) =>
+        row.processingState ? (
+          <Chip color="accent" size="sm" variant="soft">
+            <Chip.Label className="inline-flex items-center gap-1.5 h-5.25">
+              <Spinner size="sm" className="size-3" />
+              <TextShimmer className="text-xs">
+                {row.processingState}
+              </TextShimmer>
+            </Chip.Label>
+          </Chip>
+        ) : (
+          <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
+            <CircleFill width={6} />
+            <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
+          </Chip>
         ),
-        header: "Value",
-        id: "value",
-        minWidth: 150,
+      header: "Status",
+      id: "status",
+      minWidth: 130,
+    },
+    {
+      accessorKey: "priority",
+      allowsSorting: true,
+      cell: (row) =>
+        row.priority === null ? (
+          <span className="text-muted text-sm">—</span>
+        ) : (
+          <Chip
+            color={priorityMeta[row.priority].chip}
+            size="sm"
+            variant="soft"
+          >
+            <Chip.Label className="font-semibold tabular-nums">
+              {priorityMeta[row.priority].label}
+            </Chip.Label>
+          </Chip>
+        ),
+      header: "Priority",
+      headerClassName: "whitespace-nowrap",
+      id: "priority",
+      minWidth: 110,
+    },
+    {
+      allowsSorting: true,
+      cell: (row) => {
+        const urgent =
+          row.arrivesInHours >= 0 &&
+          row.arrivesInHours <= 12 &&
+          row.status !== "released";
+
+        return (
+          <span
+            className={`whitespace-nowrap text-sm ${
+              urgent
+                ? "text-danger font-medium"
+                : row.arrivesInHours < 0
+                  ? "text-muted"
+                  : ""
+            }`}
+          >
+            {formatDistanceToNowStrict(
+              addHours(new Date(), row.arrivesInHours),
+              { addSuffix: true },
+            )}
+          </span>
+        );
       },
-      {
-        align: "end",
-        cell: (row) =>
-          row.status === "blocked" ? (
-            <Button
-              size="sm"
-              variant="tertiary"
-              onPress={() =>
-                navigate({
-                  params: { itemId: row.id },
-                  to: "/dashboard/review/$itemId",
-                })
-              }
-            >
-              <Eye />
-              Review
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              onPress={() =>
-                navigate({
-                  params: { shipmentId: row.id },
-                  to: "/dashboard/shipments/$shipmentId",
-                })
-              }
-            >
-              Open
-              <ChevronRight />
-            </Button>
-          ),
-        header: "",
-        id: "actions",
-        minWidth: 120,
-        pinned: "end",
-      },
-    ],
-    [navigate],
-  );
+      header: "Arrives",
+      id: "arrives",
+      minWidth: 120,
+    },
+    {
+      align: "end",
+      allowsSorting: true,
+      cell: (row) => (
+        <div className="flex flex-col items-end">
+          <span className="font-medium tabular-nums">
+            {formatCurrency(row.value)}
+          </span>
+          <span className="text-muted whitespace-nowrap text-xs tabular-nums">
+            duty {formatCurrency(row.duty)}
+          </span>
+        </div>
+      ),
+      header: "Value",
+      id: "value",
+      minWidth: 150,
+    },
+    {
+      align: "end",
+      cell: (row) =>
+        row.status === "blocked" ? (
+          <Button
+            size="sm"
+            variant="tertiary"
+            onPress={() =>
+              navigate({
+                params: { itemId: row.id },
+                to: "/dashboard/review/$itemId",
+              })
+            }
+          >
+            <Eye />
+            Review
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() =>
+              navigate({
+                params: { shipmentId: row.id },
+                to: "/dashboard/shipments/$shipmentId",
+              })
+            }
+          >
+            Open
+            <ChevronRight />
+          </Button>
+        ),
+      header: "",
+      id: "actions",
+      minWidth: 120,
+      pinned: "end",
+    },
+  ];
 
   return (
     <div className="flex w-full flex-col gap-4">

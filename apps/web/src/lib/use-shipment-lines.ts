@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { LineActivity } from "#/components/case-file/line-classifications-card";
 import {
   useAgentRunsControllerList,
@@ -27,69 +26,60 @@ export function useShipmentLines(shipmentId: string, isProcessing: boolean) {
     query: { refetchInterval: poll },
   });
 
-  const lines: ReviewLineItem[] = useMemo(
-    () =>
-      (linesResponse?.data.lines ?? []).map((line) => ({
-        lineItemId: line.id,
-        lineNumber: line.lineNumber,
-        description: line.description,
-        quantity: line.quantity,
-        unit: line.unit,
-        valueUsd: line.totalValueUsd,
-        htsCode: line.htsCode,
-        confidence: line.confidence,
-        status: line.status,
-        reused: line.reusedFromProduct,
-        runId: line.runId,
-        summary: line.summary,
-        ...(line.duty ? { duty: line.duty } : {}),
-        ...(line.alternates
-          ? { alternates: line.alternates as unknown as ReviewLineAlternate[] }
-          : {}),
-      })),
-    [linesResponse],
+  const lines: ReviewLineItem[] = (linesResponse?.data.lines ?? []).map(
+    (line) => ({
+      lineItemId: line.id,
+      lineNumber: line.lineNumber,
+      description: line.description,
+      quantity: line.quantity,
+      unit: line.unit,
+      valueUsd: line.totalValueUsd,
+      htsCode: line.htsCode,
+      confidence: line.confidence,
+      status: line.status,
+      reused: line.reusedFromProduct,
+      runId: line.runId,
+      summary: line.summary,
+      ...(line.duty ? { duty: line.duty } : {}),
+      ...(line.alternates
+        ? { alternates: line.alternates as unknown as ReviewLineAlternate[] }
+        : {}),
+    }),
   );
 
   // Which run works which line, and each run's status — straight from the
   // runs list (newest first, so the first hit per line is the current run).
-  const { runsByLine, runStatuses } = useMemo(() => {
-    const byLine: Record<number, string> = {};
-    const statuses: Record<string, RunStatus> = {};
-    for (const run of runsResponse?.data.runs ?? []) {
-      statuses[run.id] = run.status as RunStatus;
-      if (
-        run.agent === "classification" &&
-        run.lineNumber !== null &&
-        byLine[run.lineNumber] === undefined
-      ) {
-        byLine[run.lineNumber] = run.id;
-      }
+  const runsByLine: Record<number, string> = {};
+  const runStatuses: Record<string, RunStatus> = {};
+  for (const run of runsResponse?.data.runs ?? []) {
+    runStatuses[run.id] = run.status as RunStatus;
+    if (
+      run.agent === "classification" &&
+      run.lineNumber !== null &&
+      runsByLine[run.lineNumber] === undefined
+    ) {
+      runsByLine[run.lineNumber] = run.id;
     }
-    return { runsByLine: byLine, runStatuses: statuses };
-  }, [runsResponse]);
+  }
 
   // The audit run behind each line: the row's runId once classification
   // lands, overlaid by the in-flight run while one is working.
-  const runIdForLine = useMemo(() => {
-    const map: Record<number, string> = {};
-    for (const line of lines) {
-      if (line.runId) map[line.lineNumber] = line.runId;
-    }
-    return { ...runsByLine, ...map };
-  }, [lines, runsByLine]);
+  const lineRunIds: Record<number, string> = {};
+  for (const line of lines) {
+    if (line.runId) lineRunIds[line.lineNumber] = line.runId;
+  }
+  const runIdForLine = { ...runsByLine, ...lineRunIds };
 
   // What each unclassified line is doing right now.
-  const activityByLine = useMemo(() => {
-    const map: Record<number, LineActivity> = {};
-    if (!isProcessing) return map;
+  const activityByLine: Record<number, LineActivity> = {};
+  if (isProcessing) {
     for (const line of lines) {
       if (line.htsCode) continue;
       const runId = runsByLine[line.lineNumber];
-      map[line.lineNumber] =
+      activityByLine[line.lineNumber] =
         runId && runStatuses[runId] === "running" ? "classifying" : "queued";
     }
-    return map;
-  }, [lines, isProcessing, runsByLine, runStatuses]);
+  }
 
   // The line a run is actively working, when one is.
   const runningEntry = Object.entries(runsByLine).find(

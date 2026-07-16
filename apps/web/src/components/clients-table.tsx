@@ -40,7 +40,7 @@ import {
 } from "@heroui-pro/react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Selection, SortDescriptor } from "react-aria-components";
 import { useLocalStorage } from "usehooks-ts";
 import { ClientFormDrawer } from "#/components/client-form-drawer";
@@ -260,33 +260,21 @@ export function ClientsTable() {
     [...ALL_COLUMNS],
   );
 
-  const statusFilter = useMemo(
-    () => new Set<string>(searchParams.status ?? []),
-    [searchParams.status],
-  );
-  const autonomyFilter = useMemo(
-    () => new Set<string>(searchParams.autonomy ?? []),
-    [searchParams.autonomy],
-  );
+  const statusFilter = new Set<string>(searchParams.status ?? []);
+  const autonomyFilter = new Set<string>(searchParams.autonomy ?? []);
   const sortDescriptor: SortDescriptor = {
     column: searchParams.sortBy ?? "createdAt",
     direction: searchParams.sortDir === "asc" ? "ascending" : "descending",
   };
 
-  const updateSearch = useCallback(
-    (patch: Partial<ClientsSearch>) => {
-      navigate({
-        search: (prev) => ({ ...prev, ...patch }),
-        replace: true,
-      });
-    },
-    [navigate],
-  );
+  const updateSearch = (patch: Partial<ClientsSearch>) => {
+    navigate({
+      search: (prev) => ({ ...prev, ...patch }),
+      replace: true,
+    });
+  };
 
-  const commitSearch = useCallback(
-    (q: string | undefined) => updateSearch({ q }),
-    [updateSearch],
-  );
+  const commitSearch = (q: string | undefined) => updateSearch({ q });
   const [searchInput, setSearchInput] = useDebouncedUrlSearch(
     searchParams.q,
     commitSearch,
@@ -328,77 +316,68 @@ export function ClientsTable() {
   const statusActive = statusFilter.size > 0;
   const autonomyActive = autonomyFilter.size > 0;
 
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     setSearchInput("");
     updateSearch({ q: undefined, status: undefined, autonomy: undefined });
-  }, [updateSearch, setSearchInput]);
+  };
 
-  const handleDelete = useCallback(
-    async (ids: string[]) => {
-      await Promise.all(ids.map((id) => removeClient.mutateAsync({ id })));
+  const handleDelete = async (ids: string[]) => {
+    await Promise.all(ids.map((id) => removeClient.mutateAsync({ id })));
+    setSelectedKeys(new Set());
+    await queryClient.invalidateQueries({
+      queryKey: getClientsControllerFindAllQueryKey(),
+    });
+  };
+
+  const updateClient = useClientsControllerUpdate();
+
+  const selectedClients =
+    selectedKeys === "all"
+      ? clients
+      : clients.filter((client) =>
+          (selectedKeys as Set<string | number>).has(client.id),
+        );
+
+  const pausedSelection = selectedClients.filter(
+    (client) => client.status === "paused",
+  );
+  const activeSelection = selectedClients.filter(
+    (client) => client.status === "active",
+  );
+
+  const handleSetStatus = (targets: ApiClient[], status: ClientStatus) => {
+    if (!targets.length) return;
+
+    const verb = status === "paused" ? "Paus" : "Resum";
+    const run = Promise.all(
+      targets.map((client) =>
+        updateClient.mutateAsync({ id: client.id, data: { status } }),
+      ),
+    ).then(async () => {
       setSelectedKeys(new Set());
       await queryClient.invalidateQueries({
         queryKey: getClientsControllerFindAllQueryKey(),
       });
-    },
-    [removeClient.mutateAsync, queryClient],
-  );
 
-  const updateClient = useClientsControllerUpdate();
+      return targets.length;
+    });
 
-  const selectedClients = useMemo(() => {
-    if (selectedKeys === "all") return clients;
+    toast.promise(run, {
+      error: `Failed to ${verb.toLowerCase()}e clients`,
+      loading: `${verb}ing clients...`,
+      success: (changed) =>
+        `${verb}ed ${changed} client${changed === 1 ? "" : "s"}`,
+    });
+  };
 
-    const keys = selectedKeys as Set<string | number>;
-
-    return clients.filter((client) => keys.has(client.id));
-  }, [selectedKeys, clients]);
-
-  const pausedSelection = useMemo(
-    () => selectedClients.filter((client) => client.status === "paused"),
-    [selectedClients],
-  );
-  const activeSelection = useMemo(
-    () => selectedClients.filter((client) => client.status === "active"),
-    [selectedClients],
-  );
-
-  const handleSetStatus = useCallback(
-    (targets: ApiClient[], status: ClientStatus) => {
-      if (!targets.length) return;
-
-      const verb = status === "paused" ? "Paus" : "Resum";
-      const run = Promise.all(
-        targets.map((client) =>
-          updateClient.mutateAsync({ id: client.id, data: { status } }),
-        ),
-      ).then(async () => {
-        setSelectedKeys(new Set());
-        await queryClient.invalidateQueries({
-          queryKey: getClientsControllerFindAllQueryKey(),
-        });
-
-        return targets.length;
-      });
-
-      toast.promise(run, {
-        error: `Failed to ${verb.toLowerCase()}e clients`,
-        loading: `${verb}ing clients...`,
-        success: (changed) =>
-          `${verb}ed ${changed} client${changed === 1 ? "" : "s"}`,
-      });
-    },
-    [updateClient.mutateAsync, queryClient],
-  );
-
-  const handleExport = useCallback(() => {
+  const handleExport = () => {
     toast.promise(exportClientsCsv(selectedClients), {
       error: "Failed to export clients",
       loading: "Exporting clients...",
       success: (exported) =>
         `Exported ${exported} client${exported === 1 ? "" : "s"} to CSV`,
     });
-  }, [selectedClients]);
+  };
 
   const [pendingDelete, setPendingDelete] = useState<ApiClient[] | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -406,17 +385,17 @@ export function ClientsTable() {
   const [formOpen, setFormOpen] = useState(false);
   const [formClient, setFormClient] = useState<ApiClient | null>(null);
 
-  const openCreateForm = useCallback(() => {
+  const openCreateForm = () => {
     setFormClient(null);
     setFormOpen(true);
-  }, []);
+  };
 
-  const openEditForm = useCallback((client: ApiClient) => {
+  const openEditForm = (client: ApiClient) => {
     setFormClient(client);
     setFormOpen(true);
-  }, []);
+  };
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = async () => {
     if (!pendingDelete?.length) return;
     setIsDeleting(true);
     try {
@@ -425,174 +404,166 @@ export function ClientsTable() {
     } finally {
       setIsDeleting(false);
     }
-  }, [pendingDelete, handleDelete]);
+  };
 
   const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
 
-  const visibleColumnSet = useMemo(
-    () => new Set<string>([...storedColumns, "actions"]),
-    [storedColumns],
-  );
+  const visibleColumnSet = new Set<string>([...storedColumns, "actions"]);
 
-  const columns = useMemo<DataGridColumn<ApiClient>[]>(() => {
-    const allCols: DataGridColumn<ApiClient>[] = [
-      {
-        accessorKey: "name",
-        allowsSorting: true,
-        cell: (item) => (
-          <div className="flex items-center gap-3">
-            <Avatar size="sm">
-              <Avatar.Image src={item.image ?? clientLogos[item.name]} />
-              <Avatar.Fallback>
-                {item.name
-                  .split(" ")
-                  .slice(0, 2)
-                  .map((n) => n[0])
-                  .join("")}
-              </Avatar.Fallback>
-            </Avatar>
-            <span className="text-sm font-medium">{item.name}</span>
-          </div>
-        ),
-        header: "Client",
-        id: "name",
-        isRowHeader: true,
-        minWidth: 240,
-        pinned: "start",
-      },
-      {
-        accessorKey: "iorNumber",
-        allowsSorting: true,
-        cell: (item) => <CopyText>{item.iorNumber}</CopyText>,
-        header: "IOR #",
-        id: "iorNumber",
-        minWidth: 130,
-      },
-      {
-        accessorKey: "bondNumber",
-        cell: (item) => <CopyText>{item.bondNumber}</CopyText>,
-        header: "Bond #",
-        id: "bondNumber",
-        minWidth: 130,
-      },
-      {
-        accessorKey: "primaryOrigin",
-        allowsSorting: true,
-        cell: (item) => <OriginCell code={item.primaryOrigin} />,
-        header: "Primary Origin",
-        id: "primaryOrigin",
-        minWidth: 140,
-      },
-      {
-        accessorKey: "industry",
-        allowsSorting: true,
-        header: "Industry",
-        id: "industry",
-        minWidth: 160,
-      },
-      {
-        accessorKey: "autonomy",
-        allowsSorting: true,
-        cell: (item) => (
-          <Chip
-            color={item.autonomy === "autopilot" ? "accent" : "default"}
-            size="sm"
-            variant="soft"
-          >
-            <Chip.Label>{capitalize(item.autonomy)}</Chip.Label>
-          </Chip>
-        ),
-        header: "Autonomy",
-        id: "autonomy",
-        minWidth: 110,
-      },
-      {
-        accessorKey: "status",
-        allowsSorting: true,
-        cell: (item) => (
-          <Chip color={statusColorMap[item.status]} size="sm" variant="soft">
-            <CircleFill width={6} />
-            <Chip.Label>{capitalize(item.status)}</Chip.Label>
-          </Chip>
-        ),
-        header: "Status",
-        id: "status",
-        minWidth: 110,
-      },
-      {
-        accessorKey: "createdAt",
-        allowsSorting: true,
-        cell: (item) => (
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-            <Calendar className="text-muted size-3.5" />
-            {formatDate(item.createdAt)}
-          </span>
-        ),
-        header: "Client Since",
-        id: "createdAt",
-        minWidth: 140,
-      },
-      {
-        accessorKey: "portsOfEntry",
-        cell: (item) => <PortsCell ports={item.portsOfEntry} />,
-        header: "Ports of Entry",
-        id: "portsOfEntry",
-        minWidth: 280,
-      },
-      {
-        align: "end",
-        cell: (item) => (
-          <RowActions
-            clientId={item.id}
-            onDelete={() => setPendingDelete([item])}
-            onEdit={() => openEditForm(item)}
-          />
-        ),
-        header: "",
-        id: "actions",
-        minWidth: 50,
-        pinned: "end",
-        width: 50,
-      },
-    ];
-
-    return allCols.filter((c) => visibleColumnSet.has(c.id));
-  }, [visibleColumnSet, openEditForm]);
-
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchInput(value);
+  const allCols: DataGridColumn<ApiClient>[] = [
+    {
+      accessorKey: "name",
+      allowsSorting: true,
+      cell: (item) => (
+        <div className="flex items-center gap-3">
+          <Avatar size="sm">
+            <Avatar.Image src={item.image ?? clientLogos[item.name]} />
+            <Avatar.Fallback>
+              {item.name
+                .split(" ")
+                .slice(0, 2)
+                .map((n) => n[0])
+                .join("")}
+            </Avatar.Fallback>
+          </Avatar>
+          <span className="text-sm font-medium">{item.name}</span>
+        </div>
+      ),
+      header: "Client",
+      id: "name",
+      isRowHeader: true,
+      minWidth: 240,
+      pinned: "start",
     },
-    [setSearchInput],
+    {
+      accessorKey: "iorNumber",
+      allowsSorting: true,
+      cell: (item) => <CopyText>{item.iorNumber}</CopyText>,
+      header: "IOR #",
+      id: "iorNumber",
+      minWidth: 130,
+    },
+    {
+      accessorKey: "bondNumber",
+      cell: (item) => <CopyText>{item.bondNumber}</CopyText>,
+      header: "Bond #",
+      id: "bondNumber",
+      minWidth: 130,
+    },
+    {
+      accessorKey: "primaryOrigin",
+      allowsSorting: true,
+      cell: (item) => <OriginCell code={item.primaryOrigin} />,
+      header: "Primary Origin",
+      id: "primaryOrigin",
+      minWidth: 140,
+    },
+    {
+      accessorKey: "industry",
+      allowsSorting: true,
+      header: "Industry",
+      id: "industry",
+      minWidth: 160,
+    },
+    {
+      accessorKey: "autonomy",
+      allowsSorting: true,
+      cell: (item) => (
+        <Chip
+          color={item.autonomy === "autopilot" ? "accent" : "default"}
+          size="sm"
+          variant="soft"
+        >
+          <Chip.Label>{capitalize(item.autonomy)}</Chip.Label>
+        </Chip>
+      ),
+      header: "Autonomy",
+      id: "autonomy",
+      minWidth: 110,
+    },
+    {
+      accessorKey: "status",
+      allowsSorting: true,
+      cell: (item) => (
+        <Chip color={statusColorMap[item.status]} size="sm" variant="soft">
+          <CircleFill width={6} />
+          <Chip.Label>{capitalize(item.status)}</Chip.Label>
+        </Chip>
+      ),
+      header: "Status",
+      id: "status",
+      minWidth: 110,
+    },
+    {
+      accessorKey: "createdAt",
+      allowsSorting: true,
+      cell: (item) => (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
+          <Calendar className="text-muted size-3.5" />
+          {formatDate(item.createdAt)}
+        </span>
+      ),
+      header: "Client Since",
+      id: "createdAt",
+      minWidth: 140,
+    },
+    {
+      accessorKey: "portsOfEntry",
+      cell: (item) => <PortsCell ports={item.portsOfEntry} />,
+      header: "Ports of Entry",
+      id: "portsOfEntry",
+      minWidth: 280,
+    },
+    {
+      align: "end",
+      cell: (item) => (
+        <RowActions
+          clientId={item.id}
+          onDelete={() => setPendingDelete([item])}
+          onEdit={() => openEditForm(item)}
+        />
+      ),
+      header: "",
+      id: "actions",
+      minWidth: 50,
+      pinned: "end",
+      width: 50,
+    },
+  ];
+
+  const columns: DataGridColumn<ApiClient>[] = allCols.filter((c) =>
+    visibleColumnSet.has(c.id),
   );
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+  };
 
   const selectionCount =
     selectedKeys === "all"
       ? clients.length
       : (selectedKeys as Set<string | number>).size;
 
-  const paginationPages = useMemo(() => {
-    const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+  const paginationPages: Array<{ key: string; value: number | "ellipsis" }> =
+    [];
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++)
-        pages.push({ key: `p-${i}`, value: i });
-    } else {
-      pages.push({ key: "p-1", value: 1 });
-      if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
-      const start = Math.max(2, safePage - 1);
-      const end = Math.min(totalPages - 1, safePage + 1);
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+  } else {
+    paginationPages.push({ key: "p-1", value: 1 });
+    if (safePage > 3)
+      paginationPages.push({ key: "e-start", value: "ellipsis" });
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
 
-      for (let i = start; i <= end; i++)
-        pages.push({ key: `p-${i}`, value: i });
-      if (safePage < totalPages - 2)
-        pages.push({ key: "e-end", value: "ellipsis" });
-      pages.push({ key: `p-${totalPages}`, value: totalPages });
-    }
-
-    return pages;
-  }, [totalPages, safePage]);
+    for (let i = start; i <= end; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+    if (safePage < totalPages - 2)
+      paginationPages.push({ key: "e-end", value: "ellipsis" });
+    paginationPages.push({ key: `p-${totalPages}`, value: totalPages });
+  }
 
   return (
     <div className="flex w-full flex-col gap-4">

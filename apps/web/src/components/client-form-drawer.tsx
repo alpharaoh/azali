@@ -17,7 +17,7 @@ import {
 } from "@heroui/react";
 import { RadioButtonGroup } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Collection } from "react-aria-components";
 import { PORT_GROUPS } from "#/data/ports";
 import type {
@@ -135,39 +135,35 @@ function ClientForm({
   const updateClient = useClientsControllerUpdate();
   const isSaving = createClient.isPending || updateClient.isPending;
 
-  const industryItems = useMemo(() => {
-    const query = industry.trim().toLowerCase();
-    const matches = INDUSTRIES.filter((entry) =>
-      entry.toLowerCase().includes(query),
-    );
-
-    return (matches.length ? matches : INDUSTRIES).map((entry) => ({
-      id: entry,
-    }));
-  }, [industry]);
+  const industryQuery = industry.trim().toLowerCase();
+  const industryMatches = INDUSTRIES.filter((entry) =>
+    entry.toLowerCase().includes(industryQuery),
+  );
+  const industryItems = (
+    industryMatches.length ? industryMatches : INDUSTRIES
+  ).map((entry) => ({
+    id: entry,
+  }));
 
   // Groups filtered by the typed query (matching port or country name) with
   // already-selected ports removed; empty groups drop out entirely.
-  const portGroups = useMemo(() => {
-    const query = portInput.trim().toLowerCase();
+  const portQuery = portInput.trim().toLowerCase();
+  const portGroups = PORT_GROUPS.map((group) => {
+    const country = countryName(group.code);
+    const matchesCountry = country.toLowerCase().includes(portQuery);
 
-    return PORT_GROUPS.map((group) => {
-      const country = countryName(group.code);
-      const matchesCountry = country.toLowerCase().includes(query);
-
-      return {
-        id: group.code,
-        country,
-        ports: group.ports
-          .filter(
-            (port) =>
-              !ports.includes(port) &&
-              (matchesCountry || port.toLowerCase().includes(query)),
-          )
-          .map((port) => ({ id: port })),
-      };
-    }).filter((group) => group.ports.length > 0);
-  }, [ports, portInput]);
+    return {
+      id: group.code,
+      country,
+      ports: group.ports
+        .filter(
+          (port) =>
+            !ports.includes(port) &&
+            (matchesCountry || port.toLowerCase().includes(portQuery)),
+        )
+        .map((port) => ({ id: port })),
+    };
+  }).filter((group) => group.ports.length > 0);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

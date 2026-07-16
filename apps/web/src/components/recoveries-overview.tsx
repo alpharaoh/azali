@@ -25,7 +25,7 @@ import {
   Widget,
 } from "@heroui-pro/react";
 import { format, subDays, subMonths } from "date-fns";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { DemoPreviewBanner } from "#/components/demo-preview-banner";
@@ -324,20 +324,22 @@ export function RecoveriesOverview() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
-  const visibleOpportunities = useMemo(() => {
-    let result = opportunities;
+  let visibleOpportunities = opportunities;
 
-    if (search) {
-      const q = search.toLowerCase();
+  if (search) {
+    const q = search.toLowerCase();
 
-      result = result.filter((o) => o.client.toLowerCase().includes(q));
-    }
-    if (statusFilter !== "all") {
-      result = result.filter((o) => o.status.toLowerCase() === statusFilter);
-    }
-    if (!sortDescriptor.column) return result;
-
-    return [...result].sort((a, b) => {
+    visibleOpportunities = visibleOpportunities.filter((o) =>
+      o.client.toLowerCase().includes(q),
+    );
+  }
+  if (statusFilter !== "all") {
+    visibleOpportunities = visibleOpportunities.filter(
+      (o) => o.status.toLowerCase() === statusFilter,
+    );
+  }
+  if (sortDescriptor.column) {
+    visibleOpportunities = [...visibleOpportunities].sort((a, b) => {
       const col = sortDescriptor.column as string;
       let cmp: number;
 
@@ -359,37 +361,35 @@ export function RecoveriesOverview() {
 
       return cmp;
     });
-  }, [search, statusFilter, sortDescriptor]);
+  }
 
   const totalPages = Math.ceil(visibleOpportunities.length / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
-  const paginatedOpportunities = useMemo(() => {
-    const start = (safePage - 1) * rowsPerPage;
+  const sliceStart = (safePage - 1) * rowsPerPage;
+  const paginatedOpportunities = visibleOpportunities.slice(
+    sliceStart,
+    sliceStart + rowsPerPage,
+  );
 
-    return visibleOpportunities.slice(start, start + rowsPerPage);
-  }, [visibleOpportunities, safePage, rowsPerPage]);
+  const paginationPages: Array<{ key: string; value: number | "ellipsis" }> =
+    [];
 
-  const paginationPages = useMemo(() => {
-    const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+  } else {
+    paginationPages.push({ key: "p-1", value: 1 });
+    if (safePage > 3)
+      paginationPages.push({ key: "e-start", value: "ellipsis" });
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++)
-        pages.push({ key: `p-${i}`, value: i });
-    } else {
-      pages.push({ key: "p-1", value: 1 });
-      if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
-      const start = Math.max(2, safePage - 1);
-      const end = Math.min(totalPages - 1, safePage + 1);
-
-      for (let i = start; i <= end; i++)
-        pages.push({ key: `p-${i}`, value: i });
-      if (safePage < totalPages - 2)
-        pages.push({ key: "e-end", value: "ellipsis" });
-      pages.push({ key: `p-${totalPages}`, value: totalPages });
-    }
-
-    return pages;
-  }, [totalPages, safePage]);
+    for (let i = start; i <= end; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+    if (safePage < totalPages - 2)
+      paginationPages.push({ key: "e-end", value: "ellipsis" });
+    paginationPages.push({ key: `p-${totalPages}`, value: totalPages });
+  }
 
   const rangeStart = (safePage - 1) * rowsPerPage + 1;
   const rangeEnd = Math.min(

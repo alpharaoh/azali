@@ -1,5 +1,4 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
@@ -109,33 +108,29 @@ export function useLiveReviewItems(search: ReviewSearch) {
     { query: { refetchInterval: 10_000 } },
   );
 
-  const derived = useMemo(() => {
-    const shipments = shipmentsResponse?.data.data ?? [];
-    const reviewEvents = reviewEventsResponse?.data.data ?? [];
+  const shipments = shipmentsResponse?.data.data ?? [];
+  const reviewEvents = reviewEventsResponse?.data.data ?? [];
 
-    // Events arrive occurredAt desc; first hit per shipment is the latest.
-    const latestPayload = new Map<string, ReviewRequestPayload>();
+  // Events arrive occurredAt desc; first hit per shipment is the latest.
+  const latestPayload = new Map<string, ReviewRequestPayload>();
 
-    for (const event of reviewEvents) {
-      if (!latestPayload.has(event.shipmentId)) {
-        latestPayload.set(event.shipmentId, event.payload);
-      }
+  for (const event of reviewEvents) {
+    if (!latestPayload.has(event.shipmentId)) {
+      latestPayload.set(event.shipmentId, event.payload);
     }
+  }
 
-    const items = shipments.map((shipment) =>
-      toReviewItem(shipment, latestPayload.get(shipment.id) ?? {}),
-    );
+  const items = shipments.map((shipment) =>
+    toReviewItem(shipment, latestPayload.get(shipment.id) ?? {}),
+  );
 
-    const deadlines = new Map(
-      shipments.flatMap((shipment) =>
-        shipment.reviewDeadlineAt
-          ? [[shipment.id, new Date(shipment.reviewDeadlineAt)] as const]
-          : [],
-      ),
-    );
+  const deadlines = new Map(
+    shipments.flatMap((shipment) =>
+      shipment.reviewDeadlineAt
+        ? [[shipment.id, new Date(shipment.reviewDeadlineAt)] as const]
+        : [],
+    ),
+  );
 
-    return { deadlines, items };
-  }, [shipmentsResponse, reviewEventsResponse]);
-
-  return { ...derived, isFetching, isPending };
+  return { deadlines, isFetching, isPending, items };
 }

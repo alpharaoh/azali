@@ -30,7 +30,7 @@ import {
 import { keepPreviousData } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 import { format, formatDistanceToNowStrict, subMonths } from "date-fns";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 
 import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
@@ -47,6 +47,7 @@ import {
 } from "#/generated/api";
 import { getInitials } from "#/lib/format";
 import { HTS_CHAPTER_TITLES } from "#/lib/hts-chapters";
+import { useDebouncedUrlSearch } from "#/lib/use-debounced-url-search";
 import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 import type { ClassificationsSearch } from "#/routes/dashboard/classifications";
 
@@ -62,8 +63,6 @@ const sourceMeta: Record<
 };
 
 const sourceIds = Object.keys(sourceMeta) as ProductSource[];
-
-const SEARCH_DEBOUNCE_MS = 300;
 
 /* -------------------------------------------------------------------------------------------------
  * CopyText — inline copyable HTS code
@@ -180,19 +179,16 @@ function EngineCharts() {
 
   // Trailing six months, cumulative — each point counts every product
   // classified up to and including that month.
-  const growthSeries = useMemo(() => {
-    const growth = stats?.growth ?? [];
+  const growth = stats?.growth ?? [];
+  const growthSeries = [...Array(6)].map((_, index) => {
+    const date = subMonths(new Date(), 5 - index);
+    const key = format(date, "yyyy-MM");
+    const entries = growth
+      .filter((point) => point.month <= key)
+      .reduce((sum, point) => sum + point.added, 0);
 
-    return [...Array(6)].map((_, index) => {
-      const date = subMonths(new Date(), 5 - index);
-      const key = format(date, "yyyy-MM");
-      const entries = growth
-        .filter((point) => point.month <= key)
-        .reduce((sum, point) => sum + point.added, 0);
-
-      return { entries, month: format(date, "MMM") };
-    });
-  }, [stats?.growth]);
+    return { entries, month: format(date, "MMM") };
+  });
 
   const topChapters = stats?.topChapters ?? [];
   const maxChapterCount = Math.max(
@@ -314,49 +310,28 @@ export function ClassificationEngine() {
   const searchParams = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
 
-  const [searchInput, setSearchInput] = useState(searchParams.q ?? "");
   const [clientQuery, setClientQuery] = useState("");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useRowsPerPage();
 
-  const clientFilter = useMemo(
-    () => new Set<string>(searchParams.clientId ?? []),
-    [searchParams.clientId],
-  );
-  const sourceFilter = useMemo(
-    () => new Set<string>(searchParams.source ?? []),
-    [searchParams.source],
-  );
+  const clientFilter = new Set<string>(searchParams.clientId ?? []);
+  const sourceFilter = new Set<string>(searchParams.source ?? []);
   const sortDescriptor: SortDescriptor = {
     column: searchParams.sortBy ?? "reuseCount",
     direction: searchParams.sortDir === "asc" ? "ascending" : "descending",
   };
 
-  const updateSearch = useCallback(
-    (patch: Partial<ClassificationsSearch>) => {
-      navigate({
-        search: (prev) => ({ ...prev, ...patch }),
-        replace: true,
-      });
-    },
-    [navigate],
+  const updateSearch = (patch: Partial<ClassificationsSearch>) => {
+    navigate({
+      search: (prev) => ({ ...prev, ...patch }),
+      replace: true,
+    });
+  };
+
+  const [searchInput, setSearchInput] = useDebouncedUrlSearch(
+    searchParams.q,
+    (q) => updateSearch({ q }),
   );
-
-  // Keep the input in sync with the URL (back/forward, shared links).
-  useEffect(() => {
-    setSearchInput(searchParams.q ?? "");
-  }, [searchParams.q]);
-
-  // Debounce typing into the URL.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((searchParams.q ?? "") !== searchInput) {
-        updateSearch({ q: searchInput || undefined });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, searchParams.q, updateSearch]);
 
   // Any change to the URL-driven query state starts back at page 1 (covers
   // both in-app updates and browser back/forward).
@@ -400,178 +375,172 @@ export function ClassificationEngine() {
         client.name.toLowerCase().includes(clientQuery.toLowerCase()),
       )
     : allClients;
-  const clientNameById = useMemo(
-    () => new Map(allClients.map((client) => [client.id, client.name])),
-    [allClients],
+  const clientNameById = new Map(
+    allClients.map((client) => [client.id, client.name]),
   );
 
   const hasActiveFilters =
     !!searchParams.q || clientFilter.size > 0 || sourceFilter.size > 0;
 
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     setSearchInput("");
     setClientQuery("");
     updateSearch({ q: undefined, clientId: undefined, source: undefined });
-  }, [updateSearch]);
+  };
 
   const totalPages = Math.ceil(count / rowsPerPage) || 1;
   const safePage = Math.min(page, totalPages);
 
-  const paginationPages = useMemo(() => {
-    const pages: Array<{ key: string; value: number | "ellipsis" }> = [];
+  const paginationPages: Array<{ key: string; value: number | "ellipsis" }> =
+    [];
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++)
-        pages.push({ key: `p-${i}`, value: i });
-    } else {
-      pages.push({ key: "p-1", value: 1 });
-      if (safePage > 3) pages.push({ key: "e-start", value: "ellipsis" });
-      const start = Math.max(2, safePage - 1);
-      const end = Math.min(totalPages - 1, safePage + 1);
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+  } else {
+    paginationPages.push({ key: "p-1", value: 1 });
+    if (safePage > 3)
+      paginationPages.push({ key: "e-start", value: "ellipsis" });
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
 
-      for (let i = start; i <= end; i++)
-        pages.push({ key: `p-${i}`, value: i });
-      if (safePage < totalPages - 2)
-        pages.push({ key: "e-end", value: "ellipsis" });
-      pages.push({ key: `p-${totalPages}`, value: totalPages });
-    }
-
-    return pages;
-  }, [totalPages, safePage]);
+    for (let i = start; i <= end; i++)
+      paginationPages.push({ key: `p-${i}`, value: i });
+    if (safePage < totalPages - 2)
+      paginationPages.push({ key: "e-end", value: "ellipsis" });
+    paginationPages.push({ key: `p-${totalPages}`, value: totalPages });
+  }
 
   const rangeStart = count === 0 ? 0 : (safePage - 1) * rowsPerPage + 1;
   const rangeEnd = Math.min(safePage * rowsPerPage, count);
 
-  const columns = useMemo<DataGridColumn<ApiProduct>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        allowsSorting: true,
-        cell: (product) => (
-          <div className="flex min-w-0 max-w-96 flex-col">
-            <span className="text-foreground truncate text-sm font-medium">
-              {product.name}
+  const columns: DataGridColumn<ApiProduct>[] = [
+    {
+      accessorKey: "name",
+      allowsSorting: true,
+      cell: (product) => (
+        <div className="flex min-w-0 max-w-96 flex-col">
+          <span className="text-foreground truncate text-sm font-medium">
+            {product.name}
+          </span>
+          {product.sku ? (
+            <span className="text-muted truncate text-xs tabular-nums">
+              {product.sku}
             </span>
-            {product.sku ? (
-              <span className="text-muted truncate text-xs tabular-nums">
-                {product.sku}
-              </span>
-            ) : null}
-          </div>
-        ),
-        header: "Product",
-        id: "name",
-        isRowHeader: true,
-        maxWidth: 240,
-        minWidth: 200,
-        width: 240,
-      },
-      {
-        accessorKey: "clientId",
-        cell: (product) => (
-          <span className="block min-w-0 truncate text-sm">
-            {product.client?.name ?? "—"}
-          </span>
-        ),
-        header: "Client",
-        id: "client",
-        maxWidth: 200,
-        minWidth: 160,
-        width: 200,
-      },
-      {
-        accessorKey: "htsCode",
-        allowsSorting: true,
-        cell: (product) =>
-          product.htsCode ? <CopyHts>{product.htsCode}</CopyHts> : "—",
-        header: "HTS Code",
-        id: "htsCode",
-        minWidth: 160,
-      },
-      {
-        accessorKey: "dutyRate",
-        cell: (product) => {
-          const duty =
-            product.dutyRate?.effective ?? product.dutyRate?.general ?? null;
+          ) : null}
+        </div>
+      ),
+      header: "Product",
+      id: "name",
+      isRowHeader: true,
+      maxWidth: 240,
+      minWidth: 200,
+      width: 240,
+    },
+    {
+      accessorKey: "clientId",
+      cell: (product) => (
+        <span className="block min-w-0 truncate text-sm">
+          {product.client?.name ?? "—"}
+        </span>
+      ),
+      header: "Client",
+      id: "client",
+      maxWidth: 200,
+      minWidth: 160,
+      width: 200,
+    },
+    {
+      accessorKey: "htsCode",
+      allowsSorting: true,
+      cell: (product) =>
+        product.htsCode ? <CopyHts>{product.htsCode}</CopyHts> : "—",
+      header: "HTS Code",
+      id: "htsCode",
+      minWidth: 160,
+    },
+    {
+      accessorKey: "dutyRate",
+      cell: (product) => {
+        const duty =
+          product.dutyRate?.effective ?? product.dutyRate?.general ?? null;
 
-          return (
-            <span
-              className="text-muted block min-w-0 truncate whitespace-nowrap text-sm tabular-nums"
-              title={duty ?? undefined}
-            >
-              {duty ?? "—"}
-            </span>
-          );
-        },
-        header: "Duty",
-        id: "duty",
-        maxWidth: 260,
-        minWidth: 160,
-        width: 220,
+        return (
+          <span
+            className="text-muted block min-w-0 truncate whitespace-nowrap text-sm tabular-nums"
+            title={duty ?? undefined}
+          >
+            {duty ?? "—"}
+          </span>
+        );
       },
-      {
-        accessorKey: "source",
-        cell: (product) => {
-          const meta = sourceMeta[product.source as ProductSource];
+      header: "Duty",
+      id: "duty",
+      maxWidth: 260,
+      minWidth: 160,
+      width: 220,
+    },
+    {
+      accessorKey: "source",
+      cell: (product) => {
+        const meta = sourceMeta[product.source as ProductSource];
 
-          return meta ? (
-            <Chip color={meta.chip} size="sm" variant="soft">
-              <Chip.Label>{meta.label}</Chip.Label>
-            </Chip>
-          ) : (
-            <span className="text-muted text-sm">—</span>
-          );
-        },
-        header: "Source",
-        id: "source",
-        minWidth: 150,
+        return meta ? (
+          <Chip color={meta.chip} size="sm" variant="soft">
+            <Chip.Label>{meta.label}</Chip.Label>
+          </Chip>
+        ) : (
+          <span className="text-muted text-sm">—</span>
+        );
       },
-      {
-        accessorKey: "confidence",
-        allowsSorting: true,
-        cell: (product) => (
-          <span className="text-muted text-sm tabular-nums">
-            {product.confidence !== null
-              ? `${Math.round(product.confidence * 100)}%`
-              : "—"}
-          </span>
-        ),
-        header: "Confidence",
-        id: "confidence",
-        minWidth: 100,
-      },
-      {
-        accessorKey: "reuseCount",
-        align: "end",
-        allowsSorting: true,
-        cell: (product) => (
-          <span className="font-medium tabular-nums">
-            {product.reuseCount.toLocaleString("en-US")}
-          </span>
-        ),
-        header: "Hits",
-        id: "reuseCount",
-        minWidth: 80,
-      },
-      {
-        accessorKey: "lastReusedAt",
-        allowsSorting: true,
-        cell: (product) => (
-          <span className="text-muted whitespace-nowrap text-sm">
-            {product.lastReusedAt
-              ? formatDistanceToNowStrict(new Date(product.lastReusedAt), {
-                  addSuffix: true,
-                })
-              : "Never"}
-          </span>
-        ),
-        header: "Last Used",
-        id: "lastReusedAt",
-        minWidth: 110,
-      },
-    ],
-    [],
-  );
+      header: "Source",
+      id: "source",
+      minWidth: 150,
+    },
+    {
+      accessorKey: "confidence",
+      allowsSorting: true,
+      cell: (product) => (
+        <span className="text-muted text-sm tabular-nums">
+          {product.confidence !== null
+            ? `${Math.round(product.confidence * 100)}%`
+            : "—"}
+        </span>
+      ),
+      header: "Confidence",
+      id: "confidence",
+      minWidth: 100,
+    },
+    {
+      accessorKey: "reuseCount",
+      align: "end",
+      allowsSorting: true,
+      cell: (product) => (
+        <span className="font-medium tabular-nums">
+          {product.reuseCount.toLocaleString("en-US")}
+        </span>
+      ),
+      header: "Hits",
+      id: "reuseCount",
+      minWidth: 80,
+    },
+    {
+      accessorKey: "lastReusedAt",
+      allowsSorting: true,
+      cell: (product) => (
+        <span className="text-muted whitespace-nowrap text-sm">
+          {product.lastReusedAt
+            ? formatDistanceToNowStrict(new Date(product.lastReusedAt), {
+                addSuffix: true,
+              })
+            : "Never"}
+        </span>
+      ),
+      header: "Last Used",
+      id: "lastReusedAt",
+      minWidth: 110,
+    },
+  ];
 
   return (
     <div className="flex w-full flex-col gap-4">

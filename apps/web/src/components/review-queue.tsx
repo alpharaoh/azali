@@ -11,7 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import type { DeadlineTone } from "#/components/review/review-detail";
 import {
   deadlineTone,
@@ -224,15 +224,12 @@ export function ReviewQueue() {
     Array<{ decision: Decision; item: ReviewItem }>
   >([]);
 
-  const commitSearch = useCallback(
-    (q: string | undefined) =>
-      navigate({
-        replace: true,
-        search: (prev: ReviewSearch) => ({ ...prev, q }),
-        to: ".",
-      }),
-    [navigate],
-  );
+  const commitSearch = (q: string | undefined) =>
+    navigate({
+      replace: true,
+      search: (prev: ReviewSearch) => ({ ...prev, q }),
+      to: ".",
+    });
   const [searchInput, setSearchInput] = useDebouncedUrlSearch(
     searchParams.q,
     commitSearch,
@@ -241,10 +238,7 @@ export function ReviewQueue() {
   const deadlineFor = (item: ReviewItem) =>
     deadlines.get(item.id) ?? addHours(new Date(), item.deadlineHoursFromNow);
 
-  const resolvedIds = useMemo(
-    () => new Set(resolved.map((entry) => entry.item.id)),
-    [resolved],
-  );
+  const resolvedIds = new Set(resolved.map((entry) => entry.item.id));
   // The server already applied filter + search; only hide items resolved in
   // this session while the refetch is in flight.
   const visiblePending = items.filter((item) => !resolvedIds.has(item.id));

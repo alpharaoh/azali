@@ -7,9 +7,9 @@ const SEARCH_DEBOUNCE_MS = 300;
  * URL's `q` param (the server does the searching), and URL changes
  * (back/forward, shared links) flow back into the input.
  *
- * `commit` must be referentially stable (wrap it in useCallback) — it is a
- * dependency of the debounce effect, and an unstable identity restarts the
- * timer every render.
+ * `commit` participates in the debounce effect's dependencies; with React
+ * Compiler enabled, inline functions from compiled callers are already
+ * referentially stable, so no manual useCallback is needed.
  */
 export function useDebouncedUrlSearch(
   urlQuery: string | undefined,

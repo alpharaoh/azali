@@ -7,7 +7,6 @@ import {
 import { Button, Chip, Separator, Tooltip } from "@heroui/react";
 import { Kanban, TrendChip, Widget } from "@heroui-pro/react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
-import { useMemo } from "react";
 
 import { DemoPreviewBanner } from "#/components/demo-preview-banner";
 
@@ -242,16 +241,13 @@ function TariffEventCard({ event }: { event: TariffEvent }) {
  * TariffRadarOverview
  * -----------------------------------------------------------------------------------------------*/
 export function TariffRadarOverview() {
-  const events = useMemo<TariffEvent[]>(() => {
-    const now = new Date();
+  const now = new Date();
+  const events: TariffEvent[] = eventSeeds.map((seed) => {
+    const effectiveDate = addDays(now, seed.daysFromNow);
+    const days = differenceInCalendarDays(effectiveDate, now);
 
-    return eventSeeds.map((seed) => {
-      const effectiveDate = addDays(now, seed.daysFromNow);
-      const days = differenceInCalendarDays(effectiveDate, now);
-
-      return { ...seed, daysOut: days > 0 ? days : null, effectiveDate };
-    });
-  }, []);
+    return { ...seed, daysOut: days > 0 ? days : null, effectiveDate };
+  });
 
   return (
     <div className="flex w-full flex-col gap-4">
