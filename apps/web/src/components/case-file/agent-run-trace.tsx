@@ -14,6 +14,7 @@ import { useEffect, useRef } from "react";
 import crossLogo from "#/assets/cross-logo.png";
 import htsBadge from "#/assets/htsus.svg";
 import { ClampedText } from "#/components/clamped-text";
+import { ConfidenceChip } from "#/components/confidence-chip";
 import type { AgentRunDetailResponseDtoItemsItem as RunItem } from "#/generated/api";
 import { useAgentRunsControllerFind } from "#/generated/api";
 
@@ -64,12 +65,24 @@ const TOOL_META: Record<
     source: "Knowledge base",
     icon: Magnifier,
   },
+  searchPriorClassifications: {
+    label: "Searched prior classifications",
+    source: "Knowledge base",
+    icon: Magnifier,
+  },
   webSearch: {
     label: "Searched the web",
     source: "Web",
     icon: Globe,
   },
 };
+
+/** "searchPriorClassifications" → "Search prior classifications" — a
+ * readable fallback for tools that have no curated label yet. */
+function humanizeToolName(toolName: string): string {
+  const spaced = toolName.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 
 /** Source badge — official marks for the government databases. */
 function SourceBadge({ source }: { source: SourceName }) {
@@ -91,7 +104,11 @@ function SourceBadge({ source }: { source: SourceName }) {
   }
   if (source === "CROSS") {
     return (
-      <Chip className="bg-sky-100 text-sky-900" size="sm" variant="soft">
+      <Chip
+        className="bg-sky-500/15 text-sky-700 dark:text-sky-300"
+        size="sm"
+        variant="soft"
+      >
         <Chip.Label className="inline-flex items-center gap-1">
           <img
             alt=""
@@ -117,7 +134,11 @@ function SourceBadge({ source }: { source: SourceName }) {
     );
   }
   return (
-    <Chip className="bg-purple-100 text-purple-900" size="sm" variant="soft">
+    <Chip
+      className="bg-purple-500/15 text-purple-700 dark:text-purple-300"
+      size="sm"
+      variant="soft"
+    >
       <Chip.Label className="inline-flex items-center gap-1">
         <DatabaseMagnifier className="size-3" />
         Knowledge base
@@ -183,13 +204,73 @@ function summarizeRulings(value: {
   ];
 }
 
-function summarizeMatches(matches: unknown): string[] {
-  return (matches as Array<{ text: string; score: number }>)
-    .slice(0, 3)
-    .map(
-      (match) =>
-        `${match.score.toFixed(2)}  ${match.text.slice(0, 70).replace(/\n/g, " ")}`,
-    );
+interface KnowledgeMatch {
+  text: string;
+  score: number;
+  htsCode?: string;
+  confidence?: number;
+  sameClient?: boolean;
+  verifiedBy?: string;
+}
+
+/** The matches array a knowledge-base tool result carries, when it has one. */
+function knowledgeMatches(result: RunItem | undefined): KnowledgeMatch[] {
+  if (!result) return [];
+  const output = (result.content as { output?: ToolEnvelope }).output;
+  return Array.isArray(output?.matches)
+    ? (output.matches as KnowledgeMatch[])
+    : [];
+}
+
+/** "Product: USB-C charging cable…\nSKU: …" → "USB-C charging cable…" */
+function matchHeadline(text: string): string {
+  const firstLine = text.split("\n")[0] ?? text;
+  return firstLine.replace(/^Product:\s*/i, "");
+}
+
+/** Prior classifications / document hits, as cards instead of raw JSON. */
+function KnowledgeMatchList({ matches }: { matches: KnowledgeMatch[] }) {
+  const top = matches.slice(0, 3);
+
+  return (
+    <div className="bg-surface flex flex-col overflow-hidden rounded-lg border">
+      {top.map((match, index) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: matches have no stable id
+          key={index}
+          className="flex flex-col gap-1 border-b p-2.5 last:border-b-0"
+        >
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {match.htsCode ? (
+              <span className="text-foreground font-mono text-xs tabular-nums">
+                {match.htsCode}
+              </span>
+            ) : null}
+            {typeof match.confidence === "number" ? (
+              <ConfidenceChip confidence={match.confidence} label="confident" />
+            ) : null}
+            {match.sameClient ? (
+              <Chip color="accent" size="sm" variant="soft">
+                <Chip.Label>This importer</Chip.Label>
+              </Chip>
+            ) : null}
+            <span className="text-muted ml-auto text-[10px] tabular-nums">
+              {Math.round(match.score * 100)}% match
+            </span>
+          </div>
+          <p className="text-muted m-0 line-clamp-2 text-xs leading-relaxed">
+            {matchHeadline(match.text)}
+          </p>
+        </div>
+      ))}
+      {matches.length > top.length ? (
+        <span className="text-muted border-t px-2.5 py-1.5 text-[11px]">
+          +{matches.length - top.length} more{" "}
+          {matches.length - top.length === 1 ? "match" : "matches"}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 function summarizeWebResults(output: unknown): string[] {
@@ -240,7 +321,9 @@ function summarizeResult(item: RunItem): string[] {
         return [`${value.rulingNumber}  ${value.subject.slice(0, 80)}`];
       }
       case "searchKnowledge":
-        return summarizeMatches(envelope.matches ?? output);
+      case "searchPriorClassifications":
+        // Matches render as structured cards (KnowledgeMatchList) instead.
+        return [];
       case "webSearch":
         return summarizeWebResults(output);
       default:
@@ -303,7 +386,7 @@ function DecisionBody({ answer }: { answer: AnswerView }) {
           text={answer.summary}
         />
       ) : null}
-      <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+      <div className="bg-surface flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
         <span>
           {answer.htsCode} · confidence {answer.confidence?.toFixed(2) ?? "—"}
         </span>
@@ -532,7 +615,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
 
                     if (item.kind === "tool_call") {
                       const meta = TOOL_META[item.toolName ?? ""] ?? {
-                        label: item.toolName ?? "Action",
+                        label: humanizeToolName(item.toolName ?? "Action"),
                         source: "Knowledge base" as const,
                         icon: Magnifier,
                       };
@@ -540,6 +623,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                         ? resultsByCallId.get(item.toolCallId)
                         : undefined;
                       const evidence = result ? summarizeResult(result) : [];
+                      const matches = knowledgeMatches(result);
                       const url = resultUrl(result);
                       const query = summarizeInput(item.content);
                       const failed = Boolean(
@@ -588,8 +672,10 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                                   : ""}
                               </span>
                             ) : null}
-                            {evidence.length > 0 ? (
-                              <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+                            {matches.length > 0 ? (
+                              <KnowledgeMatchList matches={matches} />
+                            ) : evidence.length > 0 ? (
+                              <div className="bg-surface flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
                                 {evidence.map((line) => (
                                   <span key={line}>{line}</span>
                                 ))}
