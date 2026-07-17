@@ -3,10 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { aggregateShipmentStats } from "@/db/queries/aggregate/aggregateShipmentStats";
 import { deleteShipment } from "@/db/queries/delete/deleteShipment";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
-import { aggregateShipmentStats } from "@/db/queries/select/many/aggregateShipmentStats";
 import { listShipmentEvents } from "@/db/queries/select/many/listShipmentEvents";
 import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { listShipments } from "@/db/queries/select/many/listShipments";

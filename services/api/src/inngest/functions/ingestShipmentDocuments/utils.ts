@@ -523,7 +523,10 @@ export async function createLineItems(
   // Replace, don't append: re-ingestion (a follow-up email batch) rebuilds
   // the full line set from the union of documents; on a fresh shipment the
   // delete is a no-op.
-  await deleteShipmentLineItems(shipmentId, context.organizationId);
+  await deleteShipmentLineItems({
+    shipmentId,
+    organizationId: context.organizationId,
+  });
   const rows = await insertShipmentLineItems(
     sourceLines.map((line, index) => ({
       organizationId: context.organizationId,

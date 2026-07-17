@@ -3,7 +3,8 @@ import { buildListQuery } from "@/db/lib/buildListQuery";
 import { type InsertShipmentLineItem, shipmentLineItems } from "@/db/schema";
 
 export const listShipmentLineItems = async (
-  where?: Partial<InsertShipmentLineItem>,
+  where?: Partial<InsertShipmentLineItem> & { ids?: string[] },
+  orderBy?: Partial<Record<keyof InsertShipmentLineItem, "asc" | "desc">>,
   limit?: number,
   offset?: number,
 ) => {
@@ -11,7 +12,7 @@ export const listShipmentLineItems = async (
 
   return buildListQuery(shipmentLineItems, {
     where,
-    orderBy: { lineNumber: "asc" },
+    orderBy: orderBy ?? { lineNumber: "asc" },
     limit,
     offset,
     extraConditions,

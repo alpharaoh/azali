@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import type { EmbeddedClient } from "@/db/lib/embedClient";
 import { embedClient } from "@/db/lib/embedClient";
+import { aggregateProductStats } from "@/db/queries/aggregate/aggregateProductStats";
 import { listProducts } from "@/db/queries/select/many/listProducts";
-import { productStats } from "@/db/queries/select/many/productStats";
 import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import type { SelectProduct } from "@/db/schema";
 import type { ListProductsDto } from "./dto/list-products.dto";
@@ -54,7 +54,7 @@ export class ProductsService {
   }
 
   async stats(organizationId: string) {
-    return productStats(organizationId);
+    return aggregateProductStats(organizationId);
   }
 
   async findOne(organizationId: string, id: string) {

@@ -60,7 +60,10 @@ export class AgentRunsService {
       throw new NotFoundException(`Run "${id}" not found`);
     }
 
-    const items = await listAgentRunItems(id, organizationId);
+    const { data: items } = await listAgentRunItems({
+      runId: id,
+      organizationId,
+    });
     return { run: toRunSummary(run), items: items.map(toRunItem) };
   }
 }

@@ -1,20 +1,17 @@
-import { and, asc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { agentRunItems } from "@/db/schema";
+import { buildListQuery } from "@/db/lib/buildListQuery";
+import { agentRunItems, type InsertAgentRunItem } from "@/db/schema";
 
-/** The full ordered audit record of a run. */
 export const listAgentRunItems = async (
-  runId: string,
-  organizationId: string,
+  where?: Partial<InsertAgentRunItem> & { ids?: string[] },
+  orderBy?: Partial<Record<keyof InsertAgentRunItem, "asc" | "desc">>,
+  limit?: number,
+  offset?: number,
 ) => {
-  return db
-    .select()
-    .from(agentRunItems)
-    .where(
-      and(
-        eq(agentRunItems.runId, runId),
-        eq(agentRunItems.organizationId, organizationId),
-      ),
-    )
-    .orderBy(asc(agentRunItems.stepIndex), asc(agentRunItems.itemIndex));
+  return buildListQuery(agentRunItems, {
+    where,
+    // The run's audit record reads in execution order.
+    orderBy: orderBy ?? { stepIndex: "asc", itemIndex: "asc" },
+    limit,
+    offset,
+  });
 };

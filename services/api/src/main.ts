@@ -37,7 +37,7 @@ async function bootstrap() {
     // @fastify/cors only allows GET,HEAD,POST by default; list everything.
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
-  app.setGlobalPrefix("v1");
+  app.setGlobalPrefix("v1", { exclude: ["/"] });
 
   const logger = app.get(Logger);
   app.useLogger(logger);

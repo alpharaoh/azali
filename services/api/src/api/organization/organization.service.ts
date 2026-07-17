@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { selectActiveMembership } from "@/db/queries/select/one/selectActiveMembership";
-import { selectOrganizationBySlug } from "@/db/queries/select/one/selectOrganizationBySlug";
+import { listMemberships } from "@/db/queries/select/many/listMemberships";
+import { listOrganizations } from "@/db/queries/select/many/listOrganizations";
+import { selectOrganization } from "@/db/queries/select/one/selectOrganization";
 import { updateOrganization } from "@/db/queries/update/updateOrganization";
 import type { UpdateOrganizationDto } from "./dto/update-organization.dto";
 
@@ -25,12 +26,17 @@ function slugify(name: string) {
 @Injectable()
 export class OrganizationService {
   async getCurrent(organizationId: string, userId: string) {
-    const membership = await selectActiveMembership(userId, organizationId);
-    if (!membership?.organization) {
+    const {
+      data: [membership],
+    } = await listMemberships({ userId, organizationId }, undefined, 1);
+    const organization = membership
+      ? await selectOrganization(organizationId)
+      : undefined;
+    if (!organization) {
       throw new NotFoundException("Organization not found");
     }
 
-    return membership.organization;
+    return organization;
   }
 
   async updateCurrent(
@@ -38,8 +44,10 @@ export class OrganizationService {
     userId: string,
     dto: UpdateOrganizationDto,
   ) {
-    const membership = await selectActiveMembership(userId, organizationId);
-    if (!membership?.organization) {
+    const {
+      data: [membership],
+    } = await listMemberships({ userId, organizationId }, undefined, 1);
+    if (!membership) {
       throw new NotFoundException("Organization not found");
     }
     if (!["owner", "admin"].includes(membership.role)) {
@@ -50,7 +58,9 @@ export class OrganizationService {
 
     // Slug is derived from the name; disambiguate only on collision.
     const base = slugify(dto.name);
-    const taken = await selectOrganizationBySlug(base);
+    const {
+      data: [taken],
+    } = await listOrganizations({ slug: base }, undefined, 1);
     const slug =
       !taken || taken.id === organizationId
         ? base

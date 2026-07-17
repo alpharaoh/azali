@@ -5,7 +5,7 @@ import { products } from "@/db/schema";
 const TOP_CHAPTERS = 6;
 
 /** Aggregate picture of the classified-product knowledge base. */
-export const productStats = async (organizationId: string) => {
+export const aggregateProductStats = async (organizationId: string) => {
   const where = and(
     eq(products.organizationId, organizationId),
     isNotNull(products.htsCode),
