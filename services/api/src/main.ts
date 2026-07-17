@@ -1,6 +1,7 @@
 // Tracing must initialize before anything that calls the AI SDK loads.
 import "./instrumentation";
 
+import { parse as parseFormBody } from "node:querystring";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
@@ -57,6 +58,58 @@ async function bootstrap() {
         functions: inngestFunctions,
       }) as never,
     });
+
+  // Parsers must be replaced AFTER init: the better-auth module swaps in
+  // its own body parsers during module init, discarding anything set
+  // earlier. This override keeps normal form parsing but sniffs JSON
+  // first — some webhook senders (Unipile) post JSON bodies labeled as
+  // x-www-form-urlencoded, which a plain form parser would shred into
+  // garbage keys.
+  await app.init();
+  const fastify = app.getHttpAdapter().getInstance();
+  fastify.removeContentTypeParser("application/x-www-form-urlencoded");
+  fastify.addContentTypeParser(
+    "application/x-www-form-urlencoded",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      const text = (body as string).trim();
+
+      // Raw or percent-encoded JSON posing as a form body.
+      const candidates = [text];
+      if (/^%7B/i.test(text)) {
+        try {
+          candidates.push(decodeURIComponent(text));
+        } catch {
+          // Malformed encoding — fall through to form parsing.
+        }
+      }
+      for (const candidate of candidates) {
+        if (candidate.startsWith("{")) {
+          try {
+            done(null, JSON.parse(candidate));
+            return;
+          } catch {
+            // Not JSON after all — treat as a regular form body.
+          }
+        }
+      }
+
+      const parsed = { ...parseFormBody(text) };
+      // Last resort: form parsing reduced a mislabeled JSON payload to a
+      // single garbage key holding the (now-decoded) document.
+      const keys = Object.keys(parsed);
+      const only = keys[0];
+      if (keys.length === 1 && only?.startsWith("{") && parsed[only] === "") {
+        try {
+          done(null, JSON.parse(only));
+          return;
+        } catch {
+          // Genuinely a form body with a weird key.
+        }
+      }
+      done(null, parsed);
+    },
+  );
 
   await app.listen(process.env.PORT ?? 3001, "0.0.0.0");
 }

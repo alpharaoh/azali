@@ -120,7 +120,14 @@ export class UnipileWebhooksService {
     const parsed = newEmailWebhookSchema.safeParse(body);
     if (!parsed.success) {
       this.logger.warn(
-        { issues: parsed.error.issues },
+        {
+          issues: parsed.error.issues.slice(0, 3),
+          bodyType: typeof body,
+          bodyKeys:
+            body && typeof body === "object"
+              ? Object.keys(body).slice(0, 8)
+              : null,
+        },
         "unparseable email webhook payload — ignoring",
       );
       return { ignored: true };
