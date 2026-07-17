@@ -1,13 +1,5 @@
-import { Check, Envelope, Plus, TrashBin } from "@gravity-ui/icons";
-import {
-  Button,
-  Chip,
-  Modal,
-  Separator,
-  Skeleton,
-  Tooltip,
-  toast,
-} from "@heroui/react";
+import { ChevronRight, Envelope, Plus, TrashBin } from "@gravity-ui/icons";
+import { Button, Chip, Modal, Skeleton, Tooltip, toast } from "@heroui/react";
 import { ItemCard, ItemCardGroup } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ComponentProps, ReactNode } from "react";
@@ -98,18 +90,21 @@ const PROVIDERS: Provider[] = [
   },
 ];
 
-function providerIcon(provider: string | null) {
+/** Pulsating "live" dot — shown wherever an inbox is actively connected. */
+function LiveDot() {
   return (
-    PROVIDERS.find((entry) => entry.id === provider)?.icon ?? (
-      <Envelope className="size-5" />
-    )
+    <span aria-label="Connected" className="relative flex size-2" role="img">
+      <span className="bg-success absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+      <span className="bg-success relative inline-flex size-2 rounded-full" />
+    </span>
   );
 }
 
 /**
- * The Integrations settings tab: connect Gmail / Outlook / IMAP inboxes.
- * Every email that lands on a connected inbox with shipment documents
- * attached becomes (or joins) a shipment automatically.
+ * The Integrations settings section: connect Gmail / Outlook / IMAP inboxes.
+ * Each provider card shows a live indicator when at least one inbox is
+ * connected; its chevron opens a modal listing every connected inbox with
+ * disconnect controls and a button to connect another.
  */
 export function EmailIntegrations() {
   const queryClient = useQueryClient();
@@ -126,8 +121,16 @@ export function EmailIntegrations() {
 
   const [connecting, setConnecting] =
     useState<ConnectEmailAccountDtoProvider | null>(null);
-  const [pendingDisconnect, setPendingDisconnect] =
-    useState<EmailAccount | null>(null);
+  const [openProviderId, setOpenProviderId] =
+    useState<ConnectEmailAccountDtoProvider | null>(null);
+  /** Account whose disconnect is awaiting inline confirmation. */
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const openProvider =
+    PROVIDERS.find((provider) => provider.id === openProviderId) ?? null;
+
+  const accountsFor = (provider: ConnectEmailAccountDtoProvider) =>
+    accounts.filter((account) => account.provider === provider);
 
   const handleConnect = async (provider: ConnectEmailAccountDtoProvider) => {
     setConnecting(provider);
@@ -146,25 +149,19 @@ export function EmailIntegrations() {
     }
   };
 
-  const confirmDisconnect = () => {
-    if (!pendingDisconnect) return;
-    const run = disconnect
-      .mutateAsync({ id: pendingDisconnect.id })
-      .then(async () => {
-        await queryClient.invalidateQueries({
-          queryKey: getEmailAccountsControllerListQueryKey(),
-        });
-        setPendingDisconnect(null);
+  const handleDisconnect = (account: EmailAccount) => {
+    const run = disconnect.mutateAsync({ id: account.id }).then(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getEmailAccountsControllerListQueryKey(),
       });
+      setConfirmingId(null);
+    });
     toast.promise(run, {
       error: "Failed to disconnect inbox",
       loading: "Disconnecting...",
       success: "Inbox disconnected",
     });
   };
-
-  const accountsFor = (provider: ConnectEmailAccountDtoProvider) =>
-    accounts.filter((account) => account.provider === provider);
 
   return (
     <div className="flex flex-col gap-6">
@@ -184,7 +181,12 @@ export function EmailIntegrations() {
                   {provider.icon}
                 </ItemCard.Icon>
                 <ItemCard.Content>
-                  <ItemCard.Title>{provider.name}</ItemCard.Title>
+                  <ItemCard.Title>
+                    <span className="flex items-center gap-2">
+                      {provider.name}
+                      {connected.length > 0 ? <LiveDot /> : null}
+                    </span>
+                  </ItemCard.Title>
                   <ItemCard.Description>
                     {connected.length === 0
                       ? provider.blurb
@@ -194,10 +196,17 @@ export function EmailIntegrations() {
                   </ItemCard.Description>
                 </ItemCard.Content>
                 <ItemCard.Action>
-                  <div className="flex items-center gap-2">
-                    {connected.length > 0 ? (
-                      <Check className="text-success size-5" />
-                    ) : null}
+                  {connected.length > 0 ? (
+                    <Button
+                      isIconOnly
+                      aria-label={`Manage ${provider.name} inboxes`}
+                      size="sm"
+                      variant="ghost"
+                      onPress={() => setOpenProviderId(provider.id)}
+                    >
+                      <ChevronRight className="text-muted size-4" />
+                    </Button>
+                  ) : (
                     <Tooltip delay={0}>
                       <Tooltip.Trigger>
                         <Button
@@ -213,7 +222,7 @@ export function EmailIntegrations() {
                       </Tooltip.Trigger>
                       <Tooltip.Content>Connect {provider.name}</Tooltip.Content>
                     </Tooltip>
-                  </div>
+                  )}
                 </ItemCard.Action>
               </ItemCard>
             );
@@ -221,98 +230,144 @@ export function EmailIntegrations() {
         </ItemCardGroup>
       )}
 
-      {accounts.length > 0 ? (
-        <>
-          <Separator />
-          <div className="flex flex-col gap-3">
-            <h3 className="text-foreground text-sm font-medium">
-              Connected inboxes
-            </h3>
-            <ItemCardGroup variant="outline">
-              {accounts.map((account) => (
-                <ItemCard key={account.id}>
-                  <ItemCard.Icon className="bg-default text-foreground">
-                    {providerIcon(account.provider)}
-                  </ItemCard.Icon>
-                  <ItemCard.Content>
-                    <ItemCard.Title>
-                      {account.emailAddress ?? account.provider ?? "Inbox"}
-                    </ItemCard.Title>
-                    <ItemCard.Description>
-                      {account.lastWebhookAt
-                        ? `Last mail ${formatDate(account.lastWebhookAt)}`
-                        : `Connected ${formatDate(account.createdAt)}`}
-                    </ItemCard.Description>
-                  </ItemCard.Content>
-                  <ItemCard.Action>
-                    <div className="flex items-center gap-2">
-                      <Chip
-                        color={
-                          account.status === "connected" ? "success" : "danger"
-                        }
-                        size="sm"
-                        variant="soft"
-                      >
-                        <Chip.Label>{account.status}</Chip.Label>
-                      </Chip>
-                      <Button
-                        isIconOnly
-                        aria-label="Disconnect inbox"
-                        size="sm"
-                        variant="ghost"
-                        onPress={() => setPendingDisconnect(account)}
-                      >
-                        <TrashBin className="text-muted size-4" />
-                      </Button>
-                    </div>
-                  </ItemCard.Action>
-                </ItemCard>
-              ))}
-            </ItemCardGroup>
-          </div>
-        </>
-      ) : null}
-
       <Modal
-        isOpen={pendingDisconnect !== null}
+        isOpen={openProvider !== null}
         onOpenChange={(open) => {
-          if (!open) setPendingDisconnect(null);
+          if (!open) {
+            setOpenProviderId(null);
+            setConfirmingId(null);
+          }
         }}
       >
         <Modal.Backdrop>
           <Modal.Container>
-            <Modal.Dialog className="sm:max-w-[360px]">
+            <Modal.Dialog className="sm:max-w-[440px]">
               <Modal.CloseTrigger />
               <Modal.Header>
-                <Modal.Icon className="bg-danger-soft text-danger-soft-foreground">
-                  <TrashBin className="size-5" />
+                <Modal.Icon className="bg-default text-foreground">
+                  {openProvider?.icon}
                 </Modal.Icon>
-                <Modal.Heading>
-                  Disconnect {pendingDisconnect?.emailAddress ?? "this inbox"}?
-                </Modal.Heading>
+                <Modal.Heading>{openProvider?.name} inboxes</Modal.Heading>
               </Modal.Header>
               <Modal.Body>
-                <p>
-                  New emails to this inbox will no longer create or update
-                  shipments. Shipments already created from it are unaffected.
-                </p>
+                {openProvider && (
+                  <ProviderAccountList
+                    accounts={accountsFor(openProvider.id)}
+                    confirmingId={confirmingId}
+                    isDisconnecting={disconnect.isPending}
+                    providerName={openProvider.name}
+                    onCancelConfirm={() => setConfirmingId(null)}
+                    onDisconnect={handleDisconnect}
+                    onRequestConfirm={(id) => setConfirmingId(id)}
+                  />
+                )}
               </Modal.Body>
               <Modal.Footer>
                 <Button slot="close" variant="secondary">
-                  Cancel
+                  Close
                 </Button>
-                <Button
-                  isPending={disconnect.isPending}
-                  variant="danger"
-                  onPress={confirmDisconnect}
-                >
-                  Disconnect
-                </Button>
+                {openProvider && (
+                  <Button
+                    isPending={connecting === openProvider.id}
+                    variant="primary"
+                    onPress={() => void handleConnect(openProvider.id)}
+                  >
+                    <Plus className="size-4" />
+                    Connect {openProvider.name}
+                  </Button>
+                )}
               </Modal.Footer>
             </Modal.Dialog>
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
     </div>
+  );
+}
+
+function ProviderAccountList({
+  accounts,
+  confirmingId,
+  isDisconnecting,
+  providerName,
+  onCancelConfirm,
+  onDisconnect,
+  onRequestConfirm,
+}: {
+  accounts: EmailAccount[];
+  confirmingId: string | null;
+  isDisconnecting: boolean;
+  providerName: string;
+  onCancelConfirm: () => void;
+  onDisconnect: (account: EmailAccount) => void;
+  onRequestConfirm: (id: string) => void;
+}) {
+  if (accounts.length === 0) {
+    return (
+      <p className="text-muted py-6 text-center text-sm">
+        No {providerName} inboxes connected yet.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="divide-border flex flex-col divide-y">
+      {accounts.map((account) => {
+        const confirming = confirmingId === account.id;
+        return (
+          <li className="flex items-center gap-3 py-3" key={account.id}>
+            {account.status === "connected" ? (
+              <LiveDot />
+            ) : (
+              <span className="bg-danger size-2 shrink-0 rounded-full" />
+            )}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-foreground truncate text-sm">
+                {account.emailAddress ?? "Inbox"}
+              </span>
+              <span className="text-muted text-xs">
+                {confirming
+                  ? "New emails will stop creating shipments."
+                  : account.lastWebhookAt
+                    ? `Last mail ${formatDate(account.lastWebhookAt)}`
+                    : `Connected ${formatDate(account.createdAt)}`}
+              </span>
+            </div>
+            {confirming ? (
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Button size="sm" variant="ghost" onPress={onCancelConfirm}>
+                  Cancel
+                </Button>
+                <Button
+                  isPending={isDisconnecting}
+                  size="sm"
+                  variant="danger"
+                  onPress={() => onDisconnect(account)}
+                >
+                  Disconnect
+                </Button>
+              </div>
+            ) : (
+              <div className="flex shrink-0 items-center gap-2">
+                {account.status !== "connected" ? (
+                  <Chip color="danger" size="sm" variant="soft">
+                    <Chip.Label>{account.status}</Chip.Label>
+                  </Chip>
+                ) : null}
+                <Button
+                  isIconOnly
+                  aria-label={`Disconnect ${account.emailAddress ?? "inbox"}`}
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => onRequestConfirm(account.id)}
+                >
+                  <TrashBin className="text-muted size-4" />
+                </Button>
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
