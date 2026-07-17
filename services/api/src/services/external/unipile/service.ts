@@ -60,6 +60,60 @@ export class UnipileService {
     return { url: response.url };
   }
 
+  /**
+   * Register (or re-register) THE email webhook for this deployment. Dev
+   * tunnels get a fresh URL on every boot, so the registration is upserted
+   * by name: any previous webhook we own is deleted and recreated pointing
+   * at the current URL. Scoped to UNIPILE_WEBHOOK_MAILBOXES when set —
+   * matching accounts connected later are picked up on the next sync.
+   */
+  static async syncEmailWebhook({
+    requestUrl,
+  }: {
+    requestUrl: string;
+  }): Promise<{ webhookId: string; scopedTo: string[] | null }> {
+    if (!env.UNIPILE_WEBHOOK_SECRET) {
+      throw new Error(
+        "UNIPILE_WEBHOOK_SECRET is not set — required to secure the email webhook",
+      );
+    }
+    const client = getUnipileClient();
+    const webhookName = "azali-email-ingest";
+
+    // Resolve the configured mailboxes to currently connected account ids.
+    let accountIds: string[] | undefined;
+    let scopedTo: string[] | null = null;
+    const mailboxes = env.UNIPILE_WEBHOOK_MAILBOXES;
+    if (mailboxes?.length) {
+      const accounts = await client.account.getAll();
+      const matching = accounts.items.filter((account) =>
+        mailboxes.includes(account.name.toLowerCase()),
+      );
+      accountIds = matching.map((account) => account.id);
+      scopedTo = matching.map((account) => account.name);
+    }
+
+    const existing = await client.webhook.getAll();
+    for (const hook of existing.items) {
+      if (hook.name === webhookName) {
+        await client.webhook.delete(hook.id);
+      }
+    }
+
+    const created = await client.webhook.create({
+      source: "email",
+      name: webhookName,
+      request_url: `${requestUrl}/v1/webhooks/unipile/email`,
+      events: ["mail_received"],
+      headers: [
+        { key: "X-Azali-Webhook-Secret", value: env.UNIPILE_WEBHOOK_SECRET },
+      ],
+      ...(accountIds ? { account_ids: accountIds } : {}),
+    });
+
+    return { webhookId: created.webhook_id, scopedTo };
+  }
+
   /** Full email read — fallback when a webhook says `has_attachments` but
    * carries an empty attachments array. */
   static async getEmail({ emailId }: { emailId: string }) {

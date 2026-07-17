@@ -1,4 +1,5 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
+import { UnipileService } from "@/services/external/unipile/service";
 
 /**
  * Dev entrypoint: starts a cloudflared quick tunnel to this machine, then
@@ -95,6 +96,25 @@ async function main() {
     }
   } else {
     log(`using explicit API_BASE_URL: ${apiBaseUrl}`);
+  }
+
+  // Point the provider's email webhook at whatever URL this boot got —
+  // quick-tunnel URLs rotate, so the registration is upserted every start.
+  if (apiBaseUrl) {
+    try {
+      const { scopedTo } = await UnipileService.syncEmailWebhook({
+        requestUrl: apiBaseUrl,
+      });
+      log(
+        scopedTo
+          ? `email webhook registered for: ${scopedTo.join(", ") || "(no matching accounts yet)"}`
+          : "email webhook registered for all accounts",
+      );
+    } catch (error) {
+      log(
+        `email webhook sync skipped: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   const server = spawn("bun", ["--watch", "src/main.ts"], {

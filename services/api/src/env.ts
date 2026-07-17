@@ -35,6 +35,19 @@ const envSchema = z.object({
   UNIPILE_DSN: z.string().optional(),
   // Shared secret Unipile sends back as a custom header on email webhooks.
   UNIPILE_WEBHOOK_SECRET: z.string().optional(),
+  // Comma-separated mailbox addresses the email webhook is scoped to;
+  // unset means every connected account (current and future).
+  UNIPILE_WEBHOOK_MAILBOXES: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(",")
+            .map((mailbox) => mailbox.trim().toLowerCase())
+            .filter(Boolean)
+        : undefined,
+    ),
   // Public base URL of this API (tunnel in dev) — used for Unipile callbacks.
   API_BASE_URL: z.string(),
   // Optional — Datadog log shipping is simply disabled when the key is absent.
