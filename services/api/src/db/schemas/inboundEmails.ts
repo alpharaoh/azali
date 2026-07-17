@@ -48,6 +48,11 @@ export const inboundEmails = pgTable(
     inReplyToMessageId: text("in_reply_to_message_id"),
     fromAddress: text("from_address").notNull(),
     subject: text("subject"),
+    // Message content, capped at ingestion so one giant newsletter can't
+    // bloat the table. Plain text is what extraction reads; the HTML is
+    // kept for faithful display/audit.
+    bodyPlain: text("body_plain"),
+    bodyHtml: text("body_html"),
     // LLM-extracted commercial invoice number, normalized (uppercased,
     // whitespace/punctuation stripped); null when the model found none.
     invoiceNumber: text("invoice_number"),
@@ -59,7 +64,7 @@ export const inboundEmails = pgTable(
       .notNull()
       .default(InboundEmailStatus.Received),
     attachmentCount: integer("attachment_count").notNull().default(0),
-    // Trimmed webhook body (html `body` dropped) kept for debugging.
+    // Trimmed webhook metadata (recipients, folders, ids) for debugging.
     payload: jsonbObject("payload").notNull().default(sql`'{}'::jsonb`),
   },
   (table) => [

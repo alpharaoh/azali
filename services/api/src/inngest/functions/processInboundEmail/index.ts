@@ -31,6 +31,9 @@ import {
 
 export const INBOUND_EMAIL_RECEIVED_EVENT = "email/inbound.received" as const;
 
+/** Stored body cap — enough for any real correspondence, bounds bloat. */
+const MAX_BODY_CHARS = 100_000;
+
 export type InboundEmailReceivedEvent = {
   data: {
     organizationId: string;
@@ -115,6 +118,8 @@ export const processInboundEmail = () => {
           inReplyToMessageId: email.in_reply_to?.message_id ?? null,
           fromAddress,
           subject: email.subject ?? null,
+          bodyPlain: email.body_plain?.slice(0, MAX_BODY_CHARS) || null,
+          bodyHtml: email.body?.slice(0, MAX_BODY_CHARS) || null,
           receivedAt,
           attachmentCount: email.attachments.length,
           payload: {
