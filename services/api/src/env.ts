@@ -28,6 +28,7 @@ const envSchema = z.object({
   LANGFUSE_PUBLIC_KEY: z.string().optional(),
   LANGFUSE_SECRET_KEY: z.string().optional(),
   LANGFUSE_BASE_URL: z.string().optional(),
+  UNIPILE_API_KEY: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);
