@@ -1,6 +1,18 @@
 import { env } from "@/env";
 import { getUnipileClient } from "./client";
 
+/** "MAIL" is Unipile's generic IMAP/SMTP provider. */
+export type MailProvider = "GOOGLE" | "OUTLOOK" | "MAIL";
+
+const ALL_MAIL_PROVIDERS: MailProvider[] = ["GOOGLE", "OUTLOOK", "MAIL"];
+
+/** `returnUrl` with a `connected` result flag appended. */
+function redirectUrl(returnUrl: string, result: "success" | "error") {
+  const url = new URL(returnUrl);
+  url.searchParams.set("connected", result);
+  return url.toString() as `http${string}`;
+}
+
 /**
  * Thin wrapper over the Unipile SDK for the email-ingestion flow: hosted
  * auth links to connect customer inboxes, and email/attachment reads for
@@ -8,16 +20,22 @@ import { getUnipileClient } from "./client";
  */
 export class UnipileService {
   /**
-   * A one-time URL where the customer connects any mail provider. `name`
+   * A one-time URL where the customer connects a mail provider. `name`
    * carries our opaque connect token — Unipile echoes it back on the
    * notify callback so the new account lands on the right org/user.
+   * `returnUrl` (already origin-validated by the caller) is where the
+   * hosted page sends the user afterwards.
    */
   static async createHostedAuthLink({
     name,
     expiresOn,
+    providers,
+    returnUrl,
   }: {
     name: string;
     expiresOn: Date;
+    providers?: MailProvider[];
+    returnUrl?: string;
   }): Promise<{ url: string }> {
     if (!env.API_BASE_URL) {
       throw new Error(
@@ -27,12 +45,17 @@ export class UnipileService {
     const client = getUnipileClient();
     const response = await client.account.createHostedAuthLink({
       type: "create",
-      // "MAIL" is Unipile's generic IMAP/SMTP provider.
-      providers: ["GOOGLE", "OUTLOOK", "MAIL"],
+      providers: providers?.length ? providers : ALL_MAIL_PROVIDERS,
       api_url: `https://${env.UNIPILE_DSN}`,
       expiresOn: expiresOn.toISOString() as `${string}Z`,
       notify_url: `${env.API_BASE_URL}/v1/webhooks/unipile/hosted-auth`,
       name,
+      ...(returnUrl
+        ? {
+            success_redirect_url: redirectUrl(returnUrl, "success"),
+            failure_redirect_url: redirectUrl(returnUrl, "error"),
+          }
+        : {}),
     });
     return { url: response.url };
   }

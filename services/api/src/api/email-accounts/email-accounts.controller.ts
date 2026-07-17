@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -8,6 +8,7 @@ import {
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getActiveOrganizationId } from "@/db/lib/getActiveOrganizationId";
 import type { auth } from "@/lib/auth";
+import { ConnectEmailAccountDto } from "./dto/connect-email-account.dto";
 import {
   ConnectEmailAccountResponseDto,
   ListEmailAccountsResponseDto,
@@ -26,10 +27,14 @@ export class EmailAccountsController {
       "Returns a single-use hosted URL where the user connects any mail provider (Gmail, Outlook, IMAP). Once connected, new inbox emails with shipment documents flow into shipments automatically.",
   })
   @ApiCreatedResponse({ type: ConnectEmailAccountResponseDto })
-  connect(@Session() session: UserSession<typeof auth>) {
+  connect(
+    @Session() session: UserSession<typeof auth>,
+    @Body() dto: ConnectEmailAccountDto,
+  ) {
     return this.emailAccountsService.connect(
       getActiveOrganizationId(session),
       session.user.id,
+      dto,
     );
   }
 

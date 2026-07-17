@@ -5,7 +5,10 @@
  * The official API for Azali
  * OpenAPI spec version: 1.0
  */
-
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,11 +21,11 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import type { ErrorType } from "../lib/axios";
-import { axios } from "../lib/axios";
+  UseQueryResult
+} from '@tanstack/react-query';
+
+import { axios } from '../lib/axios';
+import type { ErrorType } from '../lib/axios';
 /**
  * The signed-in user.
  */
@@ -134,23 +137,23 @@ export interface MeResponseDto {
 /**
  * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
  */
-export type CreateClientDtoAutonomy =
-  (typeof CreateClientDtoAutonomy)[keyof typeof CreateClientDtoAutonomy];
+export type CreateClientDtoAutonomy = typeof CreateClientDtoAutonomy[keyof typeof CreateClientDtoAutonomy];
+
 
 export const CreateClientDtoAutonomy = {
-  supervised: "supervised",
-  autopilot: "autopilot",
+  supervised: 'supervised',
+  autopilot: 'autopilot',
 } as const;
 
 /**
  * Whether automation is active or paused for this client.
  */
-export type CreateClientDtoStatus =
-  (typeof CreateClientDtoStatus)[keyof typeof CreateClientDtoStatus];
+export type CreateClientDtoStatus = typeof CreateClientDtoStatus[keyof typeof CreateClientDtoStatus];
+
 
 export const CreateClientDtoStatus = {
-  active: "active",
-  paused: "paused",
+  active: 'active',
+  paused: 'paused',
 } as const;
 
 export interface CreateClientDto {
@@ -196,23 +199,23 @@ export interface CreateClientDto {
 /**
  * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
  */
-export type ClientResponseDtoAutonomy =
-  (typeof ClientResponseDtoAutonomy)[keyof typeof ClientResponseDtoAutonomy];
+export type ClientResponseDtoAutonomy = typeof ClientResponseDtoAutonomy[keyof typeof ClientResponseDtoAutonomy];
+
 
 export const ClientResponseDtoAutonomy = {
-  supervised: "supervised",
-  autopilot: "autopilot",
+  supervised: 'supervised',
+  autopilot: 'autopilot',
 } as const;
 
 /**
  * Whether automation is active or paused for this client.
  */
-export type ClientResponseDtoStatus =
-  (typeof ClientResponseDtoStatus)[keyof typeof ClientResponseDtoStatus];
+export type ClientResponseDtoStatus = typeof ClientResponseDtoStatus[keyof typeof ClientResponseDtoStatus];
+
 
 export const ClientResponseDtoStatus = {
-  active: "active",
-  paused: "paused",
+  active: 'active',
+  paused: 'paused',
 } as const;
 
 export interface ClientResponseDto {
@@ -265,23 +268,23 @@ export interface ClientResponseDto {
 /**
  * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
  */
-export type ListClientsResponseDtoDataItemAutonomy =
-  (typeof ListClientsResponseDtoDataItemAutonomy)[keyof typeof ListClientsResponseDtoDataItemAutonomy];
+export type ListClientsResponseDtoDataItemAutonomy = typeof ListClientsResponseDtoDataItemAutonomy[keyof typeof ListClientsResponseDtoDataItemAutonomy];
+
 
 export const ListClientsResponseDtoDataItemAutonomy = {
-  supervised: "supervised",
-  autopilot: "autopilot",
+  supervised: 'supervised',
+  autopilot: 'autopilot',
 } as const;
 
 /**
  * Whether automation is active or paused for this client.
  */
-export type ListClientsResponseDtoDataItemStatus =
-  (typeof ListClientsResponseDtoDataItemStatus)[keyof typeof ListClientsResponseDtoDataItemStatus];
+export type ListClientsResponseDtoDataItemStatus = typeof ListClientsResponseDtoDataItemStatus[keyof typeof ListClientsResponseDtoDataItemStatus];
+
 
 export const ListClientsResponseDtoDataItemStatus = {
-  active: "active",
-  paused: "paused",
+  active: 'active',
+  paused: 'paused',
 } as const;
 
 export type ListClientsResponseDtoDataItem = {
@@ -345,23 +348,23 @@ export interface ListClientsResponseDto {
 /**
  * Automation level: supervised (broker reviews) or autopilot (confident work flows through).
  */
-export type UpdateClientDtoAutonomy =
-  (typeof UpdateClientDtoAutonomy)[keyof typeof UpdateClientDtoAutonomy];
+export type UpdateClientDtoAutonomy = typeof UpdateClientDtoAutonomy[keyof typeof UpdateClientDtoAutonomy];
+
 
 export const UpdateClientDtoAutonomy = {
-  supervised: "supervised",
-  autopilot: "autopilot",
+  supervised: 'supervised',
+  autopilot: 'autopilot',
 } as const;
 
 /**
  * Whether automation is active or paused for this client.
  */
-export type UpdateClientDtoStatus =
-  (typeof UpdateClientDtoStatus)[keyof typeof UpdateClientDtoStatus];
+export type UpdateClientDtoStatus = typeof UpdateClientDtoStatus[keyof typeof UpdateClientDtoStatus];
+
 
 export const UpdateClientDtoStatus = {
-  active: "active",
-  paused: "paused",
+  active: 'active',
+  paused: 'paused',
 } as const;
 
 export interface UpdateClientDto {
@@ -441,6 +444,11 @@ export interface OrganizationResponseDto {
    * @nullable
    */
   filerCode: string | null;
+  /**
+   * How long an email-created shipment collects follow-up emails before classification starts, in minutes; null uses the platform default of 2 hours.
+   * @nullable
+   */
+  emailIntakeWindowMinutes: number | null;
 }
 
 export interface UpdateOrganizationDto {
@@ -474,47 +482,54 @@ export interface UpdateOrganizationDto {
    * @pattern ^[A-Za-z0-9]{3}$
    */
   filerCode?: string | null;
+  /**
+   * How long an email-created shipment collects follow-up emails before classification starts, in minutes (max one week). Empty uses the platform default of 2 hours.
+   * @minimum 1
+   * @maximum 10080
+   * @nullable
+   */
+  emailIntakeWindowMinutes?: number | null;
 }
 
 /**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
-export type CreateShipmentDtoStage =
-  (typeof CreateShipmentDtoStage)[keyof typeof CreateShipmentDtoStage];
+export type CreateShipmentDtoStage = typeof CreateShipmentDtoStage[keyof typeof CreateShipmentDtoStage];
+
 
 export const CreateShipmentDtoStage = {
-  intake: "intake",
-  classification: "classification",
-  compliance: "compliance",
-  entry: "entry",
-  filed: "filed",
-  released: "released",
+  intake: 'intake',
+  classification: 'classification',
+  compliance: 'compliance',
+  entry: 'entry',
+  filed: 'filed',
+  released: 'released',
 } as const;
 
 /**
  * Operational status: autopilot, needs_review, awaiting_cbp, or released.
  */
-export type CreateShipmentDtoStatus =
-  (typeof CreateShipmentDtoStatus)[keyof typeof CreateShipmentDtoStatus];
+export type CreateShipmentDtoStatus = typeof CreateShipmentDtoStatus[keyof typeof CreateShipmentDtoStatus];
+
 
 export const CreateShipmentDtoStatus = {
-  autopilot: "autopilot",
-  needs_review: "needs_review",
-  awaiting_cbp: "awaiting_cbp",
-  released: "released",
+  autopilot: 'autopilot',
+  needs_review: 'needs_review',
+  awaiting_cbp: 'awaiting_cbp',
+  released: 'released',
 } as const;
 
 /**
  * How the cargo moves: ocean, air, truck, or rail.
  */
-export type CreateShipmentDtoTransportMode =
-  (typeof CreateShipmentDtoTransportMode)[keyof typeof CreateShipmentDtoTransportMode];
+export type CreateShipmentDtoTransportMode = typeof CreateShipmentDtoTransportMode[keyof typeof CreateShipmentDtoTransportMode];
+
 
 export const CreateShipmentDtoTransportMode = {
-  ocean: "ocean",
-  air: "air",
-  truck: "truck",
-  rail: "rail",
+  ocean: 'ocean',
+  air: 'air',
+  truck: 'truck',
+  rail: 'rail',
 } as const;
 
 export interface CreateShipmentDto {
@@ -614,35 +629,35 @@ export type ShipmentResponseDtoClient = {
 /**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
-export type ShipmentResponseDtoStage =
-  (typeof ShipmentResponseDtoStage)[keyof typeof ShipmentResponseDtoStage];
+export type ShipmentResponseDtoStage = typeof ShipmentResponseDtoStage[keyof typeof ShipmentResponseDtoStage];
+
 
 export const ShipmentResponseDtoStage = {
-  intake: "intake",
-  classification: "classification",
-  compliance: "compliance",
-  entry: "entry",
-  filed: "filed",
-  released: "released",
+  intake: 'intake',
+  classification: 'classification',
+  compliance: 'compliance',
+  entry: 'entry',
+  filed: 'filed',
+  released: 'released',
 } as const;
 
 /**
  * Operational status: autopilot, needs_review, awaiting_cbp, or released.
  */
-export type ShipmentResponseDtoStatus =
-  (typeof ShipmentResponseDtoStatus)[keyof typeof ShipmentResponseDtoStatus];
+export type ShipmentResponseDtoStatus = typeof ShipmentResponseDtoStatus[keyof typeof ShipmentResponseDtoStatus];
+
 
 export const ShipmentResponseDtoStatus = {
-  autopilot: "autopilot",
-  needs_review: "needs_review",
-  awaiting_cbp: "awaiting_cbp",
-  released: "released",
+  autopilot: 'autopilot',
+  needs_review: 'needs_review',
+  awaiting_cbp: 'awaiting_cbp',
+  released: 'released',
 } as const;
 
 /**
  * Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action.
  */
-export type ShipmentResponseDtoSummary = { [key: string]: unknown };
+export type ShipmentResponseDtoSummary = {[key: string]: unknown};
 
 export interface ShipmentResponseDto {
   /** Shipment id. */
@@ -772,37 +787,35 @@ export type ListShipmentsResponseDtoDataItemClient = {
 /**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
-export type ListShipmentsResponseDtoDataItemStage =
-  (typeof ListShipmentsResponseDtoDataItemStage)[keyof typeof ListShipmentsResponseDtoDataItemStage];
+export type ListShipmentsResponseDtoDataItemStage = typeof ListShipmentsResponseDtoDataItemStage[keyof typeof ListShipmentsResponseDtoDataItemStage];
+
 
 export const ListShipmentsResponseDtoDataItemStage = {
-  intake: "intake",
-  classification: "classification",
-  compliance: "compliance",
-  entry: "entry",
-  filed: "filed",
-  released: "released",
+  intake: 'intake',
+  classification: 'classification',
+  compliance: 'compliance',
+  entry: 'entry',
+  filed: 'filed',
+  released: 'released',
 } as const;
 
 /**
  * Operational status: autopilot, needs_review, awaiting_cbp, or released.
  */
-export type ListShipmentsResponseDtoDataItemStatus =
-  (typeof ListShipmentsResponseDtoDataItemStatus)[keyof typeof ListShipmentsResponseDtoDataItemStatus];
+export type ListShipmentsResponseDtoDataItemStatus = typeof ListShipmentsResponseDtoDataItemStatus[keyof typeof ListShipmentsResponseDtoDataItemStatus];
+
 
 export const ListShipmentsResponseDtoDataItemStatus = {
-  autopilot: "autopilot",
-  needs_review: "needs_review",
-  awaiting_cbp: "awaiting_cbp",
-  released: "released",
+  autopilot: 'autopilot',
+  needs_review: 'needs_review',
+  awaiting_cbp: 'awaiting_cbp',
+  released: 'released',
 } as const;
 
 /**
  * Fast-changing snapshot for display: current HTS + confidence, duty rate, flags, next action.
  */
-export type ListShipmentsResponseDtoDataItemSummary = {
-  [key: string]: unknown;
-};
+export type ListShipmentsResponseDtoDataItemSummary = {[key: string]: unknown};
 
 export type ListShipmentsResponseDtoDataItem = {
   /** Shipment id. */
@@ -953,7 +966,7 @@ export type ShipmentStatsResponseDtoByStatus = {
 /**
  * Pending-review counts keyed by review type.
  */
-export type ShipmentStatsResponseDtoByReviewType = { [key: string]: number };
+export type ShipmentStatsResponseDtoByReviewType = {[key: string]: number};
 
 export interface ShipmentStatsResponseDto {
   /**
@@ -971,42 +984,42 @@ export interface ShipmentStatsResponseDto {
 /**
  * Pipeline stage: intake → classification → compliance → entry → filed → released.
  */
-export type UpdateShipmentDtoStage =
-  (typeof UpdateShipmentDtoStage)[keyof typeof UpdateShipmentDtoStage];
+export type UpdateShipmentDtoStage = typeof UpdateShipmentDtoStage[keyof typeof UpdateShipmentDtoStage];
+
 
 export const UpdateShipmentDtoStage = {
-  intake: "intake",
-  classification: "classification",
-  compliance: "compliance",
-  entry: "entry",
-  filed: "filed",
-  released: "released",
+  intake: 'intake',
+  classification: 'classification',
+  compliance: 'compliance',
+  entry: 'entry',
+  filed: 'filed',
+  released: 'released',
 } as const;
 
 /**
  * Operational status: autopilot, needs_review, awaiting_cbp, or released.
  */
-export type UpdateShipmentDtoStatus =
-  (typeof UpdateShipmentDtoStatus)[keyof typeof UpdateShipmentDtoStatus];
+export type UpdateShipmentDtoStatus = typeof UpdateShipmentDtoStatus[keyof typeof UpdateShipmentDtoStatus];
+
 
 export const UpdateShipmentDtoStatus = {
-  autopilot: "autopilot",
-  needs_review: "needs_review",
-  awaiting_cbp: "awaiting_cbp",
-  released: "released",
+  autopilot: 'autopilot',
+  needs_review: 'needs_review',
+  awaiting_cbp: 'awaiting_cbp',
+  released: 'released',
 } as const;
 
 /**
  * How the cargo moves: ocean, air, truck, or rail.
  */
-export type UpdateShipmentDtoTransportMode =
-  (typeof UpdateShipmentDtoTransportMode)[keyof typeof UpdateShipmentDtoTransportMode];
+export type UpdateShipmentDtoTransportMode = typeof UpdateShipmentDtoTransportMode[keyof typeof UpdateShipmentDtoTransportMode];
+
 
 export const UpdateShipmentDtoTransportMode = {
-  ocean: "ocean",
-  air: "air",
-  truck: "truck",
-  rail: "rail",
+  ocean: 'ocean',
+  air: 'air',
+  truck: 'truck',
+  rail: 'rail',
 } as const;
 
 export interface UpdateShipmentDto {
@@ -1090,13 +1103,13 @@ export interface UpdateShipmentDto {
 /**
  * approved accepts the AI proposal; corrected substitutes the broker's answer; info_requested keeps the shipment in the review queue pending more information.
  */
-export type ResolveReviewDtoAction =
-  (typeof ResolveReviewDtoAction)[keyof typeof ResolveReviewDtoAction];
+export type ResolveReviewDtoAction = typeof ResolveReviewDtoAction[keyof typeof ResolveReviewDtoAction];
+
 
 export const ResolveReviewDtoAction = {
-  approved: "approved",
-  corrected: "corrected",
-  info_requested: "info_requested",
+  approved: 'approved',
+  corrected: 'corrected',
+  info_requested: 'info_requested',
 } as const;
 
 export type ResolveReviewDtoCorrectionsItem = {
@@ -1230,9 +1243,7 @@ export interface ClassifyResponseDto {
 /**
  * Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones.
  */
-export type ListShipmentEventsResponseDtoDataItemPayload = {
-  [key: string]: unknown;
-};
+export type ListShipmentEventsResponseDtoDataItemPayload = {[key: string]: unknown};
 
 export type ListShipmentEventsResponseDtoDataItem = {
   /** Event id. */
@@ -1289,20 +1300,20 @@ export interface ListShipmentEventsResponseDto {
 /**
  * Who produced the event: ai, user, system, or cbp.
  */
-export type CreateShipmentEventDtoActor =
-  (typeof CreateShipmentEventDtoActor)[keyof typeof CreateShipmentEventDtoActor];
+export type CreateShipmentEventDtoActor = typeof CreateShipmentEventDtoActor[keyof typeof CreateShipmentEventDtoActor];
+
 
 export const CreateShipmentEventDtoActor = {
-  ai: "ai",
-  user: "user",
-  system: "system",
-  cbp: "cbp",
+  ai: 'ai',
+  user: 'user',
+  system: 'system',
+  cbp: 'cbp',
 } as const;
 
 /**
  * Type-specific structured data.
  */
-export type CreateShipmentEventDtoPayload = { [key: string]: unknown };
+export type CreateShipmentEventDtoPayload = {[key: string]: unknown};
 
 export interface CreateShipmentEventDto {
   /**
@@ -1329,7 +1340,7 @@ export interface CreateShipmentEventDto {
 /**
  * Type-specific structured data. Document events also carry src and previewUrl — short-lived links to the file and its preview image. Links expire after 5 minutes; request the list again for fresh ones.
  */
-export type ShipmentEventResponseDtoPayload = { [key: string]: unknown };
+export type ShipmentEventResponseDtoPayload = {[key: string]: unknown};
 
 export interface ShipmentEventResponseDto {
   /** Event id. */
@@ -1421,15 +1432,15 @@ export interface UploadDocumentsResponseDto {
 /**
  * Intake category: commercial_invoice, packing_list, bill_of_lading, arrival_notice, or other.
  */
-export type IngestDocumentsDtoFilesItemCategory =
-  (typeof IngestDocumentsDtoFilesItemCategory)[keyof typeof IngestDocumentsDtoFilesItemCategory];
+export type IngestDocumentsDtoFilesItemCategory = typeof IngestDocumentsDtoFilesItemCategory[keyof typeof IngestDocumentsDtoFilesItemCategory];
+
 
 export const IngestDocumentsDtoFilesItemCategory = {
-  commercial_invoice: "commercial_invoice",
-  packing_list: "packing_list",
-  bill_of_lading: "bill_of_lading",
-  arrival_notice: "arrival_notice",
-  other: "other",
+  commercial_invoice: 'commercial_invoice',
+  packing_list: 'packing_list',
+  bill_of_lading: 'bill_of_lading',
+  arrival_notice: 'arrival_notice',
+  other: 'other',
 } as const;
 
 export type IngestDocumentsDtoFilesItem = {
@@ -1486,9 +1497,9 @@ export type ListShipmentDocumentsResponseDtoDocumentsItemExtraction = {
   summary: string;
   /** The document's structured data as key-value pairs. */
   fields: {
-    label: string;
-    value: string;
-  }[];
+  label: string;
+  value: string;
+}[];
 } | null;
 
 export type ListShipmentDocumentsResponseDtoDocumentsItem = {
@@ -1534,9 +1545,7 @@ export interface ListShipmentDocumentsResponseDto {
  * The run's final structured result, when completed.
  * @nullable
  */
-export type ListAgentRunsResponseDtoRunsItemResult = {
-  [key: string]: unknown;
-} | null;
+export type ListAgentRunsResponseDtoRunsItemResult = {[key: string]: unknown} | null;
 
 export type ListAgentRunsResponseDtoRunsItem = {
   /** Run id. */
@@ -1603,9 +1612,7 @@ export interface ListAgentRunsResponseDto {
  * The run's final structured result, when completed.
  * @nullable
  */
-export type AgentRunDetailResponseDtoRunResult = {
-  [key: string]: unknown;
-} | null;
+export type AgentRunDetailResponseDtoRunResult = {[key: string]: unknown} | null;
 
 export type AgentRunDetailResponseDtoRun = {
   /** Run id. */
@@ -1666,9 +1673,7 @@ export type AgentRunDetailResponseDtoRun = {
 /**
  * The item's full content — reasoning text, action input, or findings.
  */
-export type AgentRunDetailResponseDtoItemsItemContent = {
-  [key: string]: unknown;
-};
+export type AgentRunDetailResponseDtoItemsItemContent = {[key: string]: unknown};
 
 export type AgentRunDetailResponseDtoItemsItem = {
   /** Which reasoning pass this belongs to. */
@@ -1949,4808 +1954,3594 @@ export interface ProductResponseDto {
   createdAt: string;
 }
 
-export type ClientsControllerFindAllParams = {
+/**
+ * Take the user straight into this provider's connection flow (MAIL = generic IMAP). Omit to let them pick on the hosted page.
+ */
+export type ConnectEmailAccountDtoProvider = typeof ConnectEmailAccountDtoProvider[keyof typeof ConnectEmailAccountDtoProvider];
+
+
+export const ConnectEmailAccountDtoProvider = {
+  GOOGLE: 'GOOGLE',
+  OUTLOOK: 'OUTLOOK',
+  MAIL: 'MAIL',
+} as const;
+
+export interface ConnectEmailAccountDto {
+  /** Take the user straight into this provider's connection flow (MAIL = generic IMAP). Omit to let them pick on the hosted page. */
+  provider?: ConnectEmailAccountDtoProvider;
+  /** Where to send the user after they finish connecting. Must be on one of the app's trusted origins; a `connected=success|error` query param is appended. */
+  returnUrl?: string;
+}
+
+export interface ConnectEmailAccountResponseDto {
+  /** Hosted page where the user securely connects their inbox. Single use. */
+  url: string;
+  /** ISO instant the connect link stops working. */
+  expiresAt: string;
+}
+
+export type ListEmailAccountsResponseDtoAccountsItem = {
+  id: string;
   /**
-   * Free-text search on the client name (case-insensitive).
+   * E.g. GOOGLE, OUTLOOK, MAIL.
+   * @nullable
    */
-  search?: string;
+  provider: string | null;
+  /** @nullable */
+  emailAddress: string | null;
+  /** pending | connected | disconnected | error */
+  status: string;
+  connectedByUserId: string;
   /**
-   * Filter by status; comma-separated for multiple values.
+   * Last time mail was delivered for this inbox.
+   * @nullable
    */
-  status?: ClientsControllerFindAllStatusItem[];
-  /**
-   * Filter by autonomy; comma-separated for multiple values.
-   */
-  autonomy?: ClientsControllerFindAllAutonomyItem[];
-  /**
-   * Column to sort by.
-   */
-  sortBy?: ClientsControllerFindAllSortBy;
-  /**
-   * Sort direction.
-   */
-  sortDir?: ClientsControllerFindAllSortDir;
-  /**
-   * Page size (1–100).
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  /**
-   * Rows to skip before the page starts.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  offset?: number;
+  lastWebhookAt: string | null;
+  createdAt: string;
 };
 
-export type ClientsControllerFindAllStatusItem =
-  (typeof ClientsControllerFindAllStatusItem)[keyof typeof ClientsControllerFindAllStatusItem];
+export interface ListEmailAccountsResponseDto {
+  accounts: ListEmailAccountsResponseDtoAccountsItem[];
+}
+
+export type ClientsControllerFindAllParams = {
+/**
+ * Free-text search on the client name (case-insensitive).
+ */
+search?: string;
+/**
+ * Filter by status; comma-separated for multiple values.
+ */
+status?: ClientsControllerFindAllStatusItem[];
+/**
+ * Filter by autonomy; comma-separated for multiple values.
+ */
+autonomy?: ClientsControllerFindAllAutonomyItem[];
+/**
+ * Column to sort by.
+ */
+sortBy?: ClientsControllerFindAllSortBy;
+/**
+ * Sort direction.
+ */
+sortDir?: ClientsControllerFindAllSortDir;
+/**
+ * Page size (1–100).
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
+};
+
+export type ClientsControllerFindAllStatusItem = typeof ClientsControllerFindAllStatusItem[keyof typeof ClientsControllerFindAllStatusItem];
+
 
 export const ClientsControllerFindAllStatusItem = {
-  active: "active",
-  paused: "paused",
+  active: 'active',
+  paused: 'paused',
 } as const;
 
-export type ClientsControllerFindAllAutonomyItem =
-  (typeof ClientsControllerFindAllAutonomyItem)[keyof typeof ClientsControllerFindAllAutonomyItem];
+export type ClientsControllerFindAllAutonomyItem = typeof ClientsControllerFindAllAutonomyItem[keyof typeof ClientsControllerFindAllAutonomyItem];
+
 
 export const ClientsControllerFindAllAutonomyItem = {
-  supervised: "supervised",
-  autopilot: "autopilot",
+  supervised: 'supervised',
+  autopilot: 'autopilot',
 } as const;
 
-export type ClientsControllerFindAllSortBy =
-  (typeof ClientsControllerFindAllSortBy)[keyof typeof ClientsControllerFindAllSortBy];
+export type ClientsControllerFindAllSortBy = typeof ClientsControllerFindAllSortBy[keyof typeof ClientsControllerFindAllSortBy];
+
 
 export const ClientsControllerFindAllSortBy = {
-  name: "name",
-  iorNumber: "iorNumber",
-  bondNumber: "bondNumber",
-  primaryOrigin: "primaryOrigin",
-  industry: "industry",
-  autonomy: "autonomy",
-  status: "status",
-  createdAt: "createdAt",
+  name: 'name',
+  iorNumber: 'iorNumber',
+  bondNumber: 'bondNumber',
+  primaryOrigin: 'primaryOrigin',
+  industry: 'industry',
+  autonomy: 'autonomy',
+  status: 'status',
+  createdAt: 'createdAt',
 } as const;
 
-export type ClientsControllerFindAllSortDir =
-  (typeof ClientsControllerFindAllSortDir)[keyof typeof ClientsControllerFindAllSortDir];
+export type ClientsControllerFindAllSortDir = typeof ClientsControllerFindAllSortDir[keyof typeof ClientsControllerFindAllSortDir];
+
 
 export const ClientsControllerFindAllSortDir = {
-  asc: "asc",
-  desc: "desc",
+  asc: 'asc',
+  desc: 'desc',
 } as const;
 
 export type ShipmentsControllerFindAllParams = {
-  /**
-   * Free-text search across reference, entry number, and client name.
-   */
-  search?: string;
-  /**
-   * Filter by pipeline stage; comma-separated for multiple values.
-   */
-  stage?: ShipmentsControllerFindAllStageItem[];
-  /**
-   * Filter by status; comma-separated for multiple values.
-   */
-  status?: ShipmentsControllerFindAllStatusItem[];
-  /**
-   * Filter by client id; comma-separated for multiple values.
-   */
-  clientId?: string[];
-  /**
-   * Filter by pending review type (e.g. classification, signoff); comma-separated.
-   */
-  reviewType?: string[];
-  /**
-   * Inclusive lower bound on shipment value, in US cents.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  valueMin?: number;
-  /**
-   * Inclusive upper bound on shipment value, in US cents.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  valueMax?: number;
-  /**
-   * Column to sort by. priority ranks actionable shipments by urgency (1 = most urgent) from remaining work, arrival time, and value; shipments with nothing left to do sort last.
-   */
-  sortBy?: ShipmentsControllerFindAllSortBy;
-  /**
-   * Sort direction.
-   */
-  sortDir?: ShipmentsControllerFindAllSortDir;
-  /**
-   * Page size (1–100).
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  /**
-   * Rows to skip before the page starts.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  offset?: number;
+/**
+ * Free-text search across reference, entry number, and client name.
+ */
+search?: string;
+/**
+ * Filter by pipeline stage; comma-separated for multiple values.
+ */
+stage?: ShipmentsControllerFindAllStageItem[];
+/**
+ * Filter by status; comma-separated for multiple values.
+ */
+status?: ShipmentsControllerFindAllStatusItem[];
+/**
+ * Filter by client id; comma-separated for multiple values.
+ */
+clientId?: string[];
+/**
+ * Filter by pending review type (e.g. classification, signoff); comma-separated.
+ */
+reviewType?: string[];
+/**
+ * Inclusive lower bound on shipment value, in US cents.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+valueMin?: number;
+/**
+ * Inclusive upper bound on shipment value, in US cents.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+valueMax?: number;
+/**
+ * Column to sort by. priority ranks actionable shipments by urgency (1 = most urgent) from remaining work, arrival time, and value; shipments with nothing left to do sort last.
+ */
+sortBy?: ShipmentsControllerFindAllSortBy;
+/**
+ * Sort direction.
+ */
+sortDir?: ShipmentsControllerFindAllSortDir;
+/**
+ * Page size (1–100).
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
 };
 
-export type ShipmentsControllerFindAllStageItem =
-  (typeof ShipmentsControllerFindAllStageItem)[keyof typeof ShipmentsControllerFindAllStageItem];
+export type ShipmentsControllerFindAllStageItem = typeof ShipmentsControllerFindAllStageItem[keyof typeof ShipmentsControllerFindAllStageItem];
+
 
 export const ShipmentsControllerFindAllStageItem = {
-  intake: "intake",
-  classification: "classification",
-  compliance: "compliance",
-  entry: "entry",
-  filed: "filed",
-  released: "released",
+  intake: 'intake',
+  classification: 'classification',
+  compliance: 'compliance',
+  entry: 'entry',
+  filed: 'filed',
+  released: 'released',
 } as const;
 
-export type ShipmentsControllerFindAllStatusItem =
-  (typeof ShipmentsControllerFindAllStatusItem)[keyof typeof ShipmentsControllerFindAllStatusItem];
+export type ShipmentsControllerFindAllStatusItem = typeof ShipmentsControllerFindAllStatusItem[keyof typeof ShipmentsControllerFindAllStatusItem];
+
 
 export const ShipmentsControllerFindAllStatusItem = {
-  autopilot: "autopilot",
-  needs_review: "needs_review",
-  awaiting_cbp: "awaiting_cbp",
-  released: "released",
+  autopilot: 'autopilot',
+  needs_review: 'needs_review',
+  awaiting_cbp: 'awaiting_cbp',
+  released: 'released',
 } as const;
 
-export type ShipmentsControllerFindAllSortBy =
-  (typeof ShipmentsControllerFindAllSortBy)[keyof typeof ShipmentsControllerFindAllSortBy];
+export type ShipmentsControllerFindAllSortBy = typeof ShipmentsControllerFindAllSortBy[keyof typeof ShipmentsControllerFindAllSortBy];
+
 
 export const ShipmentsControllerFindAllSortBy = {
-  priority: "priority",
-  reference: "reference",
-  stage: "stage",
-  status: "status",
-  etaAt: "etaAt",
-  reviewDeadlineAt: "reviewDeadlineAt",
-  valueCents: "valueCents",
-  createdAt: "createdAt",
+  priority: 'priority',
+  reference: 'reference',
+  stage: 'stage',
+  status: 'status',
+  etaAt: 'etaAt',
+  reviewDeadlineAt: 'reviewDeadlineAt',
+  valueCents: 'valueCents',
+  createdAt: 'createdAt',
 } as const;
 
-export type ShipmentsControllerFindAllSortDir =
-  (typeof ShipmentsControllerFindAllSortDir)[keyof typeof ShipmentsControllerFindAllSortDir];
+export type ShipmentsControllerFindAllSortDir = typeof ShipmentsControllerFindAllSortDir[keyof typeof ShipmentsControllerFindAllSortDir];
+
 
 export const ShipmentsControllerFindAllSortDir = {
-  asc: "asc",
-  desc: "desc",
+  asc: 'asc',
+  desc: 'desc',
 } as const;
 
 export type ShipmentEventsControllerFindAllParams = {
-  /**
-   * Filter by event type; comma-separated for multiple values.
-   */
-  type?: string[];
-  /**
-   * Filter by actor; comma-separated for multiple values.
-   */
-  actor?: ShipmentEventsControllerFindAllActorItem[];
-  /**
-   * Page size (1–200).
-   * @minimum 1
-   * @maximum 200
-   */
-  limit?: number;
-  /**
-   * Rows to skip before the page starts.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  offset?: number;
+/**
+ * Filter by event type; comma-separated for multiple values.
+ */
+type?: string[];
+/**
+ * Filter by actor; comma-separated for multiple values.
+ */
+actor?: ShipmentEventsControllerFindAllActorItem[];
+/**
+ * Page size (1–200).
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
 };
 
-export type ShipmentEventsControllerFindAllActorItem =
-  (typeof ShipmentEventsControllerFindAllActorItem)[keyof typeof ShipmentEventsControllerFindAllActorItem];
+export type ShipmentEventsControllerFindAllActorItem = typeof ShipmentEventsControllerFindAllActorItem[keyof typeof ShipmentEventsControllerFindAllActorItem];
+
 
 export const ShipmentEventsControllerFindAllActorItem = {
-  ai: "ai",
-  user: "user",
-  system: "system",
-  cbp: "cbp",
+  ai: 'ai',
+  user: 'user',
+  system: 'system',
+  cbp: 'cbp',
 } as const;
 
 export type ShipmentEventsControllerFindByShipmentParams = {
-  /**
-   * Filter by event type; comma-separated for multiple values.
-   */
-  type?: string[];
-  /**
-   * Filter by actor; comma-separated for multiple values.
-   */
-  actor?: ShipmentEventsControllerFindByShipmentActorItem[];
-  /**
-   * Page size (1–200).
-   * @minimum 1
-   * @maximum 200
-   */
-  limit?: number;
-  /**
-   * Rows to skip before the page starts.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  offset?: number;
+/**
+ * Filter by event type; comma-separated for multiple values.
+ */
+type?: string[];
+/**
+ * Filter by actor; comma-separated for multiple values.
+ */
+actor?: ShipmentEventsControllerFindByShipmentActorItem[];
+/**
+ * Page size (1–200).
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
 };
 
-export type ShipmentEventsControllerFindByShipmentActorItem =
-  (typeof ShipmentEventsControllerFindByShipmentActorItem)[keyof typeof ShipmentEventsControllerFindByShipmentActorItem];
+export type ShipmentEventsControllerFindByShipmentActorItem = typeof ShipmentEventsControllerFindByShipmentActorItem[keyof typeof ShipmentEventsControllerFindByShipmentActorItem];
+
 
 export const ShipmentEventsControllerFindByShipmentActorItem = {
-  ai: "ai",
-  user: "user",
-  system: "system",
-  cbp: "cbp",
+  ai: 'ai',
+  user: 'user',
+  system: 'system',
+  cbp: 'cbp',
 } as const;
 
 export type ProductsControllerListParams = {
-  /**
-   * Free-text search on product name, SKU, HTS code, or client name.
-   */
-  search?: string;
-  /**
-   * Filter to one or more clients; comma-separated.
-   */
-  clientId?: string[];
-  /**
-   * Filter by who set the classification (agent or broker); comma-separated.
-   */
-  source?: ProductsControllerListSourceItem[];
-  /**
-   * Column to sort by.
-   */
-  sortBy?: ProductsControllerListSortBy;
-  /**
-   * Sort direction.
-   */
-  sortDir?: ProductsControllerListSortDir;
-  /**
-   * Page size (1–100).
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  /**
-   * Rows to skip before the page starts.
-   * @minimum 0
-   * @maximum 9007199254740991
-   */
-  offset?: number;
+/**
+ * Free-text search on product name, SKU, HTS code, or client name.
+ */
+search?: string;
+/**
+ * Filter to one or more clients; comma-separated.
+ */
+clientId?: string[];
+/**
+ * Filter by who set the classification (agent or broker); comma-separated.
+ */
+source?: ProductsControllerListSourceItem[];
+/**
+ * Column to sort by.
+ */
+sortBy?: ProductsControllerListSortBy;
+/**
+ * Sort direction.
+ */
+sortDir?: ProductsControllerListSortDir;
+/**
+ * Page size (1–100).
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * Rows to skip before the page starts.
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
 };
 
-export type ProductsControllerListSourceItem =
-  (typeof ProductsControllerListSourceItem)[keyof typeof ProductsControllerListSourceItem];
+export type ProductsControllerListSourceItem = typeof ProductsControllerListSourceItem[keyof typeof ProductsControllerListSourceItem];
+
 
 export const ProductsControllerListSourceItem = {
-  agent: "agent",
-  broker: "broker",
+  agent: 'agent',
+  broker: 'broker',
 } as const;
 
-export type ProductsControllerListSortBy =
-  (typeof ProductsControllerListSortBy)[keyof typeof ProductsControllerListSortBy];
+export type ProductsControllerListSortBy = typeof ProductsControllerListSortBy[keyof typeof ProductsControllerListSortBy];
+
 
 export const ProductsControllerListSortBy = {
-  name: "name",
-  sku: "sku",
-  htsCode: "htsCode",
-  confidence: "confidence",
-  reuseCount: "reuseCount",
-  lastReusedAt: "lastReusedAt",
-  classifiedAt: "classifiedAt",
-  createdAt: "createdAt",
+  name: 'name',
+  sku: 'sku',
+  htsCode: 'htsCode',
+  confidence: 'confidence',
+  reuseCount: 'reuseCount',
+  lastReusedAt: 'lastReusedAt',
+  classifiedAt: 'classifiedAt',
+  createdAt: 'createdAt',
 } as const;
 
-export type ProductsControllerListSortDir =
-  (typeof ProductsControllerListSortDir)[keyof typeof ProductsControllerListSortDir];
+export type ProductsControllerListSortDir = typeof ProductsControllerListSortDir[keyof typeof ProductsControllerListSortDir];
+
 
 export const ProductsControllerListSortDir = {
-  asc: "asc",
-  desc: "desc",
+  asc: 'asc',
+  desc: 'desc',
 } as const;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
 
 /**
  * Unauthenticated liveness probe. Returns a static greeting when the API is up.
  * @summary Health check
  */
 export type appControllerGetHelloResponse200 = {
-  data: string;
-  status: 200;
+  data: string
+  status: 200
+}
+
+export type appControllerGetHelloResponseSuccess = (appControllerGetHelloResponse200) & {
+  headers: Headers;
 };
+;
 
-export type appControllerGetHelloResponseSuccess =
-  appControllerGetHelloResponse200 & {
-    headers: Headers;
-  };
-
-export type appControllerGetHelloResponse =
-  appControllerGetHelloResponseSuccess;
+export type appControllerGetHelloResponse = (appControllerGetHelloResponseSuccess)
 
 export const getAppControllerGetHelloUrl = () => {
-  return `/v1`;
-};
 
-export const appControllerGetHello = async (
-  options?: RequestInit,
-): Promise<appControllerGetHelloResponse> => {
-  return axios<appControllerGetHelloResponse>(getAppControllerGetHelloUrl(), {
+
+  
+
+  return `/`
+}
+
+export const appControllerGetHello = async ( options?: RequestInit): Promise<appControllerGetHelloResponse> => {
+  
+  return axios<appControllerGetHelloResponse>(getAppControllerGetHelloUrl(),
+  {      
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getAppControllerGetHelloQueryKey = () => {
-  return [`/v1`] as const;
-};
+    return [
+    `/`
+    ] as const;
+    }
 
-export const getAppControllerGetHelloQueryOptions = <
-  TData = Awaited<ReturnType<typeof appControllerGetHello>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof appControllerGetHello>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof axios>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getAppControllerGetHelloQueryOptions = <TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
 
-  const queryKey = queryOptions?.queryKey ?? getAppControllerGetHelloQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof appControllerGetHello>>
-  > = ({ signal }) => appControllerGetHello({ signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getAppControllerGetHelloQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof appControllerGetHello>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type AppControllerGetHelloQueryResult = NonNullable<
-  Awaited<ReturnType<typeof appControllerGetHello>>
->;
-export type AppControllerGetHelloQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof appControllerGetHello>>> = ({ signal }) => appControllerGetHello({ signal, ...requestOptions });
 
-export function useAppControllerGetHello<
-  TData = Awaited<ReturnType<typeof appControllerGetHello>>,
-  TError = ErrorType<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof appControllerGetHello>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AppControllerGetHelloQueryResult = NonNullable<Awaited<ReturnType<typeof appControllerGetHello>>>
+export type AppControllerGetHelloQueryError = ErrorType<unknown>
+
+
+export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof appControllerGetHello>>,
           TError,
           Awaited<ReturnType<typeof appControllerGetHello>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAppControllerGetHello<
-  TData = Awaited<ReturnType<typeof appControllerGetHello>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof appControllerGetHello>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof appControllerGetHello>>,
           TError,
           Awaited<ReturnType<typeof appControllerGetHello>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAppControllerGetHello<
-  TData = Awaited<ReturnType<typeof appControllerGetHello>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof appControllerGetHello>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Health check
  */
 
-export function useAppControllerGetHello<
-  TData = Awaited<ReturnType<typeof appControllerGetHello>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof appControllerGetHello>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getAppControllerGetHelloQueryOptions(options);
+export function useAppControllerGetHello<TData = Awaited<ReturnType<typeof appControllerGetHello>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof appControllerGetHello>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getAppControllerGetHelloQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns the signed-in user together with their active organization and membership (role, joined date). Organization and member are null when the session has no active organization.
  * @summary Get the current user
  */
 export type usersControllerGetProfileResponse200 = {
-  data: MeResponseDto;
-  status: 200;
+  data: MeResponseDto
+  status: 200
+}
+
+export type usersControllerGetProfileResponseSuccess = (usersControllerGetProfileResponse200) & {
+  headers: Headers;
 };
+;
 
-export type usersControllerGetProfileResponseSuccess =
-  usersControllerGetProfileResponse200 & {
-    headers: Headers;
-  };
-
-export type usersControllerGetProfileResponse =
-  usersControllerGetProfileResponseSuccess;
+export type usersControllerGetProfileResponse = (usersControllerGetProfileResponseSuccess)
 
 export const getUsersControllerGetProfileUrl = () => {
-  return `/v1/users/me`;
-};
 
-export const usersControllerGetProfile = async (
-  options?: RequestInit,
-): Promise<usersControllerGetProfileResponse> => {
-  return axios<usersControllerGetProfileResponse>(
-    getUsersControllerGetProfileUrl(),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+
+  
+
+  return `/v1/users/me`
+}
+
+export const usersControllerGetProfile = async ( options?: RequestInit): Promise<usersControllerGetProfileResponse> => {
+  
+  return axios<usersControllerGetProfileResponse>(getUsersControllerGetProfileUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getUsersControllerGetProfileQueryKey = () => {
-  return [`/v1/users/me`] as const;
-};
+    return [
+    `/v1/users/me`
+    ] as const;
+    }
 
-export const getUsersControllerGetProfileQueryOptions = <
-  TData = Awaited<ReturnType<typeof usersControllerGetProfile>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof usersControllerGetProfile>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof axios>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getUsersControllerGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
 
-  const queryKey =
-    queryOptions?.queryKey ?? getUsersControllerGetProfileQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof usersControllerGetProfile>>
-  > = ({ signal }) => usersControllerGetProfile({ signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getUsersControllerGetProfileQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof usersControllerGetProfile>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type UsersControllerGetProfileQueryResult = NonNullable<
-  Awaited<ReturnType<typeof usersControllerGetProfile>>
->;
-export type UsersControllerGetProfileQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof usersControllerGetProfile>>> = ({ signal }) => usersControllerGetProfile({ signal, ...requestOptions });
 
-export function useUsersControllerGetProfile<
-  TData = Awaited<ReturnType<typeof usersControllerGetProfile>>,
-  TError = ErrorType<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof usersControllerGetProfile>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type UsersControllerGetProfileQueryResult = NonNullable<Awaited<ReturnType<typeof usersControllerGetProfile>>>
+export type UsersControllerGetProfileQueryError = ErrorType<unknown>
+
+
+export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof usersControllerGetProfile>>,
           TError,
           Awaited<ReturnType<typeof usersControllerGetProfile>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useUsersControllerGetProfile<
-  TData = Awaited<ReturnType<typeof usersControllerGetProfile>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof usersControllerGetProfile>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof usersControllerGetProfile>>,
           TError,
           Awaited<ReturnType<typeof usersControllerGetProfile>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useUsersControllerGetProfile<
-  TData = Awaited<ReturnType<typeof usersControllerGetProfile>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof usersControllerGetProfile>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get the current user
  */
 
-export function useUsersControllerGetProfile<
-  TData = Awaited<ReturnType<typeof usersControllerGetProfile>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof usersControllerGetProfile>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getUsersControllerGetProfileQueryOptions(options);
+export function useUsersControllerGetProfile<TData = Awaited<ReturnType<typeof usersControllerGetProfile>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof usersControllerGetProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getUsersControllerGetProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Creates an importer client in the active organization. The client owns shipments and carries the customs identity used on entries: IOR number, continuous bond, primary origin country, and preferred ports of entry.
  * @summary Create a client
  */
 export type clientsControllerCreateResponse201 = {
-  data: ClientResponseDto;
-  status: 201;
+  data: ClientResponseDto
+  status: 201
+}
+
+export type clientsControllerCreateResponseSuccess = (clientsControllerCreateResponse201) & {
+  headers: Headers;
 };
+;
 
-export type clientsControllerCreateResponseSuccess =
-  clientsControllerCreateResponse201 & {
-    headers: Headers;
-  };
-
-export type clientsControllerCreateResponse =
-  clientsControllerCreateResponseSuccess;
+export type clientsControllerCreateResponse = (clientsControllerCreateResponseSuccess)
 
 export const getClientsControllerCreateUrl = () => {
-  return `/v1/clients`;
-};
 
-export const clientsControllerCreate = async (
-  createClientDto: CreateClientDto,
-  options?: RequestInit,
-): Promise<clientsControllerCreateResponse> => {
-  return axios<clientsControllerCreateResponse>(
-    getClientsControllerCreateUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(createClientDto),
-    },
-  );
-};
 
-export const getClientsControllerCreateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof clientsControllerCreate>>,
-    TError,
-    { data: CreateClientDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof clientsControllerCreate>>,
-  TError,
-  { data: CreateClientDto },
-  TContext
-> => {
-  const mutationKey = ["clientsControllerCreate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof clientsControllerCreate>>,
-    { data: CreateClientDto }
-  > = (props) => {
-    const { data } = props ?? {};
+  return `/v1/clients`
+}
 
-    return clientsControllerCreate(data, requestOptions);
-  };
+export const clientsControllerCreate = async (createClientDto: CreateClientDto, options?: RequestInit): Promise<clientsControllerCreateResponse> => {
+  
+  return axios<clientsControllerCreateResponse>(getClientsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createClientDto,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ClientsControllerCreateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof clientsControllerCreate>>
->;
-export type ClientsControllerCreateMutationBody = CreateClientDto;
-export type ClientsControllerCreateMutationError = ErrorType<unknown>;
 
-/**
+export const getClientsControllerCreateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerCreate>>, TError,{data: CreateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsControllerCreate>>, TError,{data: CreateClientDto}, TContext> => {
+
+const mutationKey = ['clientsControllerCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsControllerCreate>>, {data: CreateClientDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  clientsControllerCreate(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsControllerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsControllerCreate>>>
+    export type ClientsControllerCreateMutationBody = CreateClientDto
+    export type ClientsControllerCreateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Create a client
  */
-export const useClientsControllerCreate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof clientsControllerCreate>>,
-      TError,
-      { data: CreateClientDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof clientsControllerCreate>>,
-  TError,
-  { data: CreateClientDto },
-  TContext
-> => {
-  return useMutation(
-    getClientsControllerCreateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useClientsControllerCreate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerCreate>>, TError,{data: CreateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsControllerCreate>>,
+        TError,
+        {data: CreateClientDto},
+        TContext
+      > => {
+      return useMutation(getClientsControllerCreateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the organization's clients with optional filtering by autonomy and status, free-text search on the name, sorting, and offset pagination. The response includes the total row count for the current filters.
  * @summary List clients
  */
 export type clientsControllerFindAllResponse200 = {
-  data: ListClientsResponseDto;
-  status: 200;
+  data: ListClientsResponseDto
+  status: 200
+}
+
+export type clientsControllerFindAllResponseSuccess = (clientsControllerFindAllResponse200) & {
+  headers: Headers;
 };
+;
 
-export type clientsControllerFindAllResponseSuccess =
-  clientsControllerFindAllResponse200 & {
-    headers: Headers;
-  };
+export type clientsControllerFindAllResponse = (clientsControllerFindAllResponseSuccess)
 
-export type clientsControllerFindAllResponse =
-  clientsControllerFindAllResponseSuccess;
-
-export const getClientsControllerFindAllUrl = (
-  params?: ClientsControllerFindAllParams,
-) => {
+export const getClientsControllerFindAllUrl = (params?: ClientsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/clients?${stringifiedParams}`
-    : `/v1/clients`;
-};
+  return stringifiedParams.length > 0 ? `/v1/clients?${stringifiedParams}` : `/v1/clients`
+}
 
-export const clientsControllerFindAll = async (
-  params?: ClientsControllerFindAllParams,
-  options?: RequestInit,
-): Promise<clientsControllerFindAllResponse> => {
-  return axios<clientsControllerFindAllResponse>(
-    getClientsControllerFindAllUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+export const clientsControllerFindAll = async (params?: ClientsControllerFindAllParams, options?: RequestInit): Promise<clientsControllerFindAllResponse> => {
+  
+  return axios<clientsControllerFindAllResponse>(getClientsControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getClientsControllerFindAllQueryKey = (
-  params?: ClientsControllerFindAllParams,
+
+
+
+export const getClientsControllerFindAllQueryKey = (params?: ClientsControllerFindAllParams,) => {
+    return [
+    `/v1/clients`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getClientsControllerFindAllQueryOptions = <TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  return [`/v1/clients`, ...(params ? [params] : [])] as const;
-};
 
-export const getClientsControllerFindAllQueryOptions = <
-  TData = Awaited<ReturnType<typeof clientsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ClientsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getClientsControllerFindAllQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getClientsControllerFindAllQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof clientsControllerFindAll>>
-  > = ({ signal }) =>
-    clientsControllerFindAll(params, { signal, ...requestOptions });
+  
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof clientsControllerFindAll>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsControllerFindAll>>> = ({ signal }) => clientsControllerFindAll(params, { signal, ...requestOptions });
 
-export type ClientsControllerFindAllQueryResult = NonNullable<
-  Awaited<ReturnType<typeof clientsControllerFindAll>>
->;
-export type ClientsControllerFindAllQueryError = ErrorType<unknown>;
+      
 
-export function useClientsControllerFindAll<
-  TData = Awaited<ReturnType<typeof clientsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params: undefined | ClientsControllerFindAllParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsControllerFindAllQueryResult = NonNullable<Awaited<ReturnType<typeof clientsControllerFindAll>>>
+export type ClientsControllerFindAllQueryError = ErrorType<unknown>
+
+
+export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params: undefined |  ClientsControllerFindAllParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof clientsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useClientsControllerFindAll<
-  TData = Awaited<ReturnType<typeof clientsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ClientsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof clientsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useClientsControllerFindAll<
-  TData = Awaited<ReturnType<typeof clientsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ClientsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List clients
  */
 
-export function useClientsControllerFindAll<
-  TData = Awaited<ReturnType<typeof clientsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ClientsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getClientsControllerFindAllQueryOptions(params, options);
+export function useClientsControllerFindAll<TData = Awaited<ReturnType<typeof clientsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ClientsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getClientsControllerFindAllQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Fetches one client by id, scoped to the active organization.
  * @summary Get a client
  */
 export type clientsControllerFindOneResponse200 = {
-  data: ClientResponseDto;
-  status: 200;
+  data: ClientResponseDto
+  status: 200
+}
+
+export type clientsControllerFindOneResponseSuccess = (clientsControllerFindOneResponse200) & {
+  headers: Headers;
 };
+;
 
-export type clientsControllerFindOneResponseSuccess =
-  clientsControllerFindOneResponse200 & {
-    headers: Headers;
-  };
+export type clientsControllerFindOneResponse = (clientsControllerFindOneResponseSuccess)
 
-export type clientsControllerFindOneResponse =
-  clientsControllerFindOneResponseSuccess;
+export const getClientsControllerFindOneUrl = (id: string,) => {
 
-export const getClientsControllerFindOneUrl = (id: string) => {
-  return `/v1/clients/${id}`;
-};
 
-export const clientsControllerFindOne = async (
-  id: string,
-  options?: RequestInit,
-): Promise<clientsControllerFindOneResponse> => {
-  return axios<clientsControllerFindOneResponse>(
-    getClientsControllerFindOneUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getClientsControllerFindOneQueryKey = (id: string) => {
-  return [`/v1/clients/${id}`] as const;
-};
+  return `/v1/clients/${id}`
+}
 
-export const getClientsControllerFindOneQueryOptions = <
-  TData = Awaited<ReturnType<typeof clientsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const clientsControllerFindOne = async (id: string, options?: RequestInit): Promise<clientsControllerFindOneResponse> => {
+  
+  return axios<clientsControllerFindOneResponse>(getClientsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getClientsControllerFindOneQueryKey = (id: string,) => {
+    return [
+    `/v1/clients/${id}`
+    ] as const;
+    }
+
+    
+export const getClientsControllerFindOneQueryOptions = <TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getClientsControllerFindOneQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof clientsControllerFindOne>>
-  > = ({ signal }) =>
-    clientsControllerFindOne(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getClientsControllerFindOneQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof clientsControllerFindOne>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ClientsControllerFindOneQueryResult = NonNullable<
-  Awaited<ReturnType<typeof clientsControllerFindOne>>
->;
-export type ClientsControllerFindOneQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsControllerFindOne>>> = ({ signal }) => clientsControllerFindOne(id, { signal, ...requestOptions });
 
-export function useClientsControllerFindOne<
-  TData = Awaited<ReturnType<typeof clientsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindOne>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsControllerFindOneQueryResult = NonNullable<Awaited<ReturnType<typeof clientsControllerFindOne>>>
+export type ClientsControllerFindOneQueryError = ErrorType<unknown>
+
+
+export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsControllerFindOne>>,
           TError,
           Awaited<ReturnType<typeof clientsControllerFindOne>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useClientsControllerFindOne<
-  TData = Awaited<ReturnType<typeof clientsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindOne>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof clientsControllerFindOne>>,
           TError,
           Awaited<ReturnType<typeof clientsControllerFindOne>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useClientsControllerFindOne<
-  TData = Awaited<ReturnType<typeof clientsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get a client
  */
 
-export function useClientsControllerFindOne<
-  TData = Awaited<ReturnType<typeof clientsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof clientsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getClientsControllerFindOneQueryOptions(id, options);
+export function useClientsControllerFindOne<TData = Awaited<ReturnType<typeof clientsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getClientsControllerFindOneQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Partially updates a client — only the provided fields change. Use this to pause/resume automation (status), adjust autonomy, or correct customs identifiers.
  * @summary Update a client
  */
 export type clientsControllerUpdateResponse200 = {
-  data: ClientResponseDto;
-  status: 200;
+  data: ClientResponseDto
+  status: 200
+}
+
+export type clientsControllerUpdateResponseSuccess = (clientsControllerUpdateResponse200) & {
+  headers: Headers;
 };
+;
 
-export type clientsControllerUpdateResponseSuccess =
-  clientsControllerUpdateResponse200 & {
-    headers: Headers;
-  };
+export type clientsControllerUpdateResponse = (clientsControllerUpdateResponseSuccess)
 
-export type clientsControllerUpdateResponse =
-  clientsControllerUpdateResponseSuccess;
+export const getClientsControllerUpdateUrl = (id: string,) => {
 
-export const getClientsControllerUpdateUrl = (id: string) => {
-  return `/v1/clients/${id}`;
-};
 
-export const clientsControllerUpdate = async (
-  id: string,
-  updateClientDto: UpdateClientDto,
-  options?: RequestInit,
-): Promise<clientsControllerUpdateResponse> => {
-  return axios<clientsControllerUpdateResponse>(
-    getClientsControllerUpdateUrl(id),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateClientDto),
-    },
-  );
-};
+  
 
-export const getClientsControllerUpdateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof clientsControllerUpdate>>,
-    TError,
-    { id: string; data: UpdateClientDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof clientsControllerUpdate>>,
-  TError,
-  { id: string; data: UpdateClientDto },
-  TContext
-> => {
-  const mutationKey = ["clientsControllerUpdate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/clients/${id}`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof clientsControllerUpdate>>,
-    { id: string; data: UpdateClientDto }
-  > = (props) => {
-    const { id, data } = props ?? {};
+export const clientsControllerUpdate = async (id: string,
+    updateClientDto: UpdateClientDto, options?: RequestInit): Promise<clientsControllerUpdateResponse> => {
+  
+  return axios<clientsControllerUpdateResponse>(getClientsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateClientDto,)
+  }
+);}
+  
 
-    return clientsControllerUpdate(id, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ClientsControllerUpdateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof clientsControllerUpdate>>
->;
-export type ClientsControllerUpdateMutationBody = UpdateClientDto;
-export type ClientsControllerUpdateMutationError = ErrorType<unknown>;
+export const getClientsControllerUpdateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerUpdate>>, TError,{id: string;data: UpdateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsControllerUpdate>>, TError,{id: string;data: UpdateClientDto}, TContext> => {
 
-/**
+const mutationKey = ['clientsControllerUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsControllerUpdate>>, {id: string;data: UpdateClientDto}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  clientsControllerUpdate(id,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsControllerUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsControllerUpdate>>>
+    export type ClientsControllerUpdateMutationBody = UpdateClientDto
+    export type ClientsControllerUpdateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Update a client
  */
-export const useClientsControllerUpdate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof clientsControllerUpdate>>,
-      TError,
-      { id: string; data: UpdateClientDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof clientsControllerUpdate>>,
-  TError,
-  { id: string; data: UpdateClientDto },
-  TContext
-> => {
-  return useMutation(
-    getClientsControllerUpdateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useClientsControllerUpdate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerUpdate>>, TError,{id: string;data: UpdateClientDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsControllerUpdate>>,
+        TError,
+        {id: string;data: UpdateClientDto},
+        TContext
+      > => {
+      return useMutation(getClientsControllerUpdateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Deletes a client. Deleted clients no longer appear in lists or lookups; their history is preserved for the record.
  * @summary Delete a client
  */
 export type clientsControllerRemoveResponse200 = {
-  data: ClientResponseDto;
-  status: 200;
+  data: ClientResponseDto
+  status: 200
+}
+
+export type clientsControllerRemoveResponseSuccess = (clientsControllerRemoveResponse200) & {
+  headers: Headers;
 };
+;
 
-export type clientsControllerRemoveResponseSuccess =
-  clientsControllerRemoveResponse200 & {
-    headers: Headers;
-  };
+export type clientsControllerRemoveResponse = (clientsControllerRemoveResponseSuccess)
 
-export type clientsControllerRemoveResponse =
-  clientsControllerRemoveResponseSuccess;
+export const getClientsControllerRemoveUrl = (id: string,) => {
 
-export const getClientsControllerRemoveUrl = (id: string) => {
-  return `/v1/clients/${id}`;
-};
 
-export const clientsControllerRemove = async (
-  id: string,
-  options?: RequestInit,
-): Promise<clientsControllerRemoveResponse> => {
-  return axios<clientsControllerRemoveResponse>(
-    getClientsControllerRemoveUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
+  
 
-export const getClientsControllerRemoveMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof clientsControllerRemove>>,
-    TError,
-    { id: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof clientsControllerRemove>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  const mutationKey = ["clientsControllerRemove"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/clients/${id}`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof clientsControllerRemove>>,
-    { id: string }
-  > = (props) => {
-    const { id } = props ?? {};
+export const clientsControllerRemove = async (id: string, options?: RequestInit): Promise<clientsControllerRemoveResponse> => {
+  
+  return axios<clientsControllerRemoveResponse>(getClientsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
 
-    return clientsControllerRemove(id, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ClientsControllerRemoveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof clientsControllerRemove>>
->;
+export const getClientsControllerRemoveMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsControllerRemove>>, TError,{id: string}, TContext> => {
 
-export type ClientsControllerRemoveMutationError = ErrorType<unknown>;
+const mutationKey = ['clientsControllerRemove'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-/**
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsControllerRemove>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  clientsControllerRemove(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsControllerRemoveMutationResult = NonNullable<Awaited<ReturnType<typeof clientsControllerRemove>>>
+    
+    export type ClientsControllerRemoveMutationError = ErrorType<unknown>
+
+    /**
  * @summary Delete a client
  */
-export const useClientsControllerRemove = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof clientsControllerRemove>>,
-      TError,
-      { id: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof clientsControllerRemove>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  return useMutation(
-    getClientsControllerRemoveMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useClientsControllerRemove = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsControllerRemove>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getClientsControllerRemoveMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the profile of the session's active organization: name, derived slug, description, website, contact email, and CBP filer code.
  * @summary Get the active organization
  */
 export type organizationControllerGetCurrentResponse200 = {
-  data: OrganizationResponseDto;
-  status: 200;
+  data: OrganizationResponseDto
+  status: 200
+}
+
+export type organizationControllerGetCurrentResponseSuccess = (organizationControllerGetCurrentResponse200) & {
+  headers: Headers;
 };
+;
 
-export type organizationControllerGetCurrentResponseSuccess =
-  organizationControllerGetCurrentResponse200 & {
-    headers: Headers;
-  };
-
-export type organizationControllerGetCurrentResponse =
-  organizationControllerGetCurrentResponseSuccess;
+export type organizationControllerGetCurrentResponse = (organizationControllerGetCurrentResponseSuccess)
 
 export const getOrganizationControllerGetCurrentUrl = () => {
-  return `/v1/organization`;
-};
 
-export const organizationControllerGetCurrent = async (
-  options?: RequestInit,
-): Promise<organizationControllerGetCurrentResponse> => {
-  return axios<organizationControllerGetCurrentResponse>(
-    getOrganizationControllerGetCurrentUrl(),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+
+  
+
+  return `/v1/organization`
+}
+
+export const organizationControllerGetCurrent = async ( options?: RequestInit): Promise<organizationControllerGetCurrentResponse> => {
+  
+  return axios<organizationControllerGetCurrentResponse>(getOrganizationControllerGetCurrentUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getOrganizationControllerGetCurrentQueryKey = () => {
-  return [`/v1/organization`] as const;
-};
+    return [
+    `/v1/organization`
+    ] as const;
+    }
 
-export const getOrganizationControllerGetCurrentQueryOptions = <
-  TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof axios>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getOrganizationControllerGetCurrentQueryOptions = <TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
 
-  const queryKey =
-    queryOptions?.queryKey ?? getOrganizationControllerGetCurrentQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof organizationControllerGetCurrent>>
-  > = ({ signal }) =>
-    organizationControllerGetCurrent({ signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getOrganizationControllerGetCurrentQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type OrganizationControllerGetCurrentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof organizationControllerGetCurrent>>
->;
-export type OrganizationControllerGetCurrentQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof organizationControllerGetCurrent>>> = ({ signal }) => organizationControllerGetCurrent({ signal, ...requestOptions });
 
-export function useOrganizationControllerGetCurrent<
-  TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-  TError = ErrorType<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OrganizationControllerGetCurrentQueryResult = NonNullable<Awaited<ReturnType<typeof organizationControllerGetCurrent>>>
+export type OrganizationControllerGetCurrentQueryError = ErrorType<unknown>
+
+
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
           TError,
           Awaited<ReturnType<typeof organizationControllerGetCurrent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useOrganizationControllerGetCurrent<
-  TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
           TError,
           Awaited<ReturnType<typeof organizationControllerGetCurrent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useOrganizationControllerGetCurrent<
-  TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get the active organization
  */
 
-export function useOrganizationControllerGetCurrent<
-  TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof organizationControllerGetCurrent>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getOrganizationControllerGetCurrentQueryOptions(options);
+export function useOrganizationControllerGetCurrent<TData = Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof organizationControllerGetCurrent>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getOrganizationControllerGetCurrentQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Updates the organization profile. Only owners and admins may call this. The slug is derived from the name server-side (with a suffix on collision) and cannot be set directly; the filer code is uppercased.
  * @summary Update the active organization
  */
 export type organizationControllerUpdateResponse200 = {
-  data: OrganizationResponseDto;
-  status: 200;
+  data: OrganizationResponseDto
+  status: 200
+}
+
+export type organizationControllerUpdateResponseSuccess = (organizationControllerUpdateResponse200) & {
+  headers: Headers;
 };
+;
 
-export type organizationControllerUpdateResponseSuccess =
-  organizationControllerUpdateResponse200 & {
-    headers: Headers;
-  };
-
-export type organizationControllerUpdateResponse =
-  organizationControllerUpdateResponseSuccess;
+export type organizationControllerUpdateResponse = (organizationControllerUpdateResponseSuccess)
 
 export const getOrganizationControllerUpdateUrl = () => {
-  return `/v1/organization`;
-};
 
-export const organizationControllerUpdate = async (
-  updateOrganizationDto: UpdateOrganizationDto,
-  options?: RequestInit,
-): Promise<organizationControllerUpdateResponse> => {
-  return axios<organizationControllerUpdateResponse>(
-    getOrganizationControllerUpdateUrl(),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateOrganizationDto),
-    },
-  );
-};
 
-export const getOrganizationControllerUpdateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof organizationControllerUpdate>>,
-    TError,
-    { data: UpdateOrganizationDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof organizationControllerUpdate>>,
-  TError,
-  { data: UpdateOrganizationDto },
-  TContext
-> => {
-  const mutationKey = ["organizationControllerUpdate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof organizationControllerUpdate>>,
-    { data: UpdateOrganizationDto }
-  > = (props) => {
-    const { data } = props ?? {};
+  return `/v1/organization`
+}
 
-    return organizationControllerUpdate(data, requestOptions);
-  };
+export const organizationControllerUpdate = async (updateOrganizationDto: UpdateOrganizationDto, options?: RequestInit): Promise<organizationControllerUpdateResponse> => {
+  
+  return axios<organizationControllerUpdateResponse>(getOrganizationControllerUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateOrganizationDto,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type OrganizationControllerUpdateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof organizationControllerUpdate>>
->;
-export type OrganizationControllerUpdateMutationBody = UpdateOrganizationDto;
-export type OrganizationControllerUpdateMutationError = ErrorType<unknown>;
 
-/**
+export const getOrganizationControllerUpdateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext> => {
+
+const mutationKey = ['organizationControllerUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof organizationControllerUpdate>>, {data: UpdateOrganizationDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  organizationControllerUpdate(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrganizationControllerUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof organizationControllerUpdate>>>
+    export type OrganizationControllerUpdateMutationBody = UpdateOrganizationDto
+    export type OrganizationControllerUpdateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Update the active organization
  */
-export const useOrganizationControllerUpdate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof organizationControllerUpdate>>,
-      TError,
-      { data: UpdateOrganizationDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof organizationControllerUpdate>>,
-  TError,
-  { data: UpdateOrganizationDto },
-  TContext
-> => {
-  return useMutation(
-    getOrganizationControllerUpdateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useOrganizationControllerUpdate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof organizationControllerUpdate>>, TError,{data: UpdateOrganizationDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof organizationControllerUpdate>>,
+        TError,
+        {data: UpdateOrganizationDto},
+        TContext
+      > => {
+      return useMutation(getOrganizationControllerUpdateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Creates a shipment for one of the organization's clients. The reference must be unique within the organization; stage and status default to the start of the pipeline (intake, on autopilot).
  * @summary Create a shipment
  */
 export type shipmentsControllerCreateResponse201 = {
-  data: ShipmentResponseDto;
-  status: 201;
+  data: ShipmentResponseDto
+  status: 201
+}
+
+export type shipmentsControllerCreateResponseSuccess = (shipmentsControllerCreateResponse201) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerCreateResponseSuccess =
-  shipmentsControllerCreateResponse201 & {
-    headers: Headers;
-  };
-
-export type shipmentsControllerCreateResponse =
-  shipmentsControllerCreateResponseSuccess;
+export type shipmentsControllerCreateResponse = (shipmentsControllerCreateResponseSuccess)
 
 export const getShipmentsControllerCreateUrl = () => {
-  return `/v1/shipments`;
-};
 
-export const shipmentsControllerCreate = async (
-  createShipmentDto: CreateShipmentDto,
-  options?: RequestInit,
-): Promise<shipmentsControllerCreateResponse> => {
-  return axios<shipmentsControllerCreateResponse>(
-    getShipmentsControllerCreateUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(createShipmentDto),
-    },
-  );
-};
 
-export const getShipmentsControllerCreateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentsControllerCreate>>,
-    TError,
-    { data: CreateShipmentDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentsControllerCreate>>,
-  TError,
-  { data: CreateShipmentDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentsControllerCreate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentsControllerCreate>>,
-    { data: CreateShipmentDto }
-  > = (props) => {
-    const { data } = props ?? {};
+  return `/v1/shipments`
+}
 
-    return shipmentsControllerCreate(data, requestOptions);
-  };
+export const shipmentsControllerCreate = async (createShipmentDto: CreateShipmentDto, options?: RequestInit): Promise<shipmentsControllerCreateResponse> => {
+  
+  return axios<shipmentsControllerCreateResponse>(getShipmentsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createShipmentDto,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentsControllerCreateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerCreate>>
->;
-export type ShipmentsControllerCreateMutationBody = CreateShipmentDto;
-export type ShipmentsControllerCreateMutationError = ErrorType<unknown>;
 
-/**
+export const getShipmentsControllerCreateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerCreate>>, TError,{data: CreateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerCreate>>, TError,{data: CreateShipmentDto}, TContext> => {
+
+const mutationKey = ['shipmentsControllerCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerCreate>>, {data: CreateShipmentDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  shipmentsControllerCreate(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerCreate>>>
+    export type ShipmentsControllerCreateMutationBody = CreateShipmentDto
+    export type ShipmentsControllerCreateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Create a shipment
  */
-export const useShipmentsControllerCreate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentsControllerCreate>>,
-      TError,
-      { data: CreateShipmentDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentsControllerCreate>>,
-  TError,
-  { data: CreateShipmentDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentsControllerCreateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentsControllerCreate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerCreate>>, TError,{data: CreateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerCreate>>,
+        TError,
+        {data: CreateShipmentDto},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerCreateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the organization's shipments with the full pipeline filter set: stage, status, client, review type, value bounds (cents), and free-text search across reference, entry number, and client name. Supports sorting and offset pagination; the response includes the total count for the current filters.
  * @summary List shipments
  */
 export type shipmentsControllerFindAllResponse200 = {
-  data: ListShipmentsResponseDto;
-  status: 200;
+  data: ListShipmentsResponseDto
+  status: 200
+}
+
+export type shipmentsControllerFindAllResponseSuccess = (shipmentsControllerFindAllResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerFindAllResponseSuccess =
-  shipmentsControllerFindAllResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerFindAllResponse = (shipmentsControllerFindAllResponseSuccess)
 
-export type shipmentsControllerFindAllResponse =
-  shipmentsControllerFindAllResponseSuccess;
-
-export const getShipmentsControllerFindAllUrl = (
-  params?: ShipmentsControllerFindAllParams,
-) => {
+export const getShipmentsControllerFindAllUrl = (params?: ShipmentsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/shipments?${stringifiedParams}`
-    : `/v1/shipments`;
-};
+  return stringifiedParams.length > 0 ? `/v1/shipments?${stringifiedParams}` : `/v1/shipments`
+}
 
-export const shipmentsControllerFindAll = async (
-  params?: ShipmentsControllerFindAllParams,
-  options?: RequestInit,
-): Promise<shipmentsControllerFindAllResponse> => {
-  return axios<shipmentsControllerFindAllResponse>(
-    getShipmentsControllerFindAllUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+export const shipmentsControllerFindAll = async (params?: ShipmentsControllerFindAllParams, options?: RequestInit): Promise<shipmentsControllerFindAllResponse> => {
+  
+  return axios<shipmentsControllerFindAllResponse>(getShipmentsControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getShipmentsControllerFindAllQueryKey = (
-  params?: ShipmentsControllerFindAllParams,
+
+
+
+export const getShipmentsControllerFindAllQueryKey = (params?: ShipmentsControllerFindAllParams,) => {
+    return [
+    `/v1/shipments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerFindAllQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  return [`/v1/shipments`, ...(params ? [params] : [])] as const;
-};
 
-export const getShipmentsControllerFindAllQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getShipmentsControllerFindAllQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerFindAllQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentsControllerFindAll>>
-  > = ({ signal }) =>
-    shipmentsControllerFindAll(params, { signal, ...requestOptions });
+  
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerFindAll>>> = ({ signal }) => shipmentsControllerFindAll(params, { signal, ...requestOptions });
 
-export type ShipmentsControllerFindAllQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerFindAll>>
->;
-export type ShipmentsControllerFindAllQueryError = ErrorType<unknown>;
+      
 
-export function useShipmentsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params: undefined | ShipmentsControllerFindAllParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerFindAllQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerFindAll>>>
+export type ShipmentsControllerFindAllQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params: undefined |  ShipmentsControllerFindAllParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List shipments
  */
 
-export function useShipmentsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentsControllerFindAllQueryOptions(
-    params,
-    options,
-  );
+export function useShipmentsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentsControllerFindAllQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns aggregate shipment counts for the organization, grouped by status and review type — suitable for dashboard overviews and queue filters.
  * @summary Get shipment stats
  */
 export type shipmentsControllerStatsResponse200 = {
-  data: ShipmentStatsResponseDto;
-  status: 200;
+  data: ShipmentStatsResponseDto
+  status: 200
+}
+
+export type shipmentsControllerStatsResponseSuccess = (shipmentsControllerStatsResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerStatsResponseSuccess =
-  shipmentsControllerStatsResponse200 & {
-    headers: Headers;
-  };
-
-export type shipmentsControllerStatsResponse =
-  shipmentsControllerStatsResponseSuccess;
+export type shipmentsControllerStatsResponse = (shipmentsControllerStatsResponseSuccess)
 
 export const getShipmentsControllerStatsUrl = () => {
-  return `/v1/shipments/stats`;
-};
 
-export const shipmentsControllerStats = async (
-  options?: RequestInit,
-): Promise<shipmentsControllerStatsResponse> => {
-  return axios<shipmentsControllerStatsResponse>(
-    getShipmentsControllerStatsUrl(),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+
+  
+
+  return `/v1/shipments/stats`
+}
+
+export const shipmentsControllerStats = async ( options?: RequestInit): Promise<shipmentsControllerStatsResponse> => {
+  
+  return axios<shipmentsControllerStatsResponse>(getShipmentsControllerStatsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getShipmentsControllerStatsQueryKey = () => {
-  return [`/v1/shipments/stats`] as const;
-};
+    return [
+    `/v1/shipments/stats`
+    ] as const;
+    }
 
-export const getShipmentsControllerStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentsControllerStats>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof shipmentsControllerStats>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof axios>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getShipmentsControllerStatsQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
 
-  const queryKey =
-    queryOptions?.queryKey ?? getShipmentsControllerStatsQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentsControllerStats>>
-  > = ({ signal }) => shipmentsControllerStats({ signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerStatsQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentsControllerStats>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ShipmentsControllerStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerStats>>
->;
-export type ShipmentsControllerStatsQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerStats>>> = ({ signal }) => shipmentsControllerStats({ signal, ...requestOptions });
 
-export function useShipmentsControllerStats<
-  TData = Awaited<ReturnType<typeof shipmentsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerStats>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerStatsQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerStats>>>
+export type ShipmentsControllerStatsQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerStats>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerStats>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerStats<
-  TData = Awaited<ReturnType<typeof shipmentsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerStats>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerStats>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerStats>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerStats<
-  TData = Awaited<ReturnType<typeof shipmentsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerStats>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get shipment stats
  */
 
-export function useShipmentsControllerStats<
-  TData = Awaited<ReturnType<typeof shipmentsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerStats>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentsControllerStatsQueryOptions(options);
+export function useShipmentsControllerStats<TData = Awaited<ReturnType<typeof shipmentsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentsControllerStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Fetches one shipment by id, scoped to the active organization. Includes any pending review details and the summary snapshot.
  * @summary Get a shipment
  */
 export type shipmentsControllerFindOneResponse200 = {
-  data: ShipmentResponseDto;
-  status: 200;
+  data: ShipmentResponseDto
+  status: 200
+}
+
+export type shipmentsControllerFindOneResponseSuccess = (shipmentsControllerFindOneResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerFindOneResponseSuccess =
-  shipmentsControllerFindOneResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerFindOneResponse = (shipmentsControllerFindOneResponseSuccess)
 
-export type shipmentsControllerFindOneResponse =
-  shipmentsControllerFindOneResponseSuccess;
+export const getShipmentsControllerFindOneUrl = (id: string,) => {
 
-export const getShipmentsControllerFindOneUrl = (id: string) => {
-  return `/v1/shipments/${id}`;
-};
 
-export const shipmentsControllerFindOne = async (
-  id: string,
-  options?: RequestInit,
-): Promise<shipmentsControllerFindOneResponse> => {
-  return axios<shipmentsControllerFindOneResponse>(
-    getShipmentsControllerFindOneUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getShipmentsControllerFindOneQueryKey = (id: string) => {
-  return [`/v1/shipments/${id}`] as const;
-};
+  return `/v1/shipments/${id}`
+}
 
-export const getShipmentsControllerFindOneQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const shipmentsControllerFindOne = async (id: string, options?: RequestInit): Promise<shipmentsControllerFindOneResponse> => {
+  
+  return axios<shipmentsControllerFindOneResponse>(getShipmentsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentsControllerFindOneQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}`
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerFindOneQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getShipmentsControllerFindOneQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentsControllerFindOne>>
-  > = ({ signal }) =>
-    shipmentsControllerFindOne(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerFindOneQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ShipmentsControllerFindOneQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerFindOne>>
->;
-export type ShipmentsControllerFindOneQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerFindOne>>> = ({ signal }) => shipmentsControllerFindOne(id, { signal, ...requestOptions });
 
-export function useShipmentsControllerFindOne<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerFindOneQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerFindOne>>>
+export type ShipmentsControllerFindOneQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerFindOne>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerFindOne<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerFindOne>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerFindOne<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get a shipment
  */
 
-export function useShipmentsControllerFindOne<
-  TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerFindOne>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentsControllerFindOneQueryOptions(id, options);
+export function useShipmentsControllerFindOne<TData = Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerFindOne>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentsControllerFindOneQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Partially updates a shipment — only the provided fields change. Prefer appending shipment events for anything that belongs in the audit record; this endpoint is for correcting current-state fields.
  * @summary Update a shipment
  */
 export type shipmentsControllerUpdateResponse200 = {
-  data: ShipmentResponseDto;
-  status: 200;
+  data: ShipmentResponseDto
+  status: 200
+}
+
+export type shipmentsControllerUpdateResponseSuccess = (shipmentsControllerUpdateResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerUpdateResponseSuccess =
-  shipmentsControllerUpdateResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerUpdateResponse = (shipmentsControllerUpdateResponseSuccess)
 
-export type shipmentsControllerUpdateResponse =
-  shipmentsControllerUpdateResponseSuccess;
+export const getShipmentsControllerUpdateUrl = (id: string,) => {
 
-export const getShipmentsControllerUpdateUrl = (id: string) => {
-  return `/v1/shipments/${id}`;
-};
 
-export const shipmentsControllerUpdate = async (
-  id: string,
-  updateShipmentDto: UpdateShipmentDto,
-  options?: RequestInit,
-): Promise<shipmentsControllerUpdateResponse> => {
-  return axios<shipmentsControllerUpdateResponse>(
-    getShipmentsControllerUpdateUrl(id),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateShipmentDto),
-    },
-  );
-};
+  
 
-export const getShipmentsControllerUpdateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
-    TError,
-    { id: string; data: UpdateShipmentDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
-  TError,
-  { id: string; data: UpdateShipmentDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentsControllerUpdate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/shipments/${id}`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
-    { id: string; data: UpdateShipmentDto }
-  > = (props) => {
-    const { id, data } = props ?? {};
+export const shipmentsControllerUpdate = async (id: string,
+    updateShipmentDto: UpdateShipmentDto, options?: RequestInit): Promise<shipmentsControllerUpdateResponse> => {
+  
+  return axios<shipmentsControllerUpdateResponse>(getShipmentsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateShipmentDto,)
+  }
+);}
+  
 
-    return shipmentsControllerUpdate(id, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentsControllerUpdateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerUpdate>>
->;
-export type ShipmentsControllerUpdateMutationBody = UpdateShipmentDto;
-export type ShipmentsControllerUpdateMutationError = ErrorType<unknown>;
+export const getShipmentsControllerUpdateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerUpdate>>, TError,{id: string;data: UpdateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerUpdate>>, TError,{id: string;data: UpdateShipmentDto}, TContext> => {
 
-/**
+const mutationKey = ['shipmentsControllerUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerUpdate>>, {id: string;data: UpdateShipmentDto}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  shipmentsControllerUpdate(id,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerUpdate>>>
+    export type ShipmentsControllerUpdateMutationBody = UpdateShipmentDto
+    export type ShipmentsControllerUpdateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Update a shipment
  */
-export const useShipmentsControllerUpdate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
-      TError,
-      { id: string; data: UpdateShipmentDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
-  TError,
-  { id: string; data: UpdateShipmentDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentsControllerUpdateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentsControllerUpdate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerUpdate>>, TError,{id: string;data: UpdateShipmentDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerUpdate>>,
+        TError,
+        {id: string;data: UpdateShipmentDto},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerUpdateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Deletes a shipment. Its event history is preserved in the audit record.
  * @summary Delete a shipment
  */
 export type shipmentsControllerRemoveResponse200 = {
-  data: ShipmentResponseDto;
-  status: 200;
+  data: ShipmentResponseDto
+  status: 200
+}
+
+export type shipmentsControllerRemoveResponseSuccess = (shipmentsControllerRemoveResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerRemoveResponseSuccess =
-  shipmentsControllerRemoveResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerRemoveResponse = (shipmentsControllerRemoveResponseSuccess)
 
-export type shipmentsControllerRemoveResponse =
-  shipmentsControllerRemoveResponseSuccess;
+export const getShipmentsControllerRemoveUrl = (id: string,) => {
 
-export const getShipmentsControllerRemoveUrl = (id: string) => {
-  return `/v1/shipments/${id}`;
-};
 
-export const shipmentsControllerRemove = async (
-  id: string,
-  options?: RequestInit,
-): Promise<shipmentsControllerRemoveResponse> => {
-  return axios<shipmentsControllerRemoveResponse>(
-    getShipmentsControllerRemoveUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
+  
 
-export const getShipmentsControllerRemoveMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentsControllerRemove>>,
-    TError,
-    { id: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentsControllerRemove>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  const mutationKey = ["shipmentsControllerRemove"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/shipments/${id}`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentsControllerRemove>>,
-    { id: string }
-  > = (props) => {
-    const { id } = props ?? {};
+export const shipmentsControllerRemove = async (id: string, options?: RequestInit): Promise<shipmentsControllerRemoveResponse> => {
+  
+  return axios<shipmentsControllerRemoveResponse>(getShipmentsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
 
-    return shipmentsControllerRemove(id, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentsControllerRemoveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerRemove>>
->;
+export const getShipmentsControllerRemoveMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerRemove>>, TError,{id: string}, TContext> => {
 
-export type ShipmentsControllerRemoveMutationError = ErrorType<unknown>;
+const mutationKey = ['shipmentsControllerRemove'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-/**
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerRemove>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  shipmentsControllerRemove(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerRemoveMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerRemove>>>
+    
+    export type ShipmentsControllerRemoveMutationError = ErrorType<unknown>
+
+    /**
  * @summary Delete a shipment
  */
-export const useShipmentsControllerRemove = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentsControllerRemove>>,
-      TError,
-      { id: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentsControllerRemove>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  return useMutation(
-    getShipmentsControllerRemoveMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentsControllerRemove = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerRemove>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerRemoveMutationOptions(options), queryClient);
+    }
+    
 /**
  * Resolves the shipment's pending review with one of three actions: approved (accept the AI proposal), corrected (broker supplied a different answer), or info_requested (more information needed — the shipment stays in the review queue). Approval and correction append a review_resolved event, advance the stage, and clear the review fields. Returns 409 when there is no pending review.
  * @summary Resolve a review
  */
 export type shipmentsControllerResolveResponse200 = {
-  data: ShipmentResponseDto;
-  status: 200;
+  data: ShipmentResponseDto
+  status: 200
+}
+
+export type shipmentsControllerResolveResponseSuccess = (shipmentsControllerResolveResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerResolveResponseSuccess =
-  shipmentsControllerResolveResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerResolveResponse = (shipmentsControllerResolveResponseSuccess)
 
-export type shipmentsControllerResolveResponse =
-  shipmentsControllerResolveResponseSuccess;
+export const getShipmentsControllerResolveUrl = (id: string,) => {
 
-export const getShipmentsControllerResolveUrl = (id: string) => {
-  return `/v1/shipments/${id}/resolve`;
-};
 
-export const shipmentsControllerResolve = async (
-  id: string,
-  resolveReviewDto: ResolveReviewDto,
-  options?: RequestInit,
-): Promise<shipmentsControllerResolveResponse> => {
-  return axios<shipmentsControllerResolveResponse>(
-    getShipmentsControllerResolveUrl(id),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(resolveReviewDto),
-    },
-  );
-};
+  
 
-export const getShipmentsControllerResolveMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentsControllerResolve>>,
-    TError,
-    { id: string; data: ResolveReviewDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentsControllerResolve>>,
-  TError,
-  { id: string; data: ResolveReviewDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentsControllerResolve"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/shipments/${id}/resolve`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentsControllerResolve>>,
-    { id: string; data: ResolveReviewDto }
-  > = (props) => {
-    const { id, data } = props ?? {};
+export const shipmentsControllerResolve = async (id: string,
+    resolveReviewDto: ResolveReviewDto, options?: RequestInit): Promise<shipmentsControllerResolveResponse> => {
+  
+  return axios<shipmentsControllerResolveResponse>(getShipmentsControllerResolveUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      resolveReviewDto,)
+  }
+);}
+  
 
-    return shipmentsControllerResolve(id, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentsControllerResolveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerResolve>>
->;
-export type ShipmentsControllerResolveMutationBody = ResolveReviewDto;
-export type ShipmentsControllerResolveMutationError = ErrorType<unknown>;
+export const getShipmentsControllerResolveMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerResolve>>, TError,{id: string;data: ResolveReviewDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerResolve>>, TError,{id: string;data: ResolveReviewDto}, TContext> => {
 
-/**
+const mutationKey = ['shipmentsControllerResolve'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerResolve>>, {id: string;data: ResolveReviewDto}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  shipmentsControllerResolve(id,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerResolveMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerResolve>>>
+    export type ShipmentsControllerResolveMutationBody = ResolveReviewDto
+    export type ShipmentsControllerResolveMutationError = ErrorType<unknown>
+
+    /**
  * @summary Resolve a review
  */
-export const useShipmentsControllerResolve = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentsControllerResolve>>,
-      TError,
-      { id: string; data: ResolveReviewDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentsControllerResolve>>,
-  TError,
-  { id: string; data: ResolveReviewDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentsControllerResolveMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentsControllerResolve = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerResolve>>, TError,{id: string;data: ResolveReviewDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerResolve>>,
+        TError,
+        {id: string;data: ResolveReviewDto},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerResolveMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the shipment's entry line items — one per invoice line — each with its HTS classification, confidence, and whether the code was reused from the client's product library.
  * @summary List shipment lines
  */
 export type shipmentsControllerLinesResponse200 = {
-  data: ListShipmentLinesResponseDto;
-  status: 200;
+  data: ListShipmentLinesResponseDto
+  status: 200
+}
+
+export type shipmentsControllerLinesResponseSuccess = (shipmentsControllerLinesResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerLinesResponseSuccess =
-  shipmentsControllerLinesResponse200 & {
-    headers: Headers;
-  };
+export type shipmentsControllerLinesResponse = (shipmentsControllerLinesResponseSuccess)
 
-export type shipmentsControllerLinesResponse =
-  shipmentsControllerLinesResponseSuccess;
+export const getShipmentsControllerLinesUrl = (id: string,) => {
 
-export const getShipmentsControllerLinesUrl = (id: string) => {
-  return `/v1/shipments/${id}/lines`;
-};
 
-export const shipmentsControllerLines = async (
-  id: string,
-  options?: RequestInit,
-): Promise<shipmentsControllerLinesResponse> => {
-  return axios<shipmentsControllerLinesResponse>(
-    getShipmentsControllerLinesUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getShipmentsControllerLinesQueryKey = (id: string) => {
-  return [`/v1/shipments/${id}/lines`] as const;
-};
+  return `/v1/shipments/${id}/lines`
+}
 
-export const getShipmentsControllerLinesQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentsControllerLines>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerLines>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const shipmentsControllerLines = async (id: string, options?: RequestInit): Promise<shipmentsControllerLinesResponse> => {
+  
+  return axios<shipmentsControllerLinesResponse>(getShipmentsControllerLinesUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentsControllerLinesQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/lines`
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerLinesQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getShipmentsControllerLinesQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentsControllerLines>>
-  > = ({ signal }) =>
-    shipmentsControllerLines(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerLinesQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentsControllerLines>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ShipmentsControllerLinesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerLines>>
->;
-export type ShipmentsControllerLinesQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerLines>>> = ({ signal }) => shipmentsControllerLines(id, { signal, ...requestOptions });
 
-export function useShipmentsControllerLines<
-  TData = Awaited<ReturnType<typeof shipmentsControllerLines>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerLines>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerLinesQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerLines>>>
+export type ShipmentsControllerLinesQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerLines>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerLines>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerLines<
-  TData = Awaited<ReturnType<typeof shipmentsControllerLines>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerLines>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentsControllerLines>>,
           TError,
           Awaited<ReturnType<typeof shipmentsControllerLines>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentsControllerLines<
-  TData = Awaited<ReturnType<typeof shipmentsControllerLines>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerLines>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List shipment lines
  */
 
-export function useShipmentsControllerLines<
-  TData = Awaited<ReturnType<typeof shipmentsControllerLines>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentsControllerLines>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentsControllerLinesQueryOptions(id, options);
+export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof shipmentsControllerLines>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerLines>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentsControllerLinesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Runs the AI classification for the shipment's documents: candidate tariff headings are analyzed under the General Rules of Interpretation with the binding Section and Chapter Notes, checked against published customs rulings, and resolved to a 10-digit HTS code with duty details. The result appears on the shipment timeline; uncertain classifications are routed to review. Runs asynchronously — safe to call again to re-classify.
  * @summary Classify a shipment
  */
 export type shipmentsControllerClassifyResponse201 = {
-  data: ClassifyResponseDto;
-  status: 201;
+  data: ClassifyResponseDto
+  status: 201
+}
+
+export type shipmentsControllerClassifyResponseSuccess = (shipmentsControllerClassifyResponse201) & {
+  headers: Headers;
 };
+;
 
-export type shipmentsControllerClassifyResponseSuccess =
-  shipmentsControllerClassifyResponse201 & {
-    headers: Headers;
-  };
+export type shipmentsControllerClassifyResponse = (shipmentsControllerClassifyResponseSuccess)
 
-export type shipmentsControllerClassifyResponse =
-  shipmentsControllerClassifyResponseSuccess;
+export const getShipmentsControllerClassifyUrl = (id: string,) => {
 
-export const getShipmentsControllerClassifyUrl = (id: string) => {
-  return `/v1/shipments/${id}/classify`;
-};
 
-export const shipmentsControllerClassify = async (
-  id: string,
-  options?: RequestInit,
-): Promise<shipmentsControllerClassifyResponse> => {
-  return axios<shipmentsControllerClassifyResponse>(
-    getShipmentsControllerClassifyUrl(id),
-    {
-      ...options,
-      method: "POST",
-    },
-  );
-};
+  
 
-export const getShipmentsControllerClassifyMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentsControllerClassify>>,
-    TError,
-    { id: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentsControllerClassify>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  const mutationKey = ["shipmentsControllerClassify"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/shipments/${id}/classify`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentsControllerClassify>>,
-    { id: string }
-  > = (props) => {
-    const { id } = props ?? {};
+export const shipmentsControllerClassify = async (id: string, options?: RequestInit): Promise<shipmentsControllerClassifyResponse> => {
+  
+  return axios<shipmentsControllerClassifyResponse>(getShipmentsControllerClassifyUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
 
-    return shipmentsControllerClassify(id, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentsControllerClassifyMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentsControllerClassify>>
->;
+export const getShipmentsControllerClassifyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext> => {
 
-export type ShipmentsControllerClassifyMutationError = ErrorType<unknown>;
+const mutationKey = ['shipmentsControllerClassify'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-/**
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerClassify>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  shipmentsControllerClassify(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerClassifyMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerClassify>>>
+    
+    export type ShipmentsControllerClassifyMutationError = ErrorType<unknown>
+
+    /**
  * @summary Classify a shipment
  */
-export const useShipmentsControllerClassify = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentsControllerClassify>>,
-      TError,
-      { id: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentsControllerClassify>>,
-  TError,
-  { id: string },
-  TContext
-> => {
-  return useMutation(
-    getShipmentsControllerClassifyMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentsControllerClassify = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerClassify>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerClassify>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerClassifyMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the organization-wide event feed across every shipment, newest first — a complete audit trail of automated and manual activity. Filterable by type and actor; paginated with limit/offset.
  * @summary List events across all shipments
  */
 export type shipmentEventsControllerFindAllResponse200 = {
-  data: ListShipmentEventsResponseDto;
-  status: 200;
+  data: ListShipmentEventsResponseDto
+  status: 200
+}
+
+export type shipmentEventsControllerFindAllResponseSuccess = (shipmentEventsControllerFindAllResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentEventsControllerFindAllResponseSuccess =
-  shipmentEventsControllerFindAllResponse200 & {
-    headers: Headers;
-  };
+export type shipmentEventsControllerFindAllResponse = (shipmentEventsControllerFindAllResponseSuccess)
 
-export type shipmentEventsControllerFindAllResponse =
-  shipmentEventsControllerFindAllResponseSuccess;
-
-export const getShipmentEventsControllerFindAllUrl = (
-  params?: ShipmentEventsControllerFindAllParams,
-) => {
+export const getShipmentEventsControllerFindAllUrl = (params?: ShipmentEventsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/shipments/events?${stringifiedParams}`
-    : `/v1/shipments/events`;
-};
+  return stringifiedParams.length > 0 ? `/v1/shipments/events?${stringifiedParams}` : `/v1/shipments/events`
+}
 
-export const shipmentEventsControllerFindAll = async (
-  params?: ShipmentEventsControllerFindAllParams,
-  options?: RequestInit,
-): Promise<shipmentEventsControllerFindAllResponse> => {
-  return axios<shipmentEventsControllerFindAllResponse>(
-    getShipmentEventsControllerFindAllUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+export const shipmentEventsControllerFindAll = async (params?: ShipmentEventsControllerFindAllParams, options?: RequestInit): Promise<shipmentEventsControllerFindAllResponse> => {
+  
+  return axios<shipmentEventsControllerFindAllResponse>(getShipmentEventsControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getShipmentEventsControllerFindAllQueryKey = (
-  params?: ShipmentEventsControllerFindAllParams,
+
+
+
+export const getShipmentEventsControllerFindAllQueryKey = (params?: ShipmentEventsControllerFindAllParams,) => {
+    return [
+    `/v1/shipments/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getShipmentEventsControllerFindAllQueryOptions = <TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  return [`/v1/shipments/events`, ...(params ? [params] : [])] as const;
-};
 
-export const getShipmentEventsControllerFindAllQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentEventsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ??
-    getShipmentEventsControllerFindAllQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getShipmentEventsControllerFindAllQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>
-  > = ({ signal }) =>
-    shipmentEventsControllerFindAll(params, { signal, ...requestOptions });
+  
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>> = ({ signal }) => shipmentEventsControllerFindAll(params, { signal, ...requestOptions });
 
-export type ShipmentEventsControllerFindAllQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>
->;
-export type ShipmentEventsControllerFindAllQueryError = ErrorType<unknown>;
+      
 
-export function useShipmentEventsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params: undefined | ShipmentEventsControllerFindAllParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentEventsControllerFindAllQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>>
+export type ShipmentEventsControllerFindAllQueryError = ErrorType<unknown>
+
+
+export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params: undefined |  ShipmentEventsControllerFindAllParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentEventsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentEventsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
           TError,
           Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentEventsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentEventsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List events across all shipments
  */
 
-export function useShipmentEventsControllerFindAll<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ShipmentEventsControllerFindAllParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentEventsControllerFindAllQueryOptions(
-    params,
-    options,
-  );
+export function useShipmentEventsControllerFindAll<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError = ErrorType<unknown>>(
+ params?: ShipmentEventsControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindAll>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentEventsControllerFindAllQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns one shipment's timeline — documents received, extracted facts, agent trace steps, milestones, broker notes — oldest first. This is the contemporaneous record used to reconstruct any decision later (e.g. answering a CF-28).
  * @summary List a shipment's events
  */
 export type shipmentEventsControllerFindByShipmentResponse200 = {
-  data: ListShipmentEventsResponseDto;
-  status: 200;
+  data: ListShipmentEventsResponseDto
+  status: 200
+}
+
+export type shipmentEventsControllerFindByShipmentResponseSuccess = (shipmentEventsControllerFindByShipmentResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentEventsControllerFindByShipmentResponseSuccess =
-  shipmentEventsControllerFindByShipmentResponse200 & {
-    headers: Headers;
-  };
+export type shipmentEventsControllerFindByShipmentResponse = (shipmentEventsControllerFindByShipmentResponseSuccess)
 
-export type shipmentEventsControllerFindByShipmentResponse =
-  shipmentEventsControllerFindByShipmentResponseSuccess;
-
-export const getShipmentEventsControllerFindByShipmentUrl = (
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-) => {
+export const getShipmentEventsControllerFindByShipmentUrl = (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/shipments/${shipmentId}/events?${stringifiedParams}`
-    : `/v1/shipments/${shipmentId}/events`;
-};
+  return stringifiedParams.length > 0 ? `/v1/shipments/${shipmentId}/events?${stringifiedParams}` : `/v1/shipments/${shipmentId}/events`
+}
 
-export const shipmentEventsControllerFindByShipment = async (
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-  options?: RequestInit,
-): Promise<shipmentEventsControllerFindByShipmentResponse> => {
-  return axios<shipmentEventsControllerFindByShipmentResponse>(
-    getShipmentEventsControllerFindByShipmentUrl(shipmentId, params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+export const shipmentEventsControllerFindByShipment = async (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: RequestInit): Promise<shipmentEventsControllerFindByShipmentResponse> => {
+  
+  return axios<shipmentEventsControllerFindByShipmentResponse>(getShipmentEventsControllerFindByShipmentUrl(shipmentId,params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getShipmentEventsControllerFindByShipmentQueryKey = (
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
+
+
+
+export const getShipmentEventsControllerFindByShipmentQueryKey = (shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams,) => {
+    return [
+    `/v1/shipments/${shipmentId}/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getShipmentEventsControllerFindByShipmentQueryOptions = <TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  return [
-    `/v1/shipments/${shipmentId}/events`,
-    ...(params ? [params] : []),
-  ] as const;
-};
 
-export const getShipmentEventsControllerFindByShipmentQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-  TError = ErrorType<unknown>,
->(
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ??
-    getShipmentEventsControllerFindByShipmentQueryKey(shipmentId, params);
+  const queryKey =  queryOptions?.queryKey ?? getShipmentEventsControllerFindByShipmentQueryKey(shipmentId,params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
-  > = ({ signal }) =>
-    shipmentEventsControllerFindByShipment(shipmentId, params, {
-      signal,
-      ...requestOptions,
-    });
+  
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!shipmentId,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>> = ({ signal }) => shipmentEventsControllerFindByShipment(shipmentId,params, { signal, ...requestOptions });
 
-export type ShipmentEventsControllerFindByShipmentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
->;
-export type ShipmentEventsControllerFindByShipmentQueryError =
-  ErrorType<unknown>;
+      
 
-export function useShipmentEventsControllerFindByShipment<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-  TError = ErrorType<unknown>,
->(
-  shipmentId: string,
-  params: undefined | ShipmentEventsControllerFindByShipmentParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+   return  { queryKey, queryFn, enabled: !!(shipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentEventsControllerFindByShipmentQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>>
+export type ShipmentEventsControllerFindByShipmentQueryError = ErrorType<unknown>
+
+
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params: undefined |  ShipmentEventsControllerFindByShipmentParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
           TError,
           Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentEventsControllerFindByShipment<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-  TError = ErrorType<unknown>,
->(
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
           TError,
           Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentEventsControllerFindByShipment<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-  TError = ErrorType<unknown>,
->(
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List a shipment's events
  */
 
-export function useShipmentEventsControllerFindByShipment<
-  TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-  TError = ErrorType<unknown>,
->(
-  shipmentId: string,
-  params?: ShipmentEventsControllerFindByShipmentParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentEventsControllerFindByShipmentQueryOptions(
-    shipmentId,
-    params,
-    options,
-  );
+export function useShipmentEventsControllerFindByShipment<TData = Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError = ErrorType<unknown>>(
+ shipmentId: string,
+    params?: ShipmentEventsControllerFindByShipmentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentEventsControllerFindByShipment>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentEventsControllerFindByShipmentQueryOptions(shipmentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Appends an event to the shipment's timeline. Events are immutable — there is no update or delete. Appending a review_requested event also flips the shipment to needs_review and sets its review deadline and type.
  * @summary Append a shipment event
  */
 export type shipmentEventsControllerCreateResponse201 = {
-  data: ShipmentEventResponseDto;
-  status: 201;
+  data: ShipmentEventResponseDto
+  status: 201
+}
+
+export type shipmentEventsControllerCreateResponseSuccess = (shipmentEventsControllerCreateResponse201) & {
+  headers: Headers;
 };
+;
 
-export type shipmentEventsControllerCreateResponseSuccess =
-  shipmentEventsControllerCreateResponse201 & {
-    headers: Headers;
-  };
+export type shipmentEventsControllerCreateResponse = (shipmentEventsControllerCreateResponseSuccess)
 
-export type shipmentEventsControllerCreateResponse =
-  shipmentEventsControllerCreateResponseSuccess;
+export const getShipmentEventsControllerCreateUrl = (shipmentId: string,) => {
 
-export const getShipmentEventsControllerCreateUrl = (shipmentId: string) => {
-  return `/v1/shipments/${shipmentId}/events`;
-};
 
-export const shipmentEventsControllerCreate = async (
-  shipmentId: string,
-  createShipmentEventDto: CreateShipmentEventDto,
-  options?: RequestInit,
-): Promise<shipmentEventsControllerCreateResponse> => {
-  return axios<shipmentEventsControllerCreateResponse>(
-    getShipmentEventsControllerCreateUrl(shipmentId),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(createShipmentEventDto),
-    },
-  );
-};
+  
 
-export const getShipmentEventsControllerCreateMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-    TError,
-    { shipmentId: string; data: CreateShipmentEventDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-  TError,
-  { shipmentId: string; data: CreateShipmentEventDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentEventsControllerCreate"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/shipments/${shipmentId}/events`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-    { shipmentId: string; data: CreateShipmentEventDto }
-  > = (props) => {
-    const { shipmentId, data } = props ?? {};
+export const shipmentEventsControllerCreate = async (shipmentId: string,
+    createShipmentEventDto: CreateShipmentEventDto, options?: RequestInit): Promise<shipmentEventsControllerCreateResponse> => {
+  
+  return axios<shipmentEventsControllerCreateResponse>(getShipmentEventsControllerCreateUrl(shipmentId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createShipmentEventDto,)
+  }
+);}
+  
 
-    return shipmentEventsControllerCreate(shipmentId, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentEventsControllerCreateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentEventsControllerCreate>>
->;
-export type ShipmentEventsControllerCreateMutationBody = CreateShipmentEventDto;
-export type ShipmentEventsControllerCreateMutationError = ErrorType<unknown>;
+export const getShipmentEventsControllerCreateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext> => {
 
-/**
+const mutationKey = ['shipmentEventsControllerCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, {shipmentId: string;data: CreateShipmentEventDto}> = (props) => {
+          const {shipmentId,data} = props ?? {};
+
+          return  shipmentEventsControllerCreate(shipmentId,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentEventsControllerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>>
+    export type ShipmentEventsControllerCreateMutationBody = CreateShipmentEventDto
+    export type ShipmentEventsControllerCreateMutationError = ErrorType<unknown>
+
+    /**
  * @summary Append a shipment event
  */
-export const useShipmentEventsControllerCreate = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-      TError,
-      { shipmentId: string; data: CreateShipmentEventDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
-  TError,
-  { shipmentId: string; data: CreateShipmentEventDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentEventsControllerCreateMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentEventsControllerCreate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentEventsControllerCreate>>, TError,{shipmentId: string;data: CreateShipmentEventDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentEventsControllerCreate>>,
+        TError,
+        {shipmentId: string;data: CreateShipmentEventDto},
+        TContext
+      > => {
+      return useMutation(getShipmentEventsControllerCreateMutationOptions(options), queryClient);
+    }
+    
 /**
  * Step 1 of intake: returns a presigned upload URL per file. Upload each file body directly to its URL with an HTTP PUT (the Content-Type must match), then confirm the batch via POST /shipments/documents. File keys are assigned by the server; upload URLs expire after 5 minutes.
  * @summary Get document upload URLs
  */
 export type shipmentDocumentsControllerUploadResponse201 = {
-  data: UploadDocumentsResponseDto;
-  status: 201;
+  data: UploadDocumentsResponseDto
+  status: 201
+}
+
+export type shipmentDocumentsControllerUploadResponseSuccess = (shipmentDocumentsControllerUploadResponse201) & {
+  headers: Headers;
 };
+;
 
-export type shipmentDocumentsControllerUploadResponseSuccess =
-  shipmentDocumentsControllerUploadResponse201 & {
-    headers: Headers;
-  };
-
-export type shipmentDocumentsControllerUploadResponse =
-  shipmentDocumentsControllerUploadResponseSuccess;
+export type shipmentDocumentsControllerUploadResponse = (shipmentDocumentsControllerUploadResponseSuccess)
 
 export const getShipmentDocumentsControllerUploadUrl = () => {
-  return `/v1/shipments/documents/upload`;
-};
 
-export const shipmentDocumentsControllerUpload = async (
-  uploadDocumentsDto: UploadDocumentsDto,
-  options?: RequestInit,
-): Promise<shipmentDocumentsControllerUploadResponse> => {
-  return axios<shipmentDocumentsControllerUploadResponse>(
-    getShipmentDocumentsControllerUploadUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(uploadDocumentsDto),
-    },
-  );
-};
 
-export const getShipmentDocumentsControllerUploadMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
-    TError,
-    { data: UploadDocumentsDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
-  TError,
-  { data: UploadDocumentsDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentDocumentsControllerUpload"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
-    { data: UploadDocumentsDto }
-  > = (props) => {
-    const { data } = props ?? {};
+  return `/v1/shipments/documents/upload`
+}
 
-    return shipmentDocumentsControllerUpload(data, requestOptions);
-  };
+export const shipmentDocumentsControllerUpload = async (uploadDocumentsDto: UploadDocumentsDto, options?: RequestInit): Promise<shipmentDocumentsControllerUploadResponse> => {
+  
+  return axios<shipmentDocumentsControllerUploadResponse>(getShipmentDocumentsControllerUploadUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      uploadDocumentsDto,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentDocumentsControllerUploadMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>
->;
-export type ShipmentDocumentsControllerUploadMutationBody = UploadDocumentsDto;
-export type ShipmentDocumentsControllerUploadMutationError = ErrorType<unknown>;
 
-/**
+export const getShipmentDocumentsControllerUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>, TError,{data: UploadDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>, TError,{data: UploadDocumentsDto}, TContext> => {
+
+const mutationKey = ['shipmentDocumentsControllerUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>, {data: UploadDocumentsDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  shipmentDocumentsControllerUpload(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentDocumentsControllerUploadMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>>
+    export type ShipmentDocumentsControllerUploadMutationBody = UploadDocumentsDto
+    export type ShipmentDocumentsControllerUploadMutationError = ErrorType<unknown>
+
+    /**
  * @summary Get document upload URLs
  */
-export const useShipmentDocumentsControllerUpload = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
-      TError,
-      { data: UploadDocumentsDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
-  TError,
-  { data: UploadDocumentsDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentDocumentsControllerUploadMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentDocumentsControllerUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>, TError,{data: UploadDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentDocumentsControllerUpload>>,
+        TError,
+        {data: UploadDocumentsDto},
+        TContext
+      > => {
+      return useMutation(getShipmentDocumentsControllerUploadMutationOptions(options), queryClient);
+    }
+    
 /**
  * Step 2 of intake: confirms a batch of uploaded documents and kickstarts the asynchronous shipment process (classification, extraction, matching). Each file carries its intake category (commercial invoice, packing list, bill of lading, arrival notice, other). Keys must belong to the active organization.
  * @summary Ingest uploaded documents
  */
 export type shipmentDocumentsControllerIngestResponse201 = {
-  data: IngestDocumentsResponseDto;
-  status: 201;
+  data: IngestDocumentsResponseDto
+  status: 201
+}
+
+export type shipmentDocumentsControllerIngestResponseSuccess = (shipmentDocumentsControllerIngestResponse201) & {
+  headers: Headers;
 };
+;
 
-export type shipmentDocumentsControllerIngestResponseSuccess =
-  shipmentDocumentsControllerIngestResponse201 & {
-    headers: Headers;
-  };
-
-export type shipmentDocumentsControllerIngestResponse =
-  shipmentDocumentsControllerIngestResponseSuccess;
+export type shipmentDocumentsControllerIngestResponse = (shipmentDocumentsControllerIngestResponseSuccess)
 
 export const getShipmentDocumentsControllerIngestUrl = () => {
-  return `/v1/shipments/documents`;
-};
 
-export const shipmentDocumentsControllerIngest = async (
-  ingestDocumentsDto: IngestDocumentsDto,
-  options?: RequestInit,
-): Promise<shipmentDocumentsControllerIngestResponse> => {
-  return axios<shipmentDocumentsControllerIngestResponse>(
-    getShipmentDocumentsControllerIngestUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(ingestDocumentsDto),
-    },
-  );
-};
 
-export const getShipmentDocumentsControllerIngestMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
-    TError,
-    { data: IngestDocumentsDto },
-    TContext
-  >;
-  request?: SecondParameter<typeof axios>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
-  TError,
-  { data: IngestDocumentsDto },
-  TContext
-> => {
-  const mutationKey = ["shipmentDocumentsControllerIngest"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
-    { data: IngestDocumentsDto }
-  > = (props) => {
-    const { data } = props ?? {};
+  return `/v1/shipments/documents`
+}
 
-    return shipmentDocumentsControllerIngest(data, requestOptions);
-  };
+export const shipmentDocumentsControllerIngest = async (ingestDocumentsDto: IngestDocumentsDto, options?: RequestInit): Promise<shipmentDocumentsControllerIngestResponse> => {
+  
+  return axios<shipmentDocumentsControllerIngestResponse>(getShipmentDocumentsControllerIngestUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      ingestDocumentsDto,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type ShipmentDocumentsControllerIngestMutationResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>
->;
-export type ShipmentDocumentsControllerIngestMutationBody = IngestDocumentsDto;
-export type ShipmentDocumentsControllerIngestMutationError = ErrorType<unknown>;
 
-/**
+export const getShipmentDocumentsControllerIngestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext> => {
+
+const mutationKey = ['shipmentDocumentsControllerIngest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, {data: IngestDocumentsDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  shipmentDocumentsControllerIngest(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentDocumentsControllerIngestMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>>
+    export type ShipmentDocumentsControllerIngestMutationBody = IngestDocumentsDto
+    export type ShipmentDocumentsControllerIngestMutationError = ErrorType<unknown>
+
+    /**
  * @summary Ingest uploaded documents
  */
-export const useShipmentDocumentsControllerIngest = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
-      TError,
-      { data: IngestDocumentsDto },
-      TContext
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
-  TError,
-  { data: IngestDocumentsDto },
-  TContext
-> => {
-  return useMutation(
-    getShipmentDocumentsControllerIngestMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useShipmentDocumentsControllerIngest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>, TError,{data: IngestDocumentsDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentDocumentsControllerIngest>>,
+        TError,
+        {data: IngestDocumentsDto},
+        TContext
+      > => {
+      return useMutation(getShipmentDocumentsControllerIngestMutationOptions(options), queryClient);
+    }
+    
 /**
  * Returns the documents attached to a shipment, including the extracted fields and summary for each, plus short-lived links to view the original file and its preview image. Links expire after 5 minutes — request the list again for fresh ones.
  * @summary List shipment documents
  */
 export type shipmentDocumentsControllerListResponse200 = {
-  data: ListShipmentDocumentsResponseDto;
-  status: 200;
+  data: ListShipmentDocumentsResponseDto
+  status: 200
+}
+
+export type shipmentDocumentsControllerListResponseSuccess = (shipmentDocumentsControllerListResponse200) & {
+  headers: Headers;
 };
+;
 
-export type shipmentDocumentsControllerListResponseSuccess =
-  shipmentDocumentsControllerListResponse200 & {
-    headers: Headers;
-  };
+export type shipmentDocumentsControllerListResponse = (shipmentDocumentsControllerListResponseSuccess)
 
-export type shipmentDocumentsControllerListResponse =
-  shipmentDocumentsControllerListResponseSuccess;
+export const getShipmentDocumentsControllerListUrl = (id: string,) => {
 
-export const getShipmentDocumentsControllerListUrl = (id: string) => {
-  return `/v1/shipments/${id}/documents`;
-};
 
-export const shipmentDocumentsControllerList = async (
-  id: string,
-  options?: RequestInit,
-): Promise<shipmentDocumentsControllerListResponse> => {
-  return axios<shipmentDocumentsControllerListResponse>(
-    getShipmentDocumentsControllerListUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getShipmentDocumentsControllerListQueryKey = (id: string) => {
-  return [`/v1/shipments/${id}/documents`] as const;
-};
+  return `/v1/shipments/${id}/documents`
+}
 
-export const getShipmentDocumentsControllerListQueryOptions = <
-  TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const shipmentDocumentsControllerList = async (id: string, options?: RequestInit): Promise<shipmentDocumentsControllerListResponse> => {
+  
+  return axios<shipmentDocumentsControllerListResponse>(getShipmentDocumentsControllerListUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentDocumentsControllerListQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/documents`
+    ] as const;
+    }
+
+    
+export const getShipmentDocumentsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getShipmentDocumentsControllerListQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
-  > = ({ signal }) =>
-    shipmentDocumentsControllerList(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getShipmentDocumentsControllerListQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ShipmentDocumentsControllerListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
->;
-export type ShipmentDocumentsControllerListQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>> = ({ signal }) => shipmentDocumentsControllerList(id, { signal, ...requestOptions });
 
-export function useShipmentDocumentsControllerList<
-  TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentDocumentsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>>
+export type ShipmentDocumentsControllerListQueryError = ErrorType<unknown>
+
+
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
           TError,
           Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentDocumentsControllerList<
-  TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
           TError,
           Awaited<ReturnType<typeof shipmentDocumentsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useShipmentDocumentsControllerList<
-  TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List shipment documents
  */
 
-export function useShipmentDocumentsControllerList<
-  TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof shipmentDocumentsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getShipmentDocumentsControllerListQueryOptions(
-    id,
-    options,
-  );
+export function useShipmentDocumentsControllerList<TData = Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentDocumentsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getShipmentDocumentsControllerListQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns the AI runs performed for a shipment — what ran, its status, the result, and how much work it took. Use the run id to fetch the complete audit record.
  * @summary List a shipment's AI runs
  */
 export type agentRunsControllerListResponse200 = {
-  data: ListAgentRunsResponseDto;
-  status: 200;
+  data: ListAgentRunsResponseDto
+  status: 200
+}
+
+export type agentRunsControllerListResponseSuccess = (agentRunsControllerListResponse200) & {
+  headers: Headers;
 };
+;
 
-export type agentRunsControllerListResponseSuccess =
-  agentRunsControllerListResponse200 & {
-    headers: Headers;
-  };
+export type agentRunsControllerListResponse = (agentRunsControllerListResponseSuccess)
 
-export type agentRunsControllerListResponse =
-  agentRunsControllerListResponseSuccess;
+export const getAgentRunsControllerListUrl = (id: string,) => {
 
-export const getAgentRunsControllerListUrl = (id: string) => {
-  return `/v1/shipments/${id}/runs`;
-};
 
-export const agentRunsControllerList = async (
-  id: string,
-  options?: RequestInit,
-): Promise<agentRunsControllerListResponse> => {
-  return axios<agentRunsControllerListResponse>(
-    getAgentRunsControllerListUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getAgentRunsControllerListQueryKey = (id: string) => {
-  return [`/v1/shipments/${id}/runs`] as const;
-};
+  return `/v1/shipments/${id}/runs`
+}
 
-export const getAgentRunsControllerListQueryOptions = <
-  TData = Awaited<ReturnType<typeof agentRunsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const agentRunsControllerList = async (id: string, options?: RequestInit): Promise<agentRunsControllerListResponse> => {
+  
+  return axios<agentRunsControllerListResponse>(getAgentRunsControllerListUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getAgentRunsControllerListQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/runs`
+    ] as const;
+    }
+
+    
+export const getAgentRunsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getAgentRunsControllerListQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof agentRunsControllerList>>
-  > = ({ signal }) =>
-    agentRunsControllerList(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getAgentRunsControllerListQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof agentRunsControllerList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type AgentRunsControllerListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof agentRunsControllerList>>
->;
-export type AgentRunsControllerListQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof agentRunsControllerList>>> = ({ signal }) => agentRunsControllerList(id, { signal, ...requestOptions });
 
-export function useAgentRunsControllerList<
-  TData = Awaited<ReturnType<typeof agentRunsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AgentRunsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof agentRunsControllerList>>>
+export type AgentRunsControllerListQueryError = ErrorType<unknown>
+
+
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof agentRunsControllerList>>,
           TError,
           Awaited<ReturnType<typeof agentRunsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAgentRunsControllerList<
-  TData = Awaited<ReturnType<typeof agentRunsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof agentRunsControllerList>>,
           TError,
           Awaited<ReturnType<typeof agentRunsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAgentRunsControllerList<
-  TData = Awaited<ReturnType<typeof agentRunsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List a shipment's AI runs
  */
 
-export function useAgentRunsControllerList<
-  TData = Awaited<ReturnType<typeof agentRunsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getAgentRunsControllerListQueryOptions(id, options);
+export function useAgentRunsControllerList<TData = Awaited<ReturnType<typeof agentRunsControllerList>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getAgentRunsControllerListQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns the complete audit record of an AI run: every reasoning passage, every research action with its inputs, and everything it found — in the order it happened. This is the record behind each AI decision.
  * @summary Get an AI run's audit record
  */
 export type agentRunsControllerFindResponse200 = {
-  data: AgentRunDetailResponseDto;
-  status: 200;
+  data: AgentRunDetailResponseDto
+  status: 200
+}
+
+export type agentRunsControllerFindResponseSuccess = (agentRunsControllerFindResponse200) & {
+  headers: Headers;
 };
+;
 
-export type agentRunsControllerFindResponseSuccess =
-  agentRunsControllerFindResponse200 & {
-    headers: Headers;
-  };
+export type agentRunsControllerFindResponse = (agentRunsControllerFindResponseSuccess)
 
-export type agentRunsControllerFindResponse =
-  agentRunsControllerFindResponseSuccess;
+export const getAgentRunsControllerFindUrl = (id: string,) => {
 
-export const getAgentRunsControllerFindUrl = (id: string) => {
-  return `/v1/runs/${id}`;
-};
 
-export const agentRunsControllerFind = async (
-  id: string,
-  options?: RequestInit,
-): Promise<agentRunsControllerFindResponse> => {
-  return axios<agentRunsControllerFindResponse>(
-    getAgentRunsControllerFindUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getAgentRunsControllerFindQueryKey = (id: string) => {
-  return [`/v1/runs/${id}`] as const;
-};
+  return `/v1/runs/${id}`
+}
 
-export const getAgentRunsControllerFindQueryOptions = <
-  TData = Awaited<ReturnType<typeof agentRunsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const agentRunsControllerFind = async (id: string, options?: RequestInit): Promise<agentRunsControllerFindResponse> => {
+  
+  return axios<agentRunsControllerFindResponse>(getAgentRunsControllerFindUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getAgentRunsControllerFindQueryKey = (id: string,) => {
+    return [
+    `/v1/runs/${id}`
+    ] as const;
+    }
+
+    
+export const getAgentRunsControllerFindQueryOptions = <TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getAgentRunsControllerFindQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof agentRunsControllerFind>>
-  > = ({ signal }) =>
-    agentRunsControllerFind(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getAgentRunsControllerFindQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof agentRunsControllerFind>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type AgentRunsControllerFindQueryResult = NonNullable<
-  Awaited<ReturnType<typeof agentRunsControllerFind>>
->;
-export type AgentRunsControllerFindQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof agentRunsControllerFind>>> = ({ signal }) => agentRunsControllerFind(id, { signal, ...requestOptions });
 
-export function useAgentRunsControllerFind<
-  TData = Awaited<ReturnType<typeof agentRunsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerFind>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AgentRunsControllerFindQueryResult = NonNullable<Awaited<ReturnType<typeof agentRunsControllerFind>>>
+export type AgentRunsControllerFindQueryError = ErrorType<unknown>
+
+
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof agentRunsControllerFind>>,
           TError,
           Awaited<ReturnType<typeof agentRunsControllerFind>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAgentRunsControllerFind<
-  TData = Awaited<ReturnType<typeof agentRunsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerFind>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof agentRunsControllerFind>>,
           TError,
           Awaited<ReturnType<typeof agentRunsControllerFind>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useAgentRunsControllerFind<
-  TData = Awaited<ReturnType<typeof agentRunsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get an AI run's audit record
  */
 
-export function useAgentRunsControllerFind<
-  TData = Awaited<ReturnType<typeof agentRunsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof agentRunsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getAgentRunsControllerFindQueryOptions(id, options);
+export function useAgentRunsControllerFind<TData = Awaited<ReturnType<typeof agentRunsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof agentRunsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getAgentRunsControllerFindQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns the knowledge base — every classified product, with its current HTS code, who set it (AI or broker), how many shipment lines reused it, and the owning client embedded. Supports filtering by client and source, free-text search, sorting, and offset pagination.
  * @summary List products
  */
 export type productsControllerListResponse200 = {
-  data: ListProductsResponseDto;
-  status: 200;
+  data: ListProductsResponseDto
+  status: 200
+}
+
+export type productsControllerListResponseSuccess = (productsControllerListResponse200) & {
+  headers: Headers;
 };
+;
 
-export type productsControllerListResponseSuccess =
-  productsControllerListResponse200 & {
-    headers: Headers;
-  };
+export type productsControllerListResponse = (productsControllerListResponseSuccess)
 
-export type productsControllerListResponse =
-  productsControllerListResponseSuccess;
-
-export const getProductsControllerListUrl = (
-  params?: ProductsControllerListParams,
-) => {
+export const getProductsControllerListUrl = (params?: ProductsControllerListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/products?${stringifiedParams}`
-    : `/v1/products`;
-};
+  return stringifiedParams.length > 0 ? `/v1/products?${stringifiedParams}` : `/v1/products`
+}
 
-export const productsControllerList = async (
-  params?: ProductsControllerListParams,
-  options?: RequestInit,
-): Promise<productsControllerListResponse> => {
-  return axios<productsControllerListResponse>(
-    getProductsControllerListUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+export const productsControllerList = async (params?: ProductsControllerListParams, options?: RequestInit): Promise<productsControllerListResponse> => {
+  
+  return axios<productsControllerListResponse>(getProductsControllerListUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getProductsControllerListQueryKey = (
-  params?: ProductsControllerListParams,
+
+
+
+export const getProductsControllerListQueryKey = (params?: ProductsControllerListParams,) => {
+    return [
+    `/v1/products`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getProductsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  return [`/v1/products`, ...(params ? [params] : [])] as const;
-};
 
-export const getProductsControllerListQueryOptions = <
-  TData = Awaited<ReturnType<typeof productsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ProductsControllerListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getProductsControllerListQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerListQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof productsControllerList>>
-  > = ({ signal }) =>
-    productsControllerList(params, { signal, ...requestOptions });
+  
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof productsControllerList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerList>>> = ({ signal }) => productsControllerList(params, { signal, ...requestOptions });
 
-export type ProductsControllerListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof productsControllerList>>
->;
-export type ProductsControllerListQueryError = ErrorType<unknown>;
+      
 
-export function useProductsControllerList<
-  TData = Awaited<ReturnType<typeof productsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  params: undefined | ProductsControllerListParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerList>>>
+export type ProductsControllerListQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params: undefined |  ProductsControllerListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerList>>,
           TError,
           Awaited<ReturnType<typeof productsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerList<
-  TData = Awaited<ReturnType<typeof productsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ProductsControllerListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerList>>,
           TError,
           Awaited<ReturnType<typeof productsControllerList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerList<
-  TData = Awaited<ReturnType<typeof productsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ProductsControllerListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List products
  */
 
-export function useProductsControllerList<
-  TData = Awaited<ReturnType<typeof productsControllerList>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ProductsControllerListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getProductsControllerListQueryOptions(params, options);
+export function useProductsControllerList<TData = Awaited<ReturnType<typeof productsControllerList>>, TError = ErrorType<unknown>>(
+ params?: ProductsControllerListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getProductsControllerListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns aggregate counts over the classified-product knowledge base: entries, total reuses, broker-approved entries, and distinct HTS chapters covered.
  * @summary Knowledge base stats
  */
 export type productsControllerStatsResponse200 = {
-  data: ProductStatsResponseDto;
-  status: 200;
+  data: ProductStatsResponseDto
+  status: 200
+}
+
+export type productsControllerStatsResponseSuccess = (productsControllerStatsResponse200) & {
+  headers: Headers;
 };
+;
 
-export type productsControllerStatsResponseSuccess =
-  productsControllerStatsResponse200 & {
-    headers: Headers;
-  };
-
-export type productsControllerStatsResponse =
-  productsControllerStatsResponseSuccess;
+export type productsControllerStatsResponse = (productsControllerStatsResponseSuccess)
 
 export const getProductsControllerStatsUrl = () => {
-  return `/v1/products/stats`;
-};
 
-export const productsControllerStats = async (
-  options?: RequestInit,
-): Promise<productsControllerStatsResponse> => {
-  return axios<productsControllerStatsResponse>(
-    getProductsControllerStatsUrl(),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+
+  
+
+  return `/v1/products/stats`
+}
+
+export const productsControllerStats = async ( options?: RequestInit): Promise<productsControllerStatsResponse> => {
+  
+  return axios<productsControllerStatsResponse>(getProductsControllerStatsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getProductsControllerStatsQueryKey = () => {
-  return [`/v1/products/stats`] as const;
-};
+    return [
+    `/v1/products/stats`
+    ] as const;
+    }
 
-export const getProductsControllerStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof productsControllerStats>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof productsControllerStats>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof axios>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getProductsControllerStatsQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
 
-  const queryKey =
-    queryOptions?.queryKey ?? getProductsControllerStatsQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof productsControllerStats>>
-  > = ({ signal }) => productsControllerStats({ signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerStatsQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof productsControllerStats>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ProductsControllerStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof productsControllerStats>>
->;
-export type ProductsControllerStatsQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerStats>>> = ({ signal }) => productsControllerStats({ signal, ...requestOptions });
 
-export function useProductsControllerStats<
-  TData = Awaited<ReturnType<typeof productsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerStats>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerStatsQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerStats>>>
+export type ProductsControllerStatsQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerStats>>,
           TError,
           Awaited<ReturnType<typeof productsControllerStats>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerStats<
-  TData = Awaited<ReturnType<typeof productsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerStats>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerStats>>,
           TError,
           Awaited<ReturnType<typeof productsControllerStats>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerStats<
-  TData = Awaited<ReturnType<typeof productsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerStats>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Knowledge base stats
  */
 
-export function useProductsControllerStats<
-  TData = Awaited<ReturnType<typeof productsControllerStats>>,
-  TError = ErrorType<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerStats>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getProductsControllerStatsQueryOptions(options);
+export function useProductsControllerStats<TData = Awaited<ReturnType<typeof productsControllerStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getProductsControllerStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
 
 /**
  * Returns one product and its current classification details.
  * @summary Get a product
  */
 export type productsControllerFindResponse200 = {
-  data: ProductResponseDto;
-  status: 200;
+  data: ProductResponseDto
+  status: 200
+}
+
+export type productsControllerFindResponseSuccess = (productsControllerFindResponse200) & {
+  headers: Headers;
 };
+;
 
-export type productsControllerFindResponseSuccess =
-  productsControllerFindResponse200 & {
-    headers: Headers;
-  };
+export type productsControllerFindResponse = (productsControllerFindResponseSuccess)
 
-export type productsControllerFindResponse =
-  productsControllerFindResponseSuccess;
+export const getProductsControllerFindUrl = (id: string,) => {
 
-export const getProductsControllerFindUrl = (id: string) => {
-  return `/v1/products/${id}`;
-};
 
-export const productsControllerFind = async (
-  id: string,
-  options?: RequestInit,
-): Promise<productsControllerFindResponse> => {
-  return axios<productsControllerFindResponse>(
-    getProductsControllerFindUrl(id),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  
 
-export const getProductsControllerFindQueryKey = (id: string) => {
-  return [`/v1/products/${id}`] as const;
-};
+  return `/v1/products/${id}`
+}
 
-export const getProductsControllerFindQueryOptions = <
-  TData = Awaited<ReturnType<typeof productsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
+export const productsControllerFind = async (id: string, options?: RequestInit): Promise<productsControllerFindResponse> => {
+  
+  return axios<productsControllerFindResponse>(getProductsControllerFindUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getProductsControllerFindQueryKey = (id: string,) => {
+    return [
+    `/v1/products/${id}`
+    ] as const;
+    }
+
+    
+export const getProductsControllerFindQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getProductsControllerFindQueryKey(id);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof productsControllerFind>>
-  > = ({ signal }) => productsControllerFind(id, { signal, ...requestOptions });
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerFindQueryKey(id);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof productsControllerFind>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  
 
-export type ProductsControllerFindQueryResult = NonNullable<
-  Awaited<ReturnType<typeof productsControllerFind>>
->;
-export type ProductsControllerFindQueryError = ErrorType<unknown>;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerFind>>> = ({ signal }) => productsControllerFind(id, { signal, ...requestOptions });
 
-export function useProductsControllerFind<
-  TData = Awaited<ReturnType<typeof productsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerFind>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerFindQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerFind>>>
+export type ProductsControllerFindQueryError = ErrorType<unknown>
+
+
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerFind>>,
           TError,
           Awaited<ReturnType<typeof productsControllerFind>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerFind<
-  TData = Awaited<ReturnType<typeof productsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerFind>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof productsControllerFind>>,
           TError,
           Awaited<ReturnType<typeof productsControllerFind>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProductsControllerFind<
-  TData = Awaited<ReturnType<typeof productsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get a product
  */
 
-export function useProductsControllerFind<
-  TData = Awaited<ReturnType<typeof productsControllerFind>>,
-  TError = ErrorType<unknown>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof productsControllerFind>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof axios>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getProductsControllerFindQueryOptions(id, options);
+export function useProductsControllerFind<TData = Awaited<ReturnType<typeof productsControllerFind>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFind>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getProductsControllerFindQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
+
+/**
+ * Returns a single-use hosted URL where the user connects any mail provider (Gmail, Outlook, IMAP). Once connected, new inbox emails with shipment documents flow into shipments automatically.
+ * @summary Connect an inbox
+ */
+export type emailAccountsControllerConnectResponse201 = {
+  data: ConnectEmailAccountResponseDto
+  status: 201
+}
+
+export type emailAccountsControllerConnectResponseSuccess = (emailAccountsControllerConnectResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailAccountsControllerConnectResponse = (emailAccountsControllerConnectResponseSuccess)
+
+export const getEmailAccountsControllerConnectUrl = () => {
+
+
+  
+
+  return `/v1/email-accounts/connect`
+}
+
+export const emailAccountsControllerConnect = async (connectEmailAccountDto: ConnectEmailAccountDto, options?: RequestInit): Promise<emailAccountsControllerConnectResponse> => {
+  
+  return axios<emailAccountsControllerConnectResponse>(getEmailAccountsControllerConnectUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      connectEmailAccountDto,)
+  }
+);}
+  
+
+
+
+export const getEmailAccountsControllerConnectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerConnect>>, TError,{data: ConnectEmailAccountDto}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerConnect>>, TError,{data: ConnectEmailAccountDto}, TContext> => {
+
+const mutationKey = ['emailAccountsControllerConnect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emailAccountsControllerConnect>>, {data: ConnectEmailAccountDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  emailAccountsControllerConnect(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmailAccountsControllerConnectMutationResult = NonNullable<Awaited<ReturnType<typeof emailAccountsControllerConnect>>>
+    export type EmailAccountsControllerConnectMutationBody = ConnectEmailAccountDto
+    export type EmailAccountsControllerConnectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Connect an inbox
+ */
+export const useEmailAccountsControllerConnect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerConnect>>, TError,{data: ConnectEmailAccountDto}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof emailAccountsControllerConnect>>,
+        TError,
+        {data: ConnectEmailAccountDto},
+        TContext
+      > => {
+      return useMutation(getEmailAccountsControllerConnectMutationOptions(options), queryClient);
+    }
+    
+/**
+ * The organization's connected email accounts and their delivery status.
+ * @summary List connected inboxes
+ */
+export type emailAccountsControllerListResponse200 = {
+  data: ListEmailAccountsResponseDto
+  status: 200
+}
+
+export type emailAccountsControllerListResponseSuccess = (emailAccountsControllerListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailAccountsControllerListResponse = (emailAccountsControllerListResponseSuccess)
+
+export const getEmailAccountsControllerListUrl = () => {
+
+
+  
+
+  return `/v1/email-accounts`
+}
+
+export const emailAccountsControllerList = async ( options?: RequestInit): Promise<emailAccountsControllerListResponse> => {
+  
+  return axios<emailAccountsControllerListResponse>(getEmailAccountsControllerListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getEmailAccountsControllerListQueryKey = () => {
+    return [
+    `/v1/email-accounts`
+    ] as const;
+    }
+
+    
+export const getEmailAccountsControllerListQueryOptions = <TData = Awaited<ReturnType<typeof emailAccountsControllerList>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getEmailAccountsControllerListQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof emailAccountsControllerList>>> = ({ signal }) => emailAccountsControllerList({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type EmailAccountsControllerListQueryResult = NonNullable<Awaited<ReturnType<typeof emailAccountsControllerList>>>
+export type EmailAccountsControllerListQueryError = ErrorType<unknown>
+
+
+export function useEmailAccountsControllerList<TData = Awaited<ReturnType<typeof emailAccountsControllerList>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof emailAccountsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof emailAccountsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useEmailAccountsControllerList<TData = Awaited<ReturnType<typeof emailAccountsControllerList>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof emailAccountsControllerList>>,
+          TError,
+          Awaited<ReturnType<typeof emailAccountsControllerList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useEmailAccountsControllerList<TData = Awaited<ReturnType<typeof emailAccountsControllerList>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List connected inboxes
+ */
+
+export function useEmailAccountsControllerList<TData = Awaited<ReturnType<typeof emailAccountsControllerList>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof emailAccountsControllerList>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getEmailAccountsControllerListQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Stops ingesting from this inbox. Emails already turned into shipments are unaffected.
+ * @summary Disconnect an inbox
+ */
+export type emailAccountsControllerDisconnectResponse200 = {
+  data: void
+  status: 200
+}
+
+export type emailAccountsControllerDisconnectResponseSuccess = (emailAccountsControllerDisconnectResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailAccountsControllerDisconnectResponse = (emailAccountsControllerDisconnectResponseSuccess)
+
+export const getEmailAccountsControllerDisconnectUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/email-accounts/${id}`
+}
+
+export const emailAccountsControllerDisconnect = async (id: string, options?: RequestInit): Promise<emailAccountsControllerDisconnectResponse> => {
+  
+  return axios<emailAccountsControllerDisconnectResponse>(getEmailAccountsControllerDisconnectUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
+
+
+
+export const getEmailAccountsControllerDisconnectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['emailAccountsControllerDisconnect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  emailAccountsControllerDisconnect(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmailAccountsControllerDisconnectMutationResult = NonNullable<Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>>
+    
+    export type EmailAccountsControllerDisconnectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect an inbox
+ */
+export const useEmailAccountsControllerDisconnect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof emailAccountsControllerDisconnect>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getEmailAccountsControllerDisconnectMutationOptions(options), queryClient);
+    }

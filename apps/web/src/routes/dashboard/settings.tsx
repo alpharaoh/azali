@@ -13,7 +13,9 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+import { EmailIntegrations } from "#/components/email-integrations";
 import type { OrganizationResponseDto } from "#/generated/api";
 import {
   getOrganizationControllerGetCurrentQueryKey,
@@ -22,7 +24,14 @@ import {
   useOrganizationControllerUpdate,
 } from "#/generated/api";
 
+// Optional so plain links to /dashboard/settings need no search params.
+const settingsSearchSchema = z.object({
+  /** Result flag appended by the hosted inbox-connection flow's redirect. */
+  connected: z.enum(["success", "error"]).optional().catch(undefined),
+});
+
 export const Route = createFileRoute("/dashboard/settings")({
+  validateSearch: (search) => settingsSearchSchema.parse(search),
   loader: ({ context }) => {
     void context.queryClient.ensureQueryData(
       getOrganizationControllerGetCurrentQueryOptions(),
@@ -32,17 +41,53 @@ export const Route = createFileRoute("/dashboard/settings")({
 });
 
 function SettingsPage() {
+  const { connected } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { data } = useOrganizationControllerGetCurrent();
   const organization = data?.data;
 
+  // One-shot toast when the hosted connection flow redirects back.
+  useEffect(() => {
+    if (!connected) return;
+    if (connected === "success") toast.success("Inbox connected");
+    else toast.danger("Inbox connection failed — please try again");
+    void navigate({
+      replace: true,
+      search: (previous) => ({ ...previous, connected: undefined }),
+    });
+  }, [connected, navigate]);
+
   return (
     <div className="p-4 pt-0">
-      {organization && (
-        <OrganizationForm
-          key={`${organization.id}-${organization.name}`}
-          organization={organization}
-        />
-      )}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-foreground text-base font-semibold">
+              Integrations
+            </h2>
+            <p className="text-muted text-xs leading-snug">
+              Connect the inboxes where shipment paperwork arrives. Emails with
+              documents attached become shipments automatically; related emails
+              for the same invoice are grouped for a while before classification
+              starts.
+            </p>
+          </div>
+          <Separator />
+          <EmailIntegrations />
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <h2 className="text-foreground text-base font-semibold">
+            Organization
+          </h2>
+          {organization && (
+            <OrganizationForm
+              key={`${organization.id}-${organization.name}`}
+              organization={organization}
+            />
+          )}
+        </section>
+      </div>
     </div>
   );
 }
@@ -64,6 +109,9 @@ function OrganizationForm({
     organization.contactEmail ?? "",
   );
   const [filerCode, setFilerCode] = useState(organization.filerCode ?? "");
+  const [emailIntakeWindow, setEmailIntakeWindow] = useState(
+    organization.emailIntakeWindowMinutes?.toString() ?? "",
+  );
 
   const reset = () => {
     setName(organization.name);
@@ -71,6 +119,9 @@ function OrganizationForm({
     setWebsite(organization.website ?? "");
     setContactEmail(organization.contactEmail ?? "");
     setFilerCode(organization.filerCode ?? "");
+    setEmailIntakeWindow(
+      organization.emailIntakeWindowMinutes?.toString() ?? "",
+    );
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -84,6 +135,9 @@ function OrganizationForm({
           website: website.trim() || null,
           contactEmail: contactEmail.trim() || null,
           filerCode: filerCode.trim() || null,
+          emailIntakeWindowMinutes: emailIntakeWindow.trim()
+            ? Number(emailIntakeWindow.trim())
+            : null,
         },
       })
       .then(async () => {
@@ -103,10 +157,7 @@ function OrganizationForm({
   };
 
   return (
-    <Form
-      className="mx-auto flex max-w-5xl flex-col gap-4 pb-10"
-      onSubmit={handleSubmit}
-    >
+    <Form className="flex w-full flex-col gap-4 pb-10" onSubmit={handleSubmit}>
       <Separator />
 
       <SettingsRow
@@ -208,6 +259,34 @@ function OrganizationForm({
           />
           <Description>
             Assigned by CBP when your brokerage license was issued.
+          </Description>
+          <FieldError />
+        </TextField>
+      </SettingsRow>
+
+      <Separator />
+
+      <SettingsRow
+        description="How long a shipment created from a connected inbox collects follow-up emails before classification starts."
+        label="Email Intake Window"
+      >
+        <TextField
+          fullWidth
+          name="emailIntakeWindow"
+          validate={(value) => {
+            if (!value) return null;
+            const minutes = Number(value);
+            return Number.isInteger(minutes) && minutes >= 1 && minutes <= 10080
+              ? null
+              : "Enter whole minutes between 1 and 10,080 (one week)";
+          }}
+          value={emailIntakeWindow}
+          onChange={setEmailIntakeWindow}
+        >
+          <Label className="sr-only">Email Intake Window</Label>
+          <Input className="max-w-32" inputMode="numeric" placeholder="120" />
+          <Description>
+            Minutes. Leave empty for the default of 120 minutes.
           </Description>
           <FieldError />
         </TextField>
