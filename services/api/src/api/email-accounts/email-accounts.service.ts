@@ -32,10 +32,15 @@ function assertTrustedReturnUrl(returnUrl: string) {
 @Injectable()
 export class EmailAccountsService {
   /**
-   * Start connecting an inbox: create a pending account row bound to this
-   * org/user with a single-use token, and hand back the Unipile hosted-auth
-   * URL that carries the token as its `name`. The notify callback matches
-   * on the token — a connection can only ever land where it was requested.
+   * Start connecting an inbox: bind a pending account row to this org/user
+   * with a single-use token, and hand back the Unipile hosted-auth URL that
+   * carries the token as its `name`. The notify callback matches on the
+   * token — a connection can only ever land where it was requested.
+   *
+   * Idempotent per attempt: a repeat click (or an abandoned wizard) REUSES
+   * the user's existing pending row for the provider with a fresh token,
+   * so retries never pile up duplicate rows. Connected rows are never
+   * reused — connecting a second inbox still creates its own row.
    */
   async connect(
     organizationId: string,
@@ -47,16 +52,36 @@ export class EmailAccountsService {
     const connectToken = randomBytes(32).toString("base64url");
     const expiresAt = new Date(Date.now() + CONNECT_LINK_TTL_MS);
 
-    await insertEmailAccount({
-      organizationId,
-      userId,
-      status: EmailAccountStatus.Pending,
-      // The notify-callback enrichment overwrites this with the provider
-      // Unipile reports; recording the intent up front costs nothing.
-      provider: dto.provider ?? null,
-      connectToken,
-      connectTokenExpiresAt: expiresAt,
-    });
+    const {
+      data: [pending],
+    } = await listEmailAccounts(
+      {
+        organizationId,
+        userId,
+        provider: dto.provider ?? null,
+        status: EmailAccountStatus.Pending,
+      },
+      undefined,
+      1,
+    );
+
+    if (pending) {
+      await updateEmailAccount(pending.id, {
+        connectToken,
+        connectTokenExpiresAt: expiresAt,
+      });
+    } else {
+      await insertEmailAccount({
+        organizationId,
+        userId,
+        status: EmailAccountStatus.Pending,
+        // The notify-callback enrichment overwrites this with the provider
+        // Unipile reports; recording the intent up front costs nothing.
+        provider: dto.provider ?? null,
+        connectToken,
+        connectTokenExpiresAt: expiresAt,
+      });
+    }
 
     const { url } = await UnipileService.createHostedAuthLink({
       name: connectToken,

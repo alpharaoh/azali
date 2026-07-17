@@ -83,12 +83,20 @@ export class UnipileService {
   }
 
   /** Provider + mailbox identity for a connected account (best effort —
-   * Unipile's `name` is the mailbox address for mail accounts). */
+   * Unipile's `name` is the mailbox address for mail accounts). The account
+   * type is normalized to our provider vocabulary: Unipile reports variants
+   * like GOOGLE_OAUTH or EXCHANGE that must not leak into rows the UI
+   * matches against GOOGLE/OUTLOOK/MAIL. */
   static async getAccount({ accountId }: { accountId: string }) {
     const client = getUnipileClient();
     const account = await client.account.getOne(accountId);
+    const provider: MailProvider = account.type.startsWith("GOOGLE")
+      ? "GOOGLE"
+      : account.type === "OUTLOOK" || account.type === "EXCHANGE"
+        ? "OUTLOOK"
+        : "MAIL";
     return {
-      provider: account.type,
+      provider,
       emailAddress: account.name,
     };
   }
