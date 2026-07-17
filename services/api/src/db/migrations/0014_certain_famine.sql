@@ -1,0 +1,1 @@
+ALTER TABLE "organization" ADD COLUMN "email_intake_window_minutes" integer;

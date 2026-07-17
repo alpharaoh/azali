@@ -27,6 +27,15 @@ export const updateOrganizationSchema = z.object({
     .describe(
       "CBP broker filer code — exactly 3 alphanumeric characters; stored uppercase.",
     ),
+  emailIntakeWindowMinutes: z
+    .number()
+    .int()
+    .min(1)
+    .max(10080)
+    .nullish()
+    .describe(
+      "How long an email-created shipment collects follow-up emails before classification starts, in minutes (max one week). Empty uses the platform default of 2 hours.",
+    ),
 });
 
 export class UpdateOrganizationDto extends createZodDto(

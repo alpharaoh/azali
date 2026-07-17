@@ -1,4 +1,5 @@
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
+import { updateShipment } from "@/db/queries/update/updateShipment";
 import type { ShipmentDocumentCategory } from "@/db/schema";
 import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
@@ -13,6 +14,7 @@ import {
   extractDocument,
   factsExtractedEvent,
   knowledgeRecord,
+  loadAllExtractedDocuments,
   markExtractionFailed,
   matchOrCreateProduct,
   renderPreview,
@@ -41,6 +43,12 @@ export type ShipmentDocumentsUploadedEvent = {
       size: number;
       category: ShipmentDocumentCategory;
     }>;
+    /**
+     * Skip the classification kick-off at the end of ingestion. Email-
+     * sourced shipments set this — their intake window (finalize-email-
+     * shipment) triggers classification once follow-up emails stop.
+     */
+    deferClassification?: boolean;
   };
 };
 
@@ -59,7 +67,12 @@ export const ingestShipmentDocuments = () => {
     {
       id: "ingest-shipment-documents",
       retries: 2,
-      concurrency: [{ key: "event.data.organizationId", limit: 2 }],
+      concurrency: [
+        { key: "event.data.organizationId", limit: 2 },
+        // Follow-up email batches for one shipment must not interleave —
+        // synthesis and line replacement assume exclusive access.
+        { key: "event.data.shipmentId", limit: 1 },
+      ],
       triggers: [{ event: SHIPMENT_DOCUMENTS_UPLOADED_EVENT }],
       // Retries exhausted — the shipment must not look like it is still
       // processing, and the failure must land on its timeline.
@@ -81,7 +94,7 @@ export const ingestShipmentDocuments = () => {
       },
     },
     async ({ event, step, logger }) => {
-      const { organizationId, userId, shipmentId, files } =
+      const { organizationId, userId, shipmentId, files, deferClassification } =
         event.data as ShipmentDocumentsUploadedEvent["data"];
       const context = {
         organizationId,
@@ -207,9 +220,17 @@ export const ingestShipmentDocuments = () => {
         return { shipmentId, extracted: 0, failed: documents.length };
       }
 
+      // Synthesis and line items derive from EVERY extracted document on
+      // the shipment, not just this batch — follow-up email batches refine
+      // the shipment rather than clobber it. For a first batch the union
+      // is the batch, so manual uploads behave exactly as before.
+      const allExtracted = await step.run("load-all-extracted", () =>
+        loadAllExtractedDocuments(context),
+      );
+
       // 3. Derive the shipment: facts → client → shipment → attach documents.
       const synthesis = await step.run("synthesize-shipment", () =>
-        synthesizeShipmentFacts(context, extracted),
+        synthesizeShipmentFacts(context, allExtracted),
       );
       logger.info(
         {
@@ -251,7 +272,7 @@ export const ingestShipmentDocuments = () => {
         createLineItems(
           context,
           shipment.id,
-          extracted,
+          allExtracted,
           synthesis,
           Math.round((synthesis.valueUsd ?? 0) * 100),
         ),
@@ -327,12 +348,28 @@ export const ingestShipmentDocuments = () => {
         "documents indexed into the knowledge base",
       );
 
-      // Classification picks up from here as its own run.
-      await step.sendEvent("request-classification", {
-        name: SHIPMENT_CLASSIFY_REQUESTED_EVENT,
-        data: { organizationId, userId, shipmentId: shipment.id },
-      });
-      logger.info({ shipmentId: shipment.id }, "classification run requested");
+      // Classification picks up from here as its own run — unless this is
+      // an email-sourced batch, where the intake window fires it instead.
+      if (deferClassification) {
+        await step.run("mark-awaiting-window", () =>
+          updateShipment(shipment.id, organizationId, {
+            processingState: "Waiting for related emails",
+          }),
+        );
+        logger.info(
+          { shipmentId: shipment.id },
+          "classification deferred to the email intake window",
+        );
+      } else {
+        await step.sendEvent("request-classification", {
+          name: SHIPMENT_CLASSIFY_REQUESTED_EVENT,
+          data: { organizationId, userId, shipmentId: shipment.id },
+        });
+        logger.info(
+          { shipmentId: shipment.id },
+          "classification run requested",
+        );
+      }
 
       // Push any buffered trace spans out before the run completes.
       await langfuseSpanProcessor?.forceFlush();

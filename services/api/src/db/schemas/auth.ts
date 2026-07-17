@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -97,6 +98,9 @@ export const organization = pgTable(
     contactEmail: text("contact_email"),
     /** CBP broker filer code (3 characters) — appears on entries and rulings. */
     filerCode: text("filer_code"),
+    /** How long an email-created shipment collects follow-up emails before
+     * classification starts; null uses the platform default (2 hours). */
+    emailIntakeWindowMinutes: integer("email_intake_window_minutes"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

@@ -1,8 +1,15 @@
 import { classifyShipment } from "@/inngest/functions/classifyShipment";
+import { finalizeEmailShipment } from "@/inngest/functions/finalizeEmailShipment";
 import { ingestShipmentDocuments } from "@/inngest/functions/ingestShipmentDocuments";
+import { processInboundEmail } from "@/inngest/functions/processInboundEmail";
 
 // Handlers log through Inngest's ctx.logger (backed by the shared pino
 // instance configured on the client).
 export const getInngestFunctions = () => {
-  return [ingestShipmentDocuments(), classifyShipment()];
+  return [
+    ingestShipmentDocuments(),
+    classifyShipment(),
+    processInboundEmail(),
+    finalizeEmailShipment(),
+  ];
 };

@@ -29,6 +29,18 @@ const envSchema = z.object({
   LANGFUSE_SECRET_KEY: z.string().optional(),
   LANGFUSE_BASE_URL: z.string().optional(),
   UNIPILE_API_KEY: z.string().optional(),
+  // Unipile host:port (no scheme), e.g. "api8.unipile.com:13851". Optional so
+  // the API boots without it; email ingestion fails with a clear error at the
+  // point of use instead.
+  UNIPILE_DSN: z.string().optional(),
+  // Shared secret Unipile sends back as a custom header on email webhooks.
+  UNIPILE_WEBHOOK_SECRET: z.string().optional(),
+  // Public base URL of this API (tunnel in dev) — used for Unipile callbacks.
+  API_BASE_URL: z.string().optional(),
+  // Platform default for how long an email-sourced shipment collects
+  // follow-up emails before classification starts. Organizations override
+  // it per-org via settings (organization.emailIntakeWindowMinutes).
+  EMAIL_INTAKE_WINDOW_MS: z.coerce.number().default(2 * 60 * 60 * 1000),
 });
 
 const _env = envSchema.safeParse(process.env);

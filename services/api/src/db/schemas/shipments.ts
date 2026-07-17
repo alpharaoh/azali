@@ -28,8 +28,14 @@ export enum ShipmentStatus {
   Released = "released",
 }
 
+export enum ShipmentSource {
+  Manual = "manual",
+  Email = "email",
+}
+
 export const shipmentStage = pgEnum("shipment_stage", ShipmentStage);
 export const shipmentStatus = pgEnum("shipment_status", ShipmentStatus);
+export const shipmentSource = pgEnum("shipment_source", ShipmentSource);
 
 export const shipments = pgTable(
   "shipments",
@@ -67,6 +73,15 @@ export const shipments = pgTable(
     dutyCents: bigint("duty_cents", { mode: "number" }).notNull().default(0),
     incoterm: text("incoterm"),
     entryType: text("entry_type"),
+    source: shipmentSource("source").notNull().default(ShipmentSource.Manual),
+    // Email-sourced shipments collect follow-up emails until this instant
+    // (first email + intake window); "window open" = this is in the future.
+    emailIntakeExpiresAt: timestamp("email_intake_expires_at", {
+      withTimezone: true,
+    }),
+    // Normalized invoice number the intake window groups on; null when the
+    // first email carried none (then only thread replies attribute).
+    emailIntakeInvoiceNumber: text("email_intake_invoice_number"),
   },
   (table) => [
     uniqueIndex("shipments_org_reference_uidx").on(

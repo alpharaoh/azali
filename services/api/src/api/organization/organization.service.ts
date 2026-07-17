@@ -63,6 +63,7 @@ export class OrganizationService {
       website: dto.website ?? null,
       contactEmail: dto.contactEmail ?? null,
       filerCode: dto.filerCode ? dto.filerCode.toUpperCase() : null,
+      emailIntakeWindowMinutes: dto.emailIntakeWindowMinutes ?? null,
     });
   }
 }

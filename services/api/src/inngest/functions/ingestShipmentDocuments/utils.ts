@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { propagateAttributes } from "@langfuse/tracing";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
+import { deleteShipmentLineItems } from "@/db/queries/delete/deleteShipmentLineItems";
 import { insertClient } from "@/db/queries/insert/insertClient";
 import { insertProduct } from "@/db/queries/insert/insertProduct";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
@@ -8,12 +9,14 @@ import { insertShipmentDocument } from "@/db/queries/insert/insertShipmentDocume
 import { insertShipmentLineItems } from "@/db/queries/insert/insertShipmentLineItems";
 import { listClients } from "@/db/queries/select/many/listClients";
 import { listProducts } from "@/db/queries/select/many/listProducts";
+import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentDocument } from "@/db/queries/update/updateShipmentDocument";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
 import {
   type DocumentExtraction,
   type ExtractedLineItem,
+  type InsertShipment,
   LineItemStatus,
   ShipmentDocumentCategory,
   ShipmentDocumentStatus,
@@ -221,6 +224,32 @@ export async function synthesizeShipmentFacts(
 }
 
 /**
+ * Every extracted document on the shipment — not just the current batch.
+ * Email-sourced shipments ingest in multiple batches as follow-up emails
+ * arrive; synthesis and line items must always derive from the union so a
+ * later batch (say, an arrival notice) can't clobber facts the commercial
+ * invoice established.
+ */
+export async function loadAllExtractedDocuments(
+  context: IngestContext,
+): Promise<ExtractedDocument[]> {
+  const { data } = await listShipmentDocuments({
+    organizationId: context.organizationId,
+    shipmentId: context.shipmentId,
+    status: ShipmentDocumentStatus.Extracted,
+  });
+  return data.map((row) => ({
+    id: row.id,
+    storageKey: row.storageKey,
+    fileName: row.fileName,
+    contentType: row.contentType,
+    sizeBytes: row.sizeBytes,
+    category: row.category,
+    extraction: row.extraction as unknown as DocumentExtraction,
+  }));
+}
+
+/**
  * Match the synthesized importer to an existing client by name, or create a
  * placeholder. Self-healing on retry: a re-run finds the client it created.
  */
@@ -266,10 +295,14 @@ export async function createPlaceholderShipment({
   organizationId,
   userId,
   fileCount,
+  values,
 }: {
   organizationId: string;
   userId: string;
   fileCount: number;
+  /** Caller-specific columns (e.g. email intake fields) — written in the
+   * same insert so the row is never observable half-initialized. */
+  values?: Partial<InsertShipment>;
 }) {
   const shipment = await insertShipment({
     organizationId,
@@ -286,6 +319,7 @@ export async function createPlaceholderShipment({
       description: `Processing ${fileCount} document${fileCount === 1 ? "" : "s"}`,
     },
     processingState: "Extracting documents",
+    ...values,
   });
   if (!shipment) throw new Error("Shipment insert returned no row");
   return shipment;
@@ -486,6 +520,10 @@ export async function createLineItems(
       },
     ];
 
+  // Replace, don't append: re-ingestion (a follow-up email batch) rebuilds
+  // the full line set from the union of documents; on a fresh shipment the
+  // delete is a no-op.
+  await deleteShipmentLineItems(shipmentId, context.organizationId);
   const rows = await insertShipmentLineItems(
     sourceLines.map((line, index) => ({
       organizationId: context.organizationId,
