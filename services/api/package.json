@@ -53,6 +53,7 @@
     "nestjs-pino": "^4.6.1",
     "nestjs-zod": "^5.4.0",
     "pino": "^10.3.1",
+    "pino-datadog-transport": "^3.0.6",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.1",

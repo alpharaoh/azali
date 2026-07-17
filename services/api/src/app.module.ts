@@ -15,8 +15,8 @@ import { UsersController } from "./api/users/users.controller";
 import { UsersModule } from "./api/users/users.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { env } from "./env";
 import { auth } from "./lib/auth";
+import { loggerTransport } from "./lib/logger";
 
 @Module({
   imports: [
@@ -24,18 +24,9 @@ import { auth } from "./lib/auth";
     LoggerModule.forRoot({
       forRoutes: [{ path: "*path", method: RequestMethod.ALL }],
       pinoHttp: {
-        // Pretty, colourised logs locally; JSON in production for aggregation.
-        transport:
-          env.NODE_ENV === "development"
-            ? {
-                target: "pino-pretty",
-                options: {
-                  singleLine: true,
-                  translateTime: "HH:MM:ss",
-                  ignore: "pid,hostname",
-                },
-              }
-            : undefined,
+        // Pretty locally, JSON in production; ships to Datadog when
+        // DD_API_KEY is set. Shared with the process-wide logger.
+        transport: loggerTransport,
         redact: {
           paths: [
             "req.headers.cookie",

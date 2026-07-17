@@ -37,6 +37,13 @@ const envSchema = z.object({
   UNIPILE_WEBHOOK_SECRET: z.string().optional(),
   // Public base URL of this API (tunnel in dev) — used for Unipile callbacks.
   API_BASE_URL: z.string().optional(),
+  // Optional — Datadog log shipping is simply disabled when the key is absent.
+  DD_API_KEY: z.string().optional(),
+  // Datadog intake site — this org lives on US5, not the default US1.
+  DD_SITE: z.string().default("us5.datadoghq.com"),
+  DD_SERVICE: z.string().default("azali-api"),
+  // Environment tag on Datadog telemetry; falls back to NODE_ENV.
+  DD_ENV: z.string().optional(),
   // Platform default for how long an email-sourced shipment collects
   // follow-up emails before classification starts. Organizations override
   // it per-org via settings (organization.emailIntakeWindowMinutes).
