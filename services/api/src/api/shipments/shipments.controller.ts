@@ -217,4 +217,23 @@ export class ShipmentsController {
       id,
     );
   }
+
+  /** Broker fast-forward: stop waiting for related emails, classify now. */
+  @Post(":id/skip-email-intake")
+  @ApiOperation({
+    summary: "Skip the email intake window",
+    description:
+      "For shipments created from a connected inbox: stops waiting for further related emails and starts classification immediately. Use when all the shipment's paperwork has already arrived. Emails received afterwards start a new shipment.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  skipEmailIntake(
+    @Session() session: UserSession<typeof auth>,
+    @Param("id") id: string,
+  ) {
+    return this.shipmentsService.skipEmailIntake(
+      getActiveOrganizationId(session),
+      session.user.id,
+      id,
+    );
+  }
 }

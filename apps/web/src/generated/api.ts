@@ -4090,6 +4090,89 @@ export const useShipmentsControllerClassify = <TError = ErrorType<unknown>,
     }
     
 /**
+ * For shipments created from a connected inbox: stops waiting for further related emails and starts classification immediately. Use when all the shipment's paperwork has already arrived. Emails received afterwards start a new shipment.
+ * @summary Skip the email intake window
+ */
+export type shipmentsControllerSkipEmailIntakeResponse201 = {
+  data: void
+  status: 201
+}
+
+export type shipmentsControllerSkipEmailIntakeResponseSuccess = (shipmentsControllerSkipEmailIntakeResponse201) & {
+  headers: Headers;
+};
+;
+
+export type shipmentsControllerSkipEmailIntakeResponse = (shipmentsControllerSkipEmailIntakeResponseSuccess)
+
+export const getShipmentsControllerSkipEmailIntakeUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/skip-email-intake`
+}
+
+export const shipmentsControllerSkipEmailIntake = async (id: string, options?: RequestInit): Promise<shipmentsControllerSkipEmailIntakeResponse> => {
+  
+  return axios<shipmentsControllerSkipEmailIntakeResponse>(getShipmentsControllerSkipEmailIntakeUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
+
+
+
+export const getShipmentsControllerSkipEmailIntakeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['shipmentsControllerSkipEmailIntake'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  shipmentsControllerSkipEmailIntake(id,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShipmentsControllerSkipEmailIntakeMutationResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>>
+    
+    export type ShipmentsControllerSkipEmailIntakeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Skip the email intake window
+ */
+export const useShipmentsControllerSkipEmailIntake = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof shipmentsControllerSkipEmailIntake>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getShipmentsControllerSkipEmailIntakeMutationOptions(options), queryClient);
+    }
+    
+/**
  * Returns the organization-wide event feed across every shipment, newest first — a complete audit trail of automated and manual activity. Filterable by type and actor; paginated with limit/offset.
  * @summary List events across all shipments
  */

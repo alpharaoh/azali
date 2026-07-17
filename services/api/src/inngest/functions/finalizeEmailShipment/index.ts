@@ -9,6 +9,18 @@ import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "../classifyShipment";
 export const EMAIL_SHIPMENT_INTAKE_OPENED_EVENT =
   "shipment/email-intake.opened" as const;
 
+/** A broker fast-forwards the intake window — all related emails are in. */
+export const EMAIL_INTAKE_SKIP_REQUESTED_EVENT =
+  "shipment/email-intake.skip-requested" as const;
+
+export type EmailIntakeSkipRequestedEvent = {
+  data: {
+    organizationId: string;
+    userId: string;
+    shipmentId: string;
+  };
+};
+
 export type EmailShipmentIntakeOpenedEvent = {
   data: {
     organizationId: string;
@@ -64,7 +76,23 @@ export const finalizeEmailShipment = () => {
         "email intake window opened — waiting to finalize",
       );
 
-      await step.sleepUntil("wait-intake-window", finalizeAt);
+      // Wait out the window OR a broker's skip request, whichever comes
+      // first. waitForEvent's timeout is captured on first execution, so
+      // the Date.now() here is replay-safe.
+      const waitMs = new Date(finalizeAt).getTime() - Date.now();
+      if (waitMs > 0) {
+        const skip = await step.waitForEvent("wait-intake-window", {
+          event: EMAIL_INTAKE_SKIP_REQUESTED_EVENT,
+          timeout: `${Math.ceil(waitMs / 1000)}s`,
+          match: "data.shipmentId",
+        });
+        if (skip) {
+          logger.info(
+            { shipmentId, skippedBy: skip.data.userId },
+            "intake window skipped by broker — finalizing now",
+          );
+        }
+      }
 
       // A follow-up that arrived near the deadline may still be mid-ingest;
       // give it a short grace period instead of classifying half a shipment.

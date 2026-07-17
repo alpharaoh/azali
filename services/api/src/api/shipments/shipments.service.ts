@@ -15,9 +15,14 @@ import { updateProduct } from "@/db/queries/update/updateProduct";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
 import { LineItemStatus } from "@/db/schemas/shipmentLineItems";
-import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
+import {
+  ShipmentSource,
+  ShipmentStage,
+  ShipmentStatus,
+} from "@/db/schemas/shipments";
 import { inngest } from "@/inngest/client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
+import { EMAIL_INTAKE_SKIP_REQUESTED_EVENT } from "@/inngest/functions/finalizeEmailShipment";
 import { createLogger } from "@/lib/logger";
 import { confidenceBandForScore } from "@/services/agents/classification/schema";
 import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
@@ -389,6 +394,44 @@ export class ShipmentsService {
         };
       }),
     };
+  }
+
+  /**
+   * Fast-forward an email-sourced shipment's intake window: the broker
+   * asserts all related emails are in. Closes the attribution window
+   * immediately (later emails start a fresh shipment) and signals the
+   * waiting finalize run to proceed to classification.
+   */
+  async skipEmailIntake(organizationId: string, userId: string, id: string) {
+    const shipment = await this.findOne(organizationId, id);
+    const windowOpen =
+      shipment.source === ShipmentSource.Email &&
+      shipment.emailIntakeExpiresAt !== null &&
+      shipment.emailIntakeExpiresAt > new Date();
+    if (!windowOpen) {
+      throw new ConflictException(
+        `Shipment "${id}" has no open email intake window to skip`,
+      );
+    }
+
+    await updateShipment(id, organizationId, {
+      emailIntakeExpiresAt: new Date(),
+    });
+    await insertShipmentEvent({
+      organizationId,
+      userId,
+      shipmentId: id,
+      type: "email_intake_skipped",
+      actor: "user",
+      title: "Email intake window skipped — proceeding to classification",
+      payload: {},
+    });
+    await inngest.send({
+      name: EMAIL_INTAKE_SKIP_REQUESTED_EVENT,
+      data: { organizationId, userId, shipmentId: id },
+    });
+
+    return { skipped: true };
   }
 
   /** Kick off an asynchronous classification run for a shipment. */

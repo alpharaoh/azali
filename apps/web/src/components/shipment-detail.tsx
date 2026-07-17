@@ -6,8 +6,17 @@ import {
   ShieldExclamation,
   Sparkles,
 } from "@gravity-ui/icons";
-import { Avatar, Button, Chip, Skeleton, Spinner, Tabs } from "@heroui/react";
+import {
+  Avatar,
+  Button,
+  Chip,
+  Skeleton,
+  Spinner,
+  Tabs,
+  toast,
+} from "@heroui/react";
 import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { DocumentViewerModal } from "#/components/case-file/document-viewer-modal";
@@ -26,8 +35,10 @@ import {
 import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentDocumentsResponseDtoDocumentsItem } from "#/generated/api";
 import {
+  getShipmentsControllerFindOneQueryKey,
   useShipmentDocumentsControllerList,
   useShipmentsControllerFindOne,
+  useShipmentsControllerSkipEmailIntake,
 } from "#/generated/api";
 import type {
   DocumentLine,
@@ -168,6 +179,24 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const processing = shipment?.processingState ?? null;
   const poll = processing !== null ? PROCESSING_POLL_MS : false;
 
+  // Broker fast-forward for email-sourced shipments: stop collecting
+  // related emails and classify with what's already here.
+  const queryClient = useQueryClient();
+  const skipIntake = useShipmentsControllerSkipEmailIntake();
+  const awaitingEmails = processing === "Waiting for related emails";
+  const handleSkipIntake = () => {
+    const run = skipIntake.mutateAsync({ id: shipmentId }).then(async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getShipmentsControllerFindOneQueryKey(shipmentId),
+      });
+    });
+    toast.promise(run, {
+      error: "Could not skip the wait",
+      loading: "Skipping the wait...",
+      success: "Starting classification",
+    });
+  };
+
   const { data: documentsResponse } = useShipmentDocumentsControllerList(
     shipmentId,
     { query: { refetchInterval: poll } },
@@ -257,12 +286,24 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           )}
         </div>
         {processing ? (
-          <Chip color="accent" size="md" variant="soft">
-            <Chip.Label className="inline-flex items-center gap-2 h-5.25">
-              <Spinner size="sm" />
-              <TextShimmer className="text-xs">{processing}</TextShimmer>
-            </Chip.Label>
-          </Chip>
+          <div className="flex items-center gap-2">
+            <Chip color="accent" size="md" variant="soft">
+              <Chip.Label className="inline-flex items-center gap-2 h-5.25">
+                <Spinner size="sm" />
+                <TextShimmer className="text-xs">{processing}</TextShimmer>
+              </Chip.Label>
+            </Chip>
+            {awaitingEmails ? (
+              <Button
+                isPending={skipIntake.isPending}
+                size="sm"
+                variant="secondary"
+                onPress={handleSkipIntake}
+              >
+                Skip waiting
+              </Button>
+            ) : null}
+          </div>
         ) : shipment ? (
           <Chip
             color={statusMeta[statusFromApi[shipment.status]].chip}
