@@ -104,6 +104,8 @@ export class UnipileService {
       source: "email",
       name: webhookName,
       request_url: `${requestUrl}/v1/webhooks/unipile/email`,
+      // The delivery default is form-encoded — the endpoint parses JSON.
+      format: "json",
       events: ["mail_received"],
       headers: [
         { key: "X-Azali-Webhook-Secret", value: env.UNIPILE_WEBHOOK_SECRET },
