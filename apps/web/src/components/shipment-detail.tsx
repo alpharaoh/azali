@@ -23,6 +23,7 @@ import { DocumentViewerModal } from "#/components/case-file/document-viewer-moda
 import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
 import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
 import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import { ShipmentFactsCard } from "#/components/case-file/shipment-facts";
 import {
   ActivitySkeleton,
   EventTimelineItem,
@@ -39,6 +40,7 @@ import {
   useShipmentsControllerFindOne,
   useShipmentsControllerSkipEmailIntake,
 } from "#/generated/api";
+import { toShipmentFacts } from "#/lib/review-items";
 import type {
   DocumentLine,
   ReviewDocument,
@@ -450,34 +452,43 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           </Tabs>
         </div>
 
-        {/* Activity — the shipment's running record, always in view. The
-            sticky offset clears the 4rem sticky navbar plus a breath. */}
-        <Widget className="min-w-0 xl:sticky xl:top-20">
-          <Widget.Header>
-            <Widget.Title>Activity</Widget.Title>
-          </Widget.Header>
-          <Widget.Content>
-            {caseFile.isPending ? (
-              <ActivitySkeleton />
-            ) : caseFile.activityEvents.length === 0 ? (
-              <span className="text-muted text-sm">
-                {processing
-                  ? "The record starts as soon as extraction lands…"
-                  : "No activity recorded yet."}
-              </span>
-            ) : (
-              <Timeline>
-                {[...caseFile.activityEvents].reverse().map((event, index) => (
-                  <EventTimelineItem
-                    // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
-                    key={index}
-                    event={event}
-                  />
-                ))}
-              </Timeline>
-            )}
-          </Widget.Content>
-        </Widget>
+        {/* Information column — the shipment's facts, then its running record */}
+        <div className="flex min-w-0 flex-col gap-4">
+          {shipment ? (
+            <ShipmentFactsCard shipment={toShipmentFacts(shipment)} />
+          ) : (
+            <Skeleton className="h-48 rounded-xl" />
+          )}
+
+          <Widget className="min-w-0">
+            <Widget.Header>
+              <Widget.Title>Activity</Widget.Title>
+            </Widget.Header>
+            <Widget.Content>
+              {caseFile.isPending ? (
+                <ActivitySkeleton />
+              ) : caseFile.activityEvents.length === 0 ? (
+                <span className="text-muted text-sm">
+                  {processing
+                    ? "The record starts as soon as extraction lands…"
+                    : "No activity recorded yet."}
+                </span>
+              ) : (
+                <Timeline>
+                  {[...caseFile.activityEvents]
+                    .reverse()
+                    .map((event, index) => (
+                      <EventTimelineItem
+                        // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
+                        key={index}
+                        event={event}
+                      />
+                    ))}
+                </Timeline>
+              )}
+            </Widget.Content>
+          </Widget>
+        </div>
       </div>
 
       {/* Per-line drill-down — read-only here; corrections live in review */}

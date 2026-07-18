@@ -13,6 +13,7 @@ import type {
   ReviewItem,
   ReviewItemType,
   ReviewLineItem,
+  ShipmentFacts,
 } from "#/lib/review-types";
 
 /* -------------------------------------------------------------------------------------------------
@@ -37,13 +38,42 @@ export interface ReviewRequestPayload {
   traceRunId?: string;
 }
 
+/** The display-ready shipment facts, from any shipment DTO carrying the
+ * logistics columns (the list and find-one responses both do). */
+export function toShipmentFacts(
+  shipment: Pick<
+    ApiShipment,
+    | "conveyance"
+    | "entryType"
+    | "etaAt"
+    | "incoterm"
+    | "originCountry"
+    | "originPort"
+    | "portOfEntry"
+    | "transportMode"
+  >,
+): ShipmentFacts {
+  return {
+    arrivesInHours: shipment.etaAt
+      ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
+      : null,
+    conveyance: shipment.conveyance ?? null,
+    entryType: shipment.entryType ?? "—",
+    incoterm: shipment.incoterm ?? "—",
+    mode: capitalize(shipment.transportMode),
+    origin: shipment.originPort
+      ? `${countryName(shipment.originCountry)} (${shipment.originPort})`
+      : countryName(shipment.originCountry),
+    originCountry: shipment.originCountry,
+    port: shipment.portOfEntry,
+    transportMode: shipment.transportMode,
+  };
+}
+
 export function toReviewItem(
   shipment: ApiShipment,
   payload: ReviewRequestPayload,
 ): ReviewItem {
-  const arrivesInHours = shipment.etaAt
-    ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
-    : null;
   const clientName = shipment.client?.name ?? "Unknown client";
 
   return {
@@ -69,19 +99,7 @@ export function toReviewItem(
     proposal: payload.proposal ?? { detail: "", label: "Proposal", value: "—" },
     question: payload.question ?? "Review required",
     reference: shipment.reference,
-    shipment: {
-      arrivesInHours,
-      entryType: shipment.entryType ?? "—",
-      incoterm: shipment.incoterm ?? "—",
-      mode: capitalize(shipment.transportMode),
-      transportMode: shipment.transportMode,
-      conveyance: shipment.conveyance ?? null,
-      origin: shipment.originPort
-        ? `${countryName(shipment.originCountry)} (${shipment.originPort})`
-        : countryName(shipment.originCountry),
-      originCountry: shipment.originCountry,
-      port: shipment.portOfEntry,
-    },
+    shipment: toShipmentFacts(shipment),
     shipmentValue: shipment.valueCents / 100,
     traceRunId: payload.traceRunId,
     lineItems: payload.lineItems,

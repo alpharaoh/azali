@@ -1,5 +1,4 @@
 import {
-  IconAirplane,
   IconArrowLeft,
   IconArrowRight,
   IconArrowUp,
@@ -11,7 +10,6 @@ import {
   IconPencil,
   IconShieldBreak,
   IconShieldCheck,
-  IconShip,
   IconSparklesThree,
   IconTag,
   IconUser,
@@ -25,12 +23,8 @@ import {
   Timeline,
   Widget,
 } from "@heroui-pro/react";
-import {
-  addHours,
-  differenceInHours,
-  formatDistanceToNowStrict,
-} from "date-fns";
-import type { ComponentType, ReactNode } from "react";
+import { differenceInHours, formatDistanceToNowStrict } from "date-fns";
+import type { ComponentType } from "react";
 import { useState } from "react";
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
 import {
@@ -48,6 +42,7 @@ import {
   LineDetailDrawer,
 } from "#/components/case-file/line-detail-drawer";
 import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import { ShipmentFactsStrip } from "#/components/case-file/shipment-facts";
 import {
   ActivitySkeleton,
   EventTimelineItem,
@@ -56,7 +51,6 @@ import {
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
-import { getCountryFlag } from "#/lib/country-flag";
 import { formatCurrency } from "#/lib/format";
 import type {
   DecisionAction,
@@ -94,38 +88,6 @@ export function deadlineTone(deadline: Date): DeadlineTone {
   const hoursLeft = differenceInHours(deadline, new Date());
 
   return hoursLeft <= 4 ? "danger" : hoursLeft <= 24 ? "warning" : "default";
-}
-
-/** Ship for ocean/sea freight, plane for air; nothing for unknown modes. */
-function modeIcon(transportMode: string) {
-  const mode = transportMode.toLowerCase();
-
-  if (mode === "air") return <IconAirplane className="text-muted size-3.5" />;
-  if (mode === "ocean" || mode === "sea")
-    return <IconShip className="text-muted size-3.5" />;
-
-  return null;
-}
-
-function ShipmentFact({
-  label,
-  value,
-  leading,
-}: {
-  label: string;
-  value: string;
-  /** Optional glyph (flag, mode icon) shown just before the value. */
-  leading?: ReactNode;
-}) {
-  return (
-    <div className="flex min-w-0 items-baseline gap-1.5">
-      <span className="text-muted text-xs">{label}</span>
-      <span className="text-foreground flex min-w-0 items-center gap-1 truncate text-sm font-medium">
-        {leading}
-        {value}
-      </span>
-    </div>
-  );
 }
 
 function NoteTimelineItem({
@@ -697,48 +659,7 @@ export function ReviewDetail({
             ) : null}
 
             {/* Shipment — one scannable strip */}
-            <Widget>
-              <Widget.Content className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
-                <ShipmentFact
-                  label="Origin"
-                  value={item.shipment.origin}
-                  leading={(() => {
-                    const Flag = item.shipment.originCountry
-                      ? getCountryFlag(item.shipment.originCountry)
-                      : undefined;
-
-                    return Flag ? (
-                      <Flag className="h-3 w-4 shrink-0 rounded-sm" />
-                    ) : undefined;
-                  })()}
-                />
-                <ShipmentFact label="Port" value={item.shipment.port} />
-                <ShipmentFact
-                  label="Arrives"
-                  value={
-                    item.shipment.arrivesInHours === null
-                      ? "—"
-                      : formatDistanceToNowStrict(
-                          addHours(new Date(), item.shipment.arrivesInHours),
-                          { addSuffix: true },
-                        )
-                  }
-                />
-                <ShipmentFact
-                  label="Mode"
-                  value={item.shipment.mode}
-                  leading={modeIcon(item.shipment.transportMode)}
-                />
-                {item.shipment.conveyance ? (
-                  <ShipmentFact
-                    label="Conveyance"
-                    value={item.shipment.conveyance}
-                  />
-                ) : null}
-                <ShipmentFact label="Incoterm" value={item.shipment.incoterm} />
-                <ShipmentFact label="Entry" value={item.shipment.entryType} />
-              </Widget.Content>
-            </Widget>
+            <ShipmentFactsStrip shipment={item.shipment} />
 
             {/* Activity — documents, events, and your notes to the AI, oldest first */}
             <div className="flex flex-col gap-2">
