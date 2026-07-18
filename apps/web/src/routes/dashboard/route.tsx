@@ -1,7 +1,9 @@
 import {
   Icon3dPackage2 as Icon3dPackage2Filled,
   IconBrain1 as IconBrain1Filled,
+  IconCoinStack as IconCoinStackFilled,
   IconInboxEmpty as IconInboxEmptyFilled,
+  IconLaw as IconLawFilled,
   IconMapEditFlat as IconMapEditFlatFilled,
   IconSettingsGear4 as IconSettingsGear4Filled,
   IconUserGroup as IconUserGroupFilled,
@@ -10,7 +12,9 @@ import {
   Icon3dPackage2,
   IconArrowBoxLeft,
   IconBrain1,
+  IconCoinStack,
   IconInboxEmpty,
+  IconLaw,
   IconLayoutLeftFull,
   IconMapEditFlat,
   IconSettingsGear4,
@@ -109,11 +113,25 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         icon: IconBrain1,
         iconFilled: IconBrain1Filled,
       },
+      {
+        id: "tariff-radar",
+        label: "Tariff Radar",
+        href: "/dashboard/tariff-radar",
+        icon: IconLaw,
+        iconFilled: IconLawFilled,
+      },
     ],
   },
   {
     label: "Revenue",
     items: [
+      {
+        id: "recoveries",
+        label: "Recoveries",
+        href: "/dashboard/recoveries",
+        icon: IconCoinStack,
+        iconFilled: IconCoinStackFilled,
+      },
       {
         id: "clients",
         label: "Clients",
