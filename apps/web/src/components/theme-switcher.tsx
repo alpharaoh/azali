@@ -12,10 +12,18 @@ import { type Theme, useTheme } from "#/lib/theme";
 /** Filled icon for the active theme, outlined for the inactive one. */
 function ThemeIcon({ isActive, theme }: { isActive: boolean; theme: Theme }) {
   if (theme === "light") {
-    return isActive ? <IconSunFilled size={14} /> : <IconSun size={14} />;
+    return isActive ? (
+      <IconSunFilled className="size-3.5" />
+    ) : (
+      <IconSun className="size-3.5" />
+    );
   }
 
-  return isActive ? <IconMoonFilled size={14} /> : <IconMoon size={14} />;
+  return isActive ? (
+    <IconMoonFilled className="size-3.5" />
+  ) : (
+    <IconMoon className="size-3.5" />
+  );
 }
 
 export function ThemeSwitcher({ readOnly = false }: { readOnly?: boolean }) {

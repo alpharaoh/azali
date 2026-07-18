@@ -194,7 +194,7 @@ const SidebarNav = ({
                   isCurrent={isCurrent}
                   textValue={item.label}
                 >
-                  <Sidebar.MenuIcon>
+                  <Sidebar.MenuIcon className="text-foreground!">
                     <Icon className="size-4" />
                   </Sidebar.MenuIcon>
                   <Sidebar.MenuLabel className="font-normal!">
@@ -239,7 +239,7 @@ const SidebarBase = ({
               isCurrent={isCurrent}
               textValue={item.label}
             >
-              <Sidebar.MenuIcon>
+              <Sidebar.MenuIcon className="text-foreground!">
                 <Icon className="size-4" />
               </Sidebar.MenuIcon>
               <Sidebar.MenuLabel className="font-normal!">
@@ -255,7 +255,7 @@ const SidebarBase = ({
             signOutAndRedirect(() => navigate({ to: "/login" }));
           }}
         >
-          <Sidebar.MenuIcon>
+          <Sidebar.MenuIcon className="text-foreground!">
             <IconArrowBoxLeft className="size-4" />
           </Sidebar.MenuIcon>
           <Sidebar.MenuLabel>Sign out</Sidebar.MenuLabel>
