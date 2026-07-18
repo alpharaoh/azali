@@ -188,7 +188,7 @@ function TimeLeftChip({ daysOut }: { daysOut: number | null }) {
 function TariffEventCard({ event }: { event: TariffEvent }) {
   return (
     <Kanban.Card
-      className="cursor-auto select-text"
+      className="cursor-auto select-text [&_[data-slot=kanban-card-content]]:border [&_[data-slot=kanban-card-content]]:border-border"
       id={event.id}
       textValue={event.title}
     >

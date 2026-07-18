@@ -39,8 +39,12 @@ export function DocumentsTimelineItem({
                 const { Icon, label } = docTabMeta(document);
 
                 return (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static per-shipment doc set
-                  <Tabs.Tab key={index} id={`doc-${index}`} className="w-fit">
+                  <Tabs.Tab
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static per-shipment doc set
+                    key={index}
+                    id={`doc-${index}`}
+                    className="w-fit whitespace-nowrap"
+                  >
                     <Icon className="size-3.5 mr-1.5" />
                     {label}
                     <Tabs.Indicator />
@@ -117,6 +121,40 @@ export function SingleDocumentTimelineItem({
   );
 }
 
+// Matches space, dash, underscore, dot, or nothing between words
+const SEP = "[\\s_.-]*";
+
+const matchers: Array<{ pattern: RegExp; Icon: any; label: string }> = [
+  {
+    pattern: new RegExp(`cbp${SEP}form${SEP}28|cf${SEP}28`, "i"),
+    Icon: IconGovernment,
+    label: "CF-28",
+  },
+  {
+    pattern: new RegExp(`cbp${SEP}form${SEP}29|cf${SEP}29`, "i"),
+    Icon: IconGovernment,
+    label: "CF-29",
+  },
+  {
+    pattern: /draft${SEP}response|response/i,
+    Icon: IconPencil,
+    label: "Response Draft",
+  }, // see note below
+  { pattern: /invoice/i, Icon: IconReceiptBill, label: "Invoice" },
+  { pattern: /packing/i, Icon: IconPackage, label: "Packing List" },
+  {
+    pattern: new RegExp(`bill${SEP}of${SEP}lading|b/?l|awb`, "i"),
+    Icon: IconShip,
+    label: "Bill of Lading",
+  },
+  { pattern: /arrival/i, Icon: IconBell, label: "Arrival Notice" },
+  { pattern: /spec/i, Icon: IconChecklist, label: "Spec Sheet" },
+];
+
+function getDocMeta(name: string) {
+  return matchers.find((m) => m.pattern.test(name))?.label ?? name;
+}
+
 /** Tab label + icon for a document, inferred from what it is. */
 function docTabMeta(document: ReviewDocument): {
   label: string;
@@ -124,25 +162,7 @@ function docTabMeta(document: ReviewDocument): {
 } {
   if (document.kind === "email") return { Icon: IconEmail1, label: "Email" };
 
-  const name = document.name;
-
-  if (/cbp form 28/i.test(name)) {
-    return { Icon: IconGovernment, label: "CF-28" };
-  }
-  if (/cbp form 29/i.test(name)) {
-    return { Icon: IconGovernment, label: "CF-29" };
-  }
-  if (/draft response|response/i.test(name)) {
-    return { Icon: IconPencil, label: "Response Draft" };
-  }
-  if (/invoice/i.test(name)) return { Icon: IconReceiptBill, label: "Invoice" };
-  if (/packing/i.test(name))
-    return { Icon: IconPackage, label: "Packing List" };
-  if (/bill of lading|b\/l|awb/i.test(name)) {
-    return { Icon: IconShip, label: "Bill of Lading" };
-  }
-  if (/arrival/i.test(name)) return { Icon: IconBell, label: "Arrival Notice" };
-  if (/spec/i.test(name)) return { Icon: IconChecklist, label: "Spec Sheet" };
+  const name = getDocMeta(document.name);
 
   return {
     Icon: IconFileText,
