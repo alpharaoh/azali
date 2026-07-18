@@ -19,6 +19,7 @@ import {
   Popover,
   SearchField,
   Separator,
+  Skeleton,
   Slider,
   Spinner,
 } from "@heroui/react";
@@ -121,6 +122,11 @@ interface Row {
   priority: Priority | null;
   /** Human-readable current pipeline step; null when nothing is running. */
   processingState: string | null;
+  /**
+   * True while document extraction is still filling the row in (no client
+   * attributed yet) — client and route render as skeletons, not placeholders.
+   */
+  isExtracting: boolean;
 }
 
 const stageOrder: PipelineStage[] = [
@@ -396,6 +402,8 @@ export function PipelineBoard() {
       duty: shipment.dutyCents / 100,
       priority: priorityFor(shipment.stage, status, arrivesInHours, value),
       processingState: shipment.processingState,
+      // Placeholder rows from ingestion have no client until synthesis lands.
+      isExtracting: !shipment.client && shipment.processingState !== null,
     };
   });
 
@@ -475,22 +483,33 @@ export function PipelineBoard() {
     {
       accessorKey: "client",
       allowsSorting: true,
-      cell: (row) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar size="sm">
-            <Avatar.Image src={row.logo} />
-            <Avatar.Fallback>{getInitials(row.client)}</Avatar.Fallback>
-          </Avatar>
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate whitespace-nowrap text-sm font-medium">
-              {row.client}
-            </span>
-            <span className="text-muted text-xs tabular-nums">
-              {row.reference}
-            </span>
+      cell: (row) =>
+        row.isExtracting ? (
+          <div className="flex min-w-0 items-center gap-3">
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-28 rounded" />
+              <span className="text-muted text-xs tabular-nums">
+                {row.reference}
+              </span>
+            </div>
           </div>
-        </div>
-      ),
+        ) : (
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar size="sm">
+              <Avatar.Image src={row.logo} />
+              <Avatar.Fallback>{getInitials(row.client)}</Avatar.Fallback>
+            </Avatar>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate whitespace-nowrap text-sm font-medium">
+                {row.client}
+              </span>
+              <span className="text-muted text-xs tabular-nums">
+                {row.reference}
+              </span>
+            </div>
+          </div>
+        ),
       header: "Shipment",
       id: "client",
       isRowHeader: true,
@@ -499,6 +518,10 @@ export function PipelineBoard() {
     },
     {
       cell: (row) => {
+        if (row.isExtracting) {
+          return <Skeleton className="h-4 w-36 rounded" />;
+        }
+
         const ModeIcon = row.isAir ? Plane : ShipIcon;
         const description = row.conveyance;
         return (
