@@ -113,7 +113,8 @@ interface Row {
   conveyance: string | null;
   stage: PipelineStage;
   status: ShipmentStatus;
-  arrivesInHours: number;
+  /** Null when no document has established an arrival date yet. */
+  arrivesInHours: number | null;
   value: number;
   duty: number;
   /** Null when nothing is actionable (filed / awaiting CBP / released). */
@@ -139,12 +140,16 @@ const stageOrder: PipelineStage[] = [
 function priorityFor(
   stage: PipelineStage,
   status: ShipmentStatus,
-  arrivesInHours: number,
+  arrivesInHours: number | null,
   value: number,
 ): Priority | null {
   // Filed, awaiting CBP, or released — it's not on us anymore.
   if (status === "released" || stage === "filed" || stage === "released")
     return null;
+
+  // No arrival date yet — no time pressure to rank by, so sit in the middle
+  // (value can still bump it) rather than screaming P1.
+  if (arrivesInHours === null) return value >= 100000 ? 2 : 3;
 
   const stagesLeft = 4 - stageOrder.indexOf(stage); // pre-filed stages remaining
   const hoursPerStage = arrivesInHours / Math.max(stagesLeft, 1);
@@ -372,7 +377,7 @@ export function PipelineBoard() {
     const status = statusFromApi[shipment.status];
     const arrivesInHours = shipment.etaAt
       ? (new Date(shipment.etaAt).getTime() - Date.now()) / 3_600_000
-      : 0;
+      : null;
     const value = shipment.valueCents / 100;
 
     return {
@@ -572,6 +577,10 @@ export function PipelineBoard() {
     {
       allowsSorting: true,
       cell: (row) => {
+        if (row.arrivesInHours === null) {
+          return <span className="text-muted text-sm">—</span>;
+        }
+
         const urgent =
           row.arrivesInHours >= 0 &&
           row.arrivesInHours <= 12 &&
