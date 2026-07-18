@@ -117,7 +117,7 @@ function QueueRow({
             className="bg-background absolute -bottom-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border"
             title={typeMeta[item.type].label}
           >
-            <TypeIcon className="text-muted size-3" />
+            <TypeIcon className="text-muted size-3" mode="raw" />
           </span>
         </div>
 

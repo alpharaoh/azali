@@ -68,9 +68,14 @@ import { isMultiLineReview } from "#/lib/review-types";
 /* -------------------------------------------------------------------------------------------------
  * Meta
  * -----------------------------------------------------------------------------------------------*/
+type TypeIconComponent = ComponentType<{
+  className?: string;
+  mode?: "masked" | "raw";
+}>;
+
 export const typeMeta: Record<
   ReviewItemType,
-  { label: string; icon: ComponentType<{ className?: string }> }
+  { label: string; icon: TypeIconComponent }
 > = {
   classification: { icon: IconTag, label: "Classification" },
   document: { icon: IconFileText, label: "Document" },
@@ -407,6 +412,7 @@ export function ReviewDetail({
             onSelectionChange={(key) =>
               setView(key === "trace" ? "trace" : "overview")
             }
+            size="sm"
           >
             <Segment.Item id="overview">Overview</Segment.Item>
             <Segment.Item id="trace">
