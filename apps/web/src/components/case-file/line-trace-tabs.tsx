@@ -1,4 +1,4 @@
-import { Sparkles } from "@gravity-ui/icons";
+import { IconSparklesThree } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Chip, Tabs } from "@heroui/react";
 import { TextShimmer } from "@heroui-pro/react";
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
@@ -74,7 +74,7 @@ export function LineTraceTabs({
         </span>
       ) : isProcessing ? (
         <span className="inline-flex items-center gap-2 py-1">
-          <Sparkles className="text-muted size-4" />
+          <IconSparklesThree className="text-muted size-4" />
           <TextShimmer className="text-sm">
             {pendingMessage ?? "The agent will start on this line shortly…"}
           </TextShimmer>

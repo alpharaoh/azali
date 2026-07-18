@@ -1,4 +1,7 @@
-import { PersonMagnifier, Sparkles } from "@gravity-ui/icons";
+import {
+  IconSparklesThree,
+  IconUser,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Button,
   ComboBox,
@@ -57,7 +60,7 @@ const AUTONOMY_OPTIONS = [
     label: "Supervised",
     description:
       "Every entry is queued for a licensed broker to review and approve before it is filed with CBP.",
-    icon: PersonMagnifier,
+    icon: IconUser,
     iconClassName: "bg-default text-muted",
   },
   {
@@ -65,7 +68,7 @@ const AUTONOMY_OPTIONS = [
     label: "Autopilot",
     description:
       "High-confidence entries are filed automatically; only exceptions are routed for human review.",
-    icon: Sparkles,
+    icon: IconSparklesThree,
     iconClassName: "bg-accent-soft text-accent-soft-foreground",
   },
 ] as const;

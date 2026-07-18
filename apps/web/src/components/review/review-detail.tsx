@@ -1,19 +1,19 @@
 import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  ChevronLeft,
-  CircleCheck,
-  CircleDollar,
-  FileCheck,
-  FileText,
-  Pencil,
-  Person,
-  ShieldCheck,
-  ShieldExclamation,
-  Sparkles,
-  Tag,
-} from "@gravity-ui/icons";
+  IconArrowLeft,
+  IconArrowRight,
+  IconArrowUp,
+  IconChevronLeft,
+  IconCircleCheck,
+  IconCurrencyDollar,
+  IconFileText,
+  IconPageCheck,
+  IconPencil,
+  IconShieldBreak,
+  IconShieldCheck,
+  IconSparklesThree,
+  IconTag,
+  IconUser,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Chip, ScrollShadow } from "@heroui/react";
 import {
   ChatSources,
@@ -28,7 +28,7 @@ import {
   differenceInHours,
   formatDistanceToNowStrict,
 } from "date-fns";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType } from "react";
 import { useState } from "react";
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
 import {
@@ -70,14 +70,14 @@ import { isMultiLineReview } from "#/lib/review-types";
  * -----------------------------------------------------------------------------------------------*/
 export const typeMeta: Record<
   ReviewItemType,
-  { label: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
+  { label: string; icon: ComponentType<{ className?: string }> }
 > = {
-  classification: { icon: Tag, label: "Classification" },
-  document: { icon: FileText, label: "Document" },
-  enforcement: { icon: ShieldCheck, label: "Enforcement" },
-  pga: { icon: ShieldExclamation, label: "PGA" },
-  signoff: { icon: FileCheck, label: "Sign-off" },
-  valuation: { icon: CircleDollar, label: "Valuation" },
+  classification: { icon: IconTag, label: "Classification" },
+  document: { icon: IconFileText, label: "Document" },
+  enforcement: { icon: IconShieldCheck, label: "Enforcement" },
+  pga: { icon: IconShieldBreak, label: "PGA" },
+  signoff: { icon: IconPageCheck, label: "Sign-off" },
+  valuation: { icon: IconCurrencyDollar, label: "Valuation" },
 };
 
 export type DeadlineTone = "danger" | "default" | "warning";
@@ -107,7 +107,7 @@ function NoteTimelineItem({
   return (
     <Timeline.Item align="start" status="default" {...rest}>
       <Timeline.Marker aria-hidden="true" className="size-6">
-        <Person className="size-3.5" />
+        <IconUser className="size-3.5" />
       </Timeline.Marker>
       <Timeline.Content className="gap-0.5">
         <div className="flex min-w-0 items-center justify-between gap-4">
@@ -146,7 +146,7 @@ function Composer({
         <PromptInput.Toolbar>
           <PromptInput.ToolbarEnd>
             <PromptInput.Send>
-              <ArrowUp className="size-4" />
+              <IconArrowUp className="size-4" />
             </PromptInput.Send>
           </PromptInput.ToolbarEnd>
         </PromptInput.Toolbar>
@@ -377,7 +377,7 @@ export function ReviewDetail({
             type="button"
             onClick={onBack}
           >
-            <ChevronLeft className="size-4" />
+            <IconChevronLeft className="size-4" />
           </button>
           <Chip size="sm" variant="soft">
             <TypeIcon className="size-3" />
@@ -410,34 +410,36 @@ export function ReviewDetail({
           >
             <Segment.Item id="overview">Overview</Segment.Item>
             <Segment.Item id="trace">
-              <Sparkles className="size-3.5" />
+              <IconSparklesThree className="size-3.5" />
               Agent trace
             </Segment.Item>
           </Segment>
-          <div className="flex items-center">
-            <Button
-              isIconOnly
-              aria-label="Previous item"
-              className="text-muted hover:text-foreground"
-              isDisabled={position <= 1}
-              size="sm"
-              variant="ghost"
-              onPress={() => onNavigate(-1)}
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-            <Button
-              isIconOnly
-              aria-label="Next item"
-              className="text-muted hover:text-foreground"
-              isDisabled={position >= total}
-              size="sm"
-              variant="ghost"
-              onPress={() => onNavigate(1)}
-            >
-              <ArrowRight className="size-4" />
-            </Button>
-          </div>
+          {total > 1 ? (
+            <div className="flex items-center">
+              <Button
+                isIconOnly
+                aria-label="Previous item"
+                className="text-muted hover:text-foreground"
+                isDisabled={position <= 1}
+                size="sm"
+                variant="ghost"
+                onPress={() => onNavigate(-1)}
+              >
+                <IconArrowLeft className="size-4" />
+              </Button>
+              <Button
+                isIconOnly
+                aria-label="Next item"
+                className="text-muted hover:text-foreground"
+                isDisabled={position >= total}
+                size="sm"
+                variant="ghost"
+                onPress={() => onNavigate(1)}
+              >
+                <IconArrowRight className="size-4" />
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -473,7 +475,7 @@ export function ReviewDetail({
                       variant="ghost"
                       onPress={() => setMemoOpen(true)}
                     >
-                      <FileText className="size-3.5" />
+                      <IconFileText className="size-3.5" />
                       View memo
                     </Button>
                   ) : null}
@@ -536,7 +538,7 @@ export function ReviewDetail({
                         variant="ghost"
                         onPress={() => setEditingDraft(responseDraft)}
                       >
-                        <Pencil className="size-3.5" />
+                        <IconPencil className="size-3.5" />
                         Review response draft
                       </Button>
                     ) : null}
@@ -757,7 +759,7 @@ export function ReviewDetail({
                     status="default"
                   >
                     <Timeline.Marker aria-hidden="true" className="size-6">
-                      <Pencil className="size-3.5" />
+                      <IconPencil className="size-3.5" />
                     </Timeline.Marker>
                     <Timeline.Content className="gap-2">
                       <Composer
@@ -802,7 +804,7 @@ export function ReviewDetail({
               )
             }
           >
-            <CircleCheck />
+            <IconCircleCheck />
             {correctionEntries.length
               ? `Approve with ${correctionEntries.length} correction${correctionEntries.length === 1 ? "" : "s"}`
               : "Approve all lines"}
@@ -818,7 +820,7 @@ export function ReviewDetail({
               )
             }
           >
-            <CircleCheck />
+            <IconCircleCheck />
             {alternate ? `Approve ${alternate}` : item.approveLabel}
           </Button>
         )}

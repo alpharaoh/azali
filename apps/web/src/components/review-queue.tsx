@@ -1,4 +1,4 @@
-import { CircleCheck } from "@gravity-ui/icons";
+import { IconCircleCheck } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Button,
@@ -166,7 +166,7 @@ function EmptyPane({ isQueueClear }: { isQueueClear: boolean }) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border px-6 py-16 text-center">
       <div className="bg-default/60 flex size-12 items-center justify-center rounded-2xl">
-        <CircleCheck className="text-muted size-5" />
+        <IconCircleCheck className="text-muted size-5" />
       </div>
       <div className="flex flex-col gap-1">
         <h2 className="text-foreground text-base font-semibold">
@@ -482,7 +482,7 @@ export function ReviewQueue() {
                     className="flex items-center justify-between gap-2 rounded-2xl px-3 py-2"
                   >
                     <div className="flex min-w-0 items-center gap-2">
-                      <CircleCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <IconCircleCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                       <div className="flex min-w-0 flex-col">
                         <span className="text-muted truncate text-xs">
                           {item.question}

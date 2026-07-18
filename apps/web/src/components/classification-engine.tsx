@@ -1,11 +1,11 @@
 import {
-  Book,
-  CircleInfo,
-  Copy,
-  CopyCheck,
-  Funnel,
-  Xmark,
-} from "@gravity-ui/icons";
+  IconBook,
+  IconCircleInfo,
+  IconCrossMedium,
+  IconFilter1,
+  IconSquareBehindSquare2,
+  IconSquareCheck,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Button,
@@ -88,9 +88,9 @@ function CopyHts({ children }: { children: string }) {
           onPress={handleCopy}
         >
           {copied ? (
-            <CopyCheck className="size-3" />
+            <IconSquareCheck className="size-3" />
           ) : (
-            <Copy className="size-3" />
+            <IconSquareBehindSquare2 className="size-3" />
           )}
         </Button>
         <Tooltip.Content>{copied ? "Copied!" : "Copy"}</Tooltip.Content>
@@ -149,7 +149,7 @@ function OverviewStats() {
                     size="sm"
                     variant="ghost"
                   >
-                    <CircleInfo className="size-3.5" />
+                    <IconCircleInfo className="size-3.5" />
                   </Button>
                   <Tooltip.Content className="max-w-64">
                     {stat.info}
@@ -591,7 +591,7 @@ export function ClassificationEngine() {
             {/* Filter: Client */}
             <Dropdown>
               <Button size="sm" variant="secondary">
-                <Funnel />
+                <IconFilter1 />
                 Client
               </Button>
               <Dropdown.Popover className="w-72">
@@ -653,7 +653,7 @@ export function ClassificationEngine() {
             {/* Filter: Source */}
             <Dropdown>
               <Button size="sm" variant="secondary">
-                <Funnel />
+                <IconFilter1 />
                 Source
               </Button>
               <Dropdown.Popover>
@@ -706,7 +706,7 @@ export function ClassificationEngine() {
                     updateSearch({ q: undefined });
                   }}
                 >
-                  <Xmark className="size-3" />
+                  <IconCrossMedium className="size-3" />
                 </button>
               </Chip>
             ) : null}
@@ -727,7 +727,7 @@ export function ClassificationEngine() {
                     updateSearch({ clientId: next.length ? next : undefined });
                   }}
                 >
-                  <Xmark className="size-3" />
+                  <IconCrossMedium className="size-3" />
                 </button>
               </Chip>
             ))}
@@ -748,7 +748,7 @@ export function ClassificationEngine() {
                     updateSearch({ source: next.length ? next : undefined });
                   }}
                 >
-                  <Xmark className="size-3" />
+                  <IconCrossMedium className="size-3" />
                 </button>
               </Chip>
             ))}
@@ -789,7 +789,7 @@ export function ClassificationEngine() {
                 <EmptyState className="pointer-events-auto" size="sm">
                   <EmptyState.Header>
                     <EmptyState.Media className="border" variant="icon">
-                      <Book />
+                      <IconBook />
                     </EmptyState.Media>
                     <EmptyState.Title>No Entries Found</EmptyState.Title>
                     <EmptyState.Description>

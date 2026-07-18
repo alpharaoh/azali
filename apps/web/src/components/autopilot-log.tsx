@@ -1,14 +1,14 @@
 import {
-  ArrowsRotateRight,
-  ArrowUpRightFromSquare,
-  CircleInfo,
-  FileArrowDown,
-  FileArrowUp,
-  FileText,
-  Flag,
-  Funnel,
-  Tag,
-} from "@gravity-ui/icons";
+  IconArrowRotateClockwise,
+  IconCircleInfo,
+  IconFileArrowRightOut,
+  IconFileDownload,
+  IconFileText,
+  IconFilter1,
+  IconFlag1,
+  IconSquareArrowTopRight,
+  IconTag,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Button,
   Chip,
@@ -37,7 +37,7 @@ import {
   formatDistanceToNowStrict,
   subDays,
 } from "date-fns";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType } from "react";
 import { useState } from "react";
 import type { SortDescriptor } from "react-aria-components";
 import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
@@ -73,24 +73,32 @@ const typeMeta: Record<
   AutopilotActionType,
   {
     color: string;
-    icon: ComponentType<SVGProps<SVGSVGElement>>;
+    icon: ComponentType<{ className?: string }>;
     label: string;
   }
 > = {
-  intake: { color: "var(--chart-1)", icon: FileArrowDown, label: "Intake" },
-  extraction: { color: "var(--chart-2)", icon: FileText, label: "Extraction" },
+  intake: { color: "var(--chart-1)", icon: IconFileDownload, label: "Intake" },
+  extraction: {
+    color: "var(--chart-2)",
+    icon: IconFileText,
+    label: "Extraction",
+  },
   classification: {
     color: "var(--chart-3)",
-    icon: Tag,
+    icon: IconTag,
     label: "Classification",
   },
   reconciliation: {
     color: "var(--chart-4)",
-    icon: ArrowsRotateRight,
+    icon: IconArrowRotateClockwise,
     label: "Reconciliation",
   },
-  filing: { color: "var(--chart-5)", icon: FileArrowUp, label: "Filing" },
-  review: { color: "var(--warning)", icon: Flag, label: "Review" },
+  filing: {
+    color: "var(--chart-5)",
+    icon: IconFileArrowRightOut,
+    label: "Filing",
+  },
+  review: { color: "var(--warning)", icon: IconFlag1, label: "Review" },
 };
 
 const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
@@ -287,7 +295,7 @@ function ActionRowButtons({ shipmentId }: { shipmentId: string }) {
             })
           }
         >
-          <ArrowUpRightFromSquare className="size-3.5" />
+          <IconSquareArrowTopRight className="size-3.5" />
         </Button>
         <Tooltip.Content>View shipment</Tooltip.Content>
       </Tooltip>
@@ -503,7 +511,7 @@ export function AutopilotLog() {
                       size="sm"
                       variant="ghost"
                     >
-                      <CircleInfo className="size-3.5" />
+                      <IconCircleInfo className="size-3.5" />
                     </Button>
                     <Tooltip.Content className="max-w-64">
                       {stat.info}
@@ -665,7 +673,7 @@ export function AutopilotLog() {
             </SearchField>
             <Dropdown>
               <Button size="sm" variant="secondary">
-                <Funnel />
+                <IconFilter1 />
                 Type
               </Button>
               <Dropdown.Popover>

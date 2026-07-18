@@ -1,4 +1,4 @@
-import { ArrowUpRightFromSquare } from "@gravity-ui/icons";
+import { IconSquareArrowTopRight } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Chip } from "@heroui/react";
 import { ChatSource, HoverCard } from "@heroui-pro/react";
 import type {
@@ -90,7 +90,7 @@ function DocPeek({ document: doc }: { document: ReviewDocument }) {
       )}
       <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
         <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-          <ArrowUpRightFromSquare className="size-3.5" />
+          <IconSquareArrowTopRight className="size-3.5" />
           View full document
         </span>
       </span>

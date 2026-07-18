@@ -1,4 +1,7 @@
-import { ChevronRight, Sparkles } from "@gravity-ui/icons";
+import {
+  IconChevronRight,
+  IconSparklesThree,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Chip, Separator } from "@heroui/react";
 import {
   ChatLoader,
@@ -142,7 +145,7 @@ export function LineClassificationsCard({
                                 variant="secondary"
                                 onPress={() => onViewTrace(line.lineNumber)}
                               >
-                                <Sparkles className="size-3.5" />
+                                <IconSparklesThree className="size-3.5" />
                                 View trace
                               </Button>
                             ) : null}
@@ -171,7 +174,7 @@ export function LineClassificationsCard({
                         ) : null}
                       </div>
                       {openLine ? (
-                        <ChevronRight className="text-muted size-4 shrink-0" />
+                        <IconChevronRight className="text-muted size-4 shrink-0" />
                       ) : null}
                     </div>
                   </ItemCard.Action>

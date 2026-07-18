@@ -9,22 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
-import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
-import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
-import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
 import { Route as DashboardAutopilotRouteImport } from './routes/dashboard/autopilot'
+import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
+import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
+import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardReviewIndexRouteImport } from './routes/dashboard/review/index'
-import { Route as DashboardShipmentsShipmentIdRouteImport } from './routes/dashboard/shipments/$shipmentId'
 import { Route as DashboardReviewItemIdRouteImport } from './routes/dashboard/review/$itemId'
+import { Route as DashboardShipmentsShipmentIdRouteImport } from './routes/dashboard/shipments/$shipmentId'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
@@ -32,9 +32,9 @@ const DashboardRouteRoute = DashboardRouteRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -42,19 +42,9 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardClientsRoute = DashboardClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
+const DashboardAutopilotRoute = DashboardAutopilotRouteImport.update({
+  id: '/autopilot',
+  path: '/autopilot',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardClassificationsRoute =
@@ -63,14 +53,29 @@ const DashboardClassificationsRoute =
     path: '/classifications',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
-const DashboardAutopilotRoute = DashboardAutopilotRouteImport.update({
-  id: '/autopilot',
-  path: '/autopilot',
+const DashboardClientsRoute = DashboardClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardReviewIndexRoute = DashboardReviewIndexRouteImport.update({
   id: '/review/',
   path: '/review/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardReviewItemIdRoute = DashboardReviewItemIdRouteImport.update({
+  id: '/review/$itemId',
+  path: '/review/$itemId',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardShipmentsShipmentIdRoute =
@@ -79,11 +84,6 @@ const DashboardShipmentsShipmentIdRoute =
     path: '/shipments/$shipmentId',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
-const DashboardReviewItemIdRoute = DashboardReviewItemIdRouteImport.update({
-  id: '/review/$itemId',
-  path: '/review/$itemId',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -179,11 +179,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -193,11 +193,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -207,25 +207,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/pipeline': {
-      id: '/dashboard/pipeline'
-      path: '/pipeline'
-      fullPath: '/dashboard/pipeline'
-      preLoaderRoute: typeof DashboardPipelineRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/clients': {
-      id: '/dashboard/clients'
-      path: '/clients'
-      fullPath: '/dashboard/clients'
-      preLoaderRoute: typeof DashboardClientsRouteImport
+    '/dashboard/autopilot': {
+      id: '/dashboard/autopilot'
+      path: '/autopilot'
+      fullPath: '/dashboard/autopilot'
+      preLoaderRoute: typeof DashboardAutopilotRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/classifications': {
@@ -235,11 +221,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClassificationsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/autopilot': {
-      id: '/dashboard/autopilot'
-      path: '/autopilot'
-      fullPath: '/dashboard/autopilot'
-      preLoaderRoute: typeof DashboardAutopilotRouteImport
+    '/dashboard/clients': {
+      id: '/dashboard/clients'
+      path: '/clients'
+      fullPath: '/dashboard/clients'
+      preLoaderRoute: typeof DashboardClientsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/pipeline': {
+      id: '/dashboard/pipeline'
+      path: '/pipeline'
+      fullPath: '/dashboard/pipeline'
+      preLoaderRoute: typeof DashboardPipelineRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/review/': {
@@ -249,18 +249,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardReviewIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/shipments/$shipmentId': {
-      id: '/dashboard/shipments/$shipmentId'
-      path: '/shipments/$shipmentId'
-      fullPath: '/dashboard/shipments/$shipmentId'
-      preLoaderRoute: typeof DashboardShipmentsShipmentIdRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/dashboard/review/$itemId': {
       id: '/dashboard/review/$itemId'
       path: '/review/$itemId'
       fullPath: '/dashboard/review/$itemId'
       preLoaderRoute: typeof DashboardReviewItemIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/shipments/$shipmentId': {
+      id: '/dashboard/shipments/$shipmentId'
+      path: '/shipments/$shipmentId'
+      fullPath: '/dashboard/shipments/$shipmentId'
+      preLoaderRoute: typeof DashboardShipmentsShipmentIdRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
   }

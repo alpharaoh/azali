@@ -1,16 +1,16 @@
 import {
-  ArrowUturnCcwLeft,
-  ArrowUturnCwRight,
-  Bold,
-  CircleCheck,
-  Heading2,
-  Heading3,
-  Italic,
-  ListOl,
-  ListUl,
-  Sparkles,
-  Underline,
-} from "@gravity-ui/icons";
+  IconArrowRedoDown,
+  IconArrowUndoUp,
+  IconBold,
+  IconBulletList,
+  IconCircleCheck,
+  IconH2,
+  IconH3,
+  IconItalic,
+  IconNumberedList,
+  IconSparklesThree,
+  IconUnderline,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Chip, Drawer, Separator, toast } from "@heroui/react";
 import {
   HoverCard,
@@ -124,7 +124,7 @@ export function AlternatesList({
                   >
                     {isSelected ? (
                       <>
-                        <CircleCheck className="size-3.5" />
+                        <IconCircleCheck className="size-3.5" />
                         Selected
                       </>
                     ) : (
@@ -208,10 +208,10 @@ function MemoEditor({
           <RichTextEditor.Toolbar aria-label="Memo formatting">
             <RichTextEditor.ToolbarGroup>
               <RichTextEditor.ActionButton action="undo" tooltip="Undo">
-                <ArrowUturnCcwLeft className="size-3.5" />
+                <IconArrowUndoUp className="size-3.5" />
               </RichTextEditor.ActionButton>
               <RichTextEditor.ActionButton action="redo" tooltip="Redo">
-                <ArrowUturnCwRight className="size-3.5" />
+                <IconArrowRedoDown className="size-3.5" />
               </RichTextEditor.ActionButton>
             </RichTextEditor.ToolbarGroup>
             <RichTextEditor.ToolbarSeparator />
@@ -220,28 +220,28 @@ function MemoEditor({
                 command="heading-2"
                 tooltip="Heading"
               >
-                <Heading2 className="size-3.5" />
+                <IconH2 className="size-3.5" />
               </RichTextEditor.ToggleButton>
               <RichTextEditor.ToggleButton
                 command="heading-3"
                 tooltip="Subheading"
               >
-                <Heading3 className="size-3.5" />
+                <IconH3 className="size-3.5" />
               </RichTextEditor.ToggleButton>
             </RichTextEditor.ToolbarGroup>
             <RichTextEditor.ToolbarSeparator />
             <RichTextEditor.ToolbarGroup>
               <RichTextEditor.ToggleButton command="bold" tooltip="Bold">
-                <Bold className="size-3.5" />
+                <IconBold className="size-3.5" />
               </RichTextEditor.ToggleButton>
               <RichTextEditor.ToggleButton command="italic" tooltip="Italic">
-                <Italic className="size-3.5" />
+                <IconItalic className="size-3.5" />
               </RichTextEditor.ToggleButton>
               <RichTextEditor.ToggleButton
                 command="underline"
                 tooltip="Underline"
               >
-                <Underline className="size-3.5" />
+                <IconUnderline className="size-3.5" />
               </RichTextEditor.ToggleButton>
             </RichTextEditor.ToolbarGroup>
             <RichTextEditor.ToolbarSeparator />
@@ -250,13 +250,13 @@ function MemoEditor({
                 command="bulletList"
                 tooltip="Bulleted list"
               >
-                <ListUl className="size-3.5" />
+                <IconBulletList className="size-3.5" />
               </RichTextEditor.ToggleButton>
               <RichTextEditor.ToggleButton
                 command="orderedList"
                 tooltip="Numbered list"
               >
-                <ListOl className="size-3.5" />
+                <IconNumberedList className="size-3.5" />
               </RichTextEditor.ToggleButton>
             </RichTextEditor.ToolbarGroup>
           </RichTextEditor.Toolbar>
@@ -377,7 +377,7 @@ function LineDetailContent({
           >
             <Segment.Item id="overview">Overview</Segment.Item>
             <Segment.Item id="trace">
-              <Sparkles className="size-3.5" />
+              <IconSparklesThree className="size-3.5" />
               Agent trace
             </Segment.Item>
           </Segment>

@@ -1,11 +1,11 @@
 import {
-  ArrowLeft,
-  ArrowUpRightFromSquare,
-  CircleExclamation,
-  FileText,
-  ShieldExclamation,
-  Sparkles,
-} from "@gravity-ui/icons";
+  IconArrowLeft,
+  IconExclamationCircle,
+  IconFileText,
+  IconShieldBreak,
+  IconSparklesThree,
+  IconSquareArrowTopRight,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Button,
@@ -115,7 +115,7 @@ function DocumentPreviewCard({
             />
           </>
         ) : (
-          <FileText className="text-muted size-8" />
+          <IconFileText className="text-muted size-8" />
         )}
         {document.pageCount ? (
           <span className="bg-background/80 text-muted absolute right-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums backdrop-blur-sm">
@@ -130,7 +130,7 @@ function DocumentPreviewCard({
         ) : (
           <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
             <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-              <ArrowUpRightFromSquare className="size-3.5" />
+              <IconSquareArrowTopRight className="size-3.5" />
               View document
             </span>
           </span>
@@ -244,7 +244,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
             variant="ghost"
             onPress={() => navigate({ to: "/dashboard/pipeline" })}
           >
-            <ArrowLeft className="size-4" />
+            <IconArrowLeft className="size-4" />
           </Button>
           {shipment ? (
             <>
@@ -317,7 +317,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       {shipment?.status === "needs_review" ? (
         <div className="border-warning/40 bg-warning/5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
           <span className="inline-flex items-center gap-2">
-            <ShieldExclamation className="text-warning size-4" />
+            <IconShieldBreak className="text-warning size-4" />
             <span className="text-foreground text-sm">
               Classification needs broker review.
             </span>
@@ -342,7 +342,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         /processing failed|classification failed/i.test(event.title),
       ) ? (
         <div className="border-danger/40 bg-danger/5 flex items-center gap-2 rounded-xl border p-3">
-          <CircleExclamation className="text-danger size-4" />
+          <IconExclamationCircle className="text-danger size-4" />
           <span className="text-foreground text-sm">
             Processing hit a failure — see the activity timeline for details.
           </span>
@@ -399,12 +399,12 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 className="w-fit"
               >
                 <Tabs.Tab className="w-fit" id="documents">
-                  <FileText className="mr-1.5 size-3.5" />
+                  <IconFileText className="mr-1.5 size-3.5" />
                   Documents{documents?.length ? ` (${documents.length})` : ""}
                   <Tabs.Indicator />
                 </Tabs.Tab>
                 <Tabs.Tab className="w-fit" id="trace">
-                  <Sparkles className="mr-1.5 size-3.5" />
+                  <IconSparklesThree className="mr-1.5 size-3.5" />
                   Agent trace
                   <Tabs.Indicator />
                 </Tabs.Tab>

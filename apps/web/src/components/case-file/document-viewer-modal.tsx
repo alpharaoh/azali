@@ -1,4 +1,4 @@
-import { ArrowUpRightFromSquare } from "@gravity-ui/icons";
+import { IconSquareArrowTopRight } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Modal, Spinner } from "@heroui/react";
 import { useState } from "react";
 import { receivedAgo } from "#/components/case-file/timeline-items";
@@ -108,7 +108,7 @@ export function DocumentViewerModal({
                     rel="noreferrer"
                     target="_blank"
                   >
-                    <ArrowUpRightFromSquare className="size-3" />
+                    <IconSquareArrowTopRight className="size-3" />
                     Open original in a new tab
                   </a>
                 </div>

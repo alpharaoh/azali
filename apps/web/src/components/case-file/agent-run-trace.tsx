@@ -1,15 +1,15 @@
 import {
-  Book,
-  CircleExclamation,
-  DatabaseMagnifier,
-  FileText,
-  Globe,
-  Magnifier,
-  Sparkles,
-} from "@gravity-ui/icons";
+  IconBook,
+  IconDeepSearch,
+  IconExclamationCircle,
+  IconFileText,
+  IconGlobe,
+  IconMagnifyingGlass,
+  IconSparklesThree,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Chip, Link, ScrollShadow, Skeleton } from "@heroui/react";
 import { ChainOfThought, ChatLoader, TextShimmer } from "@heroui-pro/react";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType } from "react";
 import { useEffect, useRef } from "react";
 import crossLogo from "#/assets/cross-logo.png";
 import htsBadge from "#/assets/htsus.svg";
@@ -32,48 +32,48 @@ const TOOL_META: Record<
   {
     label: string;
     source: SourceName;
-    icon: ComponentType<SVGProps<SVGSVGElement>>;
+    icon: ComponentType<{ className?: string }>;
   }
 > = {
   searchHts: {
     label: "Searched the tariff schedule",
     source: "HTSUS",
-    icon: Magnifier,
+    icon: IconMagnifyingGlass,
   },
   browseHtsHeading: {
     label: "Browsed a tariff heading",
     source: "HTSUS",
-    icon: Book,
+    icon: IconBook,
   },
   getChapterNotes: {
     label: "Read the chapter notes",
     source: "HTSUS",
-    icon: Book,
+    icon: IconBook,
   },
   searchRulings: {
     label: "Searched customs rulings",
     source: "CROSS",
-    icon: Magnifier,
+    icon: IconMagnifyingGlass,
   },
   getRuling: {
     label: "Read a ruling in full",
     source: "CROSS",
-    icon: FileText,
+    icon: IconFileText,
   },
   searchKnowledge: {
     label: "Searched the importer's record",
     source: "Knowledge base",
-    icon: Magnifier,
+    icon: IconMagnifyingGlass,
   },
   searchPriorClassifications: {
     label: "Searched prior classifications",
     source: "Knowledge base",
-    icon: Magnifier,
+    icon: IconMagnifyingGlass,
   },
   webSearch: {
     label: "Searched the web",
     source: "Web",
-    icon: Globe,
+    icon: IconGlobe,
   },
 };
 
@@ -127,7 +127,7 @@ function SourceBadge({ source }: { source: SourceName }) {
     return (
       <Chip color="success" size="sm" variant="soft">
         <Chip.Label className="inline-flex items-center gap-1">
-          <Globe className="size-3" />
+          <IconGlobe className="size-3" />
           Web
         </Chip.Label>
       </Chip>
@@ -140,7 +140,7 @@ function SourceBadge({ source }: { source: SourceName }) {
       variant="soft"
     >
       <Chip.Label className="inline-flex items-center gap-1">
-        <DatabaseMagnifier className="size-3" />
+        <IconDeepSearch className="size-3" />
         Knowledge base
       </Chip.Label>
     </Chip>
@@ -529,7 +529,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="inline-flex items-center gap-1.5">
-          <Sparkles className="text-muted size-3.5" />
+          <IconSparklesThree className="text-muted size-3.5" />
           {isRunning ? (
             <TextShimmer className="text-sm">
               {`Working — ${liveActionCount} research ${liveActionCount === 1 ? "action" : "actions"} so far`}
@@ -621,7 +621,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                       const meta = TOOL_META[item.toolName ?? ""] ?? {
                         label: humanizeToolName(item.toolName ?? "Action"),
                         source: "Knowledge base" as const,
-                        icon: Magnifier,
+                        icon: IconMagnifyingGlass,
                       };
                       const result = item.toolCallId
                         ? resultsByCallId.get(item.toolCallId)
@@ -647,7 +647,7 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                                 }
                               >
                                 {failed ? (
-                                  <CircleExclamation className="size-3.5" />
+                                  <IconExclamationCircle className="size-3.5" />
                                 ) : (
                                   <meta.icon className="size-3.5" />
                                 )}

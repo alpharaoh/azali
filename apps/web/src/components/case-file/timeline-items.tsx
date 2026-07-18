@@ -1,17 +1,17 @@
 import {
-  ChevronRight,
-  CircleCheck,
-  Envelope,
-  FileText,
-  PaperPlane,
-  Person,
-  Sparkles,
-  Tag,
-} from "@gravity-ui/icons";
+  IconChevronRight,
+  IconCircleCheck,
+  IconEmail1,
+  IconFileText,
+  IconPaperPlane,
+  IconSparklesThree,
+  IconTag,
+  IconUser,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Skeleton } from "@heroui/react";
 import { Timeline } from "@heroui-pro/react";
 import { formatDistanceToNowStrict, subHours } from "date-fns";
-import type { ComponentProps, ComponentType, SVGProps } from "react";
+import type { ComponentProps, ComponentType } from "react";
 import type { ActivityEvent } from "#/lib/review-types";
 
 export function receivedAgo(hoursAgo: number) {
@@ -38,53 +38,53 @@ export type TimelineItemPassthrough = Partial<
  * Documents keep their neutral markers.
  */
 export function eventMarker(event: ActivityEvent): {
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  Icon: ComponentType<{ className?: string }>;
   className: string;
 } {
   if (/\bcbp\b|form 2[89]/i.test(event.title)) {
     return {
-      Icon: Envelope,
+      Icon: IconEmail1,
       className:
         "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
     };
   }
   if (event.icon === "mail") {
     return {
-      Icon: Envelope,
+      Icon: IconEmail1,
       className:
         "border-sky-500/40 bg-sky-500/15 text-sky-600 dark:text-sky-400",
     };
   }
   if (event.icon === "user") {
     return {
-      Icon: Person,
+      Icon: IconUser,
       className:
         "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400",
     };
   }
   if (/classif/i.test(event.title)) {
     return {
-      Icon: Tag,
+      Icon: IconTag,
       className:
         "border-blue-500/40 bg-blue-500/15 text-blue-600 dark:text-blue-400",
     };
   }
   if (event.icon === "check") {
     return {
-      Icon: CircleCheck,
+      Icon: IconCircleCheck,
       className:
         "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     };
   }
   if (event.icon === "ai") {
     return {
-      Icon: Sparkles,
+      Icon: IconSparklesThree,
       className:
         "border-indigo-500/40 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
     };
   }
 
-  return { Icon: PaperPlane, className: "" };
+  return { Icon: IconPaperPlane, className: "" };
 }
 
 export function EventTimelineItem({
@@ -138,9 +138,9 @@ export function EventTimelineItem({
               type="button"
               onClick={onViewTrace}
             >
-              <Sparkles className="size-3" />
+              <IconSparklesThree className="size-3" />
               View agent trace
-              <ChevronRight className="size-3" />
+              <IconChevronRight className="size-3" />
             </button>
           ) : null}
           {event.memo && onViewMemo ? (
@@ -149,9 +149,9 @@ export function EventTimelineItem({
               type="button"
               onClick={onViewMemo}
             >
-              <FileText className="size-3" />
+              <IconFileText className="size-3" />
               View memo
-              <ChevronRight className="size-3" />
+              <IconChevronRight className="size-3" />
             </button>
           ) : null}
         </div>

@@ -1,16 +1,16 @@
 import {
-  ArrowUturnCcwLeft,
-  ArrowUturnCwRight,
-  Bold,
-  Heading2,
-  Heading3,
-  Italic,
-  ListOl,
-  ListUl,
-  QuoteClose,
-  Strikethrough,
-  Underline,
-} from "@gravity-ui/icons";
+  IconArrowRedoDown,
+  IconArrowUndoUp,
+  IconBold,
+  IconBulletList,
+  IconCloseQuote1,
+  IconH2,
+  IconH3,
+  IconItalic,
+  IconNumberedList,
+  IconStrikeThrough,
+  IconUnderline,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Modal, toast } from "@heroui/react";
 import { RichTextEditor } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -118,13 +118,13 @@ export function ResponseDraftModal({
                           action="undo"
                           tooltip="Undo"
                         >
-                          <ArrowUturnCcwLeft className="size-3.5" />
+                          <IconArrowUndoUp className="size-3.5" />
                         </RichTextEditor.ActionButton>
                         <RichTextEditor.ActionButton
                           action="redo"
                           tooltip="Redo"
                         >
-                          <ArrowUturnCwRight className="size-3.5" />
+                          <IconArrowRedoDown className="size-3.5" />
                         </RichTextEditor.ActionButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
@@ -133,13 +133,13 @@ export function ResponseDraftModal({
                           command="heading-2"
                           tooltip="Heading"
                         >
-                          <Heading2 className="size-3.5" />
+                          <IconH2 className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="heading-3"
                           tooltip="Subheading"
                         >
-                          <Heading3 className="size-3.5" />
+                          <IconH3 className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
@@ -148,25 +148,25 @@ export function ResponseDraftModal({
                           command="bold"
                           tooltip="Bold"
                         >
-                          <Bold className="size-3.5" />
+                          <IconBold className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="italic"
                           tooltip="Italic"
                         >
-                          <Italic className="size-3.5" />
+                          <IconItalic className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="underline"
                           tooltip="Underline"
                         >
-                          <Underline className="size-3.5" />
+                          <IconUnderline className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="strike"
                           tooltip="Strikethrough"
                         >
-                          <Strikethrough className="size-3.5" />
+                          <IconStrikeThrough className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                       <RichTextEditor.ToolbarSeparator />
@@ -175,19 +175,19 @@ export function ResponseDraftModal({
                           command="bulletList"
                           tooltip="Bulleted list"
                         >
-                          <ListUl className="size-3.5" />
+                          <IconBulletList className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="orderedList"
                           tooltip="Numbered list"
                         >
-                          <ListOl className="size-3.5" />
+                          <IconNumberedList className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                         <RichTextEditor.ToggleButton
                           command="blockquote"
                           tooltip="Blockquote"
                         >
-                          <QuoteClose className="size-3.5" />
+                          <IconCloseQuote1 className="size-3.5" />
                         </RichTextEditor.ToggleButton>
                       </RichTextEditor.ToolbarGroup>
                     </RichTextEditor.Toolbar>
@@ -197,19 +197,19 @@ export function ResponseDraftModal({
                         command="bold"
                         tooltip="Bold"
                       >
-                        <Bold className="size-3.5" />
+                        <IconBold className="size-3.5" />
                       </RichTextEditor.ToggleButton>
                       <RichTextEditor.ToggleButton
                         command="italic"
                         tooltip="Italic"
                       >
-                        <Italic className="size-3.5" />
+                        <IconItalic className="size-3.5" />
                       </RichTextEditor.ToggleButton>
                       <RichTextEditor.ToggleButton
                         command="underline"
                         tooltip="Underline"
                       >
-                        <Underline className="size-3.5" />
+                        <IconUnderline className="size-3.5" />
                       </RichTextEditor.ToggleButton>
                     </RichTextEditor.BubbleMenu>
                     <RichTextEditor.Footer>

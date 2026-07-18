@@ -17,7 +17,8 @@
     "generate:api": "orval"
   },
   "dependencies": {
-    "@gravity-ui/icons": "^2.20.0",
+    "@central-icons-react/square-filled-radius-0-stroke-1.5": "1.1.296",
+    "@central-icons-react/square-outlined-radius-0-stroke-1.5": "^1.1.296",
     "@heroui-pro/react": "^1.0.0-beta.6",
     "@heroui/react": "^3.2.1",
     "@heroui/styles": "^3.2.1",

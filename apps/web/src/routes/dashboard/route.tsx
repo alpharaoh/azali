@@ -1,12 +1,21 @@
 import {
-  ArrowRightFromSquare,
-  Book,
-  Gear,
-  ListCheck,
-  Persons,
-  Pipeline,
-  Sparkles,
-} from "@gravity-ui/icons";
+  IconBook as IconBookFilled,
+  IconChecklist as IconChecklistFilled,
+  IconKanbanView as IconKanbanViewFilled,
+  IconSettingsGear1 as IconSettingsGear1Filled,
+  IconSparklesThree as IconSparklesThreeFilled,
+  IconUserGroup as IconUserGroupFilled,
+} from "@central-icons-react/square-filled-radius-0-stroke-1.5";
+import {
+  IconArrowBoxRight,
+  IconBook,
+  IconChecklist,
+  IconKanbanView,
+  IconSettingsGear1,
+  IconSidebar,
+  IconSparklesThree,
+  IconUserGroup,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Breadcrumbs,
@@ -23,7 +32,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType } from "react";
 import { Fragment, useEffect, useState } from "react";
 
 import { ThemeSwitcher } from "#/components/theme-switcher";
@@ -57,7 +66,9 @@ type NavItem = {
   id: string;
   label: string;
   href: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon: ComponentType<{ className?: string }>;
+  /** Filled variant, shown while the item's page is active. */
+  iconFilled: ComponentType<{ className?: string }>;
   chip?: string;
 };
 
@@ -69,19 +80,22 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "review",
         label: "Review Queue",
         href: "/dashboard/review",
-        icon: ListCheck,
+        icon: IconChecklist,
+        iconFilled: IconChecklistFilled,
       },
       {
         id: "pipeline",
         label: "Pipeline",
         href: "/dashboard/pipeline",
-        icon: Pipeline,
+        icon: IconKanbanView,
+        iconFilled: IconKanbanViewFilled,
       },
       {
         id: "autopilot",
         label: "Autopilot Log",
         href: "/dashboard/autopilot",
-        icon: Sparkles,
+        icon: IconSparklesThree,
+        iconFilled: IconSparklesThreeFilled,
       },
     ],
   },
@@ -92,7 +106,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "classifications",
         label: "Classification Engine",
         href: "/dashboard/classifications",
-        icon: Book,
+        icon: IconBook,
+        iconFilled: IconBookFilled,
       },
     ],
   },
@@ -103,7 +118,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "clients",
         label: "Clients",
         href: "/dashboard/clients",
-        icon: Persons,
+        icon: IconUserGroup,
+        iconFilled: IconUserGroupFilled,
       },
     ],
   },
@@ -114,7 +130,8 @@ const FOOTER_ITEMS: NavItem[] = [
     id: "settings",
     label: "Settings",
     href: "/dashboard/settings",
-    icon: Gear,
+    icon: IconSettingsGear1,
+    iconFilled: IconSettingsGear1Filled,
   },
 ];
 
@@ -165,25 +182,30 @@ const SidebarNav = ({
         <Sidebar.Group>
           <Sidebar.GroupLabel>{group.label}</Sidebar.GroupLabel>
           <Sidebar.Menu aria-label={group.label}>
-            {group.items.map((item) => (
-              <Sidebar.MenuItem
-                key={item.id}
-                href={item.href}
-                id={`${item.id}${idSuffix}`}
-                isCurrent={pathname.startsWith(item.href)}
-                textValue={item.label}
-              >
-                <Sidebar.MenuIcon>
-                  <item.icon className="size-4" />
-                </Sidebar.MenuIcon>
-                <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
-                {item.id === "review" ? (
-                  <ReviewCountChip />
-                ) : item.chip ? (
-                  <Sidebar.MenuChip>{item.chip}</Sidebar.MenuChip>
-                ) : null}
-              </Sidebar.MenuItem>
-            ))}
+            {group.items.map((item) => {
+              const isCurrent = pathname.startsWith(item.href);
+              const Icon = isCurrent ? item.iconFilled : item.icon;
+
+              return (
+                <Sidebar.MenuItem
+                  key={item.id}
+                  href={item.href}
+                  id={`${item.id}${idSuffix}`}
+                  isCurrent={isCurrent}
+                  textValue={item.label}
+                >
+                  <Sidebar.MenuIcon>
+                    <Icon className="size-4" />
+                  </Sidebar.MenuIcon>
+                  <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+                  {item.id === "review" ? (
+                    <ReviewCountChip />
+                  ) : item.chip ? (
+                    <Sidebar.MenuChip>{item.chip}</Sidebar.MenuChip>
+                  ) : null}
+                </Sidebar.MenuItem>
+              );
+            })}
           </Sidebar.Menu>
         </Sidebar.Group>
       </Fragment>
@@ -203,20 +225,25 @@ const SidebarBase = ({
   return (
     <Sidebar.Footer>
       <Sidebar.Menu aria-label="Workspace">
-        {FOOTER_ITEMS.map((item) => (
-          <Sidebar.MenuItem
-            key={item.id}
-            href={item.href}
-            id={`${item.id}${idSuffix}`}
-            isCurrent={pathname.startsWith(item.href)}
-            textValue={item.label}
-          >
-            <Sidebar.MenuIcon>
-              <item.icon className="size-4" />
-            </Sidebar.MenuIcon>
-            <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
-          </Sidebar.MenuItem>
-        ))}
+        {FOOTER_ITEMS.map((item) => {
+          const isCurrent = pathname.startsWith(item.href);
+          const Icon = isCurrent ? item.iconFilled : item.icon;
+
+          return (
+            <Sidebar.MenuItem
+              key={item.id}
+              href={item.href}
+              id={`${item.id}${idSuffix}`}
+              isCurrent={isCurrent}
+              textValue={item.label}
+            >
+              <Sidebar.MenuIcon>
+                <Icon className="size-4" />
+              </Sidebar.MenuIcon>
+              <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+            </Sidebar.MenuItem>
+          );
+        })}
         <Sidebar.MenuItem
           id={`sign-out${idSuffix}`}
           textValue="Sign out"
@@ -225,7 +252,7 @@ const SidebarBase = ({
           }}
         >
           <Sidebar.MenuIcon>
-            <ArrowRightFromSquare className="size-4" />
+            <IconArrowBoxRight className="size-4" />
           </Sidebar.MenuIcon>
           <Sidebar.MenuLabel>Sign out</Sidebar.MenuLabel>
         </Sidebar.MenuItem>
@@ -285,7 +312,9 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
         isScrolled ? "border-border" : "border-transparent"
       }`}
     >
-      <Sidebar.Trigger />
+      <Sidebar.Trigger>
+        <IconSidebar className="size-4" />
+      </Sidebar.Trigger>
       <Breadcrumbs className="min-w-0">
         <Breadcrumbs.Item className="text-muted min-w-0" href="/dashboard">
           Azali
@@ -334,7 +363,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
             <Dropdown.Item id="settings" textValue="Settings">
               <div className="flex w-full items-center justify-between gap-2">
                 <Label>Settings</Label>
-                <Gear className="text-muted size-3.5" />
+                <IconSettingsGear1 className="text-muted size-3.5" />
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
@@ -366,7 +395,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
             <Dropdown.Item id="logout" textValue="Logout" variant="danger">
               <div className="flex w-full items-center justify-between gap-2">
                 <Label>Log Out</Label>
-                <ArrowRightFromSquare className="text-danger size-3.5" />
+                <IconArrowBoxRight className="text-danger size-3.5" />
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>

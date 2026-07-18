@@ -1,22 +1,22 @@
 import {
-  ArrowDownToLine,
-  Calendar,
-  CircleFill,
-  CirclePause,
-  CirclePlay,
-  Copy,
-  CopyCheck,
-  EllipsisVertical,
-  Eye,
-  Funnel,
-  LayoutColumns3,
-  Pencil,
-  Persons,
-  Plus,
-  Sliders,
-  TrashBin,
-  Xmark,
-} from "@gravity-ui/icons";
+  IconArrowDownWall,
+  IconCalendar1,
+  IconColumns3,
+  IconCrossMedium,
+  IconDotGrid1x3Vertical,
+  IconEyeOpen,
+  IconFilter1,
+  IconPause,
+  IconPencil,
+  IconPlay,
+  IconPlusMedium,
+  IconRecord,
+  IconSettingsSliderHor,
+  IconSquareBehindSquare2,
+  IconSquareCheck,
+  IconTrashCan,
+  IconUserGroup,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Button,
@@ -191,9 +191,9 @@ function CopyText({ children }: { children: string }) {
           onPress={handleCopy}
         >
           {copied ? (
-            <CopyCheck className="size-3" />
+            <IconSquareCheck className="size-3" />
           ) : (
-            <Copy className="size-3" />
+            <IconSquareBehindSquare2 className="size-3" />
           )}
         </Button>
         <Tooltip.Content>{copied ? "Copied!" : "Copy"}</Tooltip.Content>
@@ -486,7 +486,7 @@ export function ClientsTable() {
       allowsSorting: true,
       cell: (item) => (
         <Chip color={statusColorMap[item.status]} size="sm" variant="soft">
-          <CircleFill width={6} />
+          <IconRecord size={6} />
           <Chip.Label>{capitalize(item.status)}</Chip.Label>
         </Chip>
       ),
@@ -499,7 +499,7 @@ export function ClientsTable() {
       allowsSorting: true,
       cell: (item) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-          <Calendar className="text-muted size-3.5" />
+          <IconCalendar1 className="text-muted size-3.5" />
           {formatDate(item.createdAt)}
         </span>
       ),
@@ -581,7 +581,7 @@ export function ClientsTable() {
         </div>
         <Button variant="primary" onPress={openCreateForm}>
           Add Client
-          <Plus />
+          <IconPlusMedium />
         </Button>
       </div>
 
@@ -605,7 +605,7 @@ export function ClientsTable() {
         {/* Filter: Autonomy */}
         <Dropdown>
           <Button size="sm" variant="secondary">
-            <Funnel />
+            <IconFilter1 />
             Autonomy
           </Button>
           <Dropdown.Popover>
@@ -640,7 +640,7 @@ export function ClientsTable() {
         {/* Filter: Status */}
         <Dropdown>
           <Button size="sm" variant="secondary">
-            <Funnel />
+            <IconFilter1 />
             Status
           </Button>
           <Dropdown.Popover>
@@ -659,7 +659,7 @@ export function ClientsTable() {
               {statuses.map((status) => (
                 <Dropdown.Item key={status} id={status} textValue={status}>
                   <Chip color={statusColorMap[status]} size="sm" variant="soft">
-                    <CircleFill width={6} />
+                    <IconRecord size={6} />
                     <Chip.Label>{capitalize(status)}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />
@@ -672,7 +672,7 @@ export function ClientsTable() {
         {/* Sort */}
         <Dropdown>
           <Button size="sm" variant="secondary">
-            <Sliders />
+            <IconSettingsSliderHor />
             Sort
           </Button>
           <Dropdown.Popover>
@@ -714,7 +714,7 @@ export function ClientsTable() {
         {/* Column visibility */}
         <Dropdown>
           <Button size="sm" variant="secondary">
-            <LayoutColumns3 />
+            <IconColumns3 />
             Columns
           </Button>
           <Dropdown.Popover>
@@ -758,7 +758,7 @@ export function ClientsTable() {
                   updateSearch({ q: undefined });
                 }}
               >
-                <Xmark className="size-3" />
+                <IconCrossMedium className="size-3" />
               </button>
             </Chip>
           )}
@@ -780,7 +780,7 @@ export function ClientsTable() {
                       });
                     }}
                   >
-                    <Xmark className="size-3" />
+                    <IconCrossMedium className="size-3" />
                   </button>
                 </Chip>
               ))
@@ -801,7 +801,7 @@ export function ClientsTable() {
                       updateSearch({ status: next.length ? next : undefined });
                     }}
                   >
-                    <Xmark className="size-3" />
+                    <IconCrossMedium className="size-3" />
                   </button>
                 </Chip>
               ))
@@ -848,7 +848,7 @@ export function ClientsTable() {
               <EmptyState className="pointer-events-auto" size="sm">
                 <EmptyState.Header>
                   <EmptyState.Media className="border" variant="icon">
-                    <Persons />
+                    <IconUserGroup />
                   </EmptyState.Media>
                   <EmptyState.Title>No Clients Found</EmptyState.Title>
                   <EmptyState.Description>
@@ -861,7 +861,7 @@ export function ClientsTable() {
                     Clear Filters
                   </Button>
                   <Button variant="outline" onPress={openCreateForm}>
-                    <Plus />
+                    <IconPlusMedium />
                     Add Client
                   </Button>
                 </EmptyState.Content>
@@ -975,7 +975,7 @@ export function ClientsTable() {
         </ActionBar.Prefix>
         <ActionBar.Content>
           <Button size="sm" variant="ghost" onPress={handleExport}>
-            <ArrowDownToLine />
+            <IconArrowDownWall />
             Export
           </Button>
           {activeSelection.length > 0 && (
@@ -984,7 +984,7 @@ export function ClientsTable() {
               variant="ghost"
               onPress={() => handleSetStatus(activeSelection, "paused")}
             >
-              <CirclePause />
+              <IconPause />
               Pause
             </Button>
           )}
@@ -994,7 +994,7 @@ export function ClientsTable() {
               variant="ghost"
               onPress={() => handleSetStatus(pausedSelection, "active")}
             >
-              <CirclePlay />
+              <IconPlay />
               Resume
             </Button>
           )}
@@ -1004,7 +1004,7 @@ export function ClientsTable() {
             variant="ghost"
             onPress={() => setPendingDelete(selectedClients)}
           >
-            <TrashBin />
+            <IconTrashCan />
             Delete
           </Button>
         </ActionBar.Content>
@@ -1017,7 +1017,7 @@ export function ClientsTable() {
             variant="ghost"
             onPress={() => setSelectedKeys(new Set())}
           >
-            <Xmark />
+            <IconCrossMedium />
           </Button>
         </ActionBar.Suffix>
       </ActionBar>
@@ -1042,7 +1042,7 @@ export function ClientsTable() {
               <Modal.CloseTrigger />
               <Modal.Header>
                 <Modal.Icon className="bg-danger-soft text-danger-soft-foreground">
-                  <TrashBin className="size-5" />
+                  <IconTrashCan className="size-5" />
                 </Modal.Icon>
                 <Modal.Heading>
                   {pendingDelete?.length === 1
@@ -1094,7 +1094,7 @@ function RowActions({
   return (
     <Dropdown>
       <Button isIconOnly aria-label="Row actions" size="sm" variant="tertiary">
-        <EllipsisVertical />
+        <IconDotGrid1x3Vertical />
       </Button>
       <Dropdown.Popover className="min-w-[160px]">
         <Dropdown.Menu
@@ -1104,15 +1104,15 @@ function RowActions({
           }}
         >
           <Dropdown.Item id="view" textValue="View">
-            <Eye />
+            <IconEyeOpen className="size-4" />
             <Label>View</Label>
           </Dropdown.Item>
           <Dropdown.Item id="edit" textValue="Edit">
-            <Pencil />
+            <IconPencil className="size-4" />
             <Label>Edit</Label>
           </Dropdown.Item>
           <Dropdown.Item id="delete" textValue="Delete" variant="danger">
-            <TrashBin className="text-danger" />
+            <IconTrashCan className="text-danger size-4" />
             <Label>Delete</Label>
           </Dropdown.Item>
         </Dropdown.Menu>

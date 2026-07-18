@@ -1,4 +1,7 @@
-import { ChevronLeft, Envelope } from "@gravity-ui/icons";
+import {
+  IconChevronLeft,
+  IconEmail1,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Button,
   FieldError,
@@ -182,7 +185,7 @@ function LoginPage() {
                   fullWidth
                   onPress={() => setStep("email-input")}
                 >
-                  <Envelope className="size-4" />
+                  <IconEmail1 className="size-4" />
                   Sign in with Email
                 </Button>
 
@@ -198,7 +201,7 @@ function LoginPage() {
                 onPress={goBack}
                 className="text-muted -ml-2 mb-8 w-fit"
               >
-                <ChevronLeft className="size-4" />
+                <IconChevronLeft className="size-4" />
                 Back
               </Button>
 
@@ -244,7 +247,7 @@ function LoginPage() {
                 onPress={goBack}
                 className="text-muted -ml-2 mb-8 w-fit"
               >
-                <ChevronLeft className="size-4" />
+                <IconChevronLeft className="size-4" />
                 Back
               </Button>
 

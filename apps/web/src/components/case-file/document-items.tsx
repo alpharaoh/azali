@@ -1,18 +1,18 @@
 import {
-  ArrowUpRightFromSquare,
-  Bell,
-  Box,
-  Boxes3,
-  Envelope,
-  FileText,
-  ListCheck,
-  Pencil,
-  Receipt,
-  ShieldExclamation,
-} from "@gravity-ui/icons";
+  IconBell,
+  IconBlocks,
+  IconBox2,
+  IconChecklist,
+  IconEmail1,
+  IconFileText,
+  IconPencil,
+  IconReceiptBill,
+  IconShieldBreak,
+  IconSquareArrowTopRight,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Spinner, Tabs } from "@heroui/react";
 import { Timeline } from "@heroui-pro/react";
-import type { ComponentType, ReactNode, SVGProps } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { ReviewDocument } from "#/lib/review-types";
 import { DocumentLineRow, DocumentViewerModal } from "./document-viewer-modal";
@@ -29,7 +29,7 @@ export function DocumentsTimelineItem({
   return (
     <Timeline.Item align="start" status="default" {...rest}>
       <Timeline.Marker aria-hidden="true" className="size-6">
-        <FileText className="text-muted size-3.5" />
+        <IconFileText className="text-muted size-3.5" />
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
         <Tabs className="w-fit" variant="secondary">
@@ -95,9 +95,11 @@ export function SingleDocumentTimelineItem({
         }`}
       >
         {document.kind === "email" ? (
-          <Envelope className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
+          <IconEmail1 className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
         ) : (
-          <FileText className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`} />
+          <IconFileText
+            className={`size-3.5 ${isCbpForm ? "" : "text-muted"}`}
+          />
         )}
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
@@ -118,31 +120,31 @@ export function SingleDocumentTimelineItem({
 /** Tab label + icon for a document, inferred from what it is. */
 function docTabMeta(document: ReviewDocument): {
   label: string;
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  Icon: ComponentType<{ className?: string }>;
 } {
-  if (document.kind === "email") return { Icon: Envelope, label: "Email" };
+  if (document.kind === "email") return { Icon: IconEmail1, label: "Email" };
 
   const name = document.name;
 
   if (/cbp form 28/i.test(name)) {
-    return { Icon: ShieldExclamation, label: "CF-28" };
+    return { Icon: IconShieldBreak, label: "CF-28" };
   }
   if (/cbp form 29/i.test(name)) {
-    return { Icon: ShieldExclamation, label: "CF-29" };
+    return { Icon: IconShieldBreak, label: "CF-29" };
   }
   if (/draft response|response/i.test(name)) {
-    return { Icon: Pencil, label: "Response Draft" };
+    return { Icon: IconPencil, label: "Response Draft" };
   }
-  if (/invoice/i.test(name)) return { Icon: Receipt, label: "Invoice" };
-  if (/packing/i.test(name)) return { Icon: Box, label: "Packing List" };
+  if (/invoice/i.test(name)) return { Icon: IconReceiptBill, label: "Invoice" };
+  if (/packing/i.test(name)) return { Icon: IconBox2, label: "Packing List" };
   if (/bill of lading|b\/l|awb/i.test(name)) {
-    return { Icon: Boxes3, label: "Bill of Lading" };
+    return { Icon: IconBlocks, label: "Bill of Lading" };
   }
-  if (/arrival/i.test(name)) return { Icon: Bell, label: "Arrival Notice" };
-  if (/spec/i.test(name)) return { Icon: ListCheck, label: "Spec Sheet" };
+  if (/arrival/i.test(name)) return { Icon: IconBell, label: "Arrival Notice" };
+  if (/spec/i.test(name)) return { Icon: IconChecklist, label: "Spec Sheet" };
 
   return {
-    Icon: FileText,
+    Icon: IconFileText,
     label: name.length > 22 ? `${name.slice(0, 22)}…` : name,
   };
 }
@@ -281,7 +283,7 @@ function DraftDocumentPreview({
         >
           <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
             <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-              <Pencil className="size-3.5" />
+              <IconPencil className="size-3.5" />
               View full response
             </span>
           </span>
@@ -389,7 +391,7 @@ function PdfWithExtraction({
           >
             <span className="bg-background/70 absolute inset-0 flex items-center justify-center opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100">
               <span className="text-foreground inline-flex items-center gap-1.5 text-xs font-medium">
-                <ArrowUpRightFromSquare className="size-3.5" />
+                <IconSquareArrowTopRight className="size-3.5" />
                 View document
               </span>
             </span>
@@ -425,7 +427,7 @@ function PdfWithExtraction({
             variant="secondary"
             onPress={() => setViewerOpen(true)}
           >
-            <ArrowUpRightFromSquare className="size-3.5" />
+            <IconSquareArrowTopRight className="size-3.5" />
             View document
           </Button>
         </div>

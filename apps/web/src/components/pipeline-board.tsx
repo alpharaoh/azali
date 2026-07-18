@@ -1,13 +1,14 @@
 import {
-  ArrowRight,
-  ChevronRight,
-  CircleFill,
-  Eye,
-  FileArrowUp,
-  Funnel,
-  Plane,
-  Xmark,
-} from "@gravity-ui/icons";
+  IconAirplane,
+  IconArrowRight,
+  IconChevronRight,
+  IconCrossMedium,
+  IconEyeOpen,
+  IconFileArrowRightOut,
+  IconFilter1,
+  IconRecord,
+  IconShip,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
   Button,
@@ -58,30 +59,6 @@ export const pipelineStages = [
   { id: "entry", label: "Entry Prep" },
   { id: "filed", label: "Filed" },
 ] as const;
-
-function ShipIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 10.189V14" />
-      <path d="M12 2v3" />
-      <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6" />
-      <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76" />
-      <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-    </svg>
-  );
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Derivation — a shipment's live state comes straight from the API
@@ -521,7 +498,7 @@ export function PipelineBoard() {
           return <Skeleton className="h-4 w-36 rounded" />;
         }
 
-        const ModeIcon = row.isAir ? Plane : ShipIcon;
+        const ModeIcon = row.isAir ? IconAirplane : IconShip;
         const description = row.conveyance;
         return (
           <div className="flex items-start gap-2">
@@ -529,7 +506,7 @@ export function PipelineBoard() {
             <div className="flex flex-col">
               <span className="flex items-center gap-1 whitespace-nowrap text-sm">
                 {row.origin}
-                <ArrowRight className="text-muted size-3" />
+                <IconArrowRight className="text-muted size-3" />
                 {row.port}
               </span>
               {description && (
@@ -566,7 +543,7 @@ export function PipelineBoard() {
           </Chip>
         ) : (
           <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
-            <CircleFill width={6} />
+            <IconRecord size={6} />
             <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
           </Chip>
         ),
@@ -660,7 +637,7 @@ export function PipelineBoard() {
               })
             }
           >
-            <Eye />
+            <IconEyeOpen />
             Review
           </Button>
         ) : (
@@ -675,7 +652,7 @@ export function PipelineBoard() {
             }
           >
             Open
-            <ChevronRight />
+            <IconChevronRight />
           </Button>
         ),
       header: "",
@@ -697,7 +674,7 @@ export function PipelineBoard() {
           </p>
         </div>
         <Button size="sm" variant="primary" onPress={() => setIntakeOpen(true)}>
-          <FileArrowUp />
+          <IconFileArrowRightOut />
           Create shipment
         </Button>
         <ShipmentIntakeModal
@@ -749,7 +726,7 @@ export function PipelineBoard() {
         {/* Filter: Client */}
         <Dropdown onOpenChange={setClientMenuOpen}>
           <Button size="sm" variant="secondary">
-            <Funnel />
+            <IconFilter1 />
             Client
           </Button>
           <Dropdown.Popover className="w-72">
@@ -808,7 +785,7 @@ export function PipelineBoard() {
         {/* Filter: Status */}
         <Dropdown>
           <Button size="sm" variant="secondary">
-            <Funnel />
+            <IconFilter1 />
             Status
           </Button>
           <Dropdown.Popover>
@@ -835,7 +812,7 @@ export function PipelineBoard() {
                     size="sm"
                     variant="soft"
                   >
-                    <CircleFill width={6} />
+                    <IconRecord size={6} />
                     <Chip.Label>{option.label}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />
@@ -848,7 +825,7 @@ export function PipelineBoard() {
         {/* Filter: Value range */}
         <Popover>
           <Button size="sm" variant="secondary">
-            <Funnel />
+            <IconFilter1 />
             Value
           </Button>
           <Popover.Content className="w-80">
@@ -922,7 +899,7 @@ export function PipelineBoard() {
                   updateSearch({ q: undefined });
                 }}
               >
-                <Xmark className="size-3" />
+                <IconCrossMedium className="size-3" />
               </button>
             </Chip>
           ) : null}
@@ -942,7 +919,7 @@ export function PipelineBoard() {
                   updateSearch({ client: next.length ? next : undefined });
                 }}
               >
-                <Xmark className="size-3" />
+                <IconCrossMedium className="size-3" />
               </button>
             </Chip>
           ))}
@@ -965,7 +942,7 @@ export function PipelineBoard() {
                       updateSearch({ status: next.length ? next : undefined });
                     }}
                   >
-                    <Xmark className="size-3" />
+                    <IconCrossMedium className="size-3" />
                   </button>
                 </Chip>
               ))
@@ -984,7 +961,7 @@ export function PipelineBoard() {
                   updateSearch({ valueMax: undefined, valueMin: undefined })
                 }
               >
-                <Xmark className="size-3" />
+                <IconCrossMedium className="size-3" />
               </button>
             </Chip>
           ) : null}

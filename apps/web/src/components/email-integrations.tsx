@@ -1,4 +1,9 @@
-import { ChevronRight, Envelope, Plus, TrashBin } from "@gravity-ui/icons";
+import {
+  IconChevronRight,
+  IconEmail1,
+  IconPlusMedium,
+  IconTrashCan,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Chip, Modal, Skeleton, Tooltip, toast } from "@heroui/react";
 import { ItemCard, ItemCardGroup } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -86,7 +91,7 @@ const PROVIDERS: Provider[] = [
     id: "MAIL",
     name: "IMAP",
     blurb: "Any other mail server",
-    icon: <Envelope className="size-5" />,
+    icon: <IconEmail1 className="size-5" />,
   },
 ];
 
@@ -204,7 +209,7 @@ export function EmailIntegrations() {
                       variant="ghost"
                       onPress={() => setOpenProviderId(provider.id)}
                     >
-                      <ChevronRight className="text-muted size-4" />
+                      <IconChevronRight className="text-muted size-4" />
                     </Button>
                   ) : (
                     <Tooltip delay={0}>
@@ -217,7 +222,7 @@ export function EmailIntegrations() {
                           variant="secondary"
                           onPress={() => void handleConnect(provider.id)}
                         >
-                          <Plus className="size-4" />
+                          <IconPlusMedium className="size-4" />
                         </Button>
                       </Tooltip.Trigger>
                       <Tooltip.Content>Connect {provider.name}</Tooltip.Content>
@@ -272,7 +277,7 @@ export function EmailIntegrations() {
                     variant="primary"
                     onPress={() => void handleConnect(openProvider.id)}
                   >
-                    <Plus className="size-4" />
+                    <IconPlusMedium className="size-4" />
                     Connect {openProvider.name}
                   </Button>
                 )}
@@ -361,7 +366,7 @@ function ProviderAccountList({
                   variant="ghost"
                   onPress={() => onRequestConfirm(account.id)}
                 >
-                  <TrashBin className="text-muted size-4" />
+                  <IconTrashCan className="text-muted size-4" />
                 </Button>
               </div>
             )}
