@@ -4,10 +4,19 @@ export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "theme";
 const listeners = new Set<() => void>();
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
 
 function getTheme(): Theme {
-  return localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === "dark" || stored === "light") return stored;
+  return systemDark.matches ? "dark" : "light";
 }
+
+systemDark.addEventListener("change", () => {
+  if (localStorage.getItem(STORAGE_KEY)) return;
+  document.documentElement.classList.toggle("dark", systemDark.matches);
+  for (const listener of listeners) listener();
+});
 
 export function setTheme(theme: Theme) {
   localStorage.setItem(STORAGE_KEY, theme);

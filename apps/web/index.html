@@ -13,9 +13,12 @@
       rel="stylesheet"
     />
     <script>
+      var storedTheme = localStorage.getItem("theme");
       document.documentElement.classList.toggle(
         "dark",
-        localStorage.getItem("theme") === "dark",
+        storedTheme
+          ? storedTheme === "dark"
+          : matchMedia("(prefers-color-scheme: dark)").matches,
       );
     </script>
   </head>
