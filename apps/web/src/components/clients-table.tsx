@@ -569,7 +569,7 @@ export function ClientsTable() {
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-foreground text-xl font-semibold">Clients</h1>
+            <h1 className="text-foreground text-base font-medium">Clients</h1>
             <Chip size="sm" variant="soft">
               {count}
             </Chip>

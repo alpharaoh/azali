@@ -62,7 +62,7 @@ function SettingsPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
         <section className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <h2 className="text-foreground text-base font-semibold">
+            <h2 className="text-foreground text-base font-medium">
               Integrations
             </h2>
             <p className="text-muted text-xs leading-snug">
@@ -77,7 +77,7 @@ function SettingsPage() {
         </section>
 
         <section className="flex flex-col gap-4">
-          <h2 className="text-foreground text-base font-semibold">
+          <h2 className="text-foreground text-base font-medium">
             Organization
           </h2>
           {organization && (

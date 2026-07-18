@@ -546,12 +546,12 @@ export function ClassificationEngine() {
     <div className="flex w-full flex-col gap-4">
       {/* Header */}
       <div>
-        <h1 className="text-foreground text-xl font-semibold">
+        <h1 className="text-foreground text-base font-medium">
           Classification Engine
         </h1>
         <p className="text-muted mt-1 max-w-3xl text-sm">
-          Every code your team has ever approved, reusable forever. Corrections
-          in the Review Queue land here automatically.
+          Every code your team has approved, reusable forever. Review Queue
+          corrections land here automatically.
         </p>
       </div>
 
@@ -565,7 +565,7 @@ export function ClassificationEngine() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <h2 className="text-foreground text-base font-semibold">
+            <h2 className="text-foreground text-base font-medium">
               Knowledge Base
             </h2>
             <Chip size="sm" variant="soft">

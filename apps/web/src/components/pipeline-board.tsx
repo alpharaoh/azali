@@ -666,10 +666,10 @@ export function PipelineBoard() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-foreground text-xl font-semibold">Shipments</h1>
+          <h1 className="text-foreground text-base font-medium">Shipments</h1>
           <p className="text-muted mt-1 max-w-3xl text-sm">
-            Every shipment as a live status stream. Green flows through
-            untouched — anything blocked pops to the Review Queue.
+            Every shipment as a live status stream. Anything blocked pops to the
+            Review Queue.
           </p>
         </div>
         <Button size="sm" variant="primary" onPress={() => setIntakeOpen(true)}>

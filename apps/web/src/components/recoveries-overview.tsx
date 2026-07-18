@@ -403,10 +403,10 @@ export function RecoveriesOverview() {
 
       {/* Header */}
       <div>
-        <h1 className="text-foreground text-xl font-semibold">Recoveries</h1>
+        <h1 className="text-foreground text-base font-medium">Recoveries</h1>
         <p className="text-muted mt-1 max-w-3xl text-sm">
-          Drawback and refund opportunities the AI surfaces from entry history,
-          and claims in flight.
+          Drawback and refund opportunities the AI finds in entry history, plus
+          claims in flight.
         </p>
       </div>
 
@@ -570,7 +570,7 @@ export function RecoveriesOverview() {
       {/* Opportunities queue */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-foreground text-base font-semibold">
+          <h2 className="text-foreground text-base font-medium">
             Open Opportunities
           </h2>
           <div className="flex items-center gap-2">

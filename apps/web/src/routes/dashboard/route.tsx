@@ -6,7 +6,7 @@ import {
   IconLaw as IconLawFilled,
   IconMapEditFlat as IconMapEditFlatFilled,
   IconSettingsGear4 as IconSettingsGear4Filled,
-  IconUserGroup as IconUserGroupFilled,
+  IconUserDuo as IconUserDuoFilled,
 } from "@central-icons-react/square-filled-radius-0-stroke-1.5";
 import {
   Icon3dPackage2,
@@ -18,7 +18,7 @@ import {
   IconLayoutLeftFull,
   IconMapEditFlat,
   IconSettingsGear4,
-  IconUserGroup,
+  IconUserDuo,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
@@ -96,7 +96,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       },
       {
         id: "autopilot",
-        label: "Autopilot Log",
+        label: "Logs",
         href: "/dashboard/autopilot",
         icon: IconMapEditFlat,
         iconFilled: IconMapEditFlatFilled,
@@ -136,8 +136,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "clients",
         label: "Clients",
         href: "/dashboard/clients",
-        icon: IconUserGroup,
-        iconFilled: IconUserGroupFilled,
+        icon: IconUserDuo,
+        iconFilled: IconUserDuoFilled,
       },
     ],
   },

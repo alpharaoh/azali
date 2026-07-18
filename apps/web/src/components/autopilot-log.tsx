@@ -485,10 +485,10 @@ export function AutopilotLog() {
     <div className="flex w-full flex-col gap-4">
       {/* Header */}
       <div>
-        <h1 className="text-foreground text-xl font-semibold">Autopilot Log</h1>
+        <h1 className="text-foreground text-base font-medium">Logs</h1>
         <p className="text-muted mt-1 max-w-3xl text-sm">
-          Everything the AI did without human intervention — spot-check it,
-          build trust, and use the accuracy to raise the autonomy threshold.
+          Everything the AI did on its own. Spot-check it to build trust and
+          raise the autonomy threshold.
         </p>
       </div>
 
@@ -650,7 +650,7 @@ export function AutopilotLog() {
       {/* Feed */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-foreground text-base font-semibold">
+          <h2 className="text-foreground text-base font-medium">
             Recent Actions
           </h2>
           <div className="flex items-center gap-2">

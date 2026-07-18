@@ -169,7 +169,7 @@ function EmptyPane({ isQueueClear }: { isQueueClear: boolean }) {
         <IconCircleCheck className="text-muted size-5" />
       </div>
       <div className="flex flex-col gap-1">
-        <h2 className="text-foreground text-base font-semibold">
+        <h2 className="text-foreground text-base font-medium">
           {isQueueClear ? "Queue clear" : "Nothing selected"}
         </h2>
         <p className="text-muted max-w-[320px] text-sm">

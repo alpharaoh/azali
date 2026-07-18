@@ -255,11 +255,11 @@ export function TariffRadarOverview() {
 
       {/* Header */}
       <div>
-        <h1 className="text-foreground text-xl font-semibold">Tariff Radar</h1>
+        <h1 className="text-foreground text-base font-medium">Tariff Radar</h1>
         <p className="text-muted mt-1 max-w-3xl text-sm">
-          When tariff rules change, we already know which client products are
-          hit and what it costs them — before it takes effect. The AI re-files
-          what it can and queues the rest for review.
+          When tariff rules change, see which client products are hit and what
+          it costs before it takes effect. The AI re-files what it can and
+          queues the rest for review.
         </p>
       </div>
 

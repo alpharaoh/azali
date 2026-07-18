@@ -294,7 +294,7 @@ export function ShipmentIntakeModal({
                 with the step title in the content pane. */}
             <Modal.Body className="flex flex-col gap-6 sm:flex-row sm:items-start">
               <div className="flex shrink-0 flex-col gap-5 sm:w-56">
-                <Modal.Heading className="text-base leading-6 font-semibold">
+                <Modal.Heading className="text-base leading-6 font-medium">
                   New Shipment Intake
                 </Modal.Heading>
                 <Stepper
@@ -340,7 +340,7 @@ export function ShipmentIntakeModal({
                   <>
                     <div className="flex flex-col gap-1 h-14">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-foreground text-base font-semibold">
+                        <h3 className="text-foreground text-base font-medium">
                           {activeDocStep.title}
                         </h3>
                         {!activeDocStep.required && (
@@ -414,7 +414,7 @@ export function ShipmentIntakeModal({
                 ) : (
                   <>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-foreground text-base font-semibold">
+                      <h3 className="text-foreground text-base font-medium">
                         Review
                       </h3>
                       <p className="text-muted text-sm">

@@ -16,6 +16,11 @@
   white-space: nowrap;
 }
 
+/* Headings app-wide are medium, not semibold; widget titles follow suit. */
+.widget__title {
+  font-weight: var(--font-weight-medium, 500);
+}
+
 * {
   box-sizing: border-box;
 }
