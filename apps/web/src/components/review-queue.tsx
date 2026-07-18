@@ -280,10 +280,14 @@ export function ReviewQueue() {
             origin: live.facts.originPort
               ? `${countryName(live.facts.originCountry ?? "")} (${live.facts.originPort})`
               : countryName(live.facts.originCountry ?? ""),
+            originCountry:
+              live.facts.originCountry ?? displayItem.shipment.originCountry,
             port: live.facts.portOfEntry ?? displayItem.shipment.port,
-            mode: live.facts.conveyance
-              ? `${capitalize(live.facts.transportMode ?? "")} · ${live.facts.conveyance}`
-              : capitalize(live.facts.transportMode ?? ""),
+            mode: capitalize(live.facts.transportMode ?? ""),
+            transportMode:
+              live.facts.transportMode ?? displayItem.shipment.transportMode,
+            conveyance:
+              live.facts.conveyance ?? displayItem.shipment.conveyance,
             incoterm: live.facts.incoterm ?? displayItem.shipment.incoterm,
             entryType: live.facts.entryType ?? displayItem.shipment.entryType,
           },

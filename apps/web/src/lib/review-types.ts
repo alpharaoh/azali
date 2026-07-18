@@ -82,8 +82,15 @@ export interface Citation {
 
 export interface ShipmentFacts {
   origin: string;
+  /** ISO 3166-1 alpha-2 origin country code, for the flag. Empty if unknown. */
+  originCountry: string;
   port: string;
+  /** Display transport mode, e.g. "Ocean". */
   mode: string;
+  /** Raw transport mode ("ocean" | "air" | …), for the mode icon. */
+  transportMode: string;
+  /** Vessel/flight carrying the shipment, e.g. "COSCO Universe 095E". */
+  conveyance: string | null;
   /** Hours until ETA; negative means already arrived, null means no ETA. */
   arrivesInHours: number | null;
   incoterm: string;

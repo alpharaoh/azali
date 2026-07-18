@@ -73,12 +73,13 @@ export function toReviewItem(
       arrivesInHours,
       entryType: shipment.entryType ?? "—",
       incoterm: shipment.incoterm ?? "—",
-      mode: shipment.conveyance
-        ? `${capitalize(shipment.transportMode)} · ${shipment.conveyance}`
-        : capitalize(shipment.transportMode),
+      mode: capitalize(shipment.transportMode),
+      transportMode: shipment.transportMode,
+      conveyance: shipment.conveyance ?? null,
       origin: shipment.originPort
         ? `${countryName(shipment.originCountry)} (${shipment.originPort})`
         : countryName(shipment.originCountry),
+      originCountry: shipment.originCountry,
       port: shipment.portOfEntry,
     },
     shipmentValue: shipment.valueCents / 100,
