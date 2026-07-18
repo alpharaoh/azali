@@ -268,7 +268,7 @@ const SidebarBase = ({
         })}
         <Sidebar.MenuItem
           id={`sign-out${idSuffix}`}
-          textValue="Sign out"
+          textValue="Log Out"
           onAction={() => {
             signOutAndRedirect(() => navigate({ to: "/login" }));
           }}
@@ -276,7 +276,7 @@ const SidebarBase = ({
           <Sidebar.MenuIcon className="text-foreground!">
             <IconArrowBoxLeft className="size-4" />
           </Sidebar.MenuIcon>
-          <Sidebar.MenuLabel>Sign out</Sidebar.MenuLabel>
+          <Sidebar.MenuLabel>Log Out</Sidebar.MenuLabel>
         </Sidebar.MenuItem>
       </Sidebar.Menu>
     </Sidebar.Footer>

@@ -2,6 +2,7 @@ import {
   IconAirplane,
   IconShip,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
+import { Skeleton } from "@heroui/react";
 import { Widget } from "@heroui-pro/react";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import type { ReactNode } from "react";
@@ -81,6 +82,37 @@ export function ShipmentFactsStrip({ shipment }: { shipment: ShipmentFacts }) {
             </span>
           </div>
         ))}
+      </Widget.Content>
+    </Widget>
+  );
+}
+
+/** The card's loading shape — the same rows, before the shipment lands.
+ * Value widths vary so it reads as facts, not stripes. */
+export function ShipmentFactsCardSkeleton() {
+  const valueWidths = ["w-32", "w-24", "w-20", "w-16", "w-28", "w-14"];
+
+  return (
+    <Widget className="min-w-0">
+      <Widget.Header>
+        <Widget.Title>Shipment</Widget.Title>
+      </Widget.Header>
+      <Widget.Content className="gap-0">
+        <output
+          aria-busy="true"
+          aria-label="Loading shipment facts"
+          className="flex flex-col"
+        >
+          {valueWidths.map((width) => (
+            <div
+              key={width}
+              className="flex items-center justify-between gap-4 border-b py-2.5 last:border-b-0 last:pb-1"
+            >
+              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className={`h-3.5 rounded ${width}`} />
+            </div>
+          ))}
+        </output>
       </Widget.Content>
     </Widget>
   );

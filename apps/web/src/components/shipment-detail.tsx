@@ -23,7 +23,10 @@ import { DocumentViewerModal } from "#/components/case-file/document-viewer-moda
 import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
 import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
 import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
-import { ShipmentFactsCard } from "#/components/case-file/shipment-facts";
+import {
+  ShipmentFactsCard,
+  ShipmentFactsCardSkeleton,
+} from "#/components/case-file/shipment-facts";
 import {
   ActivitySkeleton,
   EventTimelineItem,
@@ -457,7 +460,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           {shipment ? (
             <ShipmentFactsCard shipment={toShipmentFacts(shipment)} />
           ) : (
-            <Skeleton className="h-48 rounded-xl" />
+            <ShipmentFactsCardSkeleton />
           )}
 
           <Widget className="min-w-0">
