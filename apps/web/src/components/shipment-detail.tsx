@@ -462,6 +462,11 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                   activeLineNumber={activeTraceLine}
                   isProcessing={processing !== null}
                   lines={lines}
+                  pendingMessage={
+                    awaitingEmails
+                      ? "Classification starts once all related emails are in — skip the wait above to start now."
+                      : undefined
+                  }
                   runIdForLine={runIdForLine}
                   onSelect={setManualTraceLine}
                 />

@@ -15,11 +15,15 @@ export function LineTraceTabs({
   isProcessing = false,
   lines,
   onSelect,
+  pendingMessage,
   runIdForLine,
 }: {
   activeLineNumber: number | undefined;
   /** Softens the empty state while the pipeline is still running. */
   isProcessing?: boolean;
+  /** Overrides the not-started-yet copy when the caller knows why the run
+   * hasn't begun (e.g. still collecting related emails). */
+  pendingMessage?: string;
   lines: ReviewLineItem[];
   onSelect: (lineNumber: number) => void;
   /** The audit run behind each line (row runId or a live run.started). */
@@ -72,7 +76,7 @@ export function LineTraceTabs({
         <span className="inline-flex items-center gap-2 py-1">
           <Sparkles className="text-muted size-4" />
           <TextShimmer className="text-sm">
-            The agent will start on this line shortly…
+            {pendingMessage ?? "The agent will start on this line shortly…"}
           </TextShimmer>
         </span>
       ) : (
