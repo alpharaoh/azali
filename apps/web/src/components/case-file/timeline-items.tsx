@@ -48,6 +48,13 @@ export function eventMarker(event: ActivityEvent): {
         "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
     };
   }
+  if (event.icon === "mail") {
+    return {
+      Icon: Envelope,
+      className:
+        "border-sky-500/40 bg-sky-500/15 text-sky-600 dark:text-sky-400",
+    };
+  }
   if (event.icon === "user") {
     return {
       Icon: Person,
@@ -116,6 +123,13 @@ export function EventTimelineItem({
           >
             {event.detail}
           </p>
+        ) : null}
+        {event.body ? (
+          <div className="bg-default/40 mt-1 rounded-lg border px-3 py-2">
+            <p className="text-muted m-0 line-clamp-4 whitespace-pre-line text-xs leading-5">
+              {event.body}
+            </p>
+          </div>
         ) : null}
         <div className="flex items-center gap-4.5">
           {event.steps && onViewTrace ? (

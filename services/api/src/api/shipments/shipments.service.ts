@@ -7,6 +7,7 @@ import { aggregateShipmentStats } from "@/db/queries/aggregate/aggregateShipment
 import { deleteShipment } from "@/db/queries/delete/deleteShipment";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
+import { listInboundEmails } from "@/db/queries/select/many/listInboundEmails";
 import { listShipmentEvents } from "@/db/queries/select/many/listShipmentEvents";
 import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { listShipments } from "@/db/queries/select/many/listShipments";
@@ -393,6 +394,26 @@ export class ShipmentsService {
           alternates: line.alternates,
         };
       }),
+    };
+  }
+
+  /** The emails attributed to this shipment from connected inboxes. */
+  async emails(organizationId: string, id: string) {
+    await this.findOne(organizationId, id);
+    const { data } = await listInboundEmails(
+      { organizationId, shipmentId: id },
+      { receivedAt: "asc" },
+    );
+    return {
+      emails: data.map((email) => ({
+        id: email.id,
+        fromAddress: email.fromAddress,
+        subject: email.subject,
+        bodyPlain: email.bodyPlain,
+        attachmentCount: email.attachmentCount,
+        status: email.status,
+        receivedAt: email.receivedAt.toISOString(),
+      })),
     };
   }
 

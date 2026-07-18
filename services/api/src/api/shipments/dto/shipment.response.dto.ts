@@ -1,5 +1,6 @@
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
+import { InboundEmailStatus } from "@/db/schemas/inboundEmails";
 import { ShipmentStage, ShipmentStatus } from "@/db/schemas/shipments";
 
 export const shipmentSchema = z.object({
@@ -129,6 +130,41 @@ export class ClassifyResponseDto extends createZodDto(
     eventIds: z
       .array(z.string())
       .describe("Ids of the classification runs started for this shipment."),
+  }),
+) {}
+
+export class ListShipmentEmailsResponseDto extends createZodDto(
+  z.object({
+    emails: z
+      .array(
+        z.object({
+          id: z.string().describe("Email id."),
+          fromAddress: z.string().describe("Sender address."),
+          subject: z
+            .string()
+            .nullable()
+            .describe("Subject line; null when the email had none."),
+          bodyPlain: z
+            .string()
+            .nullable()
+            .describe(
+              "Plain-text body, capped at ingestion; null when the email was HTML-only.",
+            ),
+          attachmentCount: z
+            .number()
+            .int()
+            .describe("Number of attachments received with the email."),
+          status: z
+            .enum(InboundEmailStatus)
+            .describe(
+              "Intake outcome: received (still processing), processed (documents ingested), ignored (no shipment documents attached), or failed.",
+            ),
+          receivedAt: z.iso
+            .datetime()
+            .describe("When the email arrived in the connected inbox."),
+        }),
+      )
+      .describe("The shipment's emails, oldest first."),
   }),
 ) {}
 

@@ -23,6 +23,7 @@ import { ListShipmentsDto } from "./dto/list-shipments.dto";
 import { ResolveReviewDto } from "./dto/resolve-review.dto";
 import {
   ClassifyResponseDto,
+  ListShipmentEmailsResponseDto,
   ListShipmentLinesResponseDto,
   ListShipmentsResponseDto,
   ShipmentResponseDto,
@@ -193,6 +194,25 @@ export class ShipmentsController {
   })
   lines(@Session() session: UserSession<typeof auth>, @Param("id") id: string) {
     return this.shipmentsService.lines(getActiveOrganizationId(session), id);
+  }
+
+  /** The emails attributed to the shipment. */
+  @Get(":id/emails")
+  @ApiOperation({
+    summary: "List shipment emails",
+    description:
+      "Returns the emails attributed to this shipment from the organization's connected inboxes, oldest first — the email that opened the shipment plus any follow-ups matched to it by thread or invoice number.",
+  })
+  @ApiParam({ name: "id", description: "Shipment id." })
+  @ApiOkResponse({
+    type: ListShipmentEmailsResponseDto,
+    description: "The shipment's emails, oldest first.",
+  })
+  emails(
+    @Session() session: UserSession<typeof auth>,
+    @Param("id") id: string,
+  ) {
+    return this.shipmentsService.emails(getActiveOrganizationId(session), id);
   }
 
   /** Run (or re-run) the AI classification for a shipment. */

@@ -1235,6 +1235,54 @@ export interface ListShipmentLinesResponseDto {
   lines: ListShipmentLinesResponseDtoLinesItem[];
 }
 
+/**
+ * Intake outcome: received (still processing), processed (documents ingested), ignored (no shipment documents attached), or failed.
+ */
+export type ListShipmentEmailsResponseDtoEmailsItemStatus = typeof ListShipmentEmailsResponseDtoEmailsItemStatus[keyof typeof ListShipmentEmailsResponseDtoEmailsItemStatus];
+
+
+export const ListShipmentEmailsResponseDtoEmailsItemStatus = {
+  received: 'received',
+  processed: 'processed',
+  ignored: 'ignored',
+  failed: 'failed',
+} as const;
+
+export type ListShipmentEmailsResponseDtoEmailsItem = {
+  /** Email id. */
+  id: string;
+  /** Sender address. */
+  fromAddress: string;
+  /**
+   * Subject line; null when the email had none.
+   * @nullable
+   */
+  subject: string | null;
+  /**
+   * Plain-text body, capped at ingestion; null when the email was HTML-only.
+   * @nullable
+   */
+  bodyPlain: string | null;
+  /**
+   * Number of attachments received with the email.
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  attachmentCount: number;
+  /** Intake outcome: received (still processing), processed (documents ingested), ignored (no shipment documents attached), or failed. */
+  status: ListShipmentEmailsResponseDtoEmailsItemStatus;
+  /**
+   * When the email arrived in the connected inbox.
+   * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+   */
+  receivedAt: string;
+};
+
+export interface ListShipmentEmailsResponseDto {
+  /** The shipment's emails, oldest first. */
+  emails: ListShipmentEmailsResponseDtoEmailsItem[];
+}
+
 export interface ClassifyResponseDto {
   /** Ids of the classification runs started for this shipment. */
   eventIds: string[];
@@ -3996,6 +4044,118 @@ export function useShipmentsControllerLines<TData = Awaited<ReturnType<typeof sh
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getShipmentsControllerLinesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Returns the emails attributed to this shipment from the organization's connected inboxes, oldest first — the email that opened the shipment plus any follow-ups matched to it by thread or invoice number.
+ * @summary List shipment emails
+ */
+export type shipmentsControllerEmailsResponse200 = {
+  data: ListShipmentEmailsResponseDto
+  status: 200
+}
+
+export type shipmentsControllerEmailsResponseSuccess = (shipmentsControllerEmailsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type shipmentsControllerEmailsResponse = (shipmentsControllerEmailsResponseSuccess)
+
+export const getShipmentsControllerEmailsUrl = (id: string,) => {
+
+
+  
+
+  return `/v1/shipments/${id}/emails`
+}
+
+export const shipmentsControllerEmails = async (id: string, options?: RequestInit): Promise<shipmentsControllerEmailsResponse> => {
+  
+  return axios<shipmentsControllerEmailsResponse>(getShipmentsControllerEmailsUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getShipmentsControllerEmailsQueryKey = (id: string,) => {
+    return [
+    `/v1/shipments/${id}/emails`
+    ] as const;
+    }
+
+    
+export const getShipmentsControllerEmailsQueryOptions = <TData = Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getShipmentsControllerEmailsQueryKey(id);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shipmentsControllerEmails>>> = ({ signal }) => shipmentsControllerEmails(id, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ShipmentsControllerEmailsQueryResult = NonNullable<Awaited<ReturnType<typeof shipmentsControllerEmails>>>
+export type ShipmentsControllerEmailsQueryError = ErrorType<unknown>
+
+
+export function useShipmentsControllerEmails<TData = Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerEmails>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerEmails>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerEmails<TData = Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof shipmentsControllerEmails>>,
+          TError,
+          Awaited<ReturnType<typeof shipmentsControllerEmails>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useShipmentsControllerEmails<TData = Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List shipment emails
+ */
+
+export function useShipmentsControllerEmails<TData = Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shipmentsControllerEmails>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getShipmentsControllerEmailsQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

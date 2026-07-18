@@ -1,4 +1,7 @@
-import { useShipmentEventsControllerFindByShipment } from "#/generated/api";
+import {
+  useShipmentEventsControllerFindByShipment,
+  useShipmentsControllerEmails,
+} from "#/generated/api";
 import {
   ACTIVITY_EXCLUDED_TYPES,
   BROKER_NOTE_TYPE,
@@ -42,7 +45,8 @@ export const PROCESSING_POLL_MS = 2_000;
 /**
  * The shipment's case file: one fetch of its event stream, demultiplexed by
  * event plane into documents, activity, agent traces, structured facts, and
- * broker notes. Shared by the review workspace and the shipment detail
+ * broker notes — plus the shipment's inbox emails, merged into the activity
+ * timeline by date. Shared by the review workspace and the shipment detail
  * page; pass `pollMs` while the pipeline is running to keep it live.
  */
 export function useCaseFile(
@@ -55,6 +59,10 @@ export function useCaseFile(
       { limit: 200 },
       { query: { enabled: Boolean(shipmentId), refetchInterval: pollMs } },
     );
+  const { data: emailsResponse } = useShipmentsControllerEmails(
+    shipmentId ?? "",
+    { query: { enabled: Boolean(shipmentId), refetchInterval: pollMs } },
+  );
 
   // API returns occurredAt desc; the record reads oldest-first.
   const events = [...(eventsResponse?.data.data ?? [])].reverse();
@@ -106,7 +114,7 @@ export function useCaseFile(
     );
 
   // Generic activity rows for the timeline.
-  const activityEvents: ActivityEvent[] = events
+  const milestoneEvents: ActivityEvent[] = events
     .filter(
       (event) =>
         eventPlane(event.type) === "milestone" &&
@@ -131,6 +139,26 @@ export function useCaseFile(
         status: payload.status as ActivityEvent["status"],
       };
     });
+
+  // The shipment's inbox emails join the timeline as their own beats.
+  const emailEvents: ActivityEvent[] = (emailsResponse?.data.emails ?? []).map(
+    (email) => ({
+      title: email.subject ?? "Email received",
+      detail: `${email.fromAddress}${
+        email.attachmentCount > 0
+          ? ` · ${email.attachmentCount} attachment${email.attachmentCount === 1 ? "" : "s"}`
+          : ""
+      }`,
+      body: email.bodyPlain?.trim() || undefined,
+      occurredHoursAgo: hoursAgo(email.receivedAt),
+      icon: "mail" as const,
+    }),
+  );
+
+  // Keep the record's oldest-first convention across both sources.
+  const activityEvents = [...milestoneEvents, ...emailEvents].sort(
+    (a, b) => b.occurredHoursAgo - a.occurredHoursAgo,
+  );
 
   // Structured shipment facts (latest extraction wins).
   const factsEvent = events

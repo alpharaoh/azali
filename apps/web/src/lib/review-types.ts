@@ -56,6 +56,8 @@ export type ReviewDocument =
 export interface ActivityEvent {
   title: string;
   detail?: string;
+  /** Longer-form content (e.g. an email's plain-text body) — clamped in display. */
+  body?: string;
   /** Compact thinking lines shown under the event — what the AI actually did. */
   steps?: string[];
   occurredHoursAgo: number;
