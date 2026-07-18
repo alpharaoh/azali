@@ -143,7 +143,9 @@ export function useCaseFile(
   // The shipment's inbox emails join the timeline as their own beats.
   const emailEvents: ActivityEvent[] = (emailsResponse?.data.emails ?? []).map(
     (email) => ({
-      title: email.subject ?? "Email received",
+      title: email.subject
+        ? `Email received with subject "${email.subject}"`
+        : "Email received",
       detail: `${email.fromAddress}${
         email.attachmentCount > 0
           ? ` · ${email.attachmentCount} attachment${email.attachmentCount === 1 ? "" : "s"}`
