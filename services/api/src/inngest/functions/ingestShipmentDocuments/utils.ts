@@ -10,6 +10,7 @@ import { insertShipmentLineItems } from "@/db/queries/insert/insertShipmentLineI
 import { listClients } from "@/db/queries/select/many/listClients";
 import { listProducts } from "@/db/queries/select/many/listProducts";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
+import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentDocument } from "@/db/queries/update/updateShipmentDocument";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
@@ -23,14 +24,23 @@ import {
   ShipmentStage,
   ShipmentStatus,
 } from "@/db/schema";
-import { KNOWLEDGE_RECORD_TYPES } from "@/services/external/pinecone/classificationRecord";
-import type { KnowledgeDocument } from "@/services/external/pinecone/service";
+import { createLogger } from "@/lib/logger";
+import {
+  KNOWLEDGE_RECORD_TYPES,
+  SEMANTIC_MATCH_THRESHOLD,
+} from "@/services/external/pinecone/classificationRecord";
+import {
+  KnowledgeBaseService,
+  type KnowledgeDocument,
+} from "@/services/external/pinecone/service";
 import { BlobStorageService } from "@/services/external/s3/service";
 import {
   DocumentExtractionService,
   type ShipmentSynthesis,
 } from "@/services/extraction/service";
 import { PdfPreviewService } from "@/services/pdf/service";
+
+const log = createLogger("ingest-shipment-documents");
 
 export interface IngestContext {
   organizationId: string;
@@ -559,9 +569,65 @@ export async function createLineItems(
 }
 
 /**
+ * Last-resort identity check when the exact lookups miss: a reworded invoice
+ * description may still be a known product. Only CLASSIFIED products have
+ * knowledge-base records, so unclassified duplicates still slip through —
+ * broker resolution consolidates those (indexAndDedupeClassification).
+ * Pinecone unavailability must never fail ingestion; errors fall through to
+ * product creation.
+ */
+async function matchProductSemantically(
+  context: IngestContext,
+  clientId: string,
+  line: { description: string; sku: string | null },
+): Promise<string | null> {
+  try {
+    const matches = await KnowledgeBaseService.search({
+      organizationId: context.organizationId,
+      query: [
+        `Product: ${line.description}`,
+        line.sku ? `SKU: ${line.sku}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      topK: 3,
+      filter: {
+        type: { $eq: KNOWLEDGE_RECORD_TYPES.classification },
+        clientId: { $eq: clientId },
+      },
+    });
+
+    const top = matches[0];
+    if (!top || top.score < SEMANTIC_MATCH_THRESHOLD) return null;
+    const productId = top.metadata.productId;
+    if (typeof productId !== "string") return null;
+
+    // The record can outlive its row — confirm before linking.
+    const product = await selectProduct(productId, context.organizationId);
+    if (!product) return null;
+
+    log.info(
+      {
+        productId: product.id,
+        description: line.description,
+        score: top.score,
+      },
+      "line matched to existing product semantically",
+    );
+    return product.id;
+  } catch (error) {
+    log.error(
+      { err: error, description: line.description },
+      "semantic product match failed — creating a new product",
+    );
+    return null;
+  }
+}
+
+/**
  * Link the line to the importer's product library — exact SKU, else exact
- * name — creating the product on first sight. The product is the durable
- * unit of classification.
+ * name, else a semantic match against classified products — creating the
+ * product on first sight. The product is the durable unit of classification.
  */
 export async function matchOrCreateProduct(
   context: IngestContext,
@@ -569,7 +635,7 @@ export async function matchOrCreateProduct(
   line: LineItemRow,
 ): Promise<{ productId: string; created: boolean }> {
   // Identity is SKU + name: suppliers print the parent SKU on accessory
-  // lines, so SKU alone over-matches. Semantic matching can layer on later.
+  // lines, so SKU alone over-matches.
   const bySkuAndName = line.sku
     ? (
         await listProducts(
@@ -603,6 +669,14 @@ export async function matchOrCreateProduct(
       productId: existing.id,
     });
     return { productId: existing.id, created: false };
+  }
+
+  const semanticId = await matchProductSemantically(context, clientId, line);
+  if (semanticId) {
+    await updateShipmentLineItem(line.id, context.organizationId, {
+      productId: semanticId,
+    });
+    return { productId: semanticId, created: false };
   }
 
   const product = await insertProduct({

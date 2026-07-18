@@ -19,7 +19,10 @@ import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import { buildClassificationMemo } from "@/services/agents/classification/memo";
 import { ClassificationAgentService } from "@/services/agents/classification/service";
-import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
+import {
+  effectiveConfidence,
+  indexProductClassification,
+} from "@/services/external/pinecone/classificationRecord";
 import { inngest } from "../../client";
 import { matchOrCreateProduct } from "../ingestShipmentDocuments/utils";
 import {
@@ -264,7 +267,9 @@ export const classifyShipment = () => {
           await updateShipmentLineItem(line.id, organizationId, {
             htsCode: product.htsCode,
             htsDescription: product.htsDescription,
-            confidence: product.confidence,
+            // Broker-verified products snapshot as full confidence — the
+            // stored value is the agent's pre-approval calibration.
+            confidence: effectiveConfidence(product),
             dutyRate: product.dutyRate,
             classificationRunId: product.classificationRunId,
             reusedFromProduct: true,
@@ -277,7 +282,7 @@ export const classifyShipment = () => {
           return {
             htsCode: product.htsCode,
             htsDescription: product.htsDescription,
-            confidence: product.confidence ?? 1,
+            confidence: effectiveConfidence(product) ?? 1,
             dutyRate: product.dutyRate as {
               effective?: string;
               effectivePct?: number | null;
@@ -540,6 +545,9 @@ export const classifyShipment = () => {
       // the shipment moves on without human review — autopilot's approval.
       // Flagged shipments index nothing here; broker approval or correction
       // (resolveReview) is what publishes their lines to the knowledge base.
+      // No dedupe here (unlike indexAndDedupeClassification on broker
+      // resolution): agent records can't outrank each other, and concurrent
+      // lines against an eventually-consistent index would race.
       if (!needsReview) {
         await step.run("index-approved-classifications", async () => {
           const productIds = new Set(

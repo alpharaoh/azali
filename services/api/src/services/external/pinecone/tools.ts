@@ -74,7 +74,12 @@ export function createKnowledgeBaseTools(
             htsCode: match.metadata.htsCode ?? null,
             /** "broker" = human-verified; "agent" = high-trust AI verdict. */
             verifiedBy: match.metadata.source ?? null,
-            confidence: match.metadata.confidence ?? null,
+            // Broker verification is ground truth — records indexed before
+            // that verdict may carry the agent's lower pre-approval score.
+            confidence:
+              match.metadata.source === "broker"
+                ? 1
+                : (match.metadata.confidence ?? null),
             verifiedAt: match.metadata.verifiedAt ?? null,
             /** True when the precedent is this importer's own product. */
             sameClient: clientId ? match.metadata.clientId === clientId : false,

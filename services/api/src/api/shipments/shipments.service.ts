@@ -25,7 +25,7 @@ import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyS
 import { EMAIL_INTAKE_SKIP_REQUESTED_EVENT } from "@/inngest/functions/finalizeEmailShipment";
 import { createLogger } from "@/lib/logger";
 import { confidenceBandForScore } from "@/services/agents/classification/schema";
-import { indexProductClassification } from "@/services/external/pinecone/classificationRecord";
+import { indexAndDedupeClassification } from "@/services/external/pinecone/classificationRecord";
 import type { CreateShipmentDto } from "./dto/create-shipment.dto";
 import type { ListShipmentsDto } from "./dto/list-shipments.dto";
 import {
@@ -317,7 +317,7 @@ export class ShipmentsService {
             classifiedAt: new Date(),
             source: "broker",
           });
-          await indexProductClassification(product);
+          await indexAndDedupeClassification(product);
         }
         continue;
       }
@@ -339,7 +339,7 @@ export class ShipmentsService {
             source: "broker",
             classifiedAt: new Date(),
           });
-          await indexProductClassification(product);
+          await indexAndDedupeClassification(product);
         }
       }
     }

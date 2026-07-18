@@ -5,6 +5,7 @@ import { aggregateProductStats } from "@/db/queries/aggregate/aggregateProductSt
 import { listProducts } from "@/db/queries/select/many/listProducts";
 import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import type { SelectProduct } from "@/db/schema";
+import { effectiveConfidence } from "@/services/external/pinecone/classificationRecord";
 import type { ListProductsDto } from "./dto/list-products.dto";
 
 function toProduct(
@@ -19,7 +20,8 @@ function toProduct(
     description: product.description,
     htsCode: product.htsCode,
     htsDescription: product.htsDescription,
-    confidence: product.confidence,
+    // Broker-verified reads as full confidence; `source` tells who verified.
+    confidence: effectiveConfidence(product),
     dutyRate: product.dutyRate ?? null,
     source: product.source,
     reuseCount: product.reuseCount,
