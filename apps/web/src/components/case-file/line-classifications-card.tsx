@@ -137,7 +137,7 @@ export function LineClassificationsCard({
                         {line.quantity !== null ? (
                           <Chip size="sm" variant="soft">
                             <IconPackage className="text-muted size-3" />
-                            <Chip.Label className="tabular-nums">
+                            <Chip.Label className="text-muted font-normal tabular-nums">
                               {line.quantity.toLocaleString("en-US")}
                               {line.unit ? ` ${line.unit}` : ""}
                             </Chip.Label>
@@ -146,7 +146,7 @@ export function LineClassificationsCard({
                         {line.valueUsd !== null ? (
                           <Chip size="sm" variant="soft">
                             <IconCoinStack className="text-muted size-3" />
-                            <Chip.Label className="tabular-nums">
+                            <Chip.Label className="text-muted font-normal tabular-nums">
                               {formatCurrency(line.valueUsd)}
                             </Chip.Label>
                           </Chip>
