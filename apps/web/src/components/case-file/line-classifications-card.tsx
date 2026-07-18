@@ -104,7 +104,7 @@ export function LineClassificationsCard({
               <Fragment key={line.lineItemId}>
                 {index > 0 ? <Separator /> : null}
                 <ItemCard
-                  className={`gap-8 ${
+                  className={`gap-8 px-5 py-4 ${
                     openLine
                       ? "hover:bg-default/40 cursor-pointer transition-colors"
                       : ""
@@ -222,7 +222,7 @@ export function LineClassificationsCard({
               padding + chevron + gap) so the figures line up. */}
           {showReceipt ? (
             <div
-              className={`flex flex-col gap-1 py-2.5 pl-4 ${onOpenLine ? "pr-11" : "pr-4"}`}
+              className={`flex flex-col gap-1.5 py-3.5 pl-5 ${onOpenLine ? "pr-12" : "pr-5"}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted text-xs">Total value</span>
