@@ -13,9 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as DashboardTariffRadarRouteImport } from './routes/dashboard/tariff-radar'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
-import { Route as DashboardRecoveriesRouteImport } from './routes/dashboard/recoveries'
 import { Route as DashboardPipelineRouteImport } from './routes/dashboard/pipeline'
 import { Route as DashboardClientsRouteImport } from './routes/dashboard/clients'
 import { Route as DashboardClassificationsRouteImport } from './routes/dashboard/classifications'
@@ -44,19 +42,9 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardTariffRadarRoute = DashboardTariffRadarRouteImport.update({
-  id: '/tariff-radar',
-  path: '/tariff-radar',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardRecoveriesRoute = DashboardRecoveriesRouteImport.update({
-  id: '/recoveries',
-  path: '/recoveries',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardPipelineRoute = DashboardPipelineRouteImport.update({
@@ -105,9 +93,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
-  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
   '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
@@ -120,9 +106,7 @@ export interface FileRoutesByTo {
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
-  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
   '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
@@ -137,9 +121,7 @@ export interface FileRoutesById {
   '/dashboard/classifications': typeof DashboardClassificationsRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/pipeline': typeof DashboardPipelineRoute
-  '/dashboard/recoveries': typeof DashboardRecoveriesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard/tariff-radar': typeof DashboardTariffRadarRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/review/$itemId': typeof DashboardReviewItemIdRoute
   '/dashboard/shipments/$shipmentId': typeof DashboardShipmentsShipmentIdRoute
@@ -155,9 +137,7 @@ export interface FileRouteTypes {
     | '/dashboard/classifications'
     | '/dashboard/clients'
     | '/dashboard/pipeline'
-    | '/dashboard/recoveries'
     | '/dashboard/settings'
-    | '/dashboard/tariff-radar'
     | '/dashboard/'
     | '/dashboard/review/$itemId'
     | '/dashboard/shipments/$shipmentId'
@@ -170,9 +150,7 @@ export interface FileRouteTypes {
     | '/dashboard/classifications'
     | '/dashboard/clients'
     | '/dashboard/pipeline'
-    | '/dashboard/recoveries'
     | '/dashboard/settings'
-    | '/dashboard/tariff-radar'
     | '/dashboard'
     | '/dashboard/review/$itemId'
     | '/dashboard/shipments/$shipmentId'
@@ -186,9 +164,7 @@ export interface FileRouteTypes {
     | '/dashboard/classifications'
     | '/dashboard/clients'
     | '/dashboard/pipeline'
-    | '/dashboard/recoveries'
     | '/dashboard/settings'
-    | '/dashboard/tariff-radar'
     | '/dashboard/'
     | '/dashboard/review/$itemId'
     | '/dashboard/shipments/$shipmentId'
@@ -231,25 +207,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/tariff-radar': {
-      id: '/dashboard/tariff-radar'
-      path: '/tariff-radar'
-      fullPath: '/dashboard/tariff-radar'
-      preLoaderRoute: typeof DashboardTariffRadarRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/dashboard/settings': {
       id: '/dashboard/settings'
       path: '/settings'
       fullPath: '/dashboard/settings'
       preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/recoveries': {
-      id: '/dashboard/recoveries'
-      path: '/recoveries'
-      fullPath: '/dashboard/recoveries'
-      preLoaderRoute: typeof DashboardRecoveriesRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/pipeline': {
@@ -309,9 +271,7 @@ interface DashboardRouteRouteChildren {
   DashboardClassificationsRoute: typeof DashboardClassificationsRoute
   DashboardClientsRoute: typeof DashboardClientsRoute
   DashboardPipelineRoute: typeof DashboardPipelineRoute
-  DashboardRecoveriesRoute: typeof DashboardRecoveriesRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
-  DashboardTariffRadarRoute: typeof DashboardTariffRadarRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardReviewItemIdRoute: typeof DashboardReviewItemIdRoute
   DashboardShipmentsShipmentIdRoute: typeof DashboardShipmentsShipmentIdRoute
@@ -323,9 +283,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardClassificationsRoute: DashboardClassificationsRoute,
   DashboardClientsRoute: DashboardClientsRoute,
   DashboardPipelineRoute: DashboardPipelineRoute,
-  DashboardRecoveriesRoute: DashboardRecoveriesRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
-  DashboardTariffRadarRoute: DashboardTariffRadarRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardReviewItemIdRoute: DashboardReviewItemIdRoute,
   DashboardShipmentsShipmentIdRoute: DashboardShipmentsShipmentIdRoute,

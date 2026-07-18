@@ -1,5 +1,4 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   useShipmentEventsControllerFindAll,
@@ -66,7 +65,7 @@ export function toReviewItem(
     documents: [],
     events: [],
     id: shipment.id,
-    logo: shipment.client?.image ?? clientLogos[clientName],
+    logo: shipment.client?.image ?? undefined,
     proposal: payload.proposal ?? { detail: "", label: "Proposal", value: "—" },
     question: payload.question ?? "Review required",
     reference: shipment.reference,
@@ -83,7 +82,6 @@ export function toReviewItem(
       port: shipment.portOfEntry,
     },
     shipmentValue: shipment.valueCents / 100,
-    trace: [],
     traceRunId: payload.traceRunId,
     lineItems: payload.lineItems,
     reviewLineNumber: payload.lineNumber,

@@ -7,7 +7,6 @@ import type {
   ReviewDocument,
   ReviewItem,
 } from "#/lib/review-types";
-import { docSlug } from "#/lib/review-types";
 
 const citationMeta: Record<
   CitationKind,
@@ -52,10 +51,7 @@ function CitationQuote({ citation }: { citation: Citation }) {
 function DocPeek({ document: doc }: { document: ReviewDocument }) {
   if (doc.kind === "email") return null;
 
-  const href =
-    doc.kind === "scan"
-      ? doc.src
-      : (doc.src ?? `/docs/${docSlug(doc.name)}.pdf`);
+  const href = doc.src;
 
   return (
     <a

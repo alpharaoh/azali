@@ -15,7 +15,6 @@ import { Timeline } from "@heroui-pro/react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { ReviewDocument } from "#/lib/review-types";
-import { docSlug } from "#/lib/review-types";
 import { DocumentLineRow, DocumentViewerModal } from "./document-viewer-modal";
 import { receivedAgo, type TimelineItemPassthrough } from "./timeline-items";
 
@@ -170,14 +169,7 @@ function DocumentBody({
           </p>
         </>
       ) : document.kind === "pdf" ? (
-        // Real PDFs carry their own src; everything else falls back to the
-        // generated file at the conventional /docs/<slug>.pdf path.
-        <PdfWithExtraction
-          document={{
-            ...document,
-            src: document.src ?? `/docs/${docSlug(document.name)}.pdf`,
-          }}
-        />
+        <PdfWithExtraction document={document} />
       ) : (
         <>
           <a

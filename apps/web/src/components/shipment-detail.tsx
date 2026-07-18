@@ -32,7 +32,6 @@ import {
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
-import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentDocumentsResponseDtoDocumentsItem } from "#/generated/api";
 import {
   getShipmentsControllerFindOneQueryKey,
@@ -250,12 +249,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
           {shipment ? (
             <>
               <Avatar size="md">
-                <Avatar.Image
-                  src={
-                    shipment.client?.image ??
-                    clientLogos[shipment.client?.name ?? ""]
-                  }
-                />
+                <Avatar.Image src={shipment.client?.image ?? undefined} />
                 <Avatar.Fallback>
                   {(shipment.client?.name ?? "?").slice(0, 2).toUpperCase()}
                 </Avatar.Fallback>

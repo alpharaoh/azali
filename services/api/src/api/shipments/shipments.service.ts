@@ -268,7 +268,7 @@ export class ShipmentsService {
    * line is approved or corrected (a correction also updates the product as
    * broker-confirmed — future shipments of that product reuse it); the
    * remaining classified lines are approved. Shipments without line items
-   * (seeded demos) skip untouched.
+   * skip untouched.
    */
   private async applyResolutionToLines(
     organizationId: string,

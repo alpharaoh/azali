@@ -45,7 +45,6 @@ import type { Selection, SortDescriptor } from "react-aria-components";
 import { useLocalStorage } from "usehooks-ts";
 import { ClientFormDrawer } from "#/components/client-form-drawer";
 import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
-import { clientLogos } from "#/data/client-logos";
 import type {
   ListClientsResponseDtoDataItem as ApiClient,
   ClientsControllerFindAllAutonomyItem as ClientAutonomy,
@@ -418,7 +417,7 @@ export function ClientsTable() {
       cell: (item) => (
         <div className="flex items-center gap-3">
           <Avatar size="sm">
-            <Avatar.Image src={item.image ?? clientLogos[item.name]} />
+            <Avatar.Image src={item.image ?? undefined} />
             <Avatar.Fallback>
               {item.name
                 .split(" ")

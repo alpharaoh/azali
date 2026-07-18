@@ -67,30 +67,6 @@ export interface ActivityEvent {
   memo?: boolean;
 }
 
-export type TraceStepKind =
-  | "calc"
-  | "check"
-  | "decision"
-  | "flag"
-  | "lookup"
-  | "read";
-
-/** One granular unit of agent work — with the actual values and findings. */
-export interface TraceStep {
-  kind: TraceStepKind;
-  title: string;
-  detail: string;
-  /** Monospace evidence lines: extracted values, calculations, query results. */
-  data?: string[];
-  /** Reference into the item's citations. */
-  citationRef?: string;
-}
-
-export interface TracePhase {
-  label: string;
-  steps: TraceStep[];
-}
-
 export type CitationKind = "catalog" | "evidence" | "regulation" | "ruling";
 
 /** A formal source the AI relied on — rulings, regulations, catalog precedent. */
@@ -175,8 +151,6 @@ export interface ReviewItem {
   shipmentValue: number;
   confidence: number;
   proposal: { label: string; value: string; detail: string };
-  /** The full phased agent trace — every step of work, always visible. */
-  trace: TracePhase[];
   /** Audit-record id (agent_runs) — real runs render the trace from it. */
   traceRunId?: string;
   /** The shipment's entry lines with their classifications. */
@@ -204,15 +178,6 @@ export interface ReviewItem {
   }>;
   approveLabel: string;
   canRequestInfo?: boolean;
-}
-
-/** Stable public path slug for a document name — used for the generated PDF files. */
-export function docSlug(name: string) {
-  return name
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export type DecisionAction = "approved" | "corrected" | "info-requested";

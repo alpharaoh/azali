@@ -1,11 +1,12 @@
 import {
   ArrowsRotateRight,
+  ArrowUpRightFromSquare,
   CircleInfo,
+  FileArrowDown,
   FileArrowUp,
   FileText,
   Flag,
   Funnel,
-  Pipeline,
   Tag,
 } from "@gravity-ui/icons";
 import {
@@ -50,13 +51,16 @@ import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
  * Meta
  * -----------------------------------------------------------------------------------------------*/
 type AutopilotActionType =
-  | "classification"
+  | "intake"
   | "extraction"
+  | "classification"
+  | "reconciliation"
   | "filing"
-  | "reconciliation";
+  | "review";
 
 interface Row {
   id: string;
+  shipmentId: string;
   type: AutopilotActionType;
   title: string;
   client: string;
@@ -73,28 +77,69 @@ const typeMeta: Record<
     label: string;
   }
 > = {
+  intake: { color: "var(--chart-1)", icon: FileArrowDown, label: "Intake" },
+  extraction: { color: "var(--chart-2)", icon: FileText, label: "Extraction" },
   classification: {
-    color: "var(--chart-1)",
+    color: "var(--chart-3)",
     icon: Tag,
     label: "Classification",
   },
-  extraction: { color: "var(--chart-2)", icon: FileText, label: "Extraction" },
-  filing: { color: "var(--chart-3)", icon: FileArrowUp, label: "Filing" },
   reconciliation: {
     color: "var(--chart-4)",
     icon: ArrowsRotateRight,
     label: "Reconciliation",
   },
+  filing: { color: "var(--chart-5)", icon: FileArrowUp, label: "Filing" },
+  review: { color: "var(--warning)", icon: Flag, label: "Review" },
 };
 
 const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
 
-/** Bucket the open-ended event type strings into the four action families. */
+/** Known event types, mapped to the six action families shown in the charts. */
+const EVENT_TYPE_BUCKET: Record<string, AutopilotActionType> = {
+  activity: "intake",
+  cbp_response_received: "filing",
+  classification: "classification",
+  classification_failed: "review",
+  classification_memo_drafted: "classification",
+  classification_proposed: "classification",
+  classification_reused: "classification",
+  document_extracted: "extraction",
+  document_received: "intake",
+  documents_compared: "extraction",
+  duty_calculated: "reconciliation",
+  duty_reconciled: "reconciliation",
+  email_received: "intake",
+  email_sent: "filing",
+  enforcement: "review",
+  entry_drafted: "filing",
+  entry_filed: "filing",
+  hts_lookup: "classification",
+  ingest_failed: "review",
+  invoice_received: "intake",
+  market_comparison: "reconciliation",
+  pga: "classification",
+  review_requested: "review",
+  review_resolved: "review",
+  scan_received: "intake",
+  section_301_check: "classification",
+  shipment_facts_extracted: "extraction",
+  signoff: "review",
+  tariff_change_detected: "classification",
+  totals_reconciled: "reconciliation",
+  valuation: "reconciliation",
+  vector_search: "classification",
+};
+
+/** Heuristic fallback for event types the explicit map doesn't know yet. */
 function bucketFor(eventType: string): AutopilotActionType {
-  if (/extract|scan|ocr|compare/.test(eventType)) return "extraction";
-  if (/fil|draft|response/.test(eventType)) return "filing";
-  if (/reconcil|duty|totals/.test(eventType)) return "reconciliation";
-  return "classification";
+  if (/classif|hts|tariff|section|vector/.test(eventType))
+    return "classification";
+  if (/extract|scan|ocr|compar/.test(eventType)) return "extraction";
+  if (/reconcil|duty|totals|valuat/.test(eventType)) return "reconciliation";
+  if (/entry|fil|draft|response|sent/.test(eventType)) return "filing";
+  if (/review|fail|flag|signoff/.test(eventType)) return "review";
+  return "intake";
 }
 
 /** agent_trace events carry their step kind in the payload. */
@@ -102,7 +147,7 @@ const TRACE_KIND_BUCKET: Record<string, AutopilotActionType> = {
   calc: "reconciliation",
   check: "classification",
   decision: "filing",
-  flag: "classification",
+  flag: "review",
   lookup: "classification",
   read: "extraction",
 };
@@ -117,7 +162,7 @@ function bucketForEvent(
     return TRACE_KIND_BUCKET[kind] ?? "classification";
   }
 
-  return bucketFor(eventType);
+  return EVENT_TYPE_BUCKET[eventType] ?? bucketFor(eventType);
 }
 
 function occurredAgo(date: Date) {
@@ -215,7 +260,7 @@ const actionColumns: DataGridColumn<Row>[] = [
   },
   {
     align: "end",
-    cell: () => <ActionRowButtons />,
+    cell: (action) => <ActionRowButtons shipmentId={action.shipmentId} />,
     header: "",
     id: "actions",
     minWidth: 90,
@@ -223,7 +268,7 @@ const actionColumns: DataGridColumn<Row>[] = [
   },
 ];
 
-function ActionRowButtons() {
+function ActionRowButtons({ shipmentId }: { shipmentId: string }) {
   const navigate = useNavigate();
 
   return (
@@ -231,27 +276,20 @@ function ActionRowButtons() {
       <Tooltip>
         <Button
           isIconOnly
-          aria-label="View in Pipeline"
+          aria-label="View shipment"
           className="text-muted hover:text-foreground"
           size="sm"
           variant="ghost"
-          onPress={() => navigate({ to: "/dashboard/pipeline" })}
+          onPress={() =>
+            navigate({
+              params: { shipmentId },
+              to: "/dashboard/shipments/$shipmentId",
+            })
+          }
         >
-          <Pipeline className="size-3.5" />
+          <ArrowUpRightFromSquare className="size-3.5" />
         </Button>
-        <Tooltip.Content>View in Pipeline</Tooltip.Content>
-      </Tooltip>
-      <Tooltip>
-        <Button
-          isIconOnly
-          aria-label="Flag for review"
-          className="text-muted hover:text-foreground"
-          size="sm"
-          variant="ghost"
-        >
-          <Flag className="size-3.5" />
-        </Button>
-        <Tooltip.Content>Flag for review</Tooltip.Content>
+        <Tooltip.Content>View shipment</Tooltip.Content>
       </Tooltip>
     </div>
   );
@@ -300,6 +338,7 @@ export function AutopilotLog() {
 
     return {
       id: event.id,
+      shipmentId: event.shipmentId,
       type: bucketForEvent(event.type, event.payload),
       title: event.title,
       client: shipment?.clientName ?? "Unknown client",
@@ -355,8 +394,10 @@ export function AutopilotLog() {
       day: format(date, "EEE"),
       extraction: 0,
       filing: 0,
+      intake: 0,
       offset: 6 - index,
       reconciliation: 0,
+      review: 0,
     };
   });
 
@@ -482,7 +523,7 @@ export function AutopilotLog() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Widget className="lg:col-span-2">
           <Widget.Header>
-            <Widget.Title>Autonomous Actions · Last 7 Days</Widget.Title>
+            <Widget.Title>Autonomous Actions</Widget.Title>
             <Widget.Legend>
               {typeIds.map((type) => (
                 <Widget.LegendItem key={type} color={typeMeta[type].color}>

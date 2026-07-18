@@ -1,12 +1,10 @@
 import {
   ArrowRightFromSquare,
   Book,
-  CircleDollar,
   Gear,
   ListCheck,
   Persons,
   Pipeline,
-  Pulse,
   Sparkles,
 } from "@gravity-ui/icons";
 import {
@@ -96,24 +94,11 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         href: "/dashboard/classifications",
         icon: Book,
       },
-      {
-        id: "tariff-radar",
-        label: "Tariff Radar",
-        href: "/dashboard/tariff-radar",
-        icon: Pulse,
-        chip: "3",
-      },
     ],
   },
   {
     label: "Revenue",
     items: [
-      {
-        id: "recoveries",
-        label: "Recoveries",
-        href: "/dashboard/recoveries",
-        icon: CircleDollar,
-      },
       {
         id: "clients",
         label: "Clients",

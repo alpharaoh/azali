@@ -16,15 +16,10 @@ import {
 } from "@gravity-ui/icons";
 import { Button, Chip, ScrollShadow } from "@heroui/react";
 import {
-  ChainOfThought,
-  ChatLoader,
-  ChatMessage,
   ChatSources,
   HoverCard,
   PromptInput,
-  PromptSuggestion,
   Segment,
-  TextShimmer,
   Timeline,
   Widget,
 } from "@heroui-pro/react";
@@ -60,8 +55,6 @@ import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
 import { formatCurrency } from "#/lib/format";
-import type { ThreadMessage } from "#/lib/review-chat";
-import { addThreadMessage, useReviewThreads } from "#/lib/review-chat";
 import type {
   DecisionAction,
   LineCorrection,
@@ -106,59 +99,29 @@ function ShipmentFact({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Deterministic mock "thinking time" so every trace feels like real agent work. */
-function traceDuration(item: ReviewItem) {
-  const steps = item.trace.reduce((sum, phase) => sum + phase.steps.length, 0);
-  const seconds = steps * 19 + item.citations.length * 11;
-
-  return seconds >= 60
-    ? `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    : `${seconds}s`;
-}
-
-/** Canned AI reply for the item thread — cites the top source for questions. */
-function aiReply(item: ReviewItem, message: string): string {
-  const citation = item.citations[0];
-  const kind = typeMeta[item.type].label.toLowerCase();
-
-  if (message.trim().endsWith("?") && citation) {
-    return `Good question — my proposal leans on ${citation.ref}: “${citation.quote}” If you read it differently, correct me and I'll apply your preference to future ${item.client} ${kind} decisions.`;
-  }
-
-  return `Noted — I've added this to ${item.reference}'s audit record and will factor it into future ${kind} decisions for ${item.client}.`;
-}
-
-function ThreadTimelineItem({
-  message,
+function NoteTimelineItem({
+  body,
   time = "just now",
   ...rest
-}: { message: ThreadMessage; time?: string } & TimelineItemPassthrough) {
-  const isAi = message.author === "ai";
-  const Icon = isAi ? Sparkles : Person;
-
+}: { body: string; time?: string } & TimelineItemPassthrough) {
   return (
-    <Timeline.Item
-      align="start"
-      status={isAi ? "current" : "default"}
-      {...rest}
-    >
+    <Timeline.Item align="start" status="default" {...rest}>
       <Timeline.Marker aria-hidden="true" className="size-6">
-        <Icon className="size-3.5" />
+        <Person className="size-3.5" />
       </Timeline.Marker>
       <Timeline.Content className="gap-0.5">
         <div className="flex min-w-0 items-center justify-between gap-4">
           <h3 className="text-foreground m-0 text-xs font-medium leading-5">
-            {isAi ? "Azali AI" : "You"}
+            You
           </h3>
           <time className="text-muted shrink-0 text-xs leading-5">{time}</time>
         </div>
-        <p className="text-muted m-0 text-xs leading-5">{message.body}</p>
+        <p className="text-muted m-0 text-xs leading-5">{body}</p>
       </Timeline.Content>
     </Timeline.Item>
   );
 }
 
-/** One input, two jobs — notes on the Overview, questions in the Agent Trace. */
 function Composer({
   onSubmit,
   onValueChange,
@@ -192,9 +155,9 @@ function Composer({
   );
 }
 
-/** The full reasoning transcript — the Agent Trace tab. Real runs render
- * straight from the canonical audit record; seeded demos keep their phases.
- * Multi-line reviews get a line selector — each line has its own run. */
+/** The full reasoning transcript — the Agent Trace tab. Runs render straight
+ * from the canonical audit record. Multi-line reviews get a line selector —
+ * each line has its own run. */
 function TraceSection({
   item,
   onTraceLineChange,
@@ -230,74 +193,10 @@ function TraceSection({
   }
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5">
-        <Sparkles className="text-muted size-3.5" />
-        <span className="text-muted text-sm">
-          Thought for {traceDuration(item)} ·{" "}
-          {item.trace.reduce((sum, phase) => sum + phase.steps.length, 0)} steps
-        </span>
-      </div>
+      <span className="text-muted text-sm">
+        No agent trace recorded for this review.
+      </span>
       <div className="flex flex-col gap-1">
-        {item.trace.map((phase) => (
-          <ChainOfThought key={phase.label} defaultExpanded>
-            <ChainOfThought.Trigger>
-              <span className="text-foreground font-medium">{phase.label}</span>
-              <span className="text-muted text-xs">
-                {phase.steps.length}{" "}
-                {phase.steps.length === 1 ? "step" : "steps"}
-              </span>
-            </ChainOfThought.Trigger>
-            <ChainOfThought.Content>
-              <ChainOfThought.Steps>
-                {phase.steps.map((step) => {
-                  const citation = step.citationRef
-                    ? item.citations.find(
-                        (entry) => entry.ref === step.citationRef,
-                      )
-                    : undefined;
-
-                  return (
-                    <ChainOfThought.Step
-                      key={step.title}
-                      label={
-                        <span
-                          className={
-                            step.kind === "flag"
-                              ? "text-warning font-medium"
-                              : step.kind === "decision"
-                                ? "text-accent font-medium"
-                                : "text-foreground font-medium"
-                          }
-                        >
-                          {step.title}
-                        </span>
-                      }
-                    >
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-muted text-xs leading-relaxed">
-                          {step.detail}
-                        </span>
-                        {step.data ? (
-                          <div className="bg-background/40 flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
-                            {step.data.map((line) => (
-                              <span key={line}>{line}</span>
-                            ))}
-                          </div>
-                        ) : null}
-                        {citation ? (
-                          <CitationPill
-                            citation={citation}
-                            document={findCitedDocument(item, citation)}
-                          />
-                        ) : null}
-                      </div>
-                    </ChainOfThought.Step>
-                  );
-                })}
-              </ChainOfThought.Steps>
-            </ChainOfThought.Content>
-          </ChainOfThought>
-        ))}
         <ChatSources defaultExpanded className="pt-3">
           <ChatSources.Trigger>
             <span className="inline-flex -space-x-1.5">
@@ -390,10 +289,6 @@ export function ReviewDetail({
   const [openLine, setOpenLine] = useState<ReviewLineItem | null>(null);
   const [traceLine, setTraceLine] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
-  const [isThinking, setIsThinking] = useState(false);
-  const threads = useReviewThreads();
-  const thread = threads.get(item.id) ?? [];
-  const chat = thread.filter((message) => message.kind === "chat");
   // The intake documents (invoice, packing list, B/L, spec…) collapse into ONE
   // tab-switched timeline item anchored at the earliest one. Emails, CBP
   // correspondence, and drafted responses are story beats — they keep their
@@ -469,33 +364,6 @@ export function ReviewDetail({
     if (!body) return;
     setDraft("");
     onAddNote(body);
-  };
-
-  const handleAsk = (question?: string) => {
-    const body = (question ?? draft).trim();
-
-    if (!body || isThinking) return;
-    setDraft("");
-    addThreadMessage(item.id, {
-      author: "broker",
-      body,
-      id: `msg-${Date.now()}`,
-      kind: "chat",
-    });
-    setIsThinking(true);
-    setTimeout(() => {
-      addThreadMessage(item.id, {
-        author: "ai",
-        body: aiReply(item, body),
-        citationRef:
-          body.endsWith("?") && item.citations[0]
-            ? item.citations[0].ref
-            : undefined,
-        id: `msg-${Date.now()}-ai`,
-        kind: "chat",
-      });
-      setIsThinking(false);
-    }, 1100);
   };
 
   return (
@@ -869,16 +737,11 @@ export function ReviewDetail({
                     ),
                   )}
                   {notes.map((note, index) => (
-                    <ThreadTimelineItem
+                    <NoteTimelineItem
                       key={note.id}
                       _index={activity.length + index}
                       _isLast={false}
-                      message={{
-                        author: "broker",
-                        body: note.body,
-                        id: note.id,
-                        kind: "note",
-                      }}
+                      body={note.body}
                       time={formatDistanceToNowStrict(
                         new Date(note.occurredAt),
                         {
@@ -916,82 +779,6 @@ export function ReviewDetail({
               traceLine={traceLine}
               onTraceLineChange={setTraceLine}
             />
-
-            {/* Conversation — interrogate the agent; answers join the audit record */}
-            <div className="flex flex-col gap-3">
-              <span className="text-muted text-xs font-medium">
-                Ask the agent
-              </span>
-              {chat.length === 0 && !isThinking ? (
-                <PromptSuggestion>
-                  <PromptSuggestion.Items>
-                    <PromptSuggestion.Item
-                      onPress={() =>
-                        handleAsk("Why are you confident in this?")
-                      }
-                    >
-                      Why are you confident in this?
-                    </PromptSuggestion.Item>
-                    <PromptSuggestion.Item
-                      onPress={() =>
-                        handleAsk("What would change your recommendation?")
-                      }
-                    >
-                      What would change your recommendation?
-                    </PromptSuggestion.Item>
-                  </PromptSuggestion.Items>
-                </PromptSuggestion>
-              ) : null}
-              {chat.map((message) =>
-                message.author === "broker" ? (
-                  <ChatMessage.User key={message.id}>
-                    <ChatMessage.Bubble>
-                      <p className="m-0 text-sm">{message.body}</p>
-                    </ChatMessage.Bubble>
-                  </ChatMessage.User>
-                ) : (
-                  <ChatMessage.Assistant key={message.id}>
-                    <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
-                    <ChatMessage.Body>
-                      <ChatMessage.Content>{message.body}</ChatMessage.Content>
-                      {(() => {
-                        const cited = message.citationRef
-                          ? item.citations.find(
-                              (entry) => entry.ref === message.citationRef,
-                            )
-                          : undefined;
-
-                        return cited ? (
-                          <CitationPill
-                            citation={cited}
-                            document={findCitedDocument(item, cited)}
-                          />
-                        ) : null;
-                      })()}
-                    </ChatMessage.Body>
-                  </ChatMessage.Assistant>
-                ),
-              )}
-              {isThinking ? (
-                <ChatMessage.Assistant>
-                  <ChatMessage.Avatar alt="Azali AI" fallback="✦" />
-                  <ChatMessage.Body>
-                    <div className="flex items-center gap-2 py-1.5">
-                      <ChatLoader.Dots size="sm" />
-                      <TextShimmer className="text-xs">
-                        Azali AI is thinking…
-                      </TextShimmer>
-                    </div>
-                  </ChatMessage.Body>
-                </ChatMessage.Assistant>
-              ) : null}
-              <Composer
-                placeholder="Ask the agent — answers cite sources and join the audit record…"
-                value={draft}
-                onSubmit={() => handleAsk()}
-                onValueChange={setDraft}
-              />
-            </div>
           </div>
         )}
       </ScrollShadow>

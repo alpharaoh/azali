@@ -8,12 +8,7 @@ import {
   eventPlane,
   FACTS_EVENT_TYPE,
 } from "#/lib/event-kinds";
-import type {
-  ActivityEvent,
-  ReviewDocument,
-  TracePhase,
-  TraceStepKind,
-} from "#/lib/review-types";
+import type { ActivityEvent, ReviewDocument } from "#/lib/review-types";
 
 export interface CaseFileFacts {
   originCountry?: string;
@@ -28,8 +23,6 @@ export interface CaseFileFacts {
 export interface CaseFile {
   documents: ReviewDocument[];
   activityEvents: ActivityEvent[];
-  /** Seeded/demo trace phases — real runs carry runIds instead. */
-  trace: TracePhase[];
   /** The last agent run seen — the headline line's audit record. */
   traceRunId?: string;
   facts?: CaseFileFacts;
@@ -70,36 +63,14 @@ export function useCaseFile(
   const hoursAgo = (occurredAt: string) =>
     (now - new Date(occurredAt).getTime()) / 3_600_000;
 
-  // Agent trace — one event per step, grouped by payload.phase. Real
-  // agent runs instead carry a runId pointing at the audit record.
-  const trace: TracePhase[] = [];
+  // Agent trace events carry a runId pointing at the audit record; the
+  // latest one is the headline run.
   let traceRunId: string | undefined;
 
   for (const event of events.filter((e) => eventPlane(e.type) === "trace")) {
-    const payload = event.payload as {
-      phase?: string;
-      kind?: TraceStepKind;
-      detail?: string;
-      data?: string[];
-      citationRef?: string;
-      runId?: string;
-    };
-    if (typeof payload.runId === "string") {
-      traceRunId = payload.runId;
-      continue;
-    }
-    const label = payload.phase ?? "Trace";
-    const step = {
-      kind: payload.kind ?? ("read" as TraceStepKind),
-      title: event.title,
-      detail: payload.detail ?? "",
-      ...(payload.data && { data: payload.data }),
-      ...(payload.citationRef && { citationRef: payload.citationRef }),
-    };
-    const last = trace[trace.length - 1];
+    const runId = (event.payload as { runId?: string }).runId;
 
-    if (last?.label === label) last.steps.push(step);
-    else trace.push({ label, steps: [step] });
+    if (typeof runId === "string") traceRunId = runId;
   }
 
   // Documents — payloads mirror the ReviewDocument shape.
@@ -183,7 +154,6 @@ export function useCaseFile(
     facts,
     isPending,
     notes,
-    trace,
     traceRunId,
   };
 }

@@ -271,7 +271,6 @@ export function ReviewQueue() {
   const detailItem = displayItem
     ? {
         ...displayItem,
-        trace: live.trace,
         traceRunId: displayItem.traceRunId ?? live.traceRunId,
         documents: live.documents,
         events: live.activityEvents,

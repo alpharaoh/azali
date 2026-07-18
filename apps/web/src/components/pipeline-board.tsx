@@ -33,7 +33,6 @@ import type { SortDescriptor } from "react-aria-components";
 
 import { ShipmentIntakeModal } from "#/components/shipment-intake-modal";
 import { TableFetchingState, TableSkeleton } from "#/components/table-loading";
-import { clientLogos } from "#/data/client-logos";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   useClientsControllerFindAll,
@@ -390,7 +389,7 @@ export function PipelineBoard() {
       id: shipment.id,
       reference: shipment.reference,
       client: clientName,
-      logo: shipment.client?.image ?? clientLogos[clientName],
+      logo: shipment.client?.image ?? undefined,
       origin: shipment.originPort ?? countryName(shipment.originCountry),
       port: shipment.portOfEntry,
       isAir: shipment.transportMode === "air",
@@ -412,7 +411,7 @@ export function PipelineBoard() {
   const allClients = (clientsResponse?.data.data ?? []).map((client) => ({
     id: client.id,
     name: client.name,
-    logo: client.image ?? clientLogos[client.name],
+    logo: client.image ?? undefined,
   }));
 
   const byStatus = statsResponse?.data.byStatus;
