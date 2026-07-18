@@ -353,40 +353,21 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-4">
           {/* Line classifications — THE summary, always visible above the tabs */}
-          {!linesLoaded ? (
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>Line classifications</Widget.Title>
-              </Widget.Header>
-              <Widget.Content className="flex flex-col gap-2">
-                <Skeleton className="h-14 rounded-lg" />
-                <Skeleton className="h-14 rounded-lg" />
-              </Widget.Content>
-            </Widget>
-          ) : lines.length > 0 ? (
-            <LineClassificationsCard
-              activityByLine={activityByLine}
-              lines={lines}
-              onOpenLine={setOpenLine}
-              onViewTrace={(lineNumber) => {
-                setSection("trace");
-                setManualTraceLine(lineNumber);
-              }}
-            />
-          ) : (
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>Line classifications</Widget.Title>
-              </Widget.Header>
-              <Widget.Content>
-                <span className="text-muted text-sm">
-                  {processing
-                    ? "Entry lines appear once the commercial invoice is read…"
-                    : "No entry lines on file."}
-                </span>
-              </Widget.Content>
-            </Widget>
-          )}
+          <LineClassificationsCard
+            activityByLine={activityByLine}
+            emptyMessage={
+              processing
+                ? "Entry lines appear once the commercial invoice is read…"
+                : "No entry lines on file."
+            }
+            isLoading={!linesLoaded}
+            lines={lines}
+            onOpenLine={setOpenLine}
+            onViewTrace={(lineNumber) => {
+              setSection("trace");
+              setManualTraceLine(lineNumber);
+            }}
+          />
 
           {/* Everything else lives in tabs — no endless scroll */}
           <Tabs

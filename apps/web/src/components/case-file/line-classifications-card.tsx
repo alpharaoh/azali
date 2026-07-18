@@ -2,7 +2,7 @@ import {
   IconChevronRight,
   IconSparklesThree,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
-import { Button, Chip, Separator } from "@heroui/react";
+import { Button, Chip, Separator, Skeleton } from "@heroui/react";
 import {
   ChatLoader,
   ItemCard,
@@ -30,6 +30,8 @@ const NO_CORRECTIONS: Record<string, string> = {};
 export function LineClassificationsCard({
   activityByLine,
   corrections = NO_CORRECTIONS,
+  emptyMessage = "No entry lines on file.",
+  isLoading = false,
   lines,
   onOpenLine,
   onViewTrace,
@@ -39,6 +41,10 @@ export function LineClassificationsCard({
   activityByLine?: Record<number, LineActivity>;
   /** Staged per-line HTS substitutions (lineItemId → alternate code). */
   corrections?: Record<string, string>;
+  /** Shown when there are no lines (and not loading). */
+  emptyMessage?: string;
+  /** Renders skeleton rows while the entry lines are still being fetched. */
+  isLoading?: boolean;
   lines: ReviewLineItem[];
   onOpenLine?: (line: ReviewLineItem) => void;
   /** Jump to a line's live agent trace while it is being classified. */
@@ -52,13 +58,42 @@ export function LineClassificationsCard({
       line.duty?.amountUsd !== null && line.duty?.amountUsd !== undefined,
   );
 
+  if (isLoading) {
+    return (
+      <Widget>
+        <Widget.Header>
+          <Widget.Title>{title}</Widget.Title>
+        </Widget.Header>
+        <Widget.Content className="flex flex-col gap-2">
+          <Skeleton className="h-14 rounded-lg" />
+          <Skeleton className="h-14 rounded-lg" />
+        </Widget.Content>
+      </Widget>
+    );
+  }
+
+  if (lines.length === 0) {
+    return (
+      <Widget>
+        <Widget.Header>
+          <Widget.Title>{title}</Widget.Title>
+        </Widget.Header>
+        <Widget.Content>
+          <span className="text-muted text-sm">{emptyMessage}</span>
+        </Widget.Content>
+      </Widget>
+    );
+  }
+
   return (
     <Widget>
       <Widget.Header>
         <Widget.Title>{title}</Widget.Title>
       </Widget.Header>
-      <Widget.Content>
-        <ItemCardGroup variant="outline">
+      {/* Cards sit flush against the widget content: no content padding, and
+          the group's own outline is dropped in favor of the widget's edge. */}
+      <Widget.Content className="p-0">
+        <ItemCardGroup className="border-none" variant="outline">
           {lines.map((line, index) => {
             const staged = corrections[line.lineItemId];
             // Drill-down only once the line actually HAS a classification.
