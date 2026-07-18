@@ -1,5 +1,7 @@
 import {
   IconChevronRight,
+  IconCoinStack,
+  IconPackage,
   IconSparklesThree,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Chip, Separator, Skeleton } from "@heroui/react";
@@ -127,20 +129,28 @@ export function LineClassificationsCard({
                     <ItemCard.Title className="line-clamp-2 whitespace-normal">
                       {line.description}
                     </ItemCard.Title>
-                    <ItemCard.Description className="tabular-nums">
-                      {[
-                        line.quantity !== null
-                          ? `${line.quantity.toLocaleString("en-US")}${line.unit ? ` ${line.unit}` : ""}`
-                          : null,
-                        line.valueUsd !== null
-                          ? formatCurrency(line.valueUsd)
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </ItemCard.Description>
-                    {line.reused || staged ? (
+                    {line.quantity !== null ||
+                    line.valueUsd !== null ||
+                    line.reused ||
+                    staged ? (
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        {line.quantity !== null ? (
+                          <Chip size="sm" variant="soft">
+                            <IconPackage className="text-muted size-3" />
+                            <Chip.Label className="tabular-nums">
+                              {line.quantity.toLocaleString("en-US")}
+                              {line.unit ? ` ${line.unit}` : ""}
+                            </Chip.Label>
+                          </Chip>
+                        ) : null}
+                        {line.valueUsd !== null ? (
+                          <Chip size="sm" variant="soft">
+                            <IconCoinStack className="text-muted size-3" />
+                            <Chip.Label className="tabular-nums">
+                              {formatCurrency(line.valueUsd)}
+                            </Chip.Label>
+                          </Chip>
+                        ) : null}
                         {line.reused ? (
                           <Chip
                             className="bg-purple-100 text-purple-900"
