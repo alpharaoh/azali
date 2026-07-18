@@ -4,9 +4,8 @@ import {
   IconChevronRight,
   IconCrossMedium,
   IconEyeOpen,
-  IconFileArrowRightOut,
   IconFilter1,
-  IconRecord,
+  IconPackageAdd,
   IconShip,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
@@ -543,7 +542,7 @@ export function PipelineBoard() {
           </Chip>
         ) : (
           <Chip color={statusMeta[row.status].chip} size="sm" variant="soft">
-            <IconRecord size={6} />
+            <span className="size-1.5 rounded-full bg-current" />
             <Chip.Label>{statusMeta[row.status].label}</Chip.Label>
           </Chip>
         ),
@@ -667,14 +666,14 @@ export function PipelineBoard() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-foreground text-xl font-semibold">Pipeline</h1>
+          <h1 className="text-foreground text-xl font-semibold">Shipments</h1>
           <p className="text-muted mt-1 max-w-3xl text-sm">
             Every shipment as a live status stream. Green flows through
             untouched — anything blocked pops to the Review Queue.
           </p>
         </div>
         <Button size="sm" variant="primary" onPress={() => setIntakeOpen(true)}>
-          <IconFileArrowRightOut />
+          <IconPackageAdd />
           Create shipment
         </Button>
         <ShipmentIntakeModal
@@ -812,7 +811,7 @@ export function PipelineBoard() {
                     size="sm"
                     variant="soft"
                   >
-                    <IconRecord size={6} />
+                    <span className="size-1.5 rounded-full bg-current" />
                     <Chip.Label>{option.label}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />

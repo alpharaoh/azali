@@ -1,13 +1,13 @@
 import {
   IconBell,
-  IconBlocks,
-  IconBox2,
   IconChecklist,
   IconEmail1,
   IconFileText,
+  IconGovernment,
+  IconPackage,
   IconPencil,
   IconReceiptBill,
-  IconShieldBreak,
+  IconShip,
   IconSquareArrowTopRight,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Button, Spinner, Tabs } from "@heroui/react";
@@ -127,18 +127,19 @@ function docTabMeta(document: ReviewDocument): {
   const name = document.name;
 
   if (/cbp form 28/i.test(name)) {
-    return { Icon: IconShieldBreak, label: "CF-28" };
+    return { Icon: IconGovernment, label: "CF-28" };
   }
   if (/cbp form 29/i.test(name)) {
-    return { Icon: IconShieldBreak, label: "CF-29" };
+    return { Icon: IconGovernment, label: "CF-29" };
   }
   if (/draft response|response/i.test(name)) {
     return { Icon: IconPencil, label: "Response Draft" };
   }
   if (/invoice/i.test(name)) return { Icon: IconReceiptBill, label: "Invoice" };
-  if (/packing/i.test(name)) return { Icon: IconBox2, label: "Packing List" };
+  if (/packing/i.test(name))
+    return { Icon: IconPackage, label: "Packing List" };
   if (/bill of lading|b\/l|awb/i.test(name)) {
-    return { Icon: IconBlocks, label: "Bill of Lading" };
+    return { Icon: IconShip, label: "Bill of Lading" };
   }
   if (/arrival/i.test(name)) return { Icon: IconBell, label: "Arrival Notice" };
   if (/spec/i.test(name)) return { Icon: IconChecklist, label: "Spec Sheet" };

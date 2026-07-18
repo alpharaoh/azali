@@ -1,6 +1,6 @@
 import {
-  IconSparklesThree,
-  IconUser,
+  IconEyeOpen,
+  IconSteeringWheel1,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Button,
@@ -60,7 +60,7 @@ const AUTONOMY_OPTIONS = [
     label: "Supervised",
     description:
       "Every entry is queued for a licensed broker to review and approve before it is filed with CBP.",
-    icon: IconUser,
+    icon: IconEyeOpen,
     iconClassName: "bg-default text-muted",
   },
   {
@@ -68,7 +68,7 @@ const AUTONOMY_OPTIONS = [
     label: "Autopilot",
     description:
       "High-confidence entries are filed automatically; only exceptions are routed for human review.",
-    icon: IconSparklesThree,
+    icon: IconSteeringWheel1,
     iconClassName: "bg-accent-soft text-accent-soft-foreground",
   },
 ] as const;

@@ -1,8 +1,8 @@
 import {
-  IconArrowRotateClockwise,
+  IconArrowInbox,
+  IconArrowOutOfBox,
+  IconArrowRotateRightLeft,
   IconCircleInfo,
-  IconFileArrowRightOut,
-  IconFileDownload,
   IconFileText,
   IconFilter1,
   IconFlag1,
@@ -77,7 +77,7 @@ const typeMeta: Record<
     label: string;
   }
 > = {
-  intake: { color: "var(--chart-1)", icon: IconFileDownload, label: "Intake" },
+  intake: { color: "var(--chart-1)", icon: IconArrowInbox, label: "Intake" },
   extraction: {
     color: "var(--chart-2)",
     icon: IconFileText,
@@ -90,12 +90,12 @@ const typeMeta: Record<
   },
   reconciliation: {
     color: "var(--chart-4)",
-    icon: IconArrowRotateClockwise,
+    icon: IconArrowRotateRightLeft,
     label: "Reconciliation",
   },
   filing: {
     color: "var(--chart-5)",
-    icon: IconFileArrowRightOut,
+    icon: IconArrowOutOfBox,
     label: "Filing",
   },
   review: { color: "var(--warning)", icon: IconFlag1, label: "Review" },

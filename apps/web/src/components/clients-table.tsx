@@ -1,5 +1,5 @@
 import {
-  IconArrowDownWall,
+  IconArrowInbox,
   IconCalendar1,
   IconColumns3,
   IconCrossMedium,
@@ -10,7 +10,6 @@ import {
   IconPencil,
   IconPlay,
   IconPlusMedium,
-  IconRecord,
   IconSettingsSliderHor,
   IconSquareBehindSquare2,
   IconSquareCheck,
@@ -486,7 +485,7 @@ export function ClientsTable() {
       allowsSorting: true,
       cell: (item) => (
         <Chip color={statusColorMap[item.status]} size="sm" variant="soft">
-          <IconRecord size={6} />
+          <span className="size-1.5 rounded-full bg-current" />
           <Chip.Label>{capitalize(item.status)}</Chip.Label>
         </Chip>
       ),
@@ -659,7 +658,7 @@ export function ClientsTable() {
               {statuses.map((status) => (
                 <Dropdown.Item key={status} id={status} textValue={status}>
                   <Chip color={statusColorMap[status]} size="sm" variant="soft">
-                    <IconRecord size={6} />
+                    <span className="size-1.5 rounded-full bg-current" />
                     <Chip.Label>{capitalize(status)}</Chip.Label>
                   </Chip>
                   <Dropdown.ItemIndicator />
@@ -975,7 +974,7 @@ export function ClientsTable() {
         </ActionBar.Prefix>
         <ActionBar.Content>
           <Button size="sm" variant="ghost" onPress={handleExport}>
-            <IconArrowDownWall />
+            <IconArrowInbox />
             Export
           </Button>
           {activeSelection.length > 0 && (

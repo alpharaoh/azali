@@ -1,19 +1,19 @@
 import {
-  IconBook as IconBookFilled,
-  IconChecklist as IconChecklistFilled,
-  IconKanbanView as IconKanbanViewFilled,
-  IconSettingsGear1 as IconSettingsGear1Filled,
-  IconSparklesThree as IconSparklesThreeFilled,
+  Icon3dPackage2 as Icon3dPackage2Filled,
+  IconBrain1 as IconBrain1Filled,
+  IconInboxEmpty as IconInboxEmptyFilled,
+  IconMapEditFlat as IconMapEditFlatFilled,
+  IconSettingsGear4 as IconSettingsGear4Filled,
   IconUserGroup as IconUserGroupFilled,
 } from "@central-icons-react/square-filled-radius-0-stroke-1.5";
 import {
-  IconArrowBoxRight,
-  IconBook,
-  IconChecklist,
-  IconKanbanView,
-  IconSettingsGear1,
-  IconSidebar,
-  IconSparklesThree,
+  Icon3dPackage2,
+  IconArrowBoxLeft,
+  IconBrain1,
+  IconInboxEmpty,
+  IconLayoutLeftFull,
+  IconMapEditFlat,
+  IconSettingsGear4,
   IconUserGroup,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
@@ -80,22 +80,22 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "review",
         label: "Review Queue",
         href: "/dashboard/review",
-        icon: IconChecklist,
-        iconFilled: IconChecklistFilled,
+        icon: IconInboxEmpty,
+        iconFilled: IconInboxEmptyFilled,
       },
       {
         id: "pipeline",
-        label: "Pipeline",
+        label: "Shipments",
         href: "/dashboard/pipeline",
-        icon: IconKanbanView,
-        iconFilled: IconKanbanViewFilled,
+        icon: Icon3dPackage2,
+        iconFilled: Icon3dPackage2Filled,
       },
       {
         id: "autopilot",
         label: "Autopilot Log",
         href: "/dashboard/autopilot",
-        icon: IconSparklesThree,
-        iconFilled: IconSparklesThreeFilled,
+        icon: IconMapEditFlat,
+        iconFilled: IconMapEditFlatFilled,
       },
     ],
   },
@@ -106,8 +106,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         id: "classifications",
         label: "Classification Engine",
         href: "/dashboard/classifications",
-        icon: IconBook,
-        iconFilled: IconBookFilled,
+        icon: IconBrain1,
+        iconFilled: IconBrain1Filled,
       },
     ],
   },
@@ -130,8 +130,8 @@ const FOOTER_ITEMS: NavItem[] = [
     id: "settings",
     label: "Settings",
     href: "/dashboard/settings",
-    icon: IconSettingsGear1,
-    iconFilled: IconSettingsGear1Filled,
+    icon: IconSettingsGear4,
+    iconFilled: IconSettingsGear4Filled,
   },
 ];
 
@@ -197,7 +197,9 @@ const SidebarNav = ({
                   <Sidebar.MenuIcon>
                     <Icon className="size-4" />
                   </Sidebar.MenuIcon>
-                  <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+                  <Sidebar.MenuLabel className="font-normal!">
+                    {item.label}
+                  </Sidebar.MenuLabel>
                   {item.id === "review" ? (
                     <ReviewCountChip />
                   ) : item.chip ? (
@@ -240,7 +242,9 @@ const SidebarBase = ({
               <Sidebar.MenuIcon>
                 <Icon className="size-4" />
               </Sidebar.MenuIcon>
-              <Sidebar.MenuLabel>{item.label}</Sidebar.MenuLabel>
+              <Sidebar.MenuLabel className="font-normal!">
+                {item.label}
+              </Sidebar.MenuLabel>
             </Sidebar.MenuItem>
           );
         })}
@@ -252,7 +256,7 @@ const SidebarBase = ({
           }}
         >
           <Sidebar.MenuIcon>
-            <IconArrowBoxRight className="size-4" />
+            <IconArrowBoxLeft className="size-4" />
           </Sidebar.MenuIcon>
           <Sidebar.MenuLabel>Sign out</Sidebar.MenuLabel>
         </Sidebar.MenuItem>
@@ -313,7 +317,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
       }`}
     >
       <Sidebar.Trigger>
-        <IconSidebar className="size-4" />
+        <IconLayoutLeftFull className="size-4" />
       </Sidebar.Trigger>
       <Breadcrumbs className="min-w-0">
         <Breadcrumbs.Item className="text-muted min-w-0" href="/dashboard">
@@ -363,7 +367,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
             <Dropdown.Item id="settings" textValue="Settings">
               <div className="flex w-full items-center justify-between gap-2">
                 <Label>Settings</Label>
-                <IconSettingsGear1 className="text-muted size-3.5" />
+                <IconSettingsGear4 className="text-muted size-3.5" />
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
@@ -395,7 +399,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
             <Dropdown.Item id="logout" textValue="Logout" variant="danger">
               <div className="flex w-full items-center justify-between gap-2">
                 <Label>Log Out</Label>
-                <IconArrowBoxRight className="text-danger size-3.5" />
+                <IconArrowBoxLeft className="text-danger size-3.5" />
               </div>
             </Dropdown.Item>
           </Dropdown.Menu>
