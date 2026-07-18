@@ -32,9 +32,9 @@ export function DocumentsTimelineItem({
         <IconFileText className="text-muted size-3.5" />
       </Timeline.Marker>
       <Timeline.Content className="gap-2">
-        <Tabs className="w-fit" variant="secondary">
+        <Tabs className="min-w-0 max-w-full" variant="secondary">
           <Tabs.ListContainer>
-            <Tabs.List aria-label="Shipment documents" className="w-fit">
+            <Tabs.List aria-label="Shipment documents" className="max-w-full">
               {documents.map((document, index) => {
                 const { Icon, label } = docTabMeta(document);
 
