@@ -736,7 +736,7 @@ export function ReviewDetail({
                     </Timeline.Marker>
                     <Timeline.Content className="gap-2">
                       <Composer
-                        placeholder="Add a note to the audit record…"
+                        placeholder="Add a comment..."
                         value={draft}
                         onSubmit={handleAddNote}
                         onValueChange={setDraft}
