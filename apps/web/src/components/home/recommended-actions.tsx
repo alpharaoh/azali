@@ -68,12 +68,26 @@ export function RecommendedActions() {
 
   const byStatus = statsResponse?.data.byStatus;
 
-  if (!byStatus) {
+  // Cards derive from all four sources — rendering before every one has
+  // landed shows a card set that reshuffles as the stragglers arrive.
+  if (
+    !byStatus ||
+    !reviewsResponse ||
+    !shipmentsResponse ||
+    !emailAccountsResponse
+  ) {
     return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {Array.from({ length: 3 }, (_, index) => (
+      <div className="flex flex-wrap gap-3">
+        {Array.from({ length: 2 }, (_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-          <Skeleton key={index} className="h-[74px] rounded-2xl" />
+          <div key={index} className="bg-surface flex items-center gap-3 p-4">
+            <Skeleton className="size-9 rounded-xl" />
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-4 w-44 rounded" />
+              <Skeleton className="h-3 w-56 rounded" />
+            </div>
+            <Skeleton className="ml-2 size-4 rounded" />
+          </div>
         ))}
       </div>
     );

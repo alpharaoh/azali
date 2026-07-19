@@ -84,10 +84,14 @@ function WelcomeHeader() {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-foreground text-3xl tracking-tight">
-        {greetingForHour(new Date().getHours())}
-        {firstName ? `, ${firstName}` : ""}
-      </h1>
+      {me ? (
+        <h1 className="text-foreground text-3xl tracking-tight">
+          {greetingForHour(new Date().getHours())}
+          {firstName ? `, ${firstName}` : ""}
+        </h1>
+      ) : (
+        <Skeleton className="h-9 w-72 max-w-full rounded-lg" />
+      )}
       {byStatus ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <Chip size="sm" variant="soft">
