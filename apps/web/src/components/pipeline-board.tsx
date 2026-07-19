@@ -118,7 +118,7 @@ const stageOrder: PipelineStage[] = [
  * nudged by shipment value. P1 is reserved for the extreme case: arrival is
  * imminent and the entry still isn't filed.
  */
-function priorityFor(
+export function priorityFor(
   stage: PipelineStage,
   status: ShipmentStatus,
   arrivesInHours: number | null,
@@ -203,9 +203,11 @@ function without<T>(set: Set<T>, value: T) {
 export function StageTracker({
   stage,
   status,
+  priority,
 }: {
   stage: PipelineStage;
   status: ShipmentStatus;
+  priority: Priority | null;
 }) {
   const isReleased = stage === "released";
   const currentIndex = isReleased
@@ -223,9 +225,13 @@ export function StageTracker({
 
           if (isReleased) segment = "bg-success";
           else if (index < currentIndex) segment = "bg-accent";
-          else if (index === currentIndex)
-            segment =
-              status === "blocked" ? "bg-danger" : "bg-accent animate-pulse";
+          else if (index === currentIndex) {
+            // Red is reserved for the extreme case — blocked AND P1. A blocked
+            // shipment with slack stays accent (static: nothing is running).
+            if (status === "blocked")
+              segment = priority === 1 ? "bg-danger" : "bg-accent";
+            else segment = "bg-accent animate-pulse";
+          }
 
           return (
             <span key={s.id} className={`h-1.5 w-6 rounded-full ${segment}`} />
@@ -523,7 +529,13 @@ export function PipelineBoard() {
     },
     {
       allowsSorting: true,
-      cell: (row) => <StageTracker stage={row.stage} status={row.status} />,
+      cell: (row) => (
+        <StageTracker
+          stage={row.stage}
+          status={row.status}
+          priority={row.priority}
+        />
+      ),
       header: "Stage",
       id: "stage",
       minWidth: 190,

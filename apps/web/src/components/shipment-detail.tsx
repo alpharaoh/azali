@@ -32,6 +32,7 @@ import {
   EventTimelineItem,
 } from "#/components/case-file/timeline-items";
 import {
+  priorityFor,
   StageTracker,
   statusFromApi,
   statusMeta,
@@ -271,6 +272,15 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 <StageTracker
                   stage={shipment.stage}
                   status={statusFromApi[shipment.status]}
+                  priority={priorityFor(
+                    shipment.stage,
+                    statusFromApi[shipment.status],
+                    shipment.etaAt
+                      ? (new Date(shipment.etaAt).getTime() - Date.now()) /
+                          3_600_000
+                      : null,
+                    shipment.valueCents / 100,
+                  )}
                 />
               </div>
             </>
