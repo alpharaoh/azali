@@ -1,4 +1,9 @@
-import { IconCircleCheck } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
+import {
+  Icon3dPackage2,
+  IconCircleCheck,
+  IconInboxEmpty,
+  IconSparklesThree,
+} from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Avatar, Button, Chip, Skeleton } from "@heroui/react";
 import { Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -59,6 +64,13 @@ function count(n: number, noun: string) {
 /* -------------------------------------------------------------------------------------------------
  * Header — the greeting plus one quiet line of where things stand
  * -----------------------------------------------------------------------------------------------*/
+function greetingForHour(hour: number) {
+  if (hour < 5) return "Good evening"; // small hours read as late night
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function WelcomeHeader() {
   const { data: me } = useUsersControllerGetProfile();
   const { data: statsResponse } = useShipmentsControllerStats({
@@ -72,17 +84,40 @@ function WelcomeHeader() {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-foreground text-2xl font-medium tracking-tight">
-        Welcome back{firstName ? `, ${firstName}` : ""}
+      <h1 className="text-foreground text-3xl tracking-tight">
+        {greetingForHour(new Date().getHours())}
+        {firstName ? `, ${firstName}` : ""}
       </h1>
       {byStatus ? (
-        <span className="text-muted text-sm">
-          {count(inFlight, "shipment")} in flight ·{" "}
-          {count(byStatus.needs_review, "item")} awaiting your review ·{" "}
-          {byStatus.autopilot + byStatus.awaiting_cbp} on autopilot
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Chip size="sm" variant="soft">
+            <Icon3dPackage2 className="size-3" />
+            <Chip.Label>{count(inFlight, "shipment")} in flight</Chip.Label>
+          </Chip>
+          {/* Quiet gray until reviews actually pile up. */}
+          <Chip
+            color={byStatus.needs_review > 1 ? "warning" : "default"}
+            size="sm"
+            variant="soft"
+          >
+            <IconInboxEmpty className="size-3" />
+            <Chip.Label>
+              {count(byStatus.needs_review, "item")} awaiting your review
+            </Chip.Label>
+          </Chip>
+          <Chip size="sm" variant="soft">
+            <IconSparklesThree className="size-3" />
+            <Chip.Label>
+              {byStatus.autopilot + byStatus.awaiting_cbp} on autopilot
+            </Chip.Label>
+          </Chip>
+        </div>
       ) : (
-        <Skeleton className="h-4 w-80 max-w-full rounded" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-6 w-32 rounded-full" />
+          <Skeleton className="h-6 w-40 rounded-full" />
+          <Skeleton className="h-6 w-28 rounded-full" />
+        </div>
       )}
     </div>
   );
