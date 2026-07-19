@@ -111,7 +111,7 @@ export function RecommendedActions() {
       tone: "danger",
       icon: IconClockAlert,
       title: `${count(dueSoon, "review")} due within 24 hours`,
-      detail: "Clear these first — the legal clock is running.",
+      detail: "Clear these first, the legal clock is running.",
       href: "/dashboard/review",
     });
   }
@@ -131,7 +131,7 @@ export function RecommendedActions() {
       tone: "accent",
       icon: IconInboxEmpty,
       title: `${count(byStatus.needs_review, "item")} waiting for review`,
-      detail: "No deadlines pressing — work the queue when you're ready.",
+      detail: "No deadlines pressing, work the queue when you're ready.",
       href: "/dashboard/review",
     });
   }
