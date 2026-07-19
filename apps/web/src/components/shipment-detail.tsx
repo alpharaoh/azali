@@ -330,7 +330,10 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
 
       {/* Review CTA — classification flagged lines for the broker */}
       {shipment?.status === "needs_review" ? (
-        <ItemCard variant="outline" className="my-2">
+        <ItemCard
+          variant="outline"
+          className="my-2 bg-warning/10 border-warning/40"
+        >
           <ItemCard.Icon>
             <IconSquareChecklistMagnifyingGlass className="size-4" />
           </ItemCard.Icon>
