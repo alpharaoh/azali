@@ -38,7 +38,8 @@ import {
 } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { Fragment, useEffect, useState } from "react";
-
+import logo from "#/assets/logo.svg";
+import logoDark from "#/assets/logo_dark.svg";
 import { ThemeSwitcher } from "#/components/theme-switcher";
 import {
   getUsersControllerGetProfileQueryOptions,
@@ -47,7 +48,7 @@ import {
 } from "#/generated/api";
 import { sessionQueryOptions, signOutAndRedirect } from "#/lib/auth";
 import { getInitials } from "#/lib/format";
-import { toggleTheme } from "#/lib/theme";
+import { toggleTheme, useTheme } from "#/lib/theme";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -158,21 +159,20 @@ const ALL_ITEMS = [
   ...FOOTER_ITEMS,
 ];
 
-const SidebarBrand = () => (
-  <div className="flex items-center gap-3 px-1 py-2">
-    <div className="bg-accent flex size-8 shrink-0 items-center justify-center rounded-lg">
-      <span className="text-background text-sm font-bold">A</span>
+const SidebarBrand = () => {
+  const { theme } = useTheme();
+  return (
+    <div className="flex items-center gap-3 px-1 py-1">
+      <div className="flex flex-col">
+        <img
+          src={theme === "light" ? logo : logoDark}
+          alt="Azali"
+          className="h-7 w-auto"
+        />
+      </div>
     </div>
-    <div className="flex flex-col">
-      <span className="text-foreground text-sm font-semibold leading-tight">
-        Azali
-      </span>
-      <span className="text-muted text-xs leading-tight">
-        AI Customs Brokerage
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
 const ReviewCountChip = () => {
   const { data } = useShipmentsControllerFindAll({
