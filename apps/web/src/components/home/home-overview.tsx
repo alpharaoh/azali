@@ -71,8 +71,8 @@ function WelcomeHeader() {
     : 0;
 
   return (
-    <div className="flex flex-col gap-1">
-      <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-2">
+      <h1 className="text-foreground text-2xl font-medium tracking-tight">
         Welcome back{firstName ? `, ${firstName}` : ""}
       </h1>
       {byStatus ? (
