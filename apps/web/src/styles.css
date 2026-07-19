@@ -16,6 +16,12 @@
   white-space: nowrap;
 }
 
+/* The brand wordmark's serif — loaded in index.html alongside the app fonts. */
+.font-brand {
+  font-family: "Instrument Serif", serif;
+  font-weight: 400;
+}
+
 /* Headings app-wide are medium, not semibold; widget titles follow suit. */
 .widget__title {
   font-weight: var(--font-weight-medium, 500);
