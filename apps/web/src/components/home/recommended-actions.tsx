@@ -7,6 +7,7 @@ import {
   IconInboxEmpty,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Skeleton } from "@heroui/react";
+import { ItemCard, ItemCardGroup } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { addHours, isBefore } from "date-fns";
@@ -161,32 +162,39 @@ export function RecommendedActions() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+    // Titles/descriptions don't wrap, so equal-width grid tracks would
+    // truncate them — let each card hug its content instead.
+    <ItemCardGroup layout="grid" className="flex flex-wrap">
       {shown.map((card) => {
         const Icon = card.icon;
 
         return (
-          <button
+          <ItemCard
             key={card.id}
-            className="group bg-background/40 hover:bg-default/40 flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-left transition-colors"
-            type="button"
+            className="group hover:bg-default/40 cursor-pointer p-4 transition-colors"
+            role="button"
+            tabIndex={0}
             onClick={() => navigate({ to: card.href })}
+            onKeyDown={(event: React.KeyboardEvent) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate({ to: card.href });
+              }
+            }}
           >
-            <span
-              className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${toneClass[card.tone]}`}
-            >
+            <ItemCard.Icon className={`rounded-xl ${toneClass[card.tone]}`}>
               <Icon className="size-4" />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-foreground truncate text-sm font-medium">
-                {card.title}
-              </span>
-              <span className="text-muted truncate text-xs">{card.detail}</span>
-            </span>
-            <IconArrowRight className="text-muted size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
-          </button>
+            </ItemCard.Icon>
+            <ItemCard.Content>
+              <ItemCard.Title>{card.title}</ItemCard.Title>
+              <ItemCard.Description>{card.detail}</ItemCard.Description>
+            </ItemCard.Content>
+            <ItemCard.Action>
+              <IconArrowRight className="text-muted size-4 transition-transform group-hover:translate-x-0.5" />
+            </ItemCard.Action>
+          </ItemCard>
         );
       })}
-    </div>
+    </ItemCardGroup>
   );
 }
