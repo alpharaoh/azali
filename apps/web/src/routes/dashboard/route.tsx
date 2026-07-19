@@ -2,6 +2,7 @@ import {
   Icon3dPackage2 as Icon3dPackage2Filled,
   IconBrain1 as IconBrain1Filled,
   IconCoinStack as IconCoinStackFilled,
+  IconHomeRoundDoor as IconHomeRoundDoorFilled,
   IconInboxEmpty as IconInboxEmptyFilled,
   IconLaw as IconLawFilled,
   IconMapEditFlat as IconMapEditFlatFilled,
@@ -13,6 +14,7 @@ import {
   IconArrowBoxLeft,
   IconBrain1,
   IconCoinStack,
+  IconHomeRoundDoor,
   IconInboxEmpty,
   IconLaw,
   IconLayoutLeftFull,
@@ -74,6 +76,21 @@ type NavItem = {
   iconFilled: ComponentType<{ className?: string }>;
   chip?: string;
 };
+
+const HOME_ITEM: NavItem = {
+  id: "home",
+  label: "Home",
+  href: "/dashboard",
+  icon: IconHomeRoundDoor,
+  iconFilled: IconHomeRoundDoorFilled,
+};
+
+/** Home's href is a prefix of every dashboard path — it only counts as
+ * active on an exact match; everything else keeps prefix matching. */
+const isNavItemActive = (item: NavItem, pathname: string) =>
+  item.href === "/dashboard"
+    ? pathname === "/dashboard" || pathname === "/dashboard/"
+    : pathname.startsWith(item.href);
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
@@ -153,6 +170,7 @@ const FOOTER_ITEMS: NavItem[] = [
 ];
 
 const ALL_ITEMS = [
+  HOME_ITEM,
   ...NAV_GROUPS.flatMap((group) => group.items),
   ...FOOTER_ITEMS,
 ];
@@ -181,46 +199,66 @@ const SidebarNav = ({
 }: {
   idSuffix?: string;
   pathname: string;
-}) => (
-  <>
-    {NAV_GROUPS.map((group, index) => (
-      <Fragment key={group.label}>
-        {index > 0 ? <Sidebar.Separator /> : null}
-        <Sidebar.Group>
-          <Sidebar.GroupLabel>{group.label}</Sidebar.GroupLabel>
-          <Sidebar.Menu aria-label={group.label}>
-            {group.items.map((item) => {
-              const isCurrent = pathname.startsWith(item.href);
-              const Icon = isCurrent ? item.iconFilled : item.icon;
+}) => {
+  const isHomeActive = isNavItemActive(HOME_ITEM, pathname);
+  const HomeIcon = isHomeActive ? HOME_ITEM.iconFilled : HOME_ITEM.icon;
 
-              return (
-                <Sidebar.MenuItem
-                  key={item.id}
-                  href={item.href}
-                  id={`${item.id}${idSuffix}`}
-                  isCurrent={isCurrent}
-                  textValue={item.label}
-                >
-                  <Sidebar.MenuIcon className="text-foreground!">
-                    <Icon className="size-4" />
-                  </Sidebar.MenuIcon>
-                  <Sidebar.MenuLabel className="font-normal!">
-                    {item.label}
-                  </Sidebar.MenuLabel>
-                  {item.id === "review" ? (
-                    <ReviewCountChip />
-                  ) : item.chip ? (
-                    <Sidebar.MenuChip>{item.chip}</Sidebar.MenuChip>
-                  ) : null}
-                </Sidebar.MenuItem>
-              );
-            })}
-          </Sidebar.Menu>
-        </Sidebar.Group>
-      </Fragment>
-    ))}
-  </>
-);
+  return (
+    <>
+      <Sidebar.Menu aria-label="Home">
+        <Sidebar.MenuItem
+          href={HOME_ITEM.href}
+          id={`${HOME_ITEM.id}${idSuffix}`}
+          isCurrent={isHomeActive}
+          textValue={HOME_ITEM.label}
+        >
+          <Sidebar.MenuIcon className="text-foreground!">
+            <HomeIcon className="size-4" />
+          </Sidebar.MenuIcon>
+          <Sidebar.MenuLabel className="font-normal!">
+            {HOME_ITEM.label}
+          </Sidebar.MenuLabel>
+        </Sidebar.MenuItem>
+      </Sidebar.Menu>
+      {NAV_GROUPS.map((group) => (
+        <Fragment key={group.label}>
+          <Sidebar.Separator />
+          <Sidebar.Group>
+            <Sidebar.GroupLabel>{group.label}</Sidebar.GroupLabel>
+            <Sidebar.Menu aria-label={group.label}>
+              {group.items.map((item) => {
+                const isCurrent = isNavItemActive(item, pathname);
+                const Icon = isCurrent ? item.iconFilled : item.icon;
+
+                return (
+                  <Sidebar.MenuItem
+                    key={item.id}
+                    href={item.href}
+                    id={`${item.id}${idSuffix}`}
+                    isCurrent={isCurrent}
+                    textValue={item.label}
+                  >
+                    <Sidebar.MenuIcon className="text-foreground!">
+                      <Icon className="size-4" />
+                    </Sidebar.MenuIcon>
+                    <Sidebar.MenuLabel className="font-normal!">
+                      {item.label}
+                    </Sidebar.MenuLabel>
+                    {item.id === "review" ? (
+                      <ReviewCountChip />
+                    ) : item.chip ? (
+                      <Sidebar.MenuChip>{item.chip}</Sidebar.MenuChip>
+                    ) : null}
+                  </Sidebar.MenuItem>
+                );
+              })}
+            </Sidebar.Menu>
+          </Sidebar.Group>
+        </Fragment>
+      ))}
+    </>
+  );
+};
 
 const SidebarBase = ({
   idSuffix = "",
@@ -419,7 +457,7 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
 function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const activeItem = ALL_ITEMS.find((item) => pathname.startsWith(item.href));
+  const activeItem = ALL_ITEMS.find((item) => isNavItemActive(item, pathname));
   // The review queue is a full-height two-pane workspace — give it the
   // navbar's vertical real estate.
   const hideNavbar = pathname.startsWith("/dashboard/review");

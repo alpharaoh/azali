@@ -50,7 +50,7 @@ import { ROWS_PER_PAGE_OPTIONS, useRowsPerPage } from "#/lib/use-rows-per-page";
 /* -------------------------------------------------------------------------------------------------
  * Meta
  * -----------------------------------------------------------------------------------------------*/
-type AutopilotActionType =
+export type AutopilotActionType =
   | "intake"
   | "extraction"
   | "classification"
@@ -69,7 +69,7 @@ interface Row {
   occurredAt: Date;
 }
 
-const typeMeta: Record<
+export const typeMeta: Record<
   AutopilotActionType,
   {
     color: string;
@@ -101,7 +101,7 @@ const typeMeta: Record<
   review: { color: "var(--warning)", icon: IconFlag1, label: "Review" },
 };
 
-const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
+export const typeIds = Object.keys(typeMeta) as AutopilotActionType[];
 
 /** Known event types, mapped to the six action families shown in the charts. */
 const EVENT_TYPE_BUCKET: Record<string, AutopilotActionType> = {
@@ -160,7 +160,7 @@ const TRACE_KIND_BUCKET: Record<string, AutopilotActionType> = {
   read: "extraction",
 };
 
-function bucketForEvent(
+export function bucketForEvent(
   eventType: string,
   payload: Record<string, unknown>,
 ): AutopilotActionType {
