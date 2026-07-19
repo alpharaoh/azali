@@ -87,10 +87,15 @@ const HOME_ITEM: NavItem = {
 
 /** Home's href is a prefix of every dashboard path — it only counts as
  * active on an exact match; everything else keeps prefix matching. */
-const isNavItemActive = (item: NavItem, pathname: string) =>
-  item.href === "/dashboard"
-    ? pathname === "/dashboard" || pathname === "/dashboard/"
-    : pathname.startsWith(item.href);
+const isNavItemActive = (item: NavItem, pathname: string) => {
+  if (item.href === "/dashboard")
+    return pathname === "/dashboard" || pathname === "/dashboard/";
+  // Shipment detail pages live under /dashboard/shipments (not in the nav);
+  // they belong to the Shipments section, whose list is /dashboard/pipeline.
+  if (item.id === "pipeline" && pathname.startsWith("/dashboard/shipments"))
+    return true;
+  return pathname.startsWith(item.href);
+};
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {

@@ -2,9 +2,9 @@ import {
   IconArrowLeft,
   IconExclamationCircle,
   IconFileText,
-  IconShieldBreak,
   IconSparklesThree,
   IconSquareArrowTopRight,
+  IconSquareChecklistMagnifyingGlass,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
@@ -15,7 +15,7 @@ import {
   Tabs,
   toast,
 } from "@heroui/react";
-import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
+import { ItemCard, TextShimmer, Timeline, Widget } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -330,26 +330,31 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
 
       {/* Review CTA — classification flagged lines for the broker */}
       {shipment?.status === "needs_review" ? (
-        <div className="border-warning/40 bg-warning/5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
-          <span className="inline-flex items-center gap-2">
-            <IconShieldBreak className="text-warning size-4" />
-            <span className="text-foreground text-sm">
-              Classification needs broker review.
-            </span>
-          </span>
-          <Button
-            size="sm"
-            variant="primary"
-            onPress={() =>
-              navigate({
-                params: { itemId: shipmentId },
-                to: "/dashboard/review/$itemId",
-              })
-            }
-          >
-            Open in review queue
-          </Button>
-        </div>
+        <ItemCard variant="outline" className="my-2">
+          <ItemCard.Icon>
+            <IconSquareChecklistMagnifyingGlass className="size-4" />
+          </ItemCard.Icon>
+          <ItemCard.Content>
+            <ItemCard.Title>Classification needs broker review</ItemCard.Title>
+            <ItemCard.Description>
+              Confirm the flagged lines before the entry is filed.
+            </ItemCard.Description>
+          </ItemCard.Content>
+          <ItemCard.Action>
+            <Button
+              size="sm"
+              variant="primary"
+              onPress={() =>
+                navigate({
+                  params: { itemId: shipmentId },
+                  to: "/dashboard/review/$itemId",
+                })
+              }
+            >
+              Open in review queue
+            </Button>
+          </ItemCard.Action>
+        </ItemCard>
       ) : null}
 
       {/* Failure surface — ingest/classification failures land on the timeline */}
