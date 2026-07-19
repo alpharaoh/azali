@@ -1,4 +1,5 @@
-import { Skeleton } from "@heroui/react";
+import { IconCircleInfo } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
+import { Button, Skeleton, Tooltip } from "@heroui/react";
 import { AreaChart, BarChart, ChartTooltip, Widget } from "@heroui-pro/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, subDays, subMonths } from "date-fns";
@@ -117,12 +118,31 @@ function GrowthChart() {
 
     return { entries, month: format(date, "MMM") };
   });
-  const isEmpty = growthSeries.every((point) => point.entries === 0);
 
   return (
     <Widget>
       <Widget.Header>
-        <Widget.Title>Catalog Growth</Widget.Title>
+        <span className="flex items-center gap-1.5">
+          <Widget.Title>Catalog Growth</Widget.Title>
+          <Tooltip delay={0}>
+            <Tooltip.Trigger>
+              <Button
+                isIconOnly
+                aria-label="About catalog growth"
+                className="text-muted hover:text-foreground size-5 min-h-5 min-w-5"
+                size="sm"
+                variant="ghost"
+              >
+                <IconCircleInfo className="size-3.5" />
+              </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className="max-w-60">
+              Cumulative products in the classification engine. Grows as
+              products are classified; approved codes are reused on future
+              shipments.
+            </Tooltip.Content>
+          </Tooltip>
+        </span>
         <span className="text-muted text-xs">
           Cumulative classified products
         </span>
@@ -130,10 +150,6 @@ function GrowthChart() {
       <Widget.Content>
         {isPending ? (
           <Skeleton className="h-[220px] rounded-lg" />
-        ) : isEmpty ? (
-          <div className="text-muted flex h-[220px] items-center justify-center text-sm">
-            Growth appears as products are classified.
-          </div>
         ) : (
           <AreaChart data={growthSeries} height={220}>
             <defs>
