@@ -27,6 +27,7 @@ import { differenceInHours, formatDistanceToNowStrict } from "date-fns";
 import type { ComponentType } from "react";
 import { useState } from "react";
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
+import { AlternateClassificationsCard } from "#/components/case-file/alternate-classifications-card";
 import {
   CitationPill,
   faviconFor,
@@ -37,10 +38,7 @@ import {
   SingleDocumentTimelineItem,
 } from "#/components/case-file/document-items";
 import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
-import {
-  AlternatesList,
-  LineDetailDrawer,
-} from "#/components/case-file/line-detail-drawer";
+import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
 import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
 import { ShipmentFactsStrip } from "#/components/case-file/shipment-facts";
 import {
@@ -608,21 +606,14 @@ export function ReviewDetail({
                 Multi-line mode surfaces each line's own alternates in the
                 line's drawer instead. */}
             {!multiLine && item.alternates && item.alternates.length > 0 ? (
-              <Widget>
-                <Widget.Header>
-                  <Widget.Title>Alternate classifications</Widget.Title>
-                </Widget.Header>
-                <Widget.Content>
-                  <AlternatesList
-                    alternates={item.alternates}
-                    deltaFor={(value) =>
-                      item.dutyImpact?.alternates?.[value]?.deltaUsd
-                    }
-                    selected={alternate}
-                    onSelect={setAlternate}
-                  />
-                </Widget.Content>
-              </Widget>
+              <AlternateClassificationsCard
+                alternates={item.alternates}
+                deltaFor={(value) =>
+                  item.dutyImpact?.alternates?.[value]?.deltaUsd
+                }
+                selected={alternate}
+                onSelect={setAlternate}
+              />
             ) : null}
 
             {/* Comparison — when two documents disagree, it's decision material */}

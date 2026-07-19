@@ -3,7 +3,6 @@ import {
   IconArrowUndoUp,
   IconBold,
   IconBulletList,
-  IconCircleCheck,
   IconH2,
   IconH3,
   IconItalic,
@@ -11,20 +10,14 @@ import {
   IconSparklesThree,
   IconUnderline,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
-import { Button, Chip, Drawer, Separator, toast } from "@heroui/react";
-import {
-  HoverCard,
-  ItemCard,
-  ItemCardGroup,
-  RichTextEditor,
-  Segment,
-  Widget,
-} from "@heroui-pro/react";
+import { Button, Chip, Drawer, toast } from "@heroui/react";
+import { RichTextEditor, Segment } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
+import { AlternateClassificationsCard } from "#/components/case-file/alternate-classifications-card";
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import {
@@ -33,113 +26,6 @@ import {
 } from "#/generated/api";
 import { formatCurrency } from "#/lib/format";
 import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
-
-/* -------------------------------------------------------------------------------------------------
- * Alternates — the runner-up codes with duty deltas and a choose action.
- * Shared between the single-line overview card and the per-line drawer.
- * -----------------------------------------------------------------------------------------------*/
-export function AlternatesList({
-  alternates,
-  deltaFor,
-  onSelect,
-  selected,
-}: {
-  alternates: Array<{
-    value: string;
-    detail: string;
-    confidence: number;
-    reason?: string;
-  }>;
-  /** Duty change in USD if this code were chosen; undefined hides the delta. */
-  deltaFor: (value: string) => number | undefined;
-  /** Omit for a read-only list (outside the review flow). */
-  onSelect?: (value: string | null) => void;
-  selected?: string | null;
-}) {
-  return (
-    <ItemCardGroup variant="outline">
-      {alternates.map((alt, index) => {
-        const isSelected = selected === alt.value;
-        const deltaUsd = deltaFor(alt.value);
-
-        return (
-          <Fragment key={alt.value}>
-            {index > 0 ? <Separator /> : null}
-            <ItemCard>
-              <ItemCard.Content>
-                <ItemCard.Title className="whitespace-normal tabular-nums">
-                  {alt.value}
-                </ItemCard.Title>
-                {/* The component truncates by default — let the detail wrap
-                    instead. */}
-                <ItemCard.Description className="whitespace-normal leading-relaxed">
-                  {alt.detail}
-                </ItemCard.Description>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <Chip color="default" size="sm" variant="soft">
-                    <Chip.Label>
-                      {Math.round(alt.confidence * 100)}% confident
-                    </Chip.Label>
-                  </Chip>
-                  {deltaUsd !== undefined ? (
-                    <span
-                      className={`text-xs font-medium tabular-nums ${
-                        deltaUsd > 0
-                          ? "text-danger"
-                          : deltaUsd < 0
-                            ? "text-success"
-                            : "text-muted"
-                      }`}
-                    >
-                      {deltaUsd === 0
-                        ? "$0 duty change"
-                        : `${deltaUsd > 0 ? "+" : "−"}${formatCurrency(Math.abs(deltaUsd))} duty`}
-                    </span>
-                  ) : null}
-                  {alt.reason ? (
-                    <HoverCard closeDelay={100} openDelay={150}>
-                      <HoverCard.Trigger className="inline-flex w-fit">
-                        <span className="text-muted cursor-help text-xs underline decoration-dashed underline-offset-2">
-                          Why not?
-                        </span>
-                      </HoverCard.Trigger>
-                      <HoverCard.Content
-                        className="max-w-xs p-3"
-                        placement="top"
-                      >
-                        <p className="text-muted text-xs leading-relaxed">
-                          {alt.reason}
-                        </p>
-                      </HoverCard.Content>
-                    </HoverCard>
-                  ) : null}
-                </div>
-              </ItemCard.Content>
-              {onSelect ? (
-                <ItemCard.Action>
-                  <Button
-                    size="sm"
-                    variant={isSelected ? "primary" : "outline"}
-                    onPress={() => onSelect(isSelected ? null : alt.value)}
-                  >
-                    {isSelected ? (
-                      <>
-                        <IconCircleCheck className="size-3.5" />
-                        Selected
-                      </>
-                    ) : (
-                      "Choose alternative"
-                    )}
-                  </Button>
-                </ItemCard.Action>
-              ) : null}
-            </ItemCard>
-          </Fragment>
-        );
-      })}
-    </ItemCardGroup>
-  );
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Inline memo editor — the line's rationale memo, editable in place. Saving
@@ -438,22 +324,14 @@ function LineDetailContent({
           </div>
 
           {line.alternates && line.alternates.length > 0 ? (
-            <Widget>
-              <Widget.Header>
-                <Widget.Title>Alternate classifications</Widget.Title>
-              </Widget.Header>
-              <Widget.Content>
-                <AlternatesList
-                  alternates={line.alternates}
-                  deltaFor={(value) =>
-                    line.alternates?.find((alt) => alt.value === value)
-                      ?.deltaUsd
-                  }
-                  selected={selectedAlternate}
-                  onSelect={onSelectAlternate}
-                />
-              </Widget.Content>
-            </Widget>
+            <AlternateClassificationsCard
+              alternates={line.alternates}
+              deltaFor={(value) =>
+                line.alternates?.find((alt) => alt.value === value)?.deltaUsd
+              }
+              selected={selectedAlternate}
+              onSelect={onSelectAlternate}
+            />
           ) : line.reused ? (
             <span className="text-muted text-xs">
               Reused from product memory — no alternates were scored for this
