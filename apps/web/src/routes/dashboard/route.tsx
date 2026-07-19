@@ -35,8 +35,8 @@ import {
   createFileRoute,
   Outlet,
   redirect,
-  useLocation,
   useNavigate,
+  useRouterState,
 } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { Fragment, useEffect, useState } from "react";
@@ -461,7 +461,16 @@ const DashboardNavbar = ({ sectionLabel }: { sectionLabel: string }) => {
 
 function DashboardLayout() {
   const navigate = useNavigate();
-  const pathname = useLocation({ select: (location) => location.pathname });
+  // Derive the pathname from the COMMITTED match list — the same state the
+  // Outlet renders from — so the navbar, breadcrumb, and sidebar highlight
+  // change in the exact frame the page swaps. `useLocation` flips when
+  // navigation starts (a frame early) and `resolvedLocation` updates after
+  // the commit (a frame late); both tear the layout.
+  const pathname = useRouterState({
+    select: (state) =>
+      state.matches[state.matches.length - 1]?.pathname ??
+      state.location.pathname,
+  });
   const activeItem = ALL_ITEMS.find((item) => isNavItemActive(item, pathname));
   // The review queue is a full-height two-pane workspace — give it the
   // navbar's vertical real estate.
