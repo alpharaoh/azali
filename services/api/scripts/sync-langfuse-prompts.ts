@@ -11,6 +11,10 @@
  * code fallback.
  */
 import {
+  CLASSIFICATION_PROMPT_NAME,
+  CLASSIFICATION_SYSTEM_PROMPT,
+} from "@/services/agents/classification/prompt";
+import {
   PGA_PROMPT_NAME,
   PGA_SYSTEM_PROMPT,
   PGA_TRIAGE_PROMPT,
@@ -19,6 +23,7 @@ import {
 import { langfuse } from "@/services/external/langfuse/client";
 
 const REGISTRY: Array<{ name: string; text: string }> = [
+  { name: CLASSIFICATION_PROMPT_NAME, text: CLASSIFICATION_SYSTEM_PROMPT },
   { name: PGA_PROMPT_NAME, text: PGA_SYSTEM_PROMPT },
   { name: PGA_TRIAGE_PROMPT_NAME, text: PGA_TRIAGE_PROMPT },
 ];
