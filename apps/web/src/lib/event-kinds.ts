@@ -10,6 +10,7 @@ export const DOCUMENT_EVENT_TYPES = new Set([
   "cbp_notice_received",
   "classification_memo_drafted",
   "document_received",
+  "pga_memo_drafted",
   "response_drafted",
   "ruling_request_drafted",
 ]);
@@ -25,6 +26,7 @@ export const MILESTONE_EVENT_TYPES = new Set([
   "duty_computed",
   "entry_drafted",
   "entry_filed",
+  "pga_screened",
   "review_requested",
   "review_resolved",
   "shipment_facts_extracted",

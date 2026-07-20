@@ -25,7 +25,13 @@ import { useAgentRunsControllerFind } from "#/generated/api";
  * found, in the order it happened.
  * -----------------------------------------------------------------------------------------------*/
 
-type SourceName = "HTSUS" | "CROSS" | "Knowledge base" | "Web";
+type SourceName =
+  | "HTSUS"
+  | "CROSS"
+  | "Knowledge base"
+  | "Web"
+  | "Flag table"
+  | "Engine";
 
 const TOOL_META: Record<
   string,
@@ -70,12 +76,36 @@ const TOOL_META: Record<
     source: "Knowledge base",
     icon: IconMagnifyingGlass,
   },
+  searchPriorScreenings: {
+    label: "Searched prior screenings",
+    source: "Knowledge base",
+    icon: IconMagnifyingGlass,
+  },
   webSearch: {
     label: "Searched the web",
     source: "Web",
     icon: IconGlobe,
   },
+  web_search: {
+    label: "Searched the web",
+    source: "Web",
+    icon: IconGlobe,
+  },
+  code_execution: {
+    label: "Ran code",
+    source: "Engine",
+    icon: IconMagnifyingGlass,
+  },
+  lookupPgaFlags: {
+    label: "Looked up agency flags",
+    source: "Flag table",
+    icon: IconBook,
+  },
 };
+
+/** The submission tools end their runs — they render as decisions, never as
+ * research actions, and the live tail ignores them. */
+const SUBMIT_TOOLS = new Set(["submitClassification", "submitPgaScreening"]);
 
 /** "searchPriorClassifications" → "Search prior classifications" — a
  * readable fallback for tools that have no curated label yet. */
@@ -130,6 +160,27 @@ function SourceBadge({ source }: { source: SourceName }) {
           <IconGlobe className="size-3" />
           Web
         </Chip.Label>
+      </Chip>
+    );
+  }
+  if (source === "Flag table") {
+    return (
+      <Chip
+        className="bg-amber-500/15 text-amber-700 dark:text-amber-300"
+        size="sm"
+        variant="soft"
+      >
+        <Chip.Label className="inline-flex items-center gap-1">
+          <IconBook className="size-3" />
+          ACE flags
+        </Chip.Label>
+      </Chip>
+    );
+  }
+  if (source === "Engine") {
+    return (
+      <Chip className="bg-muted/40 text-muted" size="sm" variant="soft">
+        <Chip.Label>Engine</Chip.Label>
       </Chip>
     );
   }
@@ -326,10 +377,26 @@ function summarizeResult(item: RunItem): string[] {
       }
       case "searchKnowledge":
       case "searchPriorClassifications":
+      case "searchPriorScreenings":
         // Matches render as structured cards (KnowledgeMatchList) instead.
         return [];
       case "webSearch":
         return summarizeWebResults(output);
+      case "lookupPgaFlags": {
+        const value = output as {
+          flags: Array<{
+            agencyCode: string;
+            flagCode: string;
+            requirement: string;
+          }>;
+        };
+        return value.flags.length === 0
+          ? ["no flags on this code"]
+          : value.flags.map(
+              (flag) =>
+                `${flag.flagCode}  ${flag.agencyCode}  ${flag.requirement.replace(/_/g, " ")}`,
+            );
+      }
       default:
         return [JSON.stringify(output).slice(0, 110)];
     }
@@ -402,6 +469,63 @@ function DecisionBody({ answer }: { answer: AnswerView }) {
   );
 }
 
+interface ScreeningView {
+  summary?: string;
+  determinations: Array<{
+    agencyCode: string;
+    flagCode: string | null;
+    determination: string;
+    disclaimCode: string | null;
+  }>;
+}
+
+function toScreeningView(value: unknown): ScreeningView | null {
+  const answer = value as {
+    summary?: string;
+    determinations?: ScreeningView["determinations"];
+  };
+  if (!Array.isArray(answer?.determinations)) return null;
+  return { summary: answer.summary, determinations: answer.determinations };
+}
+
+function screeningLine(
+  determination: ScreeningView["determinations"][number],
+): string {
+  const verdict =
+    determination.determination === "required"
+      ? "file agency data"
+      : determination.determination === "disclaim"
+        ? `disclaim (${determination.disclaimCode ?? "?"})`
+        : "not applicable";
+  return `${determination.agencyCode}  ${determination.flagCode ?? "sweep"}  →  ${verdict}`;
+}
+
+function ScreeningBody({ screening }: { screening: ScreeningView }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {screening.summary ? (
+        <ClampedText
+          className="text-muted text-xs leading-relaxed"
+          lines={4}
+          text={screening.summary}
+        />
+      ) : null}
+      {screening.determinations.length > 0 ? (
+        <div className="bg-surface flex flex-col gap-0.5 rounded-lg border p-2.5 font-mono text-xs leading-relaxed">
+          {screening.determinations.map((determination, index) => (
+            <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: determinations have no stable id in the run record
+              key={index}
+            >
+              {screeningLine(determination)}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function formatDuration(durationMs: number | null): string {
   if (!durationMs) return "a moment";
   const seconds = Math.round(durationMs / 1000);
@@ -455,7 +579,7 @@ function tailLabel(
   const last = items[items.length - 1];
   if (
     last?.kind === "tool_call" &&
-    last.toolName !== "submitClassification" &&
+    !SUBMIT_TOOLS.has(last.toolName ?? "") &&
     (!last.toolCallId || !resultsByCallId.has(last.toolCallId))
   ) {
     const label = TOOL_META[last.toolName ?? ""]?.label;
@@ -617,10 +741,40 @@ export function AgentRunTrace({ runId }: { runId: string }) {
                       );
                     }
 
+                    if (
+                      item.kind === "tool_call" &&
+                      item.toolName === "submitPgaScreening"
+                    ) {
+                      const screening = toScreeningView(
+                        (item.content as { input?: unknown }).input,
+                      );
+                      if (!screening) return null;
+                      const inPlay = screening.determinations.filter(
+                        (determination) =>
+                          determination.determination !== "not_applicable",
+                      ).length;
+                      return (
+                        <ChainOfThought.Step
+                          key={key}
+                          label={
+                            <span className="text-accent font-medium">
+                              {inPlay > 0
+                                ? `Screened — ${inPlay} agency ${inPlay === 1 ? "requirement" : "requirements"}`
+                                : "Screened — no agency requirements"}
+                            </span>
+                          }
+                        >
+                          <ScreeningBody screening={screening} />
+                        </ChainOfThought.Step>
+                      );
+                    }
+
                     if (item.kind === "tool_call") {
+                      // Unknown tools get the neutral Engine badge — never a
+                      // data-source badge they didn't actually query.
                       const meta = TOOL_META[item.toolName ?? ""] ?? {
                         label: humanizeToolName(item.toolName ?? "Action"),
-                        source: "Knowledge base" as const,
+                        source: "Engine" as const,
                         icon: IconMagnifyingGlass,
                       };
                       const result = item.toolCallId

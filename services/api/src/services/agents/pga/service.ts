@@ -7,51 +7,40 @@ import {
   tool,
 } from "ai";
 import { getOrganizationSlug } from "@/db/lib/getOrganizationSlug";
-import type { DocumentExtraction, ShipmentDocumentCategory } from "@/db/schema";
 import { AgentRunItemKind } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { anthropic } from "@/services/external/anthropic/client";
-import { crossRulingsTools } from "@/services/external/cross/tools";
 import { resolvePrompt } from "@/services/external/langfuse/prompts";
 import { createKnowledgeBaseTools } from "@/services/external/pinecone/tools";
 import { htsTools } from "@/services/external/usitc/tools";
+import type { PgaFlagMatch } from "@/services/pga/flagLookup";
+import { pgaTools } from "@/services/pga/tools";
+import type {
+  ClassificationDocument,
+  ClassificationShipmentFacts,
+} from "../classification/service";
 import { AgentRunRecorder } from "../recorder";
 import {
-  CLASSIFICATION_PROMPT_NAME,
-  CLASSIFICATION_SYSTEM_PROMPT,
+  PGA_FLAG_REFERENCE,
+  PGA_PROMPT_NAME,
+  PGA_SYSTEM_PROMPT,
 } from "./prompt";
 import {
-  type ClassificationResult,
-  calibrationViolations,
-  classificationResultSchema,
+  type PgaScreeningResult,
+  pgaCalibrationViolations,
+  pgaScreeningResultSchema,
 } from "./schema";
 
-const CLASSIFICATION_MODEL = "claude-opus-4-8";
+const PGA_MODEL = "claude-opus-4-8";
 /** Used when the primary model's endpoint is overloaded. */
 const FALLBACK_MODEL = "claude-sonnet-4-6";
-/** Sized for the Tier-3 research ladder (~35 tool calls, batched). */
-const MAX_STEPS = 40;
-const isValidHtsCode = (code: string) => /^\d{4}\.\d{2}\.\d{2,4}/.test(code);
+/** Screening is narrower than classification — flags are pre-resolved. */
+const MAX_STEPS = 30;
 
-const log = createLogger("classification-agent");
+const log = createLogger("pga-agent");
 
-export interface ClassificationShipmentFacts {
-  id: string;
-  reference: string;
-  clientId: string;
-  clientName: string | null;
-  originCountry: string;
-  valueCents: number;
-}
-
-export interface ClassificationDocument {
-  fileName: string;
-  category: ShipmentDocumentCategory;
-  extraction: DocumentExtraction;
-}
-
-/** The product being classified — one line item of the shipment. */
-export interface ClassificationLineItem {
+/** The classified line being screened — classification is already frozen. */
+export interface PgaLineItem {
   id: string;
   lineNumber: number;
   description: string;
@@ -60,19 +49,51 @@ export interface ClassificationLineItem {
   unit: string | null;
   totalValueCents: number | null;
   originCountry: string | null;
-  declaredHts: string | null;
+  htsCode: string;
+  htsDescription: string | null;
+  classificationSummary: string | null;
+  /** Accumulated classification-relevant product facts (products.attributes). */
+  productAttributes: Record<string, unknown> | null;
 }
 
-export interface ClassificationOutcome {
-  result: ClassificationResult;
+export interface PgaScreeningOutcome {
+  result: PgaScreeningResult;
   /** The canonical audit record (agent_runs.id); null if recording failed. */
   runId: string | null;
 }
 
+/** The flag lookup as it travels between Inngest steps — JSON-serializable
+ * (publishedAt is an ISO date string, not a Date). */
+export interface PgaFlagLookupSnapshot {
+  version: {
+    id: string;
+    pubNumber: string;
+    publishedAt: string;
+    source: string;
+  };
+  flags: PgaFlagMatch[];
+}
+
+function formatFlagLookup(lookup: PgaFlagLookupSnapshot): string {
+  const header = `Agency flag lookup (platform reference table, current as of ${lookup.version.publishedAt.slice(0, 10)}). The platform records the reference version on the audit trail — never cite internal version identifiers; cite regulations and agency guidance.`;
+  if (lookup.flags.length === 0) {
+    return `${header}\nNo PGA flags on this HTS code in the current reference. Flags lag HTS revisions — your jurisdiction sweep is the only screen this line gets.`;
+  }
+  const rows = lookup.flags.map(
+    (flag) =>
+      `- ${flag.flagCode} (${flag.agencyCode}, ${
+        flag.requirement === "required" ? "REQUIRED" : "MAY be required"
+      }, matched at prefix ${flag.matchedPrefix})${flag.programDescription ? `: ${flag.programDescription}` : ""}`,
+  );
+  return [header, ...rows].join("\n");
+}
+
 function buildDossier(
   shipment: ClassificationShipmentFacts,
-  lineItem: ClassificationLineItem,
+  lineItem: PgaLineItem,
   documents: ClassificationDocument[],
+  flagLookup: PgaFlagLookupSnapshot,
+  triageNote: string | null,
 ): string {
   const sections = documents.map((document) => {
     const fields = document.extraction.fields
@@ -95,57 +116,82 @@ function buildDossier(
       ? `- Line value: $${(lineItem.totalValueCents / 100).toLocaleString("en-US")}`
       : null,
     `- Country of origin: ${lineItem.originCountry ?? shipment.originCountry}`,
-    lineItem.declaredHts
-      ? `- Supplier-declared code (a hypothesis to verify): ${lineItem.declaredHts}`
+    `- Classified HTS code: ${lineItem.htsCode}${lineItem.htsDescription ? ` — ${lineItem.htsDescription}` : ""}`,
+    lineItem.classificationSummary
+      ? `- Classification rationale: ${lineItem.classificationSummary}`
       : null,
   ].filter(Boolean) as string[];
 
+  const attributes = lineItem.productAttributes
+    ? Object.entries(lineItem.productAttributes)
+        .map(([key, value]) => `- ${key}: ${JSON.stringify(value)}`)
+        .join("\n")
+    : null;
+
   return [
-    `## The product to classify — line ${lineItem.lineNumber} of shipment ${shipment.reference}`,
+    `## The line to screen — line ${lineItem.lineNumber} of shipment ${shipment.reference}`,
     ...lineFacts,
+    "",
+    "## PGA flag lookup (deterministic, already run for this code)",
+    formatFlagLookup(flagLookup),
+    ...(triageNote ? ["", "## Jurisdiction triage note", triageNote] : []),
     "",
     "## Shipment context",
     `- Importer: ${shipment.clientName ?? "unknown"}`,
     `- Shipment origin: ${shipment.originCountry}`,
     `- Shipment value: $${(shipment.valueCents / 100).toLocaleString("en-US")}`,
+    ...(attributes
+      ? ["", "## Known product attributes (accumulated)", attributes]
+      : []),
     "",
     "## Source documents (extracted)",
     ...sections,
     "",
-    "Classify THIS PRODUCT ONLY — the line described above. The documents may mention other line items; use them solely as context for this product. Any HS/HTS code appearing in the documents is a supplier hypothesis to verify, not ground truth.",
-    "",
-    "Before you answer: verify candidate headings with searchHts, read the governing notes with getChapterNotes, check precedent with searchRulings (and read the strongest hits with getRuling), and confirm the exact statistical line with browseHtsHeading. Your citations must come from lookups made in this run — start with your first tool call now.",
+    "Screen THIS LINE ONLY. Disposition every flag above (required / disclaim with code / not_applicable), run the jurisdiction sweep beyond the flags, check required data elements against the documents, and cite the flag-table publication. Start with your first verification lookup now.",
   ].join("\n");
 }
 
-export class ClassificationAgentService {
-  static async classify({
+export class PgaAgentService {
+  static async screen({
     organizationId,
     userId,
     shipment,
     lineItem,
     documents,
+    flagLookup,
+    triageNote = null,
   }: {
     organizationId: string;
     userId: string;
     shipment: ClassificationShipmentFacts;
-    lineItem: ClassificationLineItem;
+    lineItem: PgaLineItem;
     documents: ClassificationDocument[];
-  }): Promise<ClassificationOutcome> {
+    flagLookup: PgaFlagLookupSnapshot;
+    /** Jurisdiction suspicions from the no-flag triage pass, when it ran. */
+    triageNote?: string | null;
+  }): Promise<PgaScreeningOutcome> {
     const systemPrompt = await resolvePrompt(
-      CLASSIFICATION_PROMPT_NAME,
-      CLASSIFICATION_SYSTEM_PROMPT,
+      PGA_PROMPT_NAME,
+      PGA_SYSTEM_PROMPT,
+      { flagReference: PGA_FLAG_REFERENCE },
     );
     const organizationSlug = await getOrganizationSlug(organizationId);
-    const dossier = buildDossier(shipment, lineItem, documents);
+    const dossier = buildDossier(
+      shipment,
+      lineItem,
+      documents,
+      flagLookup,
+      triageNote,
+    );
+    const lookedUpFlags: PgaFlagMatch[] = flagLookup.flags;
 
     const recorder = await AgentRunRecorder.start({
       organizationId,
       userId,
       shipmentId: shipment.id,
-      agent: "classification",
-      model: CLASSIFICATION_MODEL,
-      promptName: systemPrompt.prompt ? CLASSIFICATION_PROMPT_NAME : null,
+      agent: "pga_screening",
+      model: PGA_MODEL,
+      promptName: systemPrompt.prompt ? PGA_PROMPT_NAME : null,
       promptVersion: systemPrompt.prompt?.version ?? null,
       input: {
         dossier,
@@ -154,7 +200,11 @@ export class ClassificationAgentService {
           id: lineItem.id,
           lineNumber: lineItem.lineNumber,
           description: lineItem.description,
-          sku: lineItem.sku,
+          htsCode: lineItem.htsCode,
+        },
+        flagTable: {
+          pubNumber: flagLookup.version.pubNumber,
+          flags: lookedUpFlags.map((flag) => flag.flagCode),
         },
         documents: documents.map((document) => ({
           fileName: document.fileName,
@@ -163,44 +213,31 @@ export class ClassificationAgentService {
       },
     });
 
-    // The final answer is a TOOL CALL, not constrained output — leaving the
-    // model's text channel free for narration, and making "the answer ends
-    // the run" literal (stopWhen below). Structured output would force every
-    // text emission into the schema, which is where placeholder answers
-    // came from.
-    const submitClassification = tool({
+    // Same architecture as classification: the final answer is a TOOL CALL —
+    // the text channel stays free for narration, and the answer ends the run.
+    const submitPgaScreening = tool({
       description:
-        "Submit your final classification. Calling this ends the run immediately — call it exactly once, when your research is complete, with real values throughout.",
-      inputSchema: classificationResultSchema,
+        "Submit your final PGA screening. Calling this ends the run immediately — call it exactly once, when every flag is dispositioned and the jurisdiction sweep is complete, with real values throughout.",
+      inputSchema: pgaScreeningResultSchema,
       execute: async () => ({ recorded: true }),
     });
 
-    // The agent loop: think → call tools → observe → repeat, until the
-    // evidence converges and the classification is submitted.
     const buildAgent = (model: string) =>
       new ToolLoopAgent({
         model: anthropic(model),
         instructions: systemPrompt.text,
         tools: {
+          ...pgaTools,
           ...htsTools,
-          ...crossRulingsTools,
-          ...createKnowledgeBaseTools(
-            organizationId,
-            shipment.clientId,
-            "classification",
-          ),
+          ...createKnowledgeBaseTools(organizationId, shipment.clientId, "pga"),
           // Provider-executed on Anthropic's side — results carry real
           // URLs. The 20250305 version deliberately: 20260209 bundles a
           // server-side code-execution container the model uses to wrap
           // searches in Python (slow, flaky, opaque in traces).
           webSearch: anthropic.tools.webSearch_20250305({ maxUses: 6 }),
-          submitClassification,
+          submitPgaScreening,
         },
-        stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("submitClassification")],
-        // Thinking tokens count toward the output budget — keep headroom, but
-        // don't let the default (model maximum) inflate request time
-        // estimates. Summarized thinking streams the reasoning into the
-        // audit record; Opus thinks adaptively, Sonnet on a budget.
+        stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("submitPgaScreening")],
         maxOutputTokens: 24_000,
         providerOptions: {
           anthropic: {
@@ -211,7 +248,7 @@ export class ClassificationAgentService {
         },
       });
 
-    let activeModel = CLASSIFICATION_MODEL;
+    let activeModel = PGA_MODEL;
     let agent = buildAgent(activeModel);
 
     log.info(
@@ -220,20 +257,20 @@ export class ClassificationAgentService {
         shipmentId: shipment.id,
         reference: shipment.reference,
         lineNumber: lineItem.lineNumber,
-        lineDescription: lineItem.description.slice(0, 80),
-        documentCount: documents.length,
+        htsCode: lineItem.htsCode,
+        flagCount: lookedUpFlags.length,
         promptVersion: systemPrompt.prompt?.version ?? null,
       },
-      "agent run starting",
+      "pga screening run starting",
     );
 
     try {
       const { output, usage } = await propagateAttributes(
         {
-          traceName: "hts-classification",
+          traceName: "pga-screening",
           userId,
           sessionId: shipment.id,
-          tags: ["classification"],
+          tags: ["pga"],
           metadata: {
             organizationId,
             organizationSlug,
@@ -243,25 +280,20 @@ export class ClassificationAgentService {
         },
         async () => {
           const callOptions = {
-            // The real deadline — replaces Bun's per-request fetch timeout.
             timeout: { totalMs: 900_000, stepMs: 420_000 },
             ...(systemPrompt.prompt
               ? { runtimeContext: { langfusePrompt: systemPrompt.prompt } }
               : {}),
             telemetry: {
-              functionId: "hts-classification",
+              functionId: "pga-screening",
               ...(systemPrompt.prompt
                 ? { includeRuntimeContext: { langfusePrompt: true } }
                 : {}),
             },
           };
 
-          // The answer captured from the submitClassification call.
-          let submitted: ClassificationResult | null = null;
+          let submitted: PgaScreeningResult | null = null;
 
-          // Stream the loop so every unit of work is auditable the moment it
-          // happens — reasoning, tool calls, and results land in the run
-          // record live. Returns how many RESEARCH tool calls the pass made.
           const consume = async (
             activeStream: Awaited<ReturnType<typeof agent.stream>>,
           ): Promise<number> => {
@@ -300,8 +332,8 @@ export class ClassificationAgentService {
                   break;
                 }
                 case "tool-call":
-                  if (part.toolName === "submitClassification") {
-                    const parsed = classificationResultSchema.safeParse(
+                  if (part.toolName === "submitPgaScreening") {
+                    const parsed = pgaScreeningResultSchema.safeParse(
                       part.input,
                     );
                     if (parsed.success) submitted = parsed.data;
@@ -381,7 +413,6 @@ export class ClassificationAgentService {
               if (!transient || attempt >= 2) throw error;
               recorder.advanceStep();
               if (attempt === 1 && activeModel !== FALLBACK_MODEL) {
-                // Two overloads in a row — the endpoint is saturated.
                 activeModel = FALLBACK_MODEL;
                 agent = buildAgent(activeModel);
                 log.warn(
@@ -397,12 +428,12 @@ export class ClassificationAgentService {
               } else {
                 log.warn(
                   { runId: recorder.runId, attempt: attempt + 1 },
-                  "provider overloaded — retrying the research pass",
+                  "provider overloaded — retrying the screening pass",
                 );
                 await recorder.recordItem({
                   kind: AgentRunItemKind.Text,
                   content: {
-                    text: `[retry] the model provider was overloaded — restarting the research pass (attempt ${attempt + 2})`,
+                    text: `[retry] the model provider was overloaded — restarting the screening pass (attempt ${attempt + 2})`,
                   },
                 });
               }
@@ -413,19 +444,19 @@ export class ClassificationAgentService {
           }
           if (!stream) throw new Error("agent stream never started");
 
-          // Prompt-level mandates are not a guarantee — when the model
-          // answers purely from memory, send it back to verify against the
-          // live schedule and CROSS before the answer can count.
-          if (toolCallsSeen === 0) {
+          // A screening with flags in play must verify — when the model
+          // answers purely from the dossier without a single lookup, send it
+          // back to check agency guidance before the answer can count.
+          if (toolCallsSeen === 0 && lookedUpFlags.length > 0) {
             log.warn(
               { runId: recorder.runId, shipmentId: shipment.id },
-              "run made no lookups — forcing a verification turn",
+              "screening made no lookups — forcing a verification turn",
             );
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
               content: {
-                text: "[verification] the run made no lookups — sending it back to verify against the live schedule and CROSS",
+                text: "[verification] the run made no lookups — sending it back to verify agency scope before the screening can count",
               },
             });
 
@@ -437,7 +468,7 @@ export class ClassificationAgentService {
                 {
                   role: "user",
                   content:
-                    "You answered without a single lookup — that does not meet the reasonable-care standard. Execute the verification checklist now: searchHts for your chosen and rejected headings, getChapterNotes for the governing notes, searchRulings (and getRuling) for real precedent, and browseHtsHeading to confirm the exact statistical line. Then call submitClassification with citations drawn only from these lookups.",
+                    "You screened flagged agencies without a single verification lookup — that does not meet the reasonable-care standard. Verify now: check the brokerage's verified record with searchPriorClassifications for how this product was screened before, and confirm the scope of each flagged agency's requirements with webSearch against agency guidance. Then call submitPgaScreening with citations drawn from these lookups.",
                 },
               ],
               ...callOptions,
@@ -448,7 +479,7 @@ export class ClassificationAgentService {
 
           // The cast resets control-flow narrowing: `submitted` is assigned
           // inside the stream consumer, which tsc's linear analysis misses.
-          let output = submitted as ClassificationResult | null;
+          let output = submitted as PgaScreeningResult | null;
           let usage = usages.reduce(
             (sum, entry) => ({
               inputTokens: (sum.inputTokens ?? 0) + (entry.inputTokens ?? 0),
@@ -462,29 +493,27 @@ export class ClassificationAgentService {
             },
           );
 
-          // If the loop ended without a valid submission — or with one that
-          // breaks the calibration rubric's hard rules — give the model one
-          // repair turn: its research is still in context, and the forced
-          // tool choice guarantees a structured submission this time.
-          const violations = output ? calibrationViolations(output) : [];
-          if (!output || !isValidHtsCode(output.htsCode) || violations.length) {
+          // No valid submission, or one that breaks the rubric's hard rules
+          // (dropped flags, disclaims without codes) — one repair turn with
+          // forced tool choice.
+          const violations = output
+            ? pgaCalibrationViolations(output, lookedUpFlags)
+            : [];
+          if (!output || violations.length) {
             log.warn(
               {
                 runId: recorder.runId,
-                htsCode: output?.htsCode ?? null,
                 calibrationViolations: violations,
               },
-              "no rubric-consistent submission from the loop — running a repair turn",
+              "no rubric-consistent screening from the loop — running a repair turn",
             );
             recorder.advanceStep();
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
               content: {
                 text: output
-                  ? violations.length
-                    ? `[repair] the submission violates the calibration rubric — requesting a corrected submission:\n- ${violations.join("\n- ")}`
-                    : `[repair] the submitted answer had an invalid HTS code ("${output.htsCode}") — requesting a corrected submission`
-                  : "[repair] the run ended without a submitted classification — requesting the submission",
+                  ? `[repair] the screening violates the calibration rubric — requesting a corrected submission:\n- ${violations.join("\n- ")}`
+                  : "[repair] the run ended without a submitted screening — requesting the submission",
               },
             });
 
@@ -498,34 +527,34 @@ export class ClassificationAgentService {
                 {
                   role: "user",
                   content: violations.length
-                    ? `Your submission violates the calibration rubric:\n- ${violations.join(
+                    ? `Your screening violates the calibration rubric:\n- ${violations.join(
                         "\n- ",
-                      )}\n\nCall submitClassification again with a corrected, rubric-consistent answer based on the research above. Fix the calibration accounting — do not change the classification itself unless a violation genuinely requires it.`
-                    : "Call submitClassification now with your complete final answer — real values throughout, based on the research above.",
+                      )}\n\nCall submitPgaScreening again with a corrected, rubric-consistent answer based on the research above. Fix the accounting — do not change the determinations themselves unless a violation genuinely requires it.`
+                    : "Call submitPgaScreening now with your complete final answer — every flag dispositioned, real values throughout, based on the research above.",
                 },
               ],
-              tools: { submitClassification },
+              tools: { submitPgaScreening },
               toolChoice: {
                 type: "tool",
-                toolName: "submitClassification",
+                toolName: "submitPgaScreening",
               },
               providerOptions: {
                 // Forced tool choice is incompatible with thinking.
                 anthropic: { thinking: { type: "disabled" } },
               },
               maxOutputTokens: 24_000,
-              telemetry: { functionId: "hts-classification-repair" },
+              telemetry: { functionId: "pga-screening-repair" },
             });
 
             const call = repair.toolCalls.find(
-              (candidate) => candidate.toolName === "submitClassification",
+              (candidate) => candidate.toolName === "submitPgaScreening",
             );
-            const parsed = classificationResultSchema.safeParse(call?.input);
+            const parsed = pgaScreeningResultSchema.safeParse(call?.input);
             output = parsed.success ? parsed.data : null;
             if (output) {
               await recorder.recordItem({
                 kind: AgentRunItemKind.ToolCall,
-                toolName: "submitClassification",
+                toolName: "submitPgaScreening",
                 toolCallId: call?.toolCallId,
                 content: { input: output },
               });
@@ -541,25 +570,25 @@ export class ClassificationAgentService {
             };
           }
 
-          if (!output || !isValidHtsCode(output.htsCode)) {
+          if (!output) {
             throw new Error(
-              "Agent did not produce a valid classification even after a repair turn — rejecting the run",
+              "Agent did not produce a valid PGA screening even after a repair turn — rejecting the run",
             );
           }
 
           // A repair turn that still breaks the rubric is not fatal — the
-          // classification stands, but the miscalibration goes on the audit
+          // screening stands, but the miscalibration goes on the audit
           // record for the broker.
-          const residual = calibrationViolations(output);
+          const residual = pgaCalibrationViolations(output, lookedUpFlags);
           if (residual.length) {
             log.warn(
               { runId: recorder.runId, calibrationViolations: residual },
-              "submission retains calibration violations after the repair turn",
+              "screening retains calibration violations after the repair turn",
             );
             await recorder.recordItem({
               kind: AgentRunItemKind.Text,
               content: {
-                text: `[calibration] the final submission still violates the rubric — flagged for broker attention:\n- ${residual.join("\n- ")}`,
+                text: `[calibration] the final screening still violates the rubric — flagged for broker attention:\n- ${residual.join("\n- ")}`,
               },
             });
           }
@@ -582,19 +611,21 @@ export class ClassificationAgentService {
         {
           runId: recorder.runId,
           shipmentId: shipment.id,
-          htsCode: output.htsCode,
-          confidence: output.confidence,
+          determinations: output.determinations.map(
+            (determination) =>
+              `${determination.agencyCode}:${determination.determination}`,
+          ),
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,
         },
-        "agent run completed",
+        "pga screening run completed",
       );
 
       return { result: output, runId: recorder.runId };
     } catch (error) {
       log.error(
         { err: error, runId: recorder.runId, shipmentId: shipment.id },
-        "agent run failed",
+        "pga screening run failed",
       );
       await recorder.fail(error);
       throw error;

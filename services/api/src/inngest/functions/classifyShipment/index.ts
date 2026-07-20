@@ -587,6 +587,16 @@ export const classifyShipment = () => {
         );
       }
 
+      // Autopilot shipments advance straight into the compliance stage —
+      // PGA screening picks them up. Reviewed shipments get there via
+      // broker approval (resolveReview sends the same event).
+      if (!needsReview) {
+        await step.sendEvent("request-pga-screening", {
+          name: "shipment/pga-screen.requested",
+          data: { organizationId, userId, shipmentId },
+        });
+      }
+
       await langfuseSpanProcessor?.forceFlush();
 
       logger.info(

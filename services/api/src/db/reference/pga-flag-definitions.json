@@ -1,0 +1,354 @@
+{
+  "header": {
+    "source": "CBP ACE Agency Tariff Code Reference",
+    "pubNumber": "0875-0419",
+    "publishedAt": "2026-03-04T00:00:00.000Z",
+    "url": null,
+    "parsedAt": "2026-07-20T00:45:54.276Z"
+  },
+  "definitions": [
+    {
+      "flagCode": "EP1",
+      "agencyCode": "EPA",
+      "requirement": "may_be_required",
+      "programCodes": ["ODS"],
+      "definition": "Ozone Depleting Substances specific data may be required"
+    },
+    {
+      "flagCode": "EP2",
+      "agencyCode": "EPA",
+      "requirement": "required",
+      "programCodes": ["ODS"],
+      "definition": "Ozone Depleting Substances specific data is required"
+    },
+    {
+      "flagCode": "EP3",
+      "agencyCode": "EPA",
+      "requirement": "may_be_required",
+      "programCodes": ["VNE"],
+      "definition": "Vehicle and Engines specific data may be required"
+    },
+    {
+      "flagCode": "EP4",
+      "agencyCode": "EPA",
+      "requirement": "required",
+      "programCodes": ["VNE"],
+      "definition": "Vehicle and Engines specific data is required"
+    },
+    {
+      "flagCode": "EP5",
+      "agencyCode": "EPA",
+      "requirement": "may_be_required",
+      "programCodes": ["PS1", "PS2", "PS3"],
+      "definition": "Pesticides specific data may be required"
+    },
+    {
+      "flagCode": "EP6",
+      "agencyCode": "EPA",
+      "requirement": "required",
+      "programCodes": ["PS1", "PS2", "PS3"],
+      "definition": "Pesticides specific data is required"
+    },
+    {
+      "flagCode": "EP7",
+      "agencyCode": "EPA",
+      "requirement": "may_be_required",
+      "programCodes": ["TS1"],
+      "definition": "Toxic Substances Control Act specific data may be required"
+    },
+    {
+      "flagCode": "EP8",
+      "agencyCode": "EPA",
+      "requirement": "required",
+      "programCodes": ["TS1"],
+      "definition": "Toxic Substances Control Act specific data is required"
+    },
+    {
+      "flagCode": "EH1",
+      "agencyCode": "EPA",
+      "requirement": "may_be_required",
+      "programCodes": ["HFC"],
+      "definition": "EPA Hydrofluorocarbons data may be required. Only disclaim A allowed"
+    },
+    {
+      "flagCode": "EH2",
+      "agencyCode": "EPA",
+      "requirement": "required",
+      "programCodes": ["HFC"],
+      "definition": "EPA Hydrofluorocarbons data is required"
+    },
+    {
+      "flagCode": "FS3",
+      "agencyCode": "FSI",
+      "requirement": "may_be_required",
+      "programCodes": ["FSI"],
+      "definition": "FSIS data may be required. Applicable to all FSIS programs"
+    },
+    {
+      "flagCode": "FS4",
+      "agencyCode": "FSI",
+      "requirement": "required",
+      "programCodes": ["FSI"],
+      "definition": "FSIS data is required. Applicable to all FSIS programs"
+    },
+    {
+      "flagCode": "NM1",
+      "agencyCode": "NMF",
+      "requirement": "may_be_required",
+      "programCodes": ["370"],
+      "definition": "370 specific data may be required"
+    },
+    {
+      "flagCode": "NM2",
+      "agencyCode": "NMF",
+      "requirement": "required",
+      "programCodes": ["370"],
+      "definition": "370 specific data is required"
+    },
+    {
+      "flagCode": "NM3",
+      "agencyCode": "NMF",
+      "requirement": "may_be_required",
+      "programCodes": ["AMR"],
+      "definition": "Antarctic Marine Living Resources specific data may be required"
+    },
+    {
+      "flagCode": "NM4",
+      "agencyCode": "NMF",
+      "requirement": "required",
+      "programCodes": ["AMR"],
+      "definition": "Antarctic Marine Living Resources specific data is required"
+    },
+    {
+      "flagCode": "NM5",
+      "agencyCode": "NMF",
+      "requirement": "may_be_required",
+      "programCodes": ["HMS"],
+      "definition": "Highly Migratory Species specific data may be required"
+    },
+    {
+      "flagCode": "NM6",
+      "agencyCode": "NMF",
+      "requirement": "required",
+      "programCodes": ["HMS"],
+      "definition": "Highly Migratory Species specific data is required"
+    },
+    {
+      "flagCode": "NM8",
+      "agencyCode": "NMF",
+      "requirement": "required",
+      "programCodes": ["SIM"],
+      "definition": "Seafood Import Monitoring Program specific data is required"
+    },
+    {
+      "flagCode": "DT1",
+      "agencyCode": "NHT",
+      "requirement": "may_be_required",
+      "programCodes": ["MVS", "REI", "TPE", "OEI", "OFF"],
+      "definition": "DOT/National Highway Traffic Safety Administration HS-7 data may be required"
+    },
+    {
+      "flagCode": "DT2",
+      "agencyCode": "NHT",
+      "requirement": "required",
+      "programCodes": ["MVS", "REI", "TPE", "OEI", "OFF"],
+      "definition": "DOT/National Highway Traffic Safety Administration HS-7 data is required"
+    },
+    {
+      "flagCode": "AL1",
+      "agencyCode": "APH",
+      "requirement": "may_be_required",
+      "programCodes": ["APL"],
+      "definition": "Lacey Act specific data may be required"
+    },
+    {
+      "flagCode": "AL2",
+      "agencyCode": "APH",
+      "requirement": "required",
+      "programCodes": ["APL"],
+      "definition": "Lacey Act specific data is required"
+    },
+    {
+      "flagCode": "FD1",
+      "agencyCode": "FDA",
+      "requirement": "may_be_required",
+      "programCodes": ["BIO", "COS", "DEV", "DRU", "FOO", "RAD", "TOB", "VME"],
+      "definition": "FDA data may be required 801(a)"
+    },
+    {
+      "flagCode": "FD2",
+      "agencyCode": "FDA",
+      "requirement": "required",
+      "programCodes": ["BIO", "COS", "DEV", "DRU", "FOO", "RAD", "TOB", "VME"],
+      "definition": "FDA data Required 801(a)"
+    },
+    {
+      "flagCode": "FD3",
+      "agencyCode": "FDA",
+      "requirement": "may_be_required",
+      "programCodes": ["BIO", "COS", "DEV", "DRU", "FOO", "RAD", "TOB", "VME"],
+      "definition": "FDA Prior Notice Data may be required 801(m)"
+    },
+    {
+      "flagCode": "FD4",
+      "agencyCode": "FDA",
+      "requirement": "required",
+      "programCodes": ["BIO", "COS", "DEV", "DRU", "FOO", "RAD", "TOB", "VME"],
+      "definition": "FDA Prior Notice Data is required 801(m)"
+    },
+    {
+      "flagCode": "AM1",
+      "agencyCode": "AMS",
+      "requirement": "may_be_required",
+      "programCodes": ["EG"],
+      "definition": "USDA/Agricultural Marketing Service Data related to egg products may be required"
+    },
+    {
+      "flagCode": "AM2",
+      "agencyCode": "AMS",
+      "requirement": "required",
+      "programCodes": ["EG"],
+      "definition": "USDA/Agricultural Marketing Service Data Related to shell eggs is required"
+    },
+    {
+      "flagCode": "AM3",
+      "agencyCode": "AMS",
+      "requirement": "may_be_required",
+      "programCodes": ["MO"],
+      "definition": "USDA/Agricultural Marketing Service Data Related to marketing orders may be required"
+    },
+    {
+      "flagCode": "AM4",
+      "agencyCode": "AMS",
+      "requirement": "required",
+      "programCodes": ["MO"],
+      "definition": "USDA/Agricultural Marketing Service Data Related to marketing orders is required"
+    },
+    {
+      "flagCode": "AM6",
+      "agencyCode": "AMS",
+      "requirement": "required",
+      "programCodes": ["PN"],
+      "definition": "USDA/Agriculture Marketing Service Data related to peanuts is required"
+    },
+    {
+      "flagCode": "AM7",
+      "agencyCode": "AMS",
+      "requirement": "may_be_required",
+      "programCodes": ["OR"],
+      "definition": "USDA/Agriculture Marketing Service Data related to organics may be required"
+    },
+    {
+      "flagCode": "AM8",
+      "agencyCode": "AMS",
+      "requirement": "required",
+      "programCodes": ["OR"],
+      "definition": "USDA/Agriculture Marketing Service Data related to organics is required"
+    },
+    {
+      "flagCode": "TB1",
+      "agencyCode": "TTB",
+      "requirement": "may_be_required",
+      "programCodes": ["BER", "WIN", "DSP", "TOB"],
+      "definition": "TTB data may be required. Applicable to all TTB programs."
+    },
+    {
+      "flagCode": "TB2",
+      "agencyCode": "TTB",
+      "requirement": "required",
+      "programCodes": ["BER", "WIN", "DSP", "TOB"],
+      "definition": "TTB data is required. Applicable to all TTB programs."
+    },
+    {
+      "flagCode": "TB3",
+      "agencyCode": "TTB",
+      "requirement": "may_be_required",
+      "programCodes": ["BER", "WIN", "DSP", "TOB"],
+      "definition": "TTB data may be required, which can only be disclaimed using codes A or C"
+    },
+    {
+      "flagCode": "AQ1",
+      "agencyCode": "APH",
+      "requirement": "may_be_required",
+      "programCodes": ["AAC", "APQ", "AVS", "ABS"],
+      "definition": "APHIS data may be required"
+    },
+    {
+      "flagCode": "AQ2",
+      "agencyCode": "APH",
+      "requirement": "required",
+      "programCodes": ["AAC", "APQ", "AVS", "ABS"],
+      "definition": "APHIS data is required"
+    },
+    {
+      "flagCode": "AQX",
+      "agencyCode": "APH",
+      "requirement": "may_be_required",
+      "programCodes": ["AAC", "APQ", "AVS", "ABS"],
+      "definition": "APHIS Data May be required (no disclaim required)"
+    },
+    {
+      "flagCode": "OM1",
+      "agencyCode": "OMC",
+      "requirement": "may_be_required",
+      "programCodes": ["OMC"],
+      "definition": "U.S. Department of State, Bureau of Oceans and International Environmental and Scientific Affairs, Office of Marine Conservation data may be required"
+    },
+    {
+      "flagCode": "OM2",
+      "agencyCode": "OMC",
+      "requirement": "required",
+      "programCodes": ["OMC"],
+      "definition": "U.S. Department of State, Bureau of Oceans and International Environmental and Scientific Affairs, Office of Marine Conservation data is required"
+    },
+    {
+      "flagCode": "FW1",
+      "agencyCode": "FWS",
+      "requirement": "may_be_required",
+      "programCodes": ["FWS"],
+      "definition": "U.S. Fish and Wildlife Service data may be required, which can only be disclaimed using codes C, D or E"
+    },
+    {
+      "flagCode": "FW2",
+      "agencyCode": "FWS",
+      "requirement": "required",
+      "programCodes": ["FWS"],
+      "definition": "U.S. Fish and Wildlife Service data is required"
+    },
+    {
+      "flagCode": "FW3",
+      "agencyCode": "FWS",
+      "requirement": "may_be_required",
+      "programCodes": ["FWS"],
+      "definition": "U.S. Fish and Wildlife Service data may be required, which can only be disclaimed using code C or D"
+    },
+    {
+      "flagCode": "DE1",
+      "agencyCode": "DEA",
+      "requirement": "may_be_required",
+      "programCodes": ["DEA"],
+      "definition": "U.S. Drug Enforcement Administration Controlled Substances and Listed Chemical data may be required"
+    },
+    {
+      "flagCode": "DE3",
+      "agencyCode": "DEA",
+      "requirement": "may_be_required",
+      "programCodes": ["MAC"],
+      "definition": "US Drug Enforcement Administration Regulated Machine data may be required"
+    },
+    {
+      "flagCode": "CP1",
+      "agencyCode": "CPSC",
+      "requirement": "may_be_required",
+      "programCodes": ["CPS"],
+      "definition": "Consumer Product Safety Commission data may be required"
+    },
+    {
+      "flagCode": "CP2",
+      "agencyCode": "CPSC",
+      "requirement": "required",
+      "programCodes": ["CPS"],
+      "definition": "Consumer Product Safety Commission data is required"
+    }
+  ]
+}

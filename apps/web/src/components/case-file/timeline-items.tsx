@@ -3,6 +3,8 @@ import {
   IconCircleCheck,
   IconEmail1,
   IconFileText,
+  IconLaw,
+  IconPackage,
   IconPaperPlane,
   IconSparklesThree,
   IconTag,
@@ -33,9 +35,11 @@ export type TimelineItemPassthrough = Partial<
 
 /**
  * Colour + icon for a timeline marker, derived from what the event means:
- * CBP correspondence is purple, classification is blue, milestones
- * (filed/released) are green, agent work is indigo, plain mail stays neutral.
- * Documents keep their neutral markers.
+ * intake is orange, classification blue, compliance (PGA) teal, CBP
+ * correspondence purple, milestones (approved/filed/released) green, other
+ * agent work indigo, plain mail sky. Keyed on the event TYPE when the
+ * projection carries it; the title regexes only back-fill events from older
+ * payloads (e.g. review-payload activity) that have no type.
  */
 export function eventMarker(event: ActivityEvent): {
   Icon: ComponentType<{ className?: string }>;
@@ -62,11 +66,37 @@ export function eventMarker(event: ActivityEvent): {
         "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400",
     };
   }
-  if (/classif/i.test(event.title)) {
+  // Compliance — PGA screening outcomes.
+  if (
+    event.type?.startsWith("pga_") ||
+    event.icon === "shield" ||
+    /\bpga\b|disclaim|jurisdiction|screening|agenc/i.test(event.title)
+  ) {
+    return {
+      Icon: IconLaw,
+      className:
+        "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400",
+    };
+  }
+  // Classification — proposals/reuses title as "Line N: <code> at NN%
+  // confidence", so the code-at-confidence shape is the title fallback.
+  if (
+    event.type?.startsWith("classification") ||
+    /classif/i.test(event.title) ||
+    /\d{4}\.\d{2}.* at \d+% confidence/i.test(event.title)
+  ) {
     return {
       Icon: IconTag,
       className:
         "border-blue-500/40 bg-blue-500/15 text-blue-600 dark:text-blue-400",
+    };
+  }
+  // Intake — the shipment coming into existence from documents or email.
+  if (/shipment created|intake/i.test(event.title)) {
+    return {
+      Icon: IconPackage,
+      className:
+        "border-orange-500/40 bg-orange-500/15 text-orange-600 dark:text-orange-400",
     };
   }
   if (event.icon === "check") {

@@ -18,7 +18,7 @@ export async function recordProcessingFailure({
   organizationId: string;
   userId: string;
   shipmentId: string;
-  type: "ingest_failed" | "classification_failed";
+  type: "ingest_failed" | "classification_failed" | "pga_screening_failed";
   title: string;
   error?: unknown;
 }): Promise<void> {

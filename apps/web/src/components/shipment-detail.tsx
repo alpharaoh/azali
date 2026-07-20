@@ -2,6 +2,7 @@ import {
   IconArrowLeft,
   IconExclamationCircle,
   IconFileText,
+  IconLaw,
   IconSparklesThree,
   IconSquareArrowTopRight,
   IconSquareChecklistMagnifyingGlass,
@@ -50,7 +51,7 @@ import type {
   ReviewDocument,
   ReviewLineItem,
 } from "#/lib/review-types";
-import { findLineMemo } from "#/lib/review-types";
+import { findLineMemo, findLineScreeningMemo } from "#/lib/review-types";
 import { PROCESSING_POLL_MS, useCaseFile } from "#/lib/use-case-file";
 import { useShipmentLines } from "#/lib/use-shipment-lines";
 
@@ -61,7 +62,7 @@ import { useShipmentLines } from "#/lib/use-shipment-lines";
  * reads as the shipment's standing record.
  * -----------------------------------------------------------------------------------------------*/
 
-type Section = "documents" | "trace";
+type Section = "documents" | "trace" | "compliance";
 
 /** Adapt an API document row to the shape the shared viewer renders. */
 function toViewerDocument(
@@ -215,8 +216,10 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
     lines,
     isLoaded: linesLoaded,
     runIdForLine,
+    pgaRunIdForLine,
     activityByLine,
     runningLineNumber,
+    pgaRunningLineNumber,
   } = useShipmentLines(shipmentId, processing !== null);
 
   // Drill-down drawer — read-only outside the review flow.
@@ -228,15 +231,28 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
 
   const [section, setSection] = useState<Section>("documents");
 
-  // Follow the classification as it moves through the lines — unless the
-  // broker picked a tab themselves. (The route keys this component by
-  // shipmentId, so all of this state resets per shipment.)
+  // Follow each agent as it moves through the lines — unless the broker
+  // picked a tab themselves. Classification and compliance keep separate
+  // follow state: their runs visit lines at different times. (The route
+  // keys this component by shipmentId, so all of this state resets per
+  // shipment.)
   const [manualTraceLine, setManualTraceLine] = useState<number | null>(null);
   const activeTraceLine =
     manualTraceLine ??
     runningLineNumber ??
     lines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
     lines[0]?.lineNumber;
+
+  const [manualPgaLine, setManualPgaLine] = useState<number | null>(null);
+  const activePgaLine =
+    manualPgaLine ??
+    pgaRunningLineNumber ??
+    lines.find((line) => pgaRunIdForLine[line.lineNumber])?.lineNumber ??
+    lines[0]?.lineNumber;
+
+  // Screening state, straight from the processing message the workflow sets.
+  const screening = /screening/i.test(processing ?? "");
+  const hasPgaRuns = Object.keys(pgaRunIdForLine).length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4">
@@ -328,7 +344,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         )}
       </div>
 
-      {/* Review CTA — classification flagged lines for the broker */}
+      {/* Review CTA — flagged work for the broker, worded per review type */}
       {shipment?.status === "needs_review" ? (
         <ItemCard
           variant="outline"
@@ -338,9 +354,15 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
             <IconSquareChecklistMagnifyingGlass className="size-4" />
           </ItemCard.Icon>
           <ItemCard.Content>
-            <ItemCard.Title>Classification needs broker review</ItemCard.Title>
+            <ItemCard.Title>
+              {shipment.reviewType === "pga"
+                ? "Compliance screening needs broker review"
+                : "Classification needs broker review"}
+            </ItemCard.Title>
             <ItemCard.Description>
-              Confirm the flagged lines before the entry is filed.
+              {shipment.reviewType === "pga"
+                ? "Confirm the agency determinations before the entry is filed."
+                : "Confirm the flagged lines before the entry is filed."}
             </ItemCard.Description>
           </ItemCard.Content>
           <ItemCard.Action>
@@ -409,7 +431,13 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                 </Tabs.Tab>
                 <Tabs.Tab className="w-fit" id="trace">
                   <IconSparklesThree className="mr-1.5 size-3.5" />
-                  Agent trace
+                  Classification trace
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+                <Tabs.Tab className="w-fit" id="compliance">
+                  <IconLaw className="mr-1.5 size-3.5" />
+                  Compliance trace
+                  {screening ? <Spinner className="ml-1.5" size="sm" /> : null}
                   <Tabs.Indicator />
                 </Tabs.Tab>
               </Tabs.List>
@@ -445,7 +473,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
               )}
             </Tabs.Panel>
 
-            {/* Agent trace — live while classification runs */}
+            {/* Classification trace — live while classification runs */}
             <Tabs.Panel className="flex flex-col gap-3 pt-3" id="trace">
               {!linesLoaded ? (
                 <Skeleton className="h-24 rounded-lg" />
@@ -467,6 +495,31 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                   }
                   runIdForLine={runIdForLine}
                   onSelect={setManualTraceLine}
+                />
+              )}
+            </Tabs.Panel>
+
+            {/* Compliance trace — PGA screening, live while it runs. A
+            separate surface from classification: screening starts after
+            classification lands and runs even for reused lines. */}
+            <Tabs.Panel className="flex flex-col gap-3 pt-3" id="compliance">
+              {!linesLoaded ? (
+                <Skeleton className="h-24 rounded-lg" />
+              ) : lines.length === 0 || (!hasPgaRuns && !screening) ? (
+                <span className="text-muted text-sm">
+                  {processing
+                    ? "Compliance screening starts once classification lands…"
+                    : "No compliance screening runs on file."}
+                </span>
+              ) : (
+                <LineTraceTabs
+                  activeLineNumber={activePgaLine}
+                  agent="pga"
+                  isProcessing={processing !== null}
+                  lines={lines}
+                  pendingMessage="Agency screening will reach this line shortly…"
+                  runIdForLine={pgaRunIdForLine}
+                  onSelect={setManualPgaLine}
                 />
               )}
             </Tabs.Panel>
@@ -518,6 +571,12 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         memo={
           openLine
             ? (findLineMemo(caseFile.documents, openLine.lineNumber) ?? null)
+            : null
+        }
+        screeningMemo={
+          openLine
+            ? (findLineScreeningMemo(caseFile.documents, openLine.lineNumber) ??
+              null)
             : null
         }
         shipmentId={shipmentId}

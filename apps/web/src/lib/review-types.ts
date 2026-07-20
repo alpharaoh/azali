@@ -54,6 +54,9 @@ export type ReviewDocument =
     };
 
 export interface ActivityEvent {
+  /** The raw shipment_events type ("classification_proposed",
+   * "pga_screened", …) — the primary key for the timeline marker. */
+  type?: string;
   title: string;
   detail?: string;
   /** Longer-form content (e.g. an email's plain-text body) — clamped in display. */
@@ -61,13 +64,19 @@ export interface ActivityEvent {
   /** Compact thinking lines shown under the event — what the AI actually did. */
   steps?: string[];
   occurredHoursAgo: number;
-  icon: "ai" | "check" | "mail" | "user";
+  icon: "ai" | "check" | "mail" | "user" | "shield";
   status?: "current" | "default" | "success" | "warning";
   /** A rationale memo backs this event — renders a "View memo" action. */
   memo?: boolean;
 }
 
-export type CitationKind = "catalog" | "evidence" | "regulation" | "ruling";
+export type CitationKind =
+  | "catalog"
+  | "evidence"
+  | "flag_table"
+  | "guidance"
+  | "regulation"
+  | "ruling";
 
 /** A formal source the AI relied on — rulings, regulations, catalog precedent. */
 export interface Citation {
@@ -140,6 +149,36 @@ export interface ReviewLineItem {
   alternates?: ReviewLineAlternate[];
 }
 
+/** One data element a triggered agency's filing needs, checked against the
+ * shipment documents. */
+export interface PgaDataElement {
+  name: string;
+  description: string;
+  present: boolean;
+  sourceDocument: string | null;
+}
+
+/** One agency call from a PGA screening — file, disclaim, or not applicable. */
+export interface PgaAgencyDetermination {
+  determinationId: string | null;
+  lineItemId: string;
+  lineNumber: number;
+  lineDescription: string;
+  agencyCode: string;
+  agencyName: string;
+  programCode: string | null;
+  flagCode: string | null;
+  flagSource: "flag_table" | "jurisdictional_analysis";
+  requirement: "may_be_required" | "required" | null;
+  determination: "disclaim" | "not_applicable" | "required";
+  disclaimCode: string | null;
+  rationale: string;
+  confidence: number;
+  dataElements: PgaDataElement[];
+  citations: Citation[];
+  runId: string | null;
+}
+
 export interface ReviewItem {
   id: string;
   type: ReviewItemType;
@@ -185,6 +224,10 @@ export interface ReviewItem {
   }>;
   approveLabel: string;
   canRequestInfo?: boolean;
+  /** PGA reviews: the agency determinations the broker is confirming. */
+  pgaAgencies?: PgaAgencyDetermination[];
+  /** The ACE flag-table publication the screening cited. */
+  flagTableVersion?: { publishedAt: string };
 }
 
 export type DecisionAction = "approved" | "corrected" | "info-requested";
@@ -226,6 +269,24 @@ export function findLineMemo(
       (document): document is ReviewDocument & { kind: "pdf" } =>
         document.kind === "pdf" &&
         /rationale memo/i.test(document.name) &&
+        new RegExp(`Line ${lineNumber}(\\D|$)`).test(document.name),
+    );
+}
+
+/**
+ * A line's PGA screening memo — per-line documents named
+ * "Screening Memo — Line N · …"; the latest revision wins.
+ */
+export function findLineScreeningMemo(
+  documents: ReviewDocument[],
+  lineNumber: number,
+): (ReviewDocument & { kind: "pdf" }) | undefined {
+  return [...documents]
+    .reverse()
+    .find(
+      (document): document is ReviewDocument & { kind: "pdf" } =>
+        document.kind === "pdf" &&
+        /screening memo/i.test(document.name) &&
         new RegExp(`Line ${lineNumber}(\\D|$)`).test(document.name),
     );
 }

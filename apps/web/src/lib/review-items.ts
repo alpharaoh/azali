@@ -10,6 +10,7 @@ import type { ReviewSearch } from "#/lib/review-queue-loader";
 import { reviewListParams } from "#/lib/review-queue-loader";
 import type {
   Citation,
+  PgaAgencyDetermination,
   ReviewItem,
   ReviewItemType,
   ReviewLineItem,
@@ -36,6 +37,8 @@ export interface ReviewRequestPayload {
   lineItems?: ReviewLineItem[];
   lineNumber?: number;
   traceRunId?: string;
+  pgaAgencies?: PgaAgencyDetermination[];
+  flagTableVersion?: ReviewItem["flagTableVersion"];
 }
 
 /** The display-ready shipment facts, from any shipment DTO carrying the
@@ -105,6 +108,8 @@ export function toReviewItem(
     lineItems: payload.lineItems,
     reviewLineNumber: payload.lineNumber,
     type: payload.reviewType ?? "classification",
+    pgaAgencies: payload.pgaAgencies,
+    flagTableVersion: payload.flagTableVersion,
   };
 }
 

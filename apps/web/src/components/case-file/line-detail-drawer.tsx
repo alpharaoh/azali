@@ -34,9 +34,13 @@ import type { ReviewDocument, ReviewLineItem } from "#/lib/review-types";
  * -----------------------------------------------------------------------------------------------*/
 function MemoEditor({
   document,
+  eventType,
   shipmentId,
 }: {
   document: ReviewDocument & { kind: "pdf" };
+  /** The event type revisions append as — keeps a revised memo in the same
+   * document family as the original (classification vs PGA screening). */
+  eventType: "classification_memo_drafted" | "pga_memo_drafted";
   shipmentId: string;
 }) {
   const queryClient = useQueryClient();
@@ -51,7 +55,7 @@ function MemoEditor({
       .mutateAsync({
         shipmentId,
         data: {
-          type: "classification_memo_drafted",
+          type: eventType,
           actor: "user",
           title: `${document.name.split("·")[0]?.trim() ?? "Rationale memo"} revised`,
           payload: {
@@ -179,6 +183,7 @@ export function LineDetailDrawer({
   memo,
   onOpenChange,
   onSelectAlternate,
+  screeningMemo = null,
   selectedAlternate,
   shipmentId,
 }: {
@@ -188,6 +193,8 @@ export function LineDetailDrawer({
   onOpenChange: (open: boolean) => void;
   /** Omit for a read-only drawer (outside the review flow). */
   onSelectAlternate?: (value: string | null) => void;
+  /** This line's PGA screening memo, when one is in the case file. */
+  screeningMemo?: (ReviewDocument & { kind: "pdf" }) | null;
   selectedAlternate?: string | null;
   shipmentId: string;
 }) {
@@ -201,6 +208,7 @@ export function LineDetailDrawer({
                 key={line.lineItemId}
                 line={line}
                 memo={memo}
+                screeningMemo={screeningMemo}
                 selectedAlternate={selectedAlternate}
                 shipmentId={shipmentId}
                 onSelectAlternate={onSelectAlternate}
@@ -218,12 +226,14 @@ function LineDetailContent({
   line,
   memo,
   onSelectAlternate,
+  screeningMemo,
   selectedAlternate,
   shipmentId,
 }: {
   line: ReviewLineItem;
   memo: (ReviewDocument & { kind: "pdf" }) | null;
   onSelectAlternate?: (value: string | null) => void;
+  screeningMemo: (ReviewDocument & { kind: "pdf" }) | null;
   selectedAlternate?: string | null;
   shipmentId: string;
 }) {
@@ -347,6 +357,21 @@ function LineDetailContent({
               <MemoEditor
                 key={memo.name}
                 document={memo}
+                eventType="classification_memo_drafted"
+                shipmentId={shipmentId}
+              />
+            </div>
+          ) : null}
+
+          {screeningMemo ? (
+            <div className="flex flex-col gap-2">
+              <span className="text-muted text-xs font-medium">
+                Screening memo
+              </span>
+              <MemoEditor
+                key={screeningMemo.name}
+                document={screeningMemo}
+                eventType="pga_memo_drafted"
                 shipmentId={shipmentId}
               />
             </div>

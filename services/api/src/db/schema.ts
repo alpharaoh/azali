@@ -3,6 +3,8 @@ export * from "./schemas/auth";
 export * from "./schemas/clients";
 export * from "./schemas/emailAccounts";
 export * from "./schemas/inboundEmails";
+export * from "./schemas/lineItemPgaDeterminations";
+export * from "./schemas/pgaFlags";
 export * from "./schemas/products";
 export * from "./schemas/shipmentDocuments";
 export * from "./schemas/shipmentEvents";
