@@ -25,6 +25,7 @@ export const MILESTONE_EVENT_TYPES = new Set([
   "duty_computed",
   "entry_drafted",
   "entry_filed",
+  "pga_screened",
   "review_requested",
   "review_resolved",
   "shipment_facts_extracted",

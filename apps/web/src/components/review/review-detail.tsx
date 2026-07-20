@@ -6,9 +6,9 @@ import {
   IconCircleCheck,
   IconCurrencyDollar,
   IconFileText,
+  IconLaw,
   IconPageCheck,
   IconPencil,
-  IconShieldBreak,
   IconShieldCheck,
   IconSparklesThree,
   IconTag,
@@ -76,7 +76,7 @@ export const typeMeta: Record<
   classification: { icon: IconTag, label: "Classification" },
   document: { icon: IconFileText, label: "Document" },
   enforcement: { icon: IconShieldCheck, label: "Enforcement" },
-  pga: { icon: IconShieldBreak, label: "PGA" },
+  pga: { icon: IconLaw, label: "PGA" },
   signoff: { icon: IconPageCheck, label: "Sign-off" },
   valuation: { icon: IconCurrencyDollar, label: "Valuation" },
 };
@@ -157,21 +157,29 @@ function TraceSection({
   onTraceLineChange: (lineNumber: number) => void;
   traceLine: number | null;
 }) {
-  if (isMultiLineReview(item)) {
-    const lines = item.lineItems ?? [];
+  // Per-line tabs whenever the payload carries per-line runs — PGA payloads
+  // qualify here even though they fail isMultiLineReview (their slim line
+  // rows carry no duty, which that gate uses to detect the classification
+  // corrections UI).
+  const lines = item.lineItems ?? [];
+  const linesWithRuns = lines.filter((line) => line.runId);
+  if (
+    isMultiLineReview(item) ||
+    (lines.length > 1 && linesWithRuns.length > 0)
+  ) {
     const active =
       lines.find((line) => line.lineNumber === traceLine) ??
       lines.find((line) => line.status === "needs_review") ??
+      linesWithRuns[0] ??
       lines[0];
     const runIdForLine = Object.fromEntries(
-      lines
-        .filter((line) => line.runId)
-        .map((line) => [line.lineNumber, line.runId as string]),
+      linesWithRuns.map((line) => [line.lineNumber, line.runId as string]),
     );
 
     return (
       <LineTraceTabs
         activeLineNumber={active?.lineNumber}
+        agent={item.type === "pga" ? "pga" : "classification"}
         lines={lines}
         runIdForLine={runIdForLine}
         onSelect={onTraceLineChange}

@@ -75,9 +75,9 @@ export interface PgaFlagLookupSnapshot {
 }
 
 function formatFlagLookup(lookup: PgaFlagLookupSnapshot): string {
-  const header = `ACE Agency Tariff Code Reference ${lookup.version.pubNumber} (published ${lookup.version.publishedAt.slice(0, 10)}) — cite this as flagTableVersion.`;
+  const header = `Agency flag lookup (platform reference table, current as of ${lookup.version.publishedAt.slice(0, 10)}). The platform records the reference version on the audit trail — never cite internal version identifiers; cite regulations and agency guidance.`;
   if (lookup.flags.length === 0) {
-    return `${header}\nNo PGA flags on this HTS code in the active publication. Flags lag HTS revisions — your jurisdiction sweep is the only screen this line gets.`;
+    return `${header}\nNo PGA flags on this HTS code in the current reference. Flags lag HTS revisions — your jurisdiction sweep is the only screen this line gets.`;
   }
   const rows = lookup.flags.map(
     (flag) =>
@@ -229,7 +229,7 @@ export class PgaAgentService {
         tools: {
           ...pgaTools,
           ...htsTools,
-          ...createKnowledgeBaseTools(organizationId, shipment.clientId),
+          ...createKnowledgeBaseTools(organizationId, shipment.clientId, "pga"),
           // Provider-executed on Anthropic's side — results carry real URLs.
           webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
           submitPgaScreening,

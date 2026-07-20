@@ -132,11 +132,6 @@ export const pgaScreeningResultSchema = z.object({
     .describe(
       "The agencies you considered BEYOND the flag lookup and why each is in or out — flags are a prior, not ground truth; flag tables lag HTS revisions. E.g. 'Product is a food-contact container: FDA analyzed despite no flag (out — not food itself, no 801(a) trigger); no wood packaging declared (APHIS out); not vehicle/engine (EPA/NHTSA out).'",
     ),
-  flagTableVersion: z
-    .string()
-    .describe(
-      "The flag-table publication cited, echoed exactly from the lookup result (e.g. '0875-0419 (2026-03-04)').",
-    ),
   clarifyingQuestions: z
     .array(z.string())
     .describe(

@@ -20,6 +20,7 @@ import {
   PgaAgentService,
   type PgaFlagLookupSnapshot,
 } from "@/services/agents/pga/service";
+import { indexPgaScreening } from "@/services/external/pinecone/screeningRecord";
 import { PgaFlagLookupService } from "@/services/pga/flagLookup";
 import { inngest } from "../../client";
 import {
@@ -253,8 +254,10 @@ export const screenShipmentPga = () => {
                 payload: {
                   lineNumber: line.lineNumber,
                   agencies: [],
+                  detail: triage.rationale,
+                  icon: "shield",
                   triage: triage.rationale,
-                  flagVersion: lookup.version.pubNumber,
+                  flagVersionId: lookup.version.id,
                 },
               }),
             );
@@ -369,6 +372,8 @@ export const screenShipmentPga = () => {
               title: `Line ${line.lineNumber}: ${describeLineScreening(result)}`,
               payload: {
                 lineNumber: line.lineNumber,
+                detail: result.summary,
+                icon: "shield",
                 agencies: result.determinations.map((determination) => ({
                   agencyCode: determination.agencyCode,
                   flagCode: determination.flagCode,
@@ -377,7 +382,7 @@ export const screenShipmentPga = () => {
                   confidence: determination.confidence,
                 })),
                 runId,
-                flagVersion: lookup.version.pubNumber,
+                flagVersionId: lookup.version.id,
               },
             }),
           ),
@@ -494,6 +499,30 @@ export const screenShipmentPga = () => {
         }),
       );
 
+      // Autopilot screenings become searchable precedent immediately;
+      // reviewed shipments index on broker approval instead (source
+      // "broker" in applyPgaResolution).
+      if (!needsReview) {
+        await step.run("index-screenings", async () => {
+          const linesById = new Map(lines.map((line) => [line.id, line]));
+          for (const outcome of outcomes) {
+            const line = linesById.get(outcome.lineItemId);
+            if (!line) continue;
+            await indexPgaScreening({
+              organizationId,
+              clientId: shipment.clientId,
+              productId: line.productId,
+              lineItemId: line.id,
+              description: line.description,
+              htsCode: line.htsCode,
+              originCountry: line.originCountry ?? shipment.originCountry,
+              determinations: outcome.determinations,
+              source: "agent",
+            });
+          }
+        });
+      }
+
       // The cast resets control-flow narrowing: `flagVersion` is assigned
       // inside the per-line worker, which tsc's linear analysis misses.
       const version = flagVersion as PgaFlagLookupSnapshot["version"] | null;
@@ -505,10 +534,7 @@ export const screenShipmentPga = () => {
             title: "PGA screening needs broker review",
             payload: buildPgaReviewPayload(
               outcomes,
-              {
-                pubNumber: version.pubNumber,
-                publishedAt: version.publishedAt,
-              },
+              { publishedAt: version.publishedAt },
               deadlineAt,
             ),
           }),

@@ -31,6 +31,7 @@ import { SHIPMENT_PGA_SCREEN_REQUESTED_EVENT } from "@/inngest/functions/screenS
 import { createLogger } from "@/lib/logger";
 import { confidenceBandForScore } from "@/services/agents/classification/schema";
 import { indexAndDedupeClassification } from "@/services/external/pinecone/classificationRecord";
+import { indexPgaScreening } from "@/services/external/pinecone/screeningRecord";
 import type { CreateShipmentDto } from "./dto/create-shipment.dto";
 import type { ListShipmentsDto } from "./dto/list-shipments.dto";
 import {
@@ -307,6 +308,44 @@ export class ShipmentsService {
     for (const determination of determinations) {
       await updateLineItemPgaDetermination(determination.id, organizationId, {
         status: PgaDeterminationStatus.Approved,
+      });
+    }
+
+    // Broker approval publishes the screenings as authoritative precedent —
+    // keyed per product + origin, so future shipments of the same lane can
+    // lean on them. Fire-and-forget: indexing never fails a resolution.
+    const shipment = await selectShipment(shipmentId, organizationId);
+    if (!shipment?.clientId) return;
+    const { data: lines } = await listShipmentLineItems({
+      organizationId,
+      shipmentId,
+    });
+    const linesById = new Map(lines.map((line) => [line.id, line]));
+    const byLine = new Map<string, typeof determinations>();
+    for (const determination of determinations) {
+      const group = byLine.get(determination.lineItemId) ?? [];
+      group.push(determination);
+      byLine.set(determination.lineItemId, group);
+    }
+    for (const [lineItemId, lineDeterminations] of byLine) {
+      const line = linesById.get(lineItemId);
+      if (!line?.htsCode) continue;
+      await indexPgaScreening({
+        organizationId,
+        clientId: shipment.clientId,
+        productId: line.productId,
+        lineItemId: line.id,
+        description: line.description,
+        htsCode: line.htsCode,
+        originCountry: line.originCountry ?? shipment.originCountry,
+        determinations: lineDeterminations.map((determination) => ({
+          agencyCode: determination.agencyCode,
+          flagCode: determination.flagCode,
+          determination: determination.determination,
+          disclaimCode: determination.disclaimCode,
+          rationale: determination.rationale,
+        })),
+        source: "broker",
       });
     }
   }

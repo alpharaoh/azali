@@ -12,6 +12,7 @@ import type { ReviewLineItem } from "#/lib/review-types";
  */
 export function LineTraceTabs({
   activeLineNumber,
+  agent = "classification",
   isProcessing = false,
   lines,
   onSelect,
@@ -19,6 +20,10 @@ export function LineTraceTabs({
   runIdForLine,
 }: {
   activeLineNumber: number | undefined;
+  /** Which agent's runs these are — picks the empty-state copy. PGA
+   * screening runs per shipment even for reused lines, so the
+   * reused-from-memory state is classification-only. */
+  agent?: "classification" | "pga";
   /** Softens the empty state while the pipeline is still running. */
   isProcessing?: boolean;
   /** Overrides the not-started-yet copy when the caller knows why the run
@@ -67,7 +72,7 @@ export function LineTraceTabs({
 
       {activeRunId ? (
         <AgentRunTrace key={activeRunId} runId={activeRunId} />
-      ) : activeLine?.reused ? (
+      ) : agent === "classification" && activeLine?.reused ? (
         <span className="text-muted text-sm">
           Reused from product memory — this line's classification came from an
           earlier broker-verified decision, so there is no fresh audit run.
@@ -78,6 +83,12 @@ export function LineTraceTabs({
           <TextShimmer className="text-sm">
             {pendingMessage ?? "The agent will start on this line shortly…"}
           </TextShimmer>
+        </span>
+      ) : agent === "pga" ? (
+        <span className="text-muted text-sm">
+          No screening run for this line — its HTS code carried no agency flags
+          and the jurisdiction triage passed it clean, or screening has not
+          reached it yet.
         </span>
       ) : (
         <span className="text-muted text-sm">

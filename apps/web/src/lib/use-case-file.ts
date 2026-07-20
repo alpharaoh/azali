@@ -101,6 +101,7 @@ export function useCaseFile(
       };
 
       return {
+        type: event.type,
         title: event.title,
         detail: payload.detail,
         steps: payload.steps,

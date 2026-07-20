@@ -1,6 +1,6 @@
 import {
   IconCircleCheck,
-  IconShieldBreak,
+  IconLaw,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Chip } from "@heroui/react";
 import { Widget } from "@heroui-pro/react";
@@ -71,7 +71,7 @@ function DeterminationRow({
         </div>
       </div>
 
-      <ClampedText text={determination.rationale} />
+      <ClampedText text={determination.rationale} lines={3} />
 
       {missing.length > 0 ? (
         <div className="border-warning/40 bg-warning/5 flex flex-col gap-1 rounded-lg border border-dashed p-2.5">
@@ -80,7 +80,7 @@ function DeterminationRow({
           </span>
           {missing.map((element) => (
             <span key={element.name} className="text-muted text-xs">
-              <IconShieldBreak className="text-warning mr-1 inline size-3 align-[-2px]" />
+              <IconLaw className="text-warning mr-1 inline size-3 align-[-2px]" />
               {element.name} — {element.description}
             </span>
           ))}
@@ -159,9 +159,8 @@ export function PgaDeterminationsCard({
         ))}
         {flagTableVersion ? (
           <span className="text-muted pt-2 text-xs">
-            Screened against ACE Agency Tariff Code Reference{" "}
-            {flagTableVersion.pubNumber} (
-            {flagTableVersion.publishedAt.slice(0, 10)})
+            Screened against the agency flag reference current as of{" "}
+            {flagTableVersion.publishedAt.slice(0, 10)}
           </span>
         ) : null}
       </Widget.Content>

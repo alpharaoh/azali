@@ -148,7 +148,7 @@ export function buildPgaSummary(outcomes: PgaLineOutcome[]) {
  */
 export function buildPgaReviewPayload(
   outcomes: PgaLineOutcome[],
-  flagVersion: { pubNumber: string; publishedAt: string },
+  flagVersion: { publishedAt: string },
   deadlineAt: string,
 ) {
   const agencies = outcomes.flatMap((outcome) =>

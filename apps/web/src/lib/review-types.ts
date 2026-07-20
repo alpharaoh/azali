@@ -54,6 +54,9 @@ export type ReviewDocument =
     };
 
 export interface ActivityEvent {
+  /** The raw shipment_events type ("classification_proposed",
+   * "pga_screened", …) — the primary key for the timeline marker. */
+  type?: string;
   title: string;
   detail?: string;
   /** Longer-form content (e.g. an email's plain-text body) — clamped in display. */
@@ -61,7 +64,7 @@ export interface ActivityEvent {
   /** Compact thinking lines shown under the event — what the AI actually did. */
   steps?: string[];
   occurredHoursAgo: number;
-  icon: "ai" | "check" | "mail" | "user";
+  icon: "ai" | "check" | "mail" | "user" | "shield";
   status?: "current" | "default" | "success" | "warning";
   /** A rationale memo backs this event — renders a "View memo" action. */
   memo?: boolean;
@@ -224,7 +227,7 @@ export interface ReviewItem {
   /** PGA reviews: the agency determinations the broker is confirming. */
   pgaAgencies?: PgaAgencyDetermination[];
   /** The ACE flag-table publication the screening cited. */
-  flagTableVersion?: { pubNumber: string; publishedAt: string };
+  flagTableVersion?: { publishedAt: string };
 }
 
 export type DecisionAction = "approved" | "corrected" | "info-requested";

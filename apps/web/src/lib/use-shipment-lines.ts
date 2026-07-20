@@ -49,16 +49,22 @@ export function useShipmentLines(shipmentId: string, isProcessing: boolean) {
 
   // Which run works which line, and each run's status — straight from the
   // runs list (newest first, so the first hit per line is the current run).
+  // Classification and compliance (PGA screening) are separate agent runs
+  // over the same lines, so each gets its own map.
   const runsByLine: Record<number, string> = {};
+  const pgaRunsByLine: Record<number, string> = {};
   const runStatuses: Record<string, RunStatus> = {};
   for (const run of runsResponse?.data.runs ?? []) {
     runStatuses[run.id] = run.status as RunStatus;
-    if (
-      run.agent === "classification" &&
-      run.lineNumber !== null &&
-      runsByLine[run.lineNumber] === undefined
-    ) {
-      runsByLine[run.lineNumber] = run.id;
+    if (run.lineNumber === null) continue;
+    const map =
+      run.agent === "classification"
+        ? runsByLine
+        : run.agent === "pga_screening"
+          ? pgaRunsByLine
+          : null;
+    if (map && map[run.lineNumber] === undefined) {
+      map[run.lineNumber] = run.id;
     }
   }
 
@@ -85,14 +91,24 @@ export function useShipmentLines(shipmentId: string, isProcessing: boolean) {
   const runningEntry = Object.entries(runsByLine).find(
     ([, runId]) => runStatuses[runId] === "running",
   );
+  const pgaRunningEntry = Object.entries(pgaRunsByLine).find(
+    ([, runId]) => runStatuses[runId] === "running",
+  );
 
   return {
     lines,
     /** False until the first fetch lands — render skeletons. */
     isLoaded: linesResponse !== undefined,
     runIdForLine,
+    /** The compliance (PGA screening) run behind each line. Unlike
+     * classification there is no row-snapshot overlay — the runs list is
+     * the complete record. */
+    pgaRunIdForLine: pgaRunsByLine,
     runStatuses,
     activityByLine,
     runningLineNumber: runningEntry ? Number(runningEntry[0]) : undefined,
+    pgaRunningLineNumber: pgaRunningEntry
+      ? Number(pgaRunningEntry[0])
+      : undefined,
   };
 }

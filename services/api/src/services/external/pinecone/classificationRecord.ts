@@ -8,12 +8,16 @@ import {
 
 const log = createLogger("knowledge-base");
 
-/** Record types stored in the knowledge-base index, filterable on search. */
+/** Record types stored in the knowledge-base index, filterable on search.
+ * Every read tool and write path pins a type — classification precedent and
+ * PGA screening precedent never mix in each other's search results. */
 export const KNOWLEDGE_RECORD_TYPES = {
   /** Raw extracted document text, written at ingestion. */
   document: "shipment_document",
   /** A product's current verified classification — the reusable verdict. */
   classification: "product_classification",
+  /** A line's PGA screening outcome for one product + origin. */
+  pgaScreening: "pga_screening",
 } as const;
 
 /**
