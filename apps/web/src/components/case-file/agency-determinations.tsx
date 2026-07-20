@@ -3,13 +3,13 @@ import {
   IconLaw,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Chip } from "@heroui/react";
-import { Widget } from "@heroui-pro/react";
 import { CitationPill } from "#/components/case-file/citations";
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
-import type { PgaAgencyDetermination, ReviewItem } from "#/lib/review-types";
+import type { PgaAgencyDetermination } from "#/lib/review-types";
 
-const determinationMeta: Record<
+/** Chip color + label per agency call. */
+export const determinationMeta: Record<
   PgaAgencyDetermination["determination"],
   { chip: "danger" | "default" | "warning"; label: string }
 > = {
@@ -18,7 +18,9 @@ const determinationMeta: Record<
   required: { chip: "danger", label: "Filing required" },
 };
 
-function DeterminationRow({
+/** One agency call from a PGA screening: verdict, rationale, data elements,
+ * and citations. The line workspace composes these per line. */
+export function DeterminationRow({
   determination,
 }: {
   determination: PgaAgencyDetermination;
@@ -111,59 +113,7 @@ function DeterminationRow({
   );
 }
 
-/**
- * The PGA review's decision card: every agency determination the screening
- * proposed, grouped by shipment line, with the flag-table publication the
- * screening cited (the reasonable-care anchor) in the footer.
- */
-export function PgaDeterminationsCard({
-  agencies,
-  flagTableVersion,
-}: {
-  agencies: PgaAgencyDetermination[];
-  flagTableVersion?: ReviewItem["flagTableVersion"];
-}) {
-  const byLine = new Map<number, PgaAgencyDetermination[]>();
-  for (const agency of agencies) {
-    const existing = byLine.get(agency.lineNumber) ?? [];
-    byLine.set(agency.lineNumber, [...existing, agency]);
-  }
-  const lines = [...byLine.entries()].sort(([a], [b]) => a - b);
-  const multiLine = lines.length > 1;
-
-  return (
-    <Widget>
-      <Widget.Header>
-        <Widget.Title>Agency determinations</Widget.Title>
-      </Widget.Header>
-      <Widget.Content className="flex flex-col gap-1">
-        {lines.map(([lineNumber, determinations]) => (
-          <div key={lineNumber} className="flex flex-col">
-            {multiLine ? (
-              <div className="flex items-baseline gap-2 pt-2">
-                <span className="text-muted shrink-0 text-xs tabular-nums">
-                  #{lineNumber}
-                </span>
-                <span className="text-muted truncate text-xs">
-                  {determinations[0]?.lineDescription}
-                </span>
-              </div>
-            ) : null}
-            {determinations.map((determination) => (
-              <DeterminationRow
-                key={`${determination.lineItemId}:${determination.agencyCode}:${determination.flagCode ?? "sweep"}`}
-                determination={determination}
-              />
-            ))}
-          </div>
-        ))}
-        {flagTableVersion ? (
-          <span className="text-muted pt-2 text-xs">
-            Screened against the agency flag reference current as of{" "}
-            {flagTableVersion.publishedAt.slice(0, 10)}
-          </span>
-        ) : null}
-      </Widget.Content>
-    </Widget>
-  );
+/** Stable render key for a determination row. */
+export function determinationKey(determination: PgaAgencyDetermination) {
+  return `${determination.lineItemId}:${determination.agencyCode}:${determination.flagCode ?? "sweep"}`;
 }

@@ -643,8 +643,8 @@ export function PipelineBoard() {
             variant="tertiary"
             onPress={() =>
               navigate({
-                params: { itemId: row.id },
-                to: "/dashboard/review/$itemId",
+                params: { shipmentId: row.id },
+                to: "/dashboard/shipments/$shipmentId",
               })
             }
           >

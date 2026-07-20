@@ -50,9 +50,9 @@ export function reviewListParams(
 }
 
 /**
- * Shared by /dashboard/review and /dashboard/review/$itemId.
- * Fire-and-forget cache warming — never blocks navigation (a blocking loader
- * would put the router's full-page pending screen over filter changes).
+ * Cache warming for the /dashboard/review list. Fire-and-forget — never
+ * blocks navigation (a blocking loader would put the router's full-page
+ * pending screen over filter changes).
  */
 export function prefetchReviewQueue(
   queryClient: QueryClient,

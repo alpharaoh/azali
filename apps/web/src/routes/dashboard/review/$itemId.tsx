@@ -1,21 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ReviewQueue } from "#/components/review-queue";
-import {
-  prefetchReviewQueue,
-  reviewSearchSchema,
-} from "#/lib/review-queue-loader";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/** The review detail pane moved into the shipment page — old deep links
+ * (bookmarks, emails) land there instead. */
 export const Route = createFileRoute("/dashboard/review/$itemId")({
-  validateSearch: (search) => reviewSearchSchema.parse(search),
-  loaderDeps: ({ search }) => search,
-  loader: ({ context, deps }) => prefetchReviewQueue(context.queryClient, deps),
-  component: ReviewItemPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      params: { shipmentId: params.itemId },
+      to: "/dashboard/shipments/$shipmentId",
+    });
+  },
 });
-
-function ReviewItemPage() {
-  return (
-    <div className="px-4 py-3">
-      <ReviewQueue />
-    </div>
-  );
-}

@@ -8,6 +8,7 @@ import {
   eventPlane,
   FACTS_EVENT_TYPE,
 } from "#/lib/event-kinds";
+import type { ReviewRequestPayload } from "#/lib/review-items";
 import type { ActivityEvent, ReviewDocument } from "#/lib/review-types";
 
 export interface CaseFileFacts {
@@ -25,6 +26,8 @@ export interface CaseFile {
   activityEvents: ActivityEvent[];
   /** The last agent run seen — the headline line's audit record. */
   traceRunId?: string;
+  /** The latest review_requested payload — frames the pending review. */
+  reviewRequest?: ReviewRequestPayload;
   facts?: CaseFileFacts;
   notes: Array<{ id: string; body: string; occurredAt: string }>;
   isPending: boolean;
@@ -71,6 +74,16 @@ export function useCaseFile(
     const runId = (event.payload as { runId?: string }).runId;
 
     if (typeof runId === "string") traceRunId = runId;
+  }
+
+  // The review framing lives on review_requested events (excluded from the
+  // activity plane); the latest payload describes the pending review.
+  let reviewRequest: ReviewRequestPayload | undefined;
+
+  for (const event of events) {
+    if (event.type === "review_requested") {
+      reviewRequest = event.payload as ReviewRequestPayload;
+    }
   }
 
   // Documents — payloads mirror the ReviewDocument shape.
@@ -155,6 +168,7 @@ export function useCaseFile(
     facts,
     isPending,
     notes,
+    reviewRequest,
     traceRunId,
   };
 }

@@ -255,6 +255,47 @@ export function isMultiLineReview(item: ReviewItem): boolean {
   return lines.length > 1 && lines.every((line) => line.duty !== undefined);
 }
 
+/** Emails, CBP correspondence, and drafted responses are story beats — they
+ * keep their own timeline slots instead of folding into the intake set. */
+export function isStandaloneDocument(document: ReviewDocument): boolean {
+  return (
+    document.kind === "email" ||
+    /cbp form 2[89]|draft response/i.test(document.name)
+  );
+}
+
+/** A rationale memo never renders as a document — it opens from the decision
+ * card's or an event's "View memo" action. */
+export function isMemoDocument(document: ReviewDocument): boolean {
+  return document.kind === "pdf" && /rationale memo/i.test(document.name);
+}
+
+/**
+ * The headline rationale memo — the latest wins, so a re-classification's
+ * memo always matches the proposal shown on the decision card.
+ */
+export function findLatestMemo(
+  documents: ReviewDocument[],
+): (ReviewDocument & { kind: "pdf" }) | undefined {
+  return [...documents]
+    .reverse()
+    .find((document): document is ReviewDocument & { kind: "pdf" } =>
+      isMemoDocument(document),
+    );
+}
+
+/** The latest agent-drafted document with an editable rich-text body. */
+export function findResponseDraft(
+  documents: ReviewDocument[],
+): (ReviewDocument & { kind: "pdf" }) | undefined {
+  return [...documents]
+    .reverse()
+    .find(
+      (document): document is ReviewDocument & { kind: "pdf" } =>
+        document.kind === "pdf" && Boolean(document.draft),
+    );
+}
+
 /**
  * A line's rationale memo — memos are per-line documents named
  * "Rationale Memo — Line N · …"; the latest revision wins.

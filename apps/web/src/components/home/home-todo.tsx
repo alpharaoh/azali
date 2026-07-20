@@ -7,6 +7,11 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import {
+  deadlineTextClass,
+  deadlineTone,
+  typeMeta as reviewTypeMeta,
+} from "#/components/case-file/review-meta";
+import {
   HOME_REVIEWS_PARAMS,
   HOME_SHIPMENTS_PARAMS,
 } from "#/components/home/home-params";
@@ -16,11 +21,6 @@ import {
   SnippetEmpty,
 } from "#/components/home/home-scaffold";
 import { priorityFor, statusFromApi } from "#/components/pipeline-board";
-import type { DeadlineTone } from "#/components/review/review-detail";
-import {
-  deadlineTone,
-  typeMeta as reviewTypeMeta,
-} from "#/components/review/review-detail";
 import {
   useEmailAccountsControllerList,
   useShipmentEventsControllerFindAll,
@@ -29,12 +29,6 @@ import {
 import { getInitials } from "#/lib/format";
 import type { ReviewRequestPayload } from "#/lib/review-items";
 
-const deadlineTextClass: Record<DeadlineTone, string> = {
-  danger: "text-danger font-medium",
-  default: "text-muted",
-  warning: "text-warning",
-};
-
 /** One unit of work on the list, whatever it points at. */
 interface TodoItem {
   id: string;
@@ -42,7 +36,7 @@ interface TodoItem {
   title: React.ReactNode;
   detail: string;
   /** Right-aligned urgency text (review deadlines). */
-  meta?: { label: string; tone: DeadlineTone };
+  meta?: { label: string; tone: keyof typeof deadlineTextClass };
   cta: string;
   go: () => void;
 }
@@ -165,8 +159,8 @@ export function HomeTodo({ className }: { className?: string }) {
       cta: "Review",
       go: () =>
         navigate({
-          to: "/dashboard/review/$itemId",
-          params: { itemId: shipment.id },
+          to: "/dashboard/shipments/$shipmentId",
+          params: { shipmentId: shipment.id },
         }),
     };
   });

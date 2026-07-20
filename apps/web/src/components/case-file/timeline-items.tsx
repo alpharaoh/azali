@@ -1,4 +1,5 @@
 import {
+  IconArrowUp,
   IconChevronRight,
   IconCircleCheck,
   IconEmail1,
@@ -11,7 +12,7 @@ import {
   IconUser,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import { Skeleton } from "@heroui/react";
-import { Timeline } from "@heroui-pro/react";
+import { PromptInput, Timeline } from "@heroui-pro/react";
 import { formatDistanceToNowStrict, subHours } from "date-fns";
 import type { ComponentProps, ComponentType } from "react";
 import type { ActivityEvent } from "#/lib/review-types";
@@ -115,6 +116,64 @@ export function eventMarker(event: ActivityEvent): {
   }
 
   return { Icon: IconPaperPlane, className: "" };
+}
+
+/** A broker note on the audit record. */
+export function NoteTimelineItem({
+  body,
+  time = "just now",
+  ...rest
+}: { body: string; time?: string } & TimelineItemPassthrough) {
+  return (
+    <Timeline.Item align="start" status="default" {...rest}>
+      <Timeline.Marker aria-hidden="true" className="size-6">
+        <IconUser className="size-3.5" />
+      </Timeline.Marker>
+      <Timeline.Content className="gap-0.5">
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <h3 className="text-foreground m-0 text-xs font-medium leading-5">
+            You
+          </h3>
+          <time className="text-muted shrink-0 text-xs leading-5">{time}</time>
+        </div>
+        <p className="text-muted m-0 text-xs leading-5">{body}</p>
+      </Timeline.Content>
+    </Timeline.Item>
+  );
+}
+
+/** The note composer — the broker's line into the audit record. */
+export function Composer({
+  onSubmit,
+  onValueChange,
+  placeholder,
+  value,
+}: {
+  onSubmit: () => void;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <PromptInput
+      value={value}
+      onSubmit={onSubmit}
+      onValueChange={onValueChange}
+    >
+      <PromptInput.Shell>
+        <PromptInput.Content>
+          <PromptInput.TextArea placeholder={placeholder} />
+        </PromptInput.Content>
+        <PromptInput.Toolbar>
+          <PromptInput.ToolbarEnd>
+            <PromptInput.Send>
+              <IconArrowUp className="size-4" />
+            </PromptInput.Send>
+          </PromptInput.ToolbarEnd>
+        </PromptInput.Toolbar>
+      </PromptInput.Shell>
+    </PromptInput>
+  );
 }
 
 export function EventTimelineItem({

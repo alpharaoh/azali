@@ -2,35 +2,37 @@ import {
   IconArrowLeft,
   IconExclamationCircle,
   IconFileText,
-  IconLaw,
-  IconSparklesThree,
+  IconPencil,
   IconSquareArrowTopRight,
-  IconSquareChecklistMagnifyingGlass,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
-import {
-  Avatar,
-  Button,
-  Chip,
-  Skeleton,
-  Spinner,
-  Tabs,
-  toast,
-} from "@heroui/react";
-import { ItemCard, TextShimmer, Timeline, Widget } from "@heroui-pro/react";
+import { Avatar, Button, Chip, Skeleton, Spinner, toast } from "@heroui/react";
+import { TextShimmer, Timeline, Widget } from "@heroui-pro/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
+import { addHours, formatDistanceToNowStrict } from "date-fns";
 import { useState } from "react";
+import { AlternateClassificationsCard } from "#/components/case-file/alternate-classifications-card";
+import { ComparisonCard } from "#/components/case-file/comparison-card";
+import { SingleDocumentTimelineItem } from "#/components/case-file/document-items";
 import { DocumentViewerModal } from "#/components/case-file/document-viewer-modal";
-import { LineClassificationsCard } from "#/components/case-file/line-classifications-card";
-import { LineDetailDrawer } from "#/components/case-file/line-detail-drawer";
-import { LineTraceTabs } from "#/components/case-file/line-trace-tabs";
+import type { LineSelection } from "#/components/case-file/line-workspace";
+import { LineWorkspace } from "#/components/case-file/line-workspace";
+import { ProposalCard } from "#/components/case-file/proposal-card";
+import { ReviewActionsBar } from "#/components/case-file/review-actions-bar";
+import {
+  deadlineTextClass,
+  deadlineTone,
+  typeMeta,
+} from "#/components/case-file/review-meta";
 import {
   ShipmentFactsCard,
   ShipmentFactsCardSkeleton,
 } from "#/components/case-file/shipment-facts";
 import {
   ActivitySkeleton,
+  Composer,
   EventTimelineItem,
+  NoteTimelineItem,
 } from "#/components/case-file/timeline-items";
 import {
   priorityFor,
@@ -38,31 +40,47 @@ import {
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
+import { ResponseDraftModal } from "#/components/response-draft-modal";
 import type { ListShipmentDocumentsResponseDtoDocumentsItem } from "#/generated/api";
 import {
+  getShipmentEventsControllerFindByShipmentQueryKey,
   getShipmentsControllerFindOneQueryKey,
   useShipmentDocumentsControllerList,
+  useShipmentEventsControllerCreate,
   useShipmentsControllerFindOne,
+  useShipmentsControllerResolve,
   useShipmentsControllerSkipEmailIntake,
 } from "#/generated/api";
-import { toShipmentFacts } from "#/lib/review-items";
+import { BROKER_NOTE_TYPE } from "#/lib/event-kinds";
+import { buildShipmentReviewItem, toShipmentFacts } from "#/lib/review-items";
 import type {
+  DecisionAction,
   DocumentLine,
+  LineCorrection,
   ReviewDocument,
-  ReviewLineItem,
 } from "#/lib/review-types";
-import { findLineMemo, findLineScreeningMemo } from "#/lib/review-types";
+import {
+  findLatestMemo,
+  findResponseDraft,
+  isMultiLineReview,
+  isStandaloneDocument,
+} from "#/lib/review-types";
 import { PROCESSING_POLL_MS, useCaseFile } from "#/lib/use-case-file";
+import { useReviewDecision } from "#/lib/use-review-decision";
 import { useShipmentLines } from "#/lib/use-shipment-lines";
 
 /* -------------------------------------------------------------------------------------------------
  * Per-shipment detail page — fully usable WHILE the pipeline is processing:
  * documents appear as they extract, lines as they classify, and the agent
- * trace fills in live (polled while the pipeline runs). Once settled it
- * reads as the shipment's standing record.
+ * trace fills in live (polled while the pipeline runs). When the pipeline
+ * flags the shipment for review, the page IS the review surface: the
+ * question, the decision cards, and the approve/correct actions all live
+ * here. Once settled it reads as the shipment's standing record.
  * -----------------------------------------------------------------------------------------------*/
 
-type Section = "documents" | "trace" | "compliance";
+/** Poll cadence while a review is pending — picks up resolutions made
+ * elsewhere (another tab, another broker) without a refresh. */
+const REVIEW_POLL_MS = 10_000;
 
 /** Adapt an API document row to the shape the shared viewer renders. */
 function toViewerDocument(
@@ -85,8 +103,7 @@ function toViewerDocument(
   };
 }
 
-/** One document tile — first-page preview on a soft mat, hover to view.
- * Same preview treatment as the review workspace's document pane. */
+/** One document tile — first-page preview on a soft mat, hover to view. */
 function DocumentPreviewCard({
   document,
   onOpen,
@@ -170,20 +187,31 @@ function DocumentPreviewCard({
 
 export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
   const navigate = useNavigate();
+  const router = useRouter();
 
-  // The row self-gates its poll: keep polling until it exists AND is no
-  // longer processing (covers landing here seconds after the upload).
+  // The row self-gates its poll: fast while it's processing (or not yet
+  // loaded), review cadence while a broker decision is pending, off once
+  // settled.
   const { data: shipmentResponse } = useShipmentsControllerFindOne(shipmentId, {
     query: {
-      refetchInterval: (query) =>
-        !query.state.data || query.state.data.data.processingState !== null
-          ? PROCESSING_POLL_MS
-          : false,
+      refetchInterval: (query) => {
+        const row = query.state.data?.data;
+
+        if (!row || row.processingState !== null) return PROCESSING_POLL_MS;
+        if (row.status === "needs_review") return REVIEW_POLL_MS;
+        return false;
+      },
     },
   });
   const shipment = shipmentResponse?.data;
   const processing = shipment?.processingState ?? null;
-  const poll = processing !== null ? PROCESSING_POLL_MS : false;
+  const inReview = shipment?.status === "needs_review";
+  const poll =
+    processing !== null
+      ? PROCESSING_POLL_MS
+      : inReview
+        ? REVIEW_POLL_MS
+        : false;
 
   // Broker fast-forward for email-sourced shipments: stop collecting
   // related emails and classify with what's already here.
@@ -218,41 +246,169 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
     runIdForLine,
     pgaRunIdForLine,
     activityByLine,
-    runningLineNumber,
-    pgaRunningLineNumber,
   } = useShipmentLines(shipmentId, processing !== null);
 
-  // Drill-down drawer — read-only outside the review flow.
-  const [openLine, setOpenLine] = useState<ReviewLineItem | null>(null);
+  /* ---------------------------------------------------------------------------------------------
+   * Review surface — the pending review's framing (from the shipment's own
+   * review_requested event) plus the staged decision. Everything unmounts
+   * the moment the status leaves needs_review.
+   * -------------------------------------------------------------------------------------------*/
+  const reviewItem =
+    shipment && inReview && !caseFile.isPending
+      ? buildShipmentReviewItem(shipment, caseFile)
+      : null;
+  // PGA mode — the decision card is the agency determinations; corrections
+  // don't apply (approve / request-info only, the server 409s the rest).
+  const isPgaReview = Boolean(
+    reviewItem &&
+      reviewItem.type === "pga" &&
+      (reviewItem.pgaAgencies?.length ?? 0) > 0,
+  );
+  // Multi-line mode gates on the payload's enriched line shape, exactly as
+  // the queue did — and never for PGA, whose live lines all carry duty.
+  const multiLine = Boolean(
+    reviewItem && reviewItem.type !== "pga" && isMultiLineReview(reviewItem),
+  );
+  const decision = useReviewDecision();
+  const reviewDeadline = shipment?.reviewDeadlineAt
+    ? new Date(shipment.reviewDeadlineAt)
+    : addHours(new Date(), 24);
+  const reviewTone = deadlineTone(reviewDeadline);
+
+  const memoDocument = findLatestMemo(caseFile.documents);
+  const responseDraft = findResponseDraft(caseFile.documents);
+  const [editingDraft, setEditingDraft] = useState<
+    (ReviewDocument & { kind: "pdf" }) | null
+  >(null);
+  const [isMemoOpen, setMemoOpen] = useState(false);
+
+  const resolveReview = useShipmentsControllerResolve();
+  const handleResolve = (
+    action: DecisionAction,
+    alternate?: string,
+    corrections?: LineCorrection[],
+  ) => {
+    if (!shipment) return;
+    const reference = shipment.reference;
+    // Everything shipment-shaped: the list, stats, the global event feed,
+    // and per-shipment timelines all live under /v1/shipments.
+    const invalidateShipments = () =>
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          String(query.queryKey[0]).startsWith("/v1/shipments"),
+      });
+    const run = resolveReview
+      .mutateAsync({
+        id: shipmentId,
+        data: {
+          action: action === "info-requested" ? "info_requested" : action,
+          ...(alternate && { alternate }),
+          ...(corrections?.length && { corrections }),
+        },
+      })
+      .then(async () => {
+        decision.reset();
+        await invalidateShipments();
+      })
+      .catch(async (error) => {
+        // A 409 means it was resolved elsewhere — the refetch flips the
+        // status and the review surface unmounts on its own.
+        await invalidateShipments();
+        throw error;
+      });
+
+    toast.promise(run, {
+      error: "Failed to resolve review — it may have been resolved elsewhere",
+      loading: "Resolving review...",
+      success:
+        action === "approved"
+          ? `Approved ${reference}`
+          : action === "corrected"
+            ? corrections?.length
+              ? `Corrected ${reference} — ${corrections.length} line${corrections.length === 1 ? "" : "s"}`
+              : `Corrected ${reference} → ${alternate}`
+            : `Requested more info for ${reference}`,
+    });
+  };
+
+  // Broker notes ride the audit record as events, review or not.
+  const createEvent = useShipmentEventsControllerCreate();
+  const [noteDraft, setNoteDraft] = useState("");
+  const handleAddNote = () => {
+    const body = noteDraft.trim();
+
+    if (!body) return;
+    setNoteDraft("");
+    createEvent
+      .mutateAsync({
+        shipmentId,
+        data: {
+          type: BROKER_NOTE_TYPE,
+          actor: "user",
+          title: "Broker note added to the audit record",
+          payload: { body },
+        },
+      })
+      .then(() => {
+        queryClient.invalidateQueries({
+          queryKey:
+            getShipmentEventsControllerFindByShipmentQueryKey(shipmentId),
+        });
+      })
+      .catch(() => {
+        toast.danger("Failed to save note");
+      });
+  };
+
   // Full-document viewer (real PDF + the AI's reading).
   const [viewerDocument, setViewerDocument] = useState<
     (ReviewDocument & { kind: "pdf"; src?: string }) | null
   >(null);
 
-  const [section, setSection] = useState<Section>("documents");
+  // The line workspace's selection — Overview or one line's whole story.
+  // (The route keys this component by shipmentId, so it resets per shipment.)
+  const [selectedLine, setSelectedLine] = useState<LineSelection>("overview");
+  // "View agent trace" from the activity rail lands on the first line with
+  // an audit run — the trace lives inside that line's tab now.
+  const jumpToTrace = () => {
+    const target =
+      lines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
+      lines[0]?.lineNumber;
 
-  // Follow each agent as it moves through the lines — unless the broker
-  // picked a tab themselves. Classification and compliance keep separate
-  // follow state: their runs visit lines at different times. (The route
-  // keys this component by shipmentId, so all of this state resets per
-  // shipment.)
-  const [manualTraceLine, setManualTraceLine] = useState<number | null>(null);
-  const activeTraceLine =
-    manualTraceLine ??
-    runningLineNumber ??
-    lines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
-    lines[0]?.lineNumber;
-
-  const [manualPgaLine, setManualPgaLine] = useState<number | null>(null);
-  const activePgaLine =
-    manualPgaLine ??
-    pgaRunningLineNumber ??
-    lines.find((line) => pgaRunIdForLine[line.lineNumber])?.lineNumber ??
-    lines[0]?.lineNumber;
+    if (target !== undefined) setSelectedLine(target);
+  };
 
   // Screening state, straight from the processing message the workflow sets.
   const screening = /screening/i.test(processing ?? "");
-  const hasPgaRuns = Object.keys(pgaRunIdForLine).length > 0;
+
+  // The running record: activity events, CBP correspondence and drafted
+  // responses as their own beats, and broker notes — oldest first, so the
+  // record reads top-down and the latest beat sits by the composer. (Emails
+  // already arrive through the activity merge.)
+  const railEntries = [
+    ...caseFile.activityEvents.map((event) => ({
+      event,
+      hoursAgo: event.occurredHoursAgo,
+      kind: "event" as const,
+    })),
+    ...caseFile.documents
+      .filter(
+        (document) =>
+          document.kind !== "email" && isStandaloneDocument(document),
+      )
+      .map((document) => ({
+        document,
+        hoursAgo: document.receivedHoursAgo,
+        kind: "document" as const,
+      })),
+    ...caseFile.notes.map((note) => ({
+      hoursAgo: (Date.now() - new Date(note.occurredAt).getTime()) / 3_600_000,
+      kind: "note" as const,
+      note,
+    })),
+  ].sort((a, b) => b.hoursAgo - a.hoursAgo);
+
+  const ReviewTypeIcon = reviewItem ? typeMeta[reviewItem.type].icon : null;
 
   return (
     <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4">
@@ -261,10 +417,14 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Button
             isIconOnly
-            aria-label="Back to pipeline"
+            aria-label="Back"
             size="sm"
             variant="ghost"
-            onPress={() => navigate({ to: "/dashboard/pipeline" })}
+            onPress={() =>
+              router.history.canGoBack()
+                ? router.history.back()
+                : navigate({ to: "/dashboard/pipeline" })
+            }
           >
             <IconArrowLeft className="size-4" />
           </Button>
@@ -344,42 +504,48 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         )}
       </div>
 
-      {/* Review CTA — flagged work for the broker, worded per review type */}
-      {shipment?.status === "needs_review" ? (
-        <ItemCard
-          variant="outline"
-          className="my-2 bg-warning/10 border-warning/40"
-        >
-          <ItemCard.Icon>
-            <IconSquareChecklistMagnifyingGlass className="size-4" />
-          </ItemCard.Icon>
-          <ItemCard.Content>
-            <ItemCard.Title>
-              {shipment.reviewType === "pga"
-                ? "Compliance screening needs broker review"
-                : "Classification needs broker review"}
-            </ItemCard.Title>
-            <ItemCard.Description>
-              {shipment.reviewType === "pga"
-                ? "Confirm the agency determinations before the entry is filed."
-                : "Confirm the flagged lines before the entry is filed."}
-            </ItemCard.Description>
-          </ItemCard.Content>
-          <ItemCard.Action>
-            <Button
-              size="sm"
-              variant="primary"
-              onPress={() =>
-                navigate({
-                  params: { itemId: shipmentId },
-                  to: "/dashboard/review/$itemId",
-                })
-              }
-            >
-              Open in review queue
-            </Button>
-          </ItemCard.Action>
-        </ItemCard>
+      {/* Review band — the question being asked of the broker. The page IS
+          the review: the decision cards sit below, the actions bar is
+          pinned at the bottom. */}
+      {inReview ? (
+        reviewItem && ReviewTypeIcon ? (
+          <div className="border-warning/40 bg-warning/5 flex flex-col gap-2 rounded-2xl border p-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Chip size="sm" variant="soft">
+                <ReviewTypeIcon className="size-3" />
+                <Chip.Label>{typeMeta[reviewItem.type].label}</Chip.Label>
+              </Chip>
+              {reviewItem.noticeForm ? (
+                <Chip color="danger" size="sm" variant="soft">
+                  <Chip.Label className="font-semibold">
+                    {reviewItem.noticeForm}
+                  </Chip.Label>
+                </Chip>
+              ) : null}
+              <Chip
+                color={reviewTone === "default" ? "default" : reviewTone}
+                size="sm"
+                variant="soft"
+              >
+                <Chip.Label>
+                  {formatDistanceToNowStrict(reviewDeadline, {
+                    addSuffix: true,
+                  })}
+                </Chip.Label>
+              </Chip>
+            </div>
+            <h2 className="text-foreground m-0 text-base font-semibold leading-normal">
+              {reviewItem.question}
+            </h2>
+            {reviewItem.deadlineReason ? (
+              <span className="text-muted text-xs">
+                {reviewItem.deadlineReason}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <Skeleton className="h-24 rounded-2xl" />
+        )
       ) : null}
 
       {/* Failure surface — ingest/classification failures land on the timeline */}
@@ -397,133 +563,97 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       {/* Main content left, the shipment's running record on the right */}
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-4">
-          {/* Line classifications — THE summary, always visible above the tabs */}
-          <LineClassificationsCard
-            activityByLine={activityByLine}
-            emptyMessage={
-              processing
-                ? "Entry lines appear once the commercial invoice is read…"
-                : "No entry lines on file."
-            }
-            isLoading={!linesLoaded}
-            lines={lines}
-            onOpenLine={setOpenLine}
-            onViewTrace={(lineNumber) => {
-              setSection("trace");
-              setManualTraceLine(lineNumber);
-            }}
-          />
-
-          {/* Everything else lives in tabs — no endless scroll */}
-          <Tabs
-            selectedKey={section}
-            onSelectionChange={(key) => setSection(String(key) as Section)}
-          >
-            <Tabs.ListContainer>
-              <Tabs.List
-                aria-label="Shipment record sections"
-                className="w-fit"
-              >
-                <Tabs.Tab className="w-fit" id="documents">
-                  <IconFileText className="mr-1.5 size-3.5" />
-                  Documents{documents?.length ? ` (${documents.length})` : ""}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab className="w-fit" id="trace">
-                  <IconSparklesThree className="mr-1.5 size-3.5" />
-                  Classification trace
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab className="w-fit" id="compliance">
-                  <IconLaw className="mr-1.5 size-3.5" />
-                  Compliance trace
-                  {screening ? <Spinner className="ml-1.5" size="sm" /> : null}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
-
-            {/* Documents — preview-image tiles, three across; click opens the
-            full viewer (real PDF + the AI's complete reading) */}
-            <Tabs.Panel className="pt-3" id="documents">
-              {documents === undefined ? (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <Skeleton className="h-44 rounded-lg" />
-                  <Skeleton className="h-44 rounded-lg" />
-                  <Skeleton className="h-44 rounded-lg" />
-                </div>
-              ) : documents.length === 0 ? (
-                <span className="text-muted text-sm">
-                  {processing
-                    ? "Registering uploaded documents…"
-                    : "No documents on file."}
-                </span>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {documents.map((document) => (
-                    <DocumentPreviewCard
-                      key={document.id}
-                      document={document}
-                      onOpen={() =>
-                        setViewerDocument(toViewerDocument(document))
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </Tabs.Panel>
-
-            {/* Classification trace — live while classification runs */}
-            <Tabs.Panel className="flex flex-col gap-3 pt-3" id="trace">
-              {!linesLoaded ? (
-                <Skeleton className="h-24 rounded-lg" />
-              ) : lines.length === 0 ? (
-                <span className="text-muted text-sm">
-                  {processing
-                    ? "The agent starts once the entry lines are extracted…"
-                    : "No classification runs on file."}
-                </span>
-              ) : (
-                <LineTraceTabs
-                  activeLineNumber={activeTraceLine}
-                  isProcessing={processing !== null}
-                  lines={lines}
-                  pendingMessage={
-                    awaitingEmails
-                      ? "Classification starts once all related emails are in — skip the wait above to start now."
-                      : undefined
+          {/* Decision cards — the headline proposal with its alternates.
+              Multi-line reviews stage corrections inside the line workspace;
+              PGA reviews decide over the workspace's agency determinations. */}
+          {reviewItem && !isPgaReview && !multiLine ? (
+            <>
+              <ProposalCard
+                item={reviewItem}
+                onViewDraft={
+                  responseDraft
+                    ? () => setEditingDraft(responseDraft)
+                    : undefined
+                }
+                onViewMemo={memoDocument ? () => setMemoOpen(true) : undefined}
+              />
+              {reviewItem.alternates?.length ? (
+                <AlternateClassificationsCard
+                  alternates={reviewItem.alternates}
+                  deltaFor={(value) =>
+                    reviewItem.dutyImpact?.alternates?.[value]?.deltaUsd
                   }
-                  runIdForLine={runIdForLine}
-                  onSelect={setManualTraceLine}
+                  selected={decision.alternate}
+                  onSelect={decision.setAlternate}
                 />
-              )}
-            </Tabs.Panel>
+              ) : null}
+            </>
+          ) : null}
+          {reviewItem?.comparison ? (
+            <ComparisonCard comparison={reviewItem.comparison} />
+          ) : null}
 
-            {/* Compliance trace — PGA screening, live while it runs. A
-            separate surface from classification: screening starts after
-            classification lands and runs even for reused lines. */}
-            <Tabs.Panel className="flex flex-col gap-3 pt-3" id="compliance">
-              {!linesLoaded ? (
-                <Skeleton className="h-24 rounded-lg" />
-              ) : lines.length === 0 || (!hasPgaRuns && !screening) ? (
-                <span className="text-muted text-sm">
-                  {processing
-                    ? "Compliance screening starts once classification lands…"
-                    : "No compliance screening runs on file."}
-                </span>
-              ) : (
-                <LineTraceTabs
-                  activeLineNumber={activePgaLine}
-                  agent="pga"
-                  isProcessing={processing !== null}
-                  lines={lines}
-                  pendingMessage="Agency screening will reach this line shortly…"
-                  runIdForLine={pgaRunIdForLine}
-                  onSelect={setManualPgaLine}
-                />
-              )}
-            </Tabs.Panel>
-          </Tabs>
+          {/* The line workspace — Overview across every line, then one tab
+              per line gathering its classification, agency determinations,
+              memos, and both agent traces. During a multi-line review the
+              per-line alternates stage corrections. The documents card
+              (preview tiles → full viewer) rides on the Overview tab. */}
+          <LineWorkspace
+            activityByLine={activityByLine}
+            awaitingEmails={awaitingEmails}
+            corrections={multiLine ? decision.corrections : undefined}
+            documents={caseFile.documents}
+            documentsSlot={
+              <Widget className="min-w-0">
+                <Widget.Header>
+                  <Widget.Title>
+                    Documents
+                    {documents?.length ? ` (${documents.length})` : ""}
+                  </Widget.Title>
+                </Widget.Header>
+                <Widget.Content>
+                  {documents === undefined ? (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <Skeleton className="h-44 rounded-lg" />
+                      <Skeleton className="h-44 rounded-lg" />
+                      <Skeleton className="h-44 rounded-lg" />
+                    </div>
+                  ) : documents.length === 0 ? (
+                    <span className="text-muted text-sm">
+                      {processing
+                        ? "Registering uploaded documents…"
+                        : "No documents on file."}
+                    </span>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {documents.map((document) => (
+                        <DocumentPreviewCard
+                          key={document.id}
+                          document={document}
+                          onOpen={() =>
+                            setViewerDocument(toViewerDocument(document))
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Widget.Content>
+              </Widget>
+            }
+            flagTableVersion={caseFile.reviewRequest?.flagTableVersion}
+            lines={lines}
+            linesLoaded={linesLoaded}
+            pgaAgencies={caseFile.reviewRequest?.pgaAgencies}
+            pgaRunIdForLine={pgaRunIdForLine}
+            processing={processing}
+            runIdForLine={runIdForLine}
+            screening={screening}
+            selected={selectedLine}
+            shipmentId={shipmentId}
+            traceRunId={caseFile.traceRunId}
+            onSelect={setSelectedLine}
+            onStageCorrection={multiLine ? decision.stageCorrection : undefined}
+          />
         </div>
 
         {/* Information column — the shipment's facts, then its running record */}
@@ -541,49 +671,125 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
             <Widget.Content>
               {caseFile.isPending ? (
                 <ActivitySkeleton />
-              ) : caseFile.activityEvents.length === 0 ? (
-                <span className="text-muted text-sm">
-                  {processing
-                    ? "The record starts as soon as extraction lands…"
-                    : "No activity recorded yet."}
-                </span>
               ) : (
-                <Timeline>
-                  {[...caseFile.activityEvents]
-                    .reverse()
-                    .map((event, index) => (
-                      <EventTimelineItem
-                        // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
-                        key={index}
-                        event={event}
-                      />
-                    ))}
-                </Timeline>
+                <div className="flex flex-col gap-3">
+                  {railEntries.length === 0 ? (
+                    <span className="text-muted text-sm">
+                      {processing
+                        ? "The record starts as soon as extraction lands…"
+                        : "No activity recorded yet."}
+                    </span>
+                  ) : null}
+                  <Timeline>
+                    {railEntries.map((entry, index) =>
+                      entry.kind === "event" ? (
+                        <EventTimelineItem
+                          // biome-ignore lint/suspicious/noArrayIndexKey: events have no stable id in this projection
+                          key={`event-${index}`}
+                          event={entry.event}
+                          onViewMemo={
+                            memoDocument ? () => setMemoOpen(true) : undefined
+                          }
+                          onViewTrace={jumpToTrace}
+                        />
+                      ) : entry.kind === "document" ? (
+                        <SingleDocumentTimelineItem
+                          key={
+                            entry.document.kind === "email"
+                              ? entry.document.subject
+                              : entry.document.name
+                          }
+                          document={entry.document}
+                          onEditDraft={
+                            entry.document.kind === "pdf" &&
+                            entry.document.draft
+                              ? () =>
+                                  setEditingDraft(
+                                    entry.document as ReviewDocument & {
+                                      kind: "pdf";
+                                    },
+                                  )
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        <NoteTimelineItem
+                          key={entry.note.id}
+                          body={entry.note.body}
+                          time={formatDistanceToNowStrict(
+                            new Date(entry.note.occurredAt),
+                            { addSuffix: true },
+                          )}
+                        />
+                      ),
+                    )}
+                    {/* The broker's line into the audit record — always on,
+                        pinned after the latest beat. */}
+                    <Timeline.Item align="start" status="default">
+                      <Timeline.Marker aria-hidden="true" className="size-6">
+                        <IconPencil className="size-3.5" />
+                      </Timeline.Marker>
+                      <Timeline.Content className="gap-2">
+                        <Composer
+                          placeholder="Add a note to the record..."
+                          value={noteDraft}
+                          onSubmit={handleAddNote}
+                          onValueChange={setNoteDraft}
+                        />
+                      </Timeline.Content>
+                    </Timeline.Item>
+                  </Timeline>
+                </div>
               )}
             </Widget.Content>
           </Widget>
         </div>
       </div>
 
-      {/* Per-line drill-down — read-only here; corrections live in review */}
-      <LineDetailDrawer
-        line={openLine}
-        memo={
-          openLine
-            ? (findLineMemo(caseFile.documents, openLine.lineNumber) ?? null)
-            : null
-        }
-        screeningMemo={
-          openLine
-            ? (findLineScreeningMemo(caseFile.documents, openLine.lineNumber) ??
-              null)
-            : null
-        }
+      {/* Decision bar — pinned while a review is pending, so the actions
+          stay in reach however deep the record scrolls. */}
+      {reviewItem ? (
+        <div className="bg-background/85 sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur">
+          <span
+            className={`px-2 text-xs ${
+              decision.correctionEntries.length > 0
+                ? "text-muted"
+                : deadlineTextClass[reviewTone]
+            }`}
+          >
+            {decision.correctionEntries.length > 0
+              ? `${decision.correctionEntries.length} correction${decision.correctionEntries.length === 1 ? "" : "s"} staged`
+              : `Review due ${formatDistanceToNowStrict(reviewDeadline, { addSuffix: true })}`}
+          </span>
+          <ReviewActionsBar
+            alternate={decision.alternate}
+            approveLabel={reviewItem.approveLabel}
+            canRequestInfo={reviewItem.canRequestInfo}
+            correctionEntries={decision.correctionEntries}
+            isResolving={resolveReview.isPending}
+            multiLine={multiLine}
+            onResolve={handleResolve}
+          />
+        </div>
+      ) : null}
+
+      <ResponseDraftModal
+        document={editingDraft}
+        isOpen={Boolean(editingDraft)}
         shipmentId={shipmentId}
         onOpenChange={(open) => {
-          if (!open) setOpenLine(null);
+          if (!open) setEditingDraft(null);
         }}
       />
+      {memoDocument ? (
+        <ResponseDraftModal
+          readOnly
+          document={memoDocument}
+          isOpen={isMemoOpen}
+          shipmentId={shipmentId}
+          onOpenChange={setMemoOpen}
+        />
+      ) : null}
 
       {viewerDocument ? (
         <DocumentViewerModal

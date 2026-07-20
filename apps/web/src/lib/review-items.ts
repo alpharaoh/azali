@@ -9,8 +9,10 @@ import { capitalize } from "#/lib/format";
 import type { ReviewSearch } from "#/lib/review-queue-loader";
 import { reviewListParams } from "#/lib/review-queue-loader";
 import type {
+  ActivityEvent,
   Citation,
   PgaAgencyDetermination,
+  ReviewDocument,
   ReviewItem,
   ReviewItemType,
   ReviewLineItem,
@@ -73,8 +75,27 @@ export function toShipmentFacts(
   };
 }
 
+/** Any shipment DTO carrying the fields a review item needs — the list and
+ * find-one responses both do. */
+export type ReviewShipmentSource = Pick<
+  ApiShipment,
+  | "client"
+  | "conveyance"
+  | "entryType"
+  | "etaAt"
+  | "id"
+  | "incoterm"
+  | "originCountry"
+  | "originPort"
+  | "portOfEntry"
+  | "reference"
+  | "reviewDeadlineAt"
+  | "transportMode"
+  | "valueCents"
+>;
+
 export function toReviewItem(
-  shipment: ApiShipment,
+  shipment: ReviewShipmentSource,
   payload: ReviewRequestPayload,
 ): ReviewItem {
   const clientName = shipment.client?.name ?? "Unknown client";
@@ -110,6 +131,35 @@ export function toReviewItem(
     type: payload.reviewType ?? "classification",
     pgaAgencies: payload.pgaAgencies,
     flagTableVersion: payload.flagTableVersion,
+  };
+}
+
+/**
+ * The shipment page's review item: the review_requested framing from the
+ * shipment's own event stream, overlaid with the case file's documents,
+ * activity, and trace. Falls back to the shipment row's reviewType when no
+ * payload landed (legacy shipments / event-window overflow) so the decision
+ * layer still renders and resolves correctly.
+ */
+export function buildShipmentReviewItem(
+  shipment: ReviewShipmentSource & { reviewType?: string | null },
+  caseFile: {
+    activityEvents: ActivityEvent[];
+    documents: ReviewDocument[];
+    reviewRequest?: ReviewRequestPayload;
+    traceRunId?: string;
+  },
+): ReviewItem {
+  const payload = caseFile.reviewRequest ?? {
+    reviewType: (shipment.reviewType as ReviewItemType | null) ?? undefined,
+  };
+  const item = toReviewItem(shipment, payload);
+
+  return {
+    ...item,
+    documents: caseFile.documents,
+    events: caseFile.activityEvents,
+    traceRunId: item.traceRunId ?? caseFile.traceRunId,
   };
 }
 
