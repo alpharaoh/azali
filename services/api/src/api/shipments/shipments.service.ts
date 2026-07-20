@@ -8,13 +8,16 @@ import { deleteShipment } from "@/db/queries/delete/deleteShipment";
 import { insertShipment } from "@/db/queries/insert/insertShipment";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
 import { listInboundEmails } from "@/db/queries/select/many/listInboundEmails";
+import { listLineItemPgaDeterminations } from "@/db/queries/select/many/listLineItemPgaDeterminations";
 import { listShipmentEvents } from "@/db/queries/select/many/listShipmentEvents";
 import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { listShipments } from "@/db/queries/select/many/listShipments";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
+import { updateLineItemPgaDetermination } from "@/db/queries/update/updateLineItemPgaDetermination";
 import { updateProduct } from "@/db/queries/update/updateProduct";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import { updateShipmentLineItem } from "@/db/queries/update/updateShipmentLineItem";
+import { PgaDeterminationStatus } from "@/db/schemas/lineItemPgaDeterminations";
 import { LineItemStatus } from "@/db/schemas/shipmentLineItems";
 import {
   ShipmentSource,
@@ -24,6 +27,7 @@ import {
 import { inngest } from "@/inngest/client";
 import { SHIPMENT_CLASSIFY_REQUESTED_EVENT } from "@/inngest/functions/classifyShipment";
 import { EMAIL_INTAKE_SKIP_REQUESTED_EVENT } from "@/inngest/functions/finalizeEmailShipment";
+import { SHIPMENT_PGA_SCREEN_REQUESTED_EVENT } from "@/inngest/functions/screenShipmentPga";
 import { createLogger } from "@/lib/logger";
 import { confidenceBandForScore } from "@/services/agents/classification/schema";
 import { indexAndDedupeClassification } from "@/services/external/pinecone/classificationRecord";
@@ -219,6 +223,18 @@ export class ShipmentsService {
       );
     }
 
+    // Reviews resolve by TYPE — a PGA approval must never touch the
+    // classification lines (or publish them as broker-verified precedent).
+    const reviewType = shipment.reviewType ?? "classification";
+    if (
+      reviewType === "pga" &&
+      dto.action === ReviewResolutionAction.Corrected
+    ) {
+      throw new ConflictException(
+        "PGA reviews support approval or an information request — per-determination corrections are not available yet",
+      );
+    }
+
     const correctedSuffix = dto.corrections?.length
       ? ` → ${dto.corrections.length} line${dto.corrections.length === 1 ? "" : "s"}`
       : dto.alternate
@@ -249,7 +265,11 @@ export class ShipmentsService {
       return shipment;
     }
 
-    await this.applyResolutionToLines(organizationId, id, dto);
+    if (reviewType === "pga") {
+      await this.applyPgaResolution(organizationId, id);
+    } else {
+      await this.applyResolutionToLines(organizationId, id, dto);
+    }
 
     const nextStage = advanceStage(shipment.stage);
 
@@ -260,7 +280,35 @@ export class ShipmentsService {
       reviewType: null,
     });
 
+    // An approved (or corrected) classification hands the shipment to the
+    // compliance stage — PGA screening runs there, against the codes as
+    // they now stand.
+    if (reviewType !== "pga" && nextStage === ShipmentStage.Compliance) {
+      await inngest.send({
+        name: SHIPMENT_PGA_SCREEN_REQUESTED_EVENT,
+        data: { organizationId, userId, shipmentId: id },
+      });
+    }
+
     return updated ?? shipment;
+  }
+
+  /**
+   * Land a PGA review approval: the broker confirms every proposed agency
+   * determination. Classification lines are untouched by design — they were
+   * settled in their own review (or rode autopilot).
+   */
+  private async applyPgaResolution(organizationId: string, shipmentId: string) {
+    const { data: determinations } = await listLineItemPgaDeterminations({
+      organizationId,
+      shipmentId,
+      status: PgaDeterminationStatus.Proposed,
+    });
+    for (const determination of determinations) {
+      await updateLineItemPgaDetermination(determination.id, organizationId, {
+        status: PgaDeterminationStatus.Approved,
+      });
+    }
   }
 
   /**
@@ -275,14 +323,27 @@ export class ShipmentsService {
     shipmentId: string,
     dto: ResolveReviewDto,
   ) {
+    // The headline line comes from the review event — but only from a
+    // CLASSIFICATION-shaped one. PGA reviews append their own
+    // review_requested events, so "latest" alone would grab the wrong
+    // payload.
     const { data: reviewEvents } = await listShipmentEvents(
       { organizationId, shipmentId, types: ["review_requested"] },
       { occurredAt: "desc" },
-      1,
+      10,
     );
-    const payload = reviewEvents[0]?.payload as
-      | { lineItemId?: string }
-      | undefined;
+    const payload = reviewEvents
+      .map(
+        (event) =>
+          event.payload as
+            | { reviewType?: string; lineItemId?: string }
+            | undefined,
+      )
+      .find(
+        (candidate) =>
+          candidate?.reviewType === "classification" ||
+          candidate?.reviewType === undefined,
+      );
     const { data: lines } = await listShipmentLineItems({
       organizationId,
       shipmentId,
