@@ -3,9 +3,36 @@ import flagDefinitions from "@/db/reference/pga-flag-definitions.json";
 /** Langfuse Prompt Management name — edit/version the prompt there. */
 export const PGA_PROMPT_NAME = "pga-screening-system-prompt";
 
+/** Langfuse name for the cheap no-flag jurisdiction triage prompt. */
+export const PGA_TRIAGE_PROMPT_NAME = "pga-triage-prompt";
+
+/**
+ * The one-shot jurisdiction triage for UNFLAGGED lines — decides whether a
+ * line with no tariff flags plausibly falls under any agency's scope, or can
+ * pass without a full screening run.
+ *
+ * This is the FALLBACK — the live version is fetched from Langfuse
+ * ({@link PGA_TRIAGE_PROMPT_NAME}, label "latest") at call time.
+ */
+export const PGA_TRIAGE_PROMPT = `You are screening a US import shipment line for Partner Government Agency jurisdiction. The line's HTS code carries NO PGA flags in CBP's ACE flag table — but flag tables lag HTS revisions, so decide from the product itself whether any agency plausibly regulates it.
+
+Line: {{lineDescription}}
+HTS code: {{htsCode}}{{htsDescription}}
+Country of origin: {{originCountry}}
+{{classificationSummary}}
+
+Shipment documents:
+{{documentSummaries}}
+
+Consider: FDA (food, food-contact, cosmetics, drugs, devices, radiation-emitting); APHIS (plants, wood, animal products, Lacey Act); FSIS (meat/poultry/egg); AMS (shell eggs, marketing orders, organics); EPA (vehicles/engines, chemicals/TSCA, pesticides, refrigerants); NHTSA (vehicles/equipment); FWS (wildlife-derived materials); NMFS (seafood); TTB (alcohol/tobacco); CPSC (consumer product safety); DEA (controlled substances/listed chemicals).
+
+Mark clean=true ONLY when the product is clearly outside every agency's scope. When in doubt, name the agency — a false "plausible" costs one screening run; a false "clean" is a compliance hole.`;
+
 /** The flag semantics table, rendered from the parsed CBP publication so the
- * prompt never drifts from the checked-in reference. */
-const FLAG_REFERENCE = flagDefinitions.definitions
+ * prompt never drifts from the checked-in reference. Injected into the
+ * system prompt as the {{flagReference}} variable — the Langfuse-managed
+ * version stays in sync with the checked-in data. */
+export const PGA_FLAG_REFERENCE = flagDefinitions.definitions
   .map(
     (definition) =>
       `- ${definition.flagCode} (${definition.agencyCode}, ${
@@ -47,7 +74,7 @@ A jurisdictional_analysis determination must cite regulation or agency guidance 
 
 ## The flag reference (from the cited publication)
 
-${FLAG_REFERENCE}
+{{flagReference}}
 
 ## Disclaim codes
 

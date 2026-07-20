@@ -20,7 +20,7 @@ import {
   PgaAgentService,
   type PgaFlagLookupSnapshot,
 } from "@/services/agents/pga/service";
-import { lookupPgaFlags } from "@/services/pga/flagLookup";
+import { PgaFlagLookupService } from "@/services/pga/flagLookup";
 import { inngest } from "../../client";
 import {
   buildPgaReviewPayload,
@@ -222,7 +222,7 @@ export const screenShipmentPga = () => {
         const lookup = await step.run(
           `flags-${line.lineNumber}`,
           async (): Promise<PgaFlagLookupSnapshot> => {
-            const result = await lookupPgaFlags(line.htsCode);
+            const result = await PgaFlagLookupService.lookup(line.htsCode);
             return {
               version: {
                 id: result.version.id,
@@ -505,7 +505,6 @@ export const screenShipmentPga = () => {
             title: "PGA screening needs broker review",
             payload: buildPgaReviewPayload(
               outcomes,
-              shipment,
               {
                 pubNumber: version.pubNumber,
                 publishedAt: version.publishedAt,

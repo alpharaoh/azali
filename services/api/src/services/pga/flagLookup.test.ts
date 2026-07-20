@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { expandHtsPrefixes, normalizeHtsCode } from "./flagLookup";
+import { PgaFlagLookupService } from "./flagLookup";
+
+const { expandHtsPrefixes, normalizeHtsCode } = PgaFlagLookupService;
 
 describe("normalizeHtsCode", () => {
   test("strips dots from a full 10-digit code", () => {

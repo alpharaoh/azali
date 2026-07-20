@@ -1,0 +1,248 @@
+htsCode,description,species,program
+0307.81.0000,"Live, Fresh or Chilled Abalone (Haliotis spp.)",Abalone,SIMP
+0307.83.0000,Frozen Abalone (Haliotis spp.),Abalone,SIMP
+0307.87.0000,"Dried, Salted, in Brine, or Smoked NSPF Abalone (Haliotis spp.) ",Abalone,SIMP
+1605.57.0500,Prepared meals containing Abalone,Abalone,SIMP
+1605.57.6000,Prepared or preseved Abalone; Other than in prepared meals,Abalone,SIMP
+1605.10.2051,"Crabmeat (Callinectes spp., including blue crabs (C. sapidus)); In airtight containers",Atlantic Blue Crab,SIMP
+1605.10.4025,"Frozen Crabmeat of Swimming Crabs (Callinectes spp., including blue crabs (C. sapidus)); Not in airtight containers",Atlantic Blue Crab,SIMP
+0302.51.0010,Fresh or Chilled Atlantic Cod (Gadus morhua),"Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0302.51.0090,"Fresh or Chilled Cod (Gadus ogac, Gadus macrocephalus); Other than Atlantic Cod","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0303.63.0010,Frozen Atlantic Cod (Gadus morhua),"Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0303.63.0090,"Frozen Cod (Gadus ogac, Gadus macrocephalus); Other than Atlantic Cod","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.44.0010,Fresh Atlantic Cod Fillets (Gadus morhua),"Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.44.0015,"Fresh Cod (Gadus ogac, Gadus macrocephalus) Fillets; Other than Atlantic Cod","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.53.0010,Fresh Atlantic Cod (Gadus morhua) Fillets,"Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.53.0015,"Fresh Cod (Gadus ogac, Gadus macrocephalus) Fillets; Other than Atlantic Cod","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.71.1000,"Frozen Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus) Fillets; Skinned ","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.71.5000,"Frozen Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus) Fillets; Other than Skinned","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.95.1010,"Frozen Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus) Fillets; Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0304.95.1020,"Frozen Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus) Fillets, Other than Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.32.0010,"Dried, Salted, or Brined Cod Fillets","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.49.4020,"Smoked Cod, cusk, haddock, hake, or pollock","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.51.0000,"Dried Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus)","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0010,"Whole Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Moisture content > 50%","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0025,"Whole Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Moisture content between 45-50% ","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0030,"Whole Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Moisture content between 43-45% ","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0045,"Whole Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Moisture content between <43%","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0050,"Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Processed; Moisture content > 50%","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0060,"Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Processed; Moisture content between 45-50% ","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0070,"Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Processed; Moisture content between 43-45% ","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0305.62.0080,"Salted Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus); Processed; Moisture content between <43%","Cod (Atlantic, Pacific, Gadus spp)",SIMP
+0302.89.5072,Fresh or Chilled Dolphinfish (Mahi mahi) (Coryphaena spp.),Dolphinfish,SIMP
+0304.89.5055,Frozen Dolphinfish (Mahi mahi) (Coryphaena spp.) Fillets,Dolphinfish,SIMP
+0302.89.5061,Fresh Grouper,Grouper,SIMP
+0303.89.0070,Frozen Grouper,Grouper,SIMP
+0306.19.0130,Frozen Antarctic Krill (Euphausia superba),Antarctic Krill ,AMLR
+0309.90.1030,"Frozen flours, meals and pellets of Antarctic Krill",Antarctic Krill ,AMLR
+0511.99.3030,Antarctic Krill (Euphausia superba) unfit for human consumption,Antarctic Krill ,AMLR
+0302.89.5058,Fresh or Chilled Snapper (Lutjanidae),Northern Red Snapper,SIMP
+0303.89.0067,Frozen Snapper (Lutjanidae),Northern Red Snapper,SIMP
+0306.14.2000,Frozen NSPF Crabmeat,NSPF Crab,SIMP
+0306.14.4090,Frozen NSPF Crabs; Other than crabmeat,NSPF Crab,SIMP
+0306.33.2000,"Live, Fresh or Chilled NSPF Crabmeat",NSPF Crab,SIMP
+0306.33.4000,"Live, Fresh or Chilled NSPF Crabs; Other than crabmeat",NSPF Crab,SIMP
+0306.93.2000,"Dried, Salted, in Brine, or Smoked NSPF Crabmeat",NSPF Crab,SIMP
+0306.93.4000,"Dried, Salted, in Brine, or Smoked NSPF Crabs; Other than crabmeat",NSPF Crab,SIMP
+1605.10.0510,Prepared meals containing NSPF Crab; In airtight containers,NSPF Crab,SIMP
+1605.10.0590,Prepared meals containing NSPF Crab; Not in airtight containers,NSPF Crab,SIMP
+1605.10.2090,NSPF Crabmeat; In airtight containers; Not in prepared meals,NSPF Crab,SIMP
+1605.10.4035,Frozen NSPF Crabmeat; Not in airtight containers; Not in prepared meals,NSPF Crab,SIMP
+1605.10.4040,Prepared or preserved NSPF Crabmeat; Other than frozen; Not in airtight containers,NSPF Crab,SIMP
+1605.10.6010,Prepared or preserved NSPF Crab; Other than crabmeat; Not in prepared meals; In airtight containers,NSPF Crab,SIMP
+1605.10.6090,Prepared or preserved NSPF Crab; Other than crabmeat; Not in prepared meals; Not in airtight containers,NSPF Crab,SIMP
+0306.19.0161,Frozen NSPF Crustaceans; Not Freshwater Crawfish or Antarctic Krill,NSPF Crustaceans,SIMP
+0306.39.0100,"Live, Fresh, or Chilled NSPF Crustaceans",NSPF Crustaceans,SIMP
+0306.99.0100,"Dried, Salted, in Brine, or Smoked NSPF Crustaceans",NSPF Crustaceans,SIMP
+0309.90.1061,"Frozen flours, meals and pellets of NSPF Crustaceans; Not Freshwater Crawfish or Antarctic Krill",NSPF Crustaceans,SIMP
+0309.90.2000,"Live, Fresh, or Chilled flours, meals and pellets of NSPF Crustaceans",NSPF Crustaceans,SIMP
+0309.90.3000,"Flours, meals and pellets of NSPF Crustaceans; Other than Live, Fresh, Chilled, or Frozen",NSPF Crustaceans,SIMP
+1605.40.0500,Prepared meals of NSPF Crustaceans,NSPF Crustaceans,SIMP
+1605.40.1090,Prepared or preserved NSPF Crustaceans; Other than prepared meals; Not Peeled freshwater crawfish tail meat,NSPF Crustaceans,SIMP
+0301.19.0000,Live Ornamental NSPF Fish; Not freshwater,NSPF Fish,SIMP
+0301.99.0390,Live NSPF Fish,NSPF Fish,SIMP
+0302.49.0000,"Fresh or Chilled Indian mackerels (Rastrelliger spp.), seerfishes (Scomberomorus spp.), jacks, crevalles (Caranx spp.), silver pomfrets (Pampus spp.), Pacific saury (Cololabis saira), scads (Decapterus spp.), capelin (Mallotus villosus), Kawakawa (Euthynnus affinis), bonitos (Sarda spp.), marlins, sailfishes, spearfish (Istiophoridae)",NSPF Fish,SIMP
+0302.59.1100,"Fresh or Chilled NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae; Scaled; In immediate containers weighing with their contents 6.8 kg or less ",NSPF Fish,SIMP
+0302.59.5090,"Fresh or Chilled NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae; Not scaled; Not in immediate containers weighing with their contents 6.8 kg or less ",NSPF Fish,SIMP
+0302.89.1140,Fresh or Chilled NSPF Fish; Scaled; In immediate containers weighing with their contents 6.8 kg or less ,NSPF Fish,SIMP
+0302.89.5077,Fresh or Chilled NSPF Fish; Not scaled; Not in immediate containers weighing with their contents 6.8 kg or less ,NSPF Fish,SIMP
+0302.91.4090,"Fresh or Chilled NSPF Fish livers, roes and milt",NSPF Fish,SIMP
+0302.99.0000,"Fresh or Chilled NSPF Fish fins, heads, tails, maws",NSPF Fish,SIMP
+0303.59.0000,"Frozen Indian Mackerels (Rastrelliger spp.), Seerfishes (Scomberomorus spp.), Jacks, Crevalles (Caranx spp.), Silver Pomfrets (Pampus spp.), Pacific Saury (Cololabis saira), Scads (Decapterus spp.), Capelin  (Mallotus villosus), Kawakawa (Euthynnus affinis), (Sarda spp.), marlins, sailfishes, spearfish (Istiophoridae)",NSPF Fish,SIMP
+0303.69.0000,"Frozen NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae",NSPF Fish,SIMP
+0303.89.0080,Frozen NSPF Fish  ,NSPF Fish,SIMP
+0303.91.4095,"Frozen NSPF Fish livers, roes and milt",NSPF Fish,SIMP
+0303.99.0000,"Frozen NSPF Fish fins, heads, tails, maws",NSPF Fish,SIMP
+0304.44.0090,"Fresh or Chilled Fillets of NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae",NSPF Fish,SIMP
+0304.49.0190,Fresh or Chilled NSPF Fish Fillets,NSPF Fish,SIMP
+0304.53.0090,"Fresh or Chilled Other Fish Meat of NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae",NSPF Fish,"SIMP, TTVP"
+0304.59.0091,Fresh or Chilled Other Fish Meat of NSPF Fish,NSPF Fish,SIMP
+0304.79.1090,"Frozen Fillets of NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae; Skinned",NSPF Fish,SIMP
+0304.79.5000,"Frozen Fillets of NSPF Fish of Families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae; Not Skinned",NSPF Fish,SIMP
+0304.89.1090,Frozen Fillets of NSPF Fish; Skinned,NSPF Fish,"SIMP, TTVP"
+0304.89.5091,Frozen Fillets of NSPF Fish; Not skinned,NSPF Fish,SIMP
+0304.95.1005,"Frozen Surimi of NSPF Fish of the families Bregmacerotidae, Euclichthyidae, Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae, other than Alaska Pollock (Theragra chalcogramma); In bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0304.95.1015,"Frozen Other Fish Meat of NSPF Fish of the families Bregmacerotidae, Euclichthyidae, Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae, other than Alaska Pollock (Theragra chalcogramma); Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0304.95.1090,"Frozen Other Fish Meat of NSPF Fish of the families Bregmacerotidae, Euclichthyidae, Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae, other than Alaska Pollock (Theragra chalcogramma); Not Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0304.95.9000,"Frozen Other Fish Meat of NSPF Fish of the families Bregmacerotidae, Euclichthyidae, Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae, other than Alaska Pollock (Theragra chalcogramma); Not in bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0304.99.1104,Frozen Surimi of NSPF Fish; In bulk or in immediate containers weighing with their contents over 6.8 kg each,NSPF Fish,"SIMP, TTVP"
+0304.99.1109,Frozen Other Fish Meat of NSPF Fish; Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each,NSPF Fish,"SIMP, TTVP"
+0304.99.1194,Frozen Other Fish Meat of NSPF Fish; Not Minced; In bulk or in immediate containers weighing with their contents over 6.8 kg each,NSPF Fish,"SIMP, TTVP"
+0304.99.9190,Frozen Other Fish Meat of NSPF Ocean Fish; Not in bulk or in immediate containers weighing with their contents over 6.8 kg each,NSPF Fish,"SIMP, TTVP"
+0304.99.9192,Frozen Other Fish Meat of NSPF Fish; Not in bulk or in immediate containers weighing with their contents over 6.8 kg each,NSPF Fish,"SIMP, TTVP"
+0305.20.4065,"Dried, Salted, in Brine, or Smoked Livers, roes and milt of NSPF Fish",NSPF Fish,"SIMP, TTVP"
+0305.32.0090,"Dried, Salted, or Brined NSPF Fish Fillets from the families Bregmacerotidae, Euclichthyidae Gadidae, Macrouridae, Melanonidae, Merlucciidae, Moridae and Muraenolepididae",NSPF Fish,SIMP
+0305.39.6180,"Dried, Salted, or Brined NSPF Fish Fillets",NSPF Fish,"SIMP, TTVP"
+0305.49.4045,Smoked NSPF Fish or Fish Fillets,NSPF Fish,"SIMP, TTVP"
+0305.53.0000,"Dried NSPF Fish of the families Bregmacerotidae, Euclichthyidae, Gadidae, Macrouridae,Melanonidae, Merlucciidae, Moridae and Muraenolepididae; Not Cod (Gadus morhua, Gadus ogac, Gadus macrocephalus)",NSPF Fish,SIMP
+0305.59.0001,Dried NSPF Fish  ,NSPF Fish,"SIMP, TTVP"
+0305.69.5001,Salted or in Brine NSPF Fish; In immediate containers weighing with their contents 6.8 kg or less each,NSPF Fish,SIMP
+0305.69.6001,Salted or in Brine NSPF Fish; Not in immediate containers weighing with their contents 6.8 kg or less each,NSPF Fish,SIMP
+0305.72.0000,"Dried, Salted, in Brine, or Smoked NSPF Fish heads, tails and maws",NSPF Fish,SIMP
+0305.79.0000,"Dried, Salted, in Brine, or Smoked NSPF Fish fins and other edible fish offal",NSPF Fish,SIMP
+0309.10.0500,"Flours, meals and pellets of NSPF Fish; In bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0309.10.9000,"Flours, meals and pellets of NSPF Fish; Not in bulk or in immediate containers weighing with their contents over 6.8 kg each",NSPF Fish,SIMP
+0511.91.0090,"Products of fish or crustaceans, molluscs or other aquatic invertebrates; unfit for human consumption",NSPF Fish,TTVP
+1604.19.2200,Prepared or preserved NSPF Fish; In airtight containers; Not in oil,NSPF Fish,"SIMP, TTVP"
+1604.19.3200,Prepared or preserved NSPF Fish; In airtight containers; In oil,NSPF Fish,SIMP
+1604.19.4100,"Fish sticks and similar products of NSPF Fish, of any size or shape, fillets or other portions of fish, if breaded, coated with batter or similarly prepared: Neither cooked nor in oil",NSPF Fish,SIMP
+1604.19.5100,"Fish sticks and similar products of NSPF Fish, of any size or shape, fillets or other portions of fish, if breaded, coated with batter or similarly prepared",NSPF Fish,SIMP
+1604.19.6100,Prepared or Preserved NSPF Fish; In oil and in bulk or in immediate containers weighing with their contents over 7 kg each,NSPF Fish,SIMP
+1604.19.8200,Prepared or Preserved NSPF Fish,NSPF Fish,SIMP
+1604.20.1000,Pastes of prepared or preserved NSPF Fish,NSPF Fish,"SIMP, TTVP"
+1604.20.1500,"Balls, cakes and puddings of prepared or preserved NSPF Fish; In oil",NSPF Fish,"SIMP, TTVP"
+1604.20.2000,"Balls, cakes and puddings of NSPF Fish; Not in oil; In immediate containers weighing with their contents not over 6.8 kg each; In airtight containers",NSPF Fish,"SIMP, TTVP"
+1604.20.2500,"Balls, cakes and puddings of NSPF Fish; Not in oil; In immediate containers weighing with their contents not over 6.8 kg each; Not in airtight containers",NSPF Fish,"SIMP, TTVP"
+1604.20.3000,"Balls, cakes and puddings of NSPF Fish; Not in oil; Not in immediate containers weighing with their contents not over 6.8 kg each; Not in airtight containers",NSPF Fish,"SIMP, TTVP"
+1604.20.5010,"Fish sticks and similar products of NSPF Fish, of any size or shape, if breaded, coated with batter or similarly prepared; Pre-cooked and frozen",NSPF Fish,SIMP
+1604.20.5090,"Fish sticks and similar products of NSPF Fish, of any size or shape, if breaded, coated with batter or similarly prepared",NSPF Fish,SIMP
+1604.20.6010,Pre-cooked and Frozen NSPF Fish,NSPF Fish,SIMP
+1604.20.6090,Other prepared or preserved NSPF fish,NSPF Fish,"SIMP, TTVP"
+1604.20.0510,"Prepared meals of NSPF Fish containing meat of crustaceans, molluscs or other aquatic invertebrates","NSPF Fish, Invertebrate & Molluscs","SIMP, TTVP"
+1604.20.0590,"Other prepared meals of NSPF Fish containing meat of crustaceans, molluscs or other aquatic invertebrates","NSPF Fish, Invertebrate & Molluscs","SIMP, TTVP"
+0307.91.0390,"Live, Fresh or Chilled NSPF Molluscs",NSPF Molluscs,SIMP
+0307.92.0190,Frozen NSPF Molluscs,NSPF Molluscs,SIMP
+0307.99.0300,"Dried, Salted, in Brine, or Smoked NSPF Molluscs",NSPF Molluscs,SIMP
+0309.90.4090,"Live, Fresh, or Chilled flours, meals and pellets of NSPF Molluscs",NSPF Molluscs,SIMP
+0309.90.5090,"Frozen flours, meals and pellets of NSPF Molluscs",NSPF Molluscs,SIMP
+0309.90.6000,"Flours, meals and pellets of NSPF Molluscs",NSPF Molluscs,SIMP
+1605.59.0500,Prepared meals containing NSPF Molluscs ,NSPF Molluscs,SIMP
+1605.59.6000,Prepared or preseved NSPF Molluscs,NSPF Molluscs,SIMP
+0308.90.0100,"Dried, Salted, in Brine, or Smoked NSPF Aquatic invertebrates: Other than crustaceans and molluscs",NSPF Other Aquatic Invertebrates,SIMP
+0309.90.9000,"Flours, meals and pellets of NSPF Aquatic invertebrates; Other than crustaceans and molluscs",NSPF Other Aquatic Invertebrates,SIMP
+1605.69.0000,Prepared or preseved NSPF Aquatic invertebrates,NSPF Other Aquatic Invertebrates,SIMP
+0306.14.4003,Frozen Red King Crab (Paralithodes camtschaticus),Red King Crab,SIMP
+0306.14.4015,Frozen NSPF King Crab,Red King Crab,SIMP
+1605.10.2010,King Crab Crabmeat in airtight containers,Red King Crab,SIMP
+1605.10.4002,Frozen King Crab Crabmeat,Red King Crab,SIMP
+0308.11.0000,"Live, Fresh or Chilled Sea Cucumbers (Stichopus japonicus, Holothuroidea)",Sea Cucumber,SIMP
+0308.12.0000,"Frozen Sea Cucumbers (Stichopus japonicus, Holothuroidea)",Sea Cucumber,SIMP
+0308.19.0100,"Dried, Salted, in Brine, or Smoked NSPF Sea Cucumbers (Stichopus japonicus, Holothuroidea)",Sea Cucumber,SIMP
+1605.61.0000,Prepared or preseved Sea Cucumbers,Sea Cucumber,SIMP
+0302.81.0011,Fresh or Chilled Dogfish (Squalus spp.),Shark,SIMP
+0302.81.0091,Fresh or Chilled NSPF Sharks,Shark,SIMP
+0302.92.0000,Fresh or Chilled Shark Fins,Shark,SIMP
+0303.81.0011,Frozen Dogfish (Squalus spp.),Shark,SIMP
+0303.81.0091,Frozen NSPF Sharks,Shark,SIMP
+0303.92.0000,Frozen Shark Fins,Shark,SIMP
+0304.47.0000,Fresh or Chilled Dogfish and NSPF Shark Fillets,Shark,SIMP
+0304.56.0000,Fresh or Chilled Dogfish and NSPF Shark,Shark,SIMP
+0304.88.0000,"Frozen Dogfish, NSPF Shark, Ray or Skate Fillets",Shark,SIMP
+0304.96.0000,Frozen Dogfish and NSPF Shark,Shark,SIMP
+0305.71.0000,"Dried, Salted, in Brine, or Smoked NSPF Shark fins",Shark,"SIMP, HMS"
+1604.18.1000,NSPF Shark fins; In airtight containers,Shark,SIMP
+1604.18.9000,Prepared or preserved NSPF Shark fins,Shark,SIMP
+0306.16.0003,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 33 per kg (15s)",Shrimp,SIMP
+0306.16.0006,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 33-45 per kg (15-20s)",Shrimp,SIMP
+0306.16.0009,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 46-55 per kg (21-25s)",Shrimp,SIMP
+0306.16.0012,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 56-66 per kg (26-30s)",Shrimp,SIMP
+0306.16.0015,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 67-88 per kg (31-40s)",Shrimp,SIMP
+0306.16.0018,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 89-110 per kg (41-50s)",Shrimp,SIMP
+0306.16.0021,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 111-132 per kg (51-60s)",Shrimp,SIMP
+0306.16.0024,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count size less than 133-154 per kg (61-70s)",Shrimp,SIMP
+0306.16.0027,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on, Count more than 154 per kg (70s)",Shrimp,SIMP
+0306.16.0040,"Frozen Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Peeled",Shrimp,SIMP
+0306.17.0004,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size (headless weight) less than 33 per kg (15s)",Shrimp,SIMP
+0306.17.0005,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 33-45 per kg (15-20s)",Shrimp,SIMP
+0306.17.0007,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 46-55 per kg (21-25s)",Shrimp,SIMP
+0306.17.0008,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 56-66 per kg (26-30s)",Shrimp,SIMP
+0306.17.0010,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 67-88 per kg (31-40s)",Shrimp,SIMP
+0306.17.0011,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 89-110 per kg (41-50s)",Shrimp,SIMP
+0306.17.0013,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 111-132 per kg (51-60s)",Shrimp,SIMP
+0306.17.0014,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 133-154 per kg (61-70s)",Shrimp,SIMP
+0306.17.0016,"Frozen Farmed NSPF Shrimps and Prawns; Shell-on, Count more than 154 per kg (70s)",Shrimp,SIMP
+0306.17.0017,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size (headless weight) less than 33 per kg (15s)",Shrimp,SIMP
+0306.17.0019,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 33-45 per kg (15-20s)",Shrimp,SIMP
+0306.17.0020,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 46-55 per kg (21-25s)",Shrimp,SIMP
+0306.17.0022,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 56-66 per kg (26-30s)",Shrimp,SIMP
+0306.17.0023,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 67-88 per kg (31-40s)",Shrimp,SIMP
+0306.17.0025,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 89-110 per kg (41-50s)",Shrimp,SIMP
+0306.17.0026,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 111-132 per kg (51-60s)",Shrimp,SIMP
+0306.17.0028,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count size less than 133-154 per kg (61-70s)",Shrimp,SIMP
+0306.17.0029,"Frozen Not Farmed NSPF Shrimps and Prawns; Shell-on, Count more than 154 per kg (70s)",Shrimp,SIMP
+0306.17.0041,Frozen Farmed NSPF Shrimps and Prawns; Peeled,Shrimp,SIMP
+0306.17.0042,Frozen Not Farmed NSPF Shrimps and Prawns; Peeled,Shrimp,SIMP
+0306.35.0020,"Live, Fresh or Chilled Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Shell-on",Shrimp,SIMP
+0306.35.0040,"Live, Fresh or Chilled Cold-water Shrimps and Prawns (Pandalus spp., Crangon crangon); Peeled",Shrimp,SIMP
+0306.36.0020,"Live, Fresh or Chilled NSPF Cold-water Shrimps and Prawns; Shell-on",Shrimp,SIMP
+0306.36.0040,"Live, Fresh or Chilled NSPF Cold-water Shrimps and Prawns; Peeled",Shrimp,SIMP
+0306.95.0020,"Dried, Salted, in Brine, or Smoked NSPF Shrimp and Prawns; Shell-on",Shrimp,SIMP
+0306.95.0040,"Dried, Salted, in Brine, or Smoked NSPF Shrimp and Prawns; Peeled",Shrimp,SIMP
+1605.21.0500,Prepared Meals of NSPF Shrimps and Prawns containing fish meat; Not in airtight containers,Shrimp,SIMP
+1605.21.1020,Frozen prepared or preserved NSPF Shrimp and Prawns; Breaded; Not in airtight containers,Shrimp,SIMP
+1605.21.1030,Frozen prepared or preserved NSPF Shrimp and Prawns; Not in airtight containers,Shrimp,SIMP
+1605.21.1050,Prepared or preserved NSPF Shrimp and Prawns; Not Frozen; Not in airtight containers,Shrimp,SIMP
+1605.29.0500,Prepared Meals of NSPF Shrimps and Prawns containing fish meat,Shrimp,SIMP
+1605.29.1010,Frozen prepared or preserved NSPF Shrimp and Prawns,Shrimp,SIMP
+1605.29.1040,Prepared or preserved NSPF Shrimp and Prawns; Not Frozen,Shrimp,SIMP
+0302.47.0010,Fresh or Chilled Swordfish (Xiphias gladius) Steaks,Swordfish,"SIMP, HMS"
+0302.47.0090,Fresh or Chilled Swordfish  (Xiphias gladius),Swordfish,"SIMP, HMS"
+0303.57.0010,Frozen Swordfish (Xiphias gladius) Steaks,Swordfish,"SIMP, HMS"
+0303.57.0090,Frozen Swordfish (Xiphias gladius),Swordfish,"SIMP, HMS"
+0304.45.0000,Fresh or Chilled Swordfish (Xiphias gladius) Fillets,Swordfish,"SIMP, HMS"
+0304.54.0000,Fresh or Chilled Swordfish (Xiphias gladius) Other Meat,Swordfish,"SIMP, HMS"
+0304.84.0000,Frozen Swordfish (Xiphias gladius) Fillets,Swordfish,"SIMP, HMS"
+0304.91.1000,Frozen Swordfish (Xiphias gladius) Other Meat; In bulk or in immediate containers weighing with their contents over 6.8 kg each,Swordfish,"SIMP, HMS"
+0304.91.9000,Frozen Swordfish (Xiphias gladius) Other Meat,Swordfish,"SIMP, HMS"
+0305.54.0000,"Dried Herrings (Clupea harengus, Clupea pallasii), anchovies (Engraulis spp.), sardines (Sardina pilchardus, Sardinops spp.), sardinella (Sardinella spp.), brisling or sprats (Sprattus sprattus), mackerel (Scomber scombrus, Scomber australasicus, Scomber japonicus), Indian mackerels (Rastrelliger spp.), seerfishes (Scomberomorus spp.), jack and horse mackerel (Trachurus spp.), jacks, crevalles (Caranx spp.), cobia (Rachycentron canadum), silver pomfrets (Pampus spp.), Pacific saury (Cololabis saira), scads (Decapterus spp.), capelin (Mallotus villosus), swordfish (Xiphias gladius), Kawakawa (Euthynnus affinis), bonitos (Sarda spp.), marlins, sailfishes, spearfish (Istiophoridae)",Swordfish,SIMP
+0302.83.0000,Fresh or Chilled Toothfish (Dissostichus spp.) ,Toothfish,AMLR
+0303.83.0000,Frozen Toothfish (Dissostichus spp.) ,Toothfish,AMLR
+0304.46.0000,Fresh or Chilled Toothfish (Dissostichus spp.) Fillets,Toothfish,AMLR
+0304.55.0000,Fresh or Chilled Toothfish (Dissostichus spp.) Other Meat,Toothfish,AMLR
+0304.85.0000,Frozen Toothfish (Dissostichus spp.) Fillets,Toothfish,AMLR
+0304.92.1000,Frozen Toothfish (Dissostichus spp.) Other Meat; In bulk or in immediate containers weighing with their contents over 6.8 kg each,Toothfish,AMLR
+0304.92.9000,Frozen Toothfish (Dissostichus spp.) Other Meat,Toothfish,AMLR
+0301.94.0100,"Live Atlantic and Pacific Bluefin Tunas (Thunnus thynnus, Thunnus orientalis)",Tuna,SIMP
+0301.95.0000,Live Southern Bluefin Tuna (Thunnus maccoyii),Tuna,SIMP
+0302.31.0000,Fresh or Chilled Albacore or Longfinned Tuna (Thunnus alalunga),Tuna,SIMP
+0302.32.0000,Fresh or Chilled Yellowfin Tuna (Thunnus albacares),Tuna,SIMP
+0302.33.0000,Fresh or Chilled Skipjack Tuna (stripe-bellied bonito) (Katsuwonus pelamis),Tuna,SIMP
+0302.34.0000,Fresh or Chilled Bigeye Tuna (Thunnus obesus),Tuna,SIMP
+0302.35.0100,"Fresh or Chilled Atlantic and Pacific Bluefin Tunas (Thunnus thynnus, Thunnus orientalis)",Tuna,"SIMP, HMS"
+0302.36.0000,Fresh or Chilled Southern Bluefin Tuna (Thunnus maccoyii),Tuna,"SIMP, HMS"
+0302.39.0200,Fresh or Chilled NSPF Tuna (of the genus Thunnus),Tuna,SIMP
+0303.41.0000,Frozen Albacore or Longfinned Tunas (Thunnus alalunga),Tuna,"SIMP, TTVP"
+0303.42.0020,Frozen Yellowfin Tuna (Thunnus albacares); Whole Fish,Tuna,"SIMP, TTVP"
+0303.42.0040,Frozen Yellowfin Tuna (Thunnus albacares); Eviscerated; Head on,Tuna,"SIMP, TTVP"
+0303.42.0060,Frozen Yellowfin Tuna (Thunnus albacares),Tuna,"SIMP, TTVP"
+0303.43.0000,Frozen Skipjack Tuna (stripe-bellied bonito) (Katsuwonus pelamis),Tuna,"SIMP, TTVP"
+0303.44.0000,Frozen Bigeye Tuna (Thunnus obesus),Tuna,"SIMP, HMS, TTVP"
+0303.45.0110,Frozen Atlantic Bluefin Tuna (Thunnus thynnus),Tuna,"SIMP, HMS, TTVP"
+0303.45.0150,Frozen Pacific Bluefin Tuna (Thunnus orientalis),Tuna,"SIMP, HMS, TTVP"
+0303.46.0000,Frozen Southern Bluefin Tuna (Thunnus maccoyii),Tuna,"SIMP, HMS, TTVP"
+0303.49.0200,Frozen NSPF Tuna (of the genus Thunnus),Tuna,"SIMP, HMS, TTVP"
+0304.87.0000,Frozen NSPF Tuna (of genus Thunnus and of fish of the genus Euthynnus (Katsuwonus) pelamis) Fillets,Tuna,"SIMP, TTVP, HMS"
+0304.99.1190,Frozen NSPF Tuna (of genus Thunnus and of fish of the genus Euthynnus (Katsuwonus) pelamis) Other Meat; In bulk or in immediate containers weighing with their contents over 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.1010,NSPF Tunas and skipjack; In airtight containers; In oil; In foil or other flexible containers weighing with their contents not more than 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.1091,Albacore Tuna; In airtight containers; In oil,Tuna,"SIMP, TTVP"
+1604.14.1099,NSPF Tunas and skipjack; In airtight containers; In oil,Tuna,"SIMP, TTVP"
+1604.14.2251,Albacore Tuna (Thunnus alalunga); In airtight containers; Not in oil;  In foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.2259,Albacore Tuna (Thunnus alalunga); In airtight containers; Not in oil;  Not in foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.2291,NSPF Tunas and skipjack; In airtight containers; Not in oil; In foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.2299,NSPF Tunas and skipjack; In airtight containers; Not in oil; Not in foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.3051,Albacore Tuna (Thunnus alalunga); In airtight containers; Not in oil; In foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each; Over Quota,Tuna,"SIMP, TTVP"
+1604.14.3059,Albacore Tuna (Thunnus alalunga); In airtight containers; Not in oil; Not in foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each; Over Quota,Tuna,"SIMP, TTVP"
+1604.14.3091,NSPF Tunas and skipjack; In airtight containers; Not in oil; In foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each; Over Quota,Tuna,"SIMP, TTVP"
+1604.14.3099,NSPF Tunas and skipjack; In airtight containers; Not in oil; Not in foil or other flexible con- tainers weighing with their contents not more than 6.8 kg each; Over Quota,Tuna,"SIMP, TTVP"
+1604.14.4000,Prepared or preserved NSPF Tunas and skipjack; Not in airtight containers; Not in oil; In bulk or in immediate containers weighing with their contents over 6.8 kg each,Tuna,"SIMP, TTVP"
+1604.14.5000,Prepared or preserved NSPF Tunas and skipjack; Not in airtight containers; Not in oil; Not in bulk or in immediate containers weighing with their contents over 6.8 kg each,Tuna,"SIMP, TTVP"

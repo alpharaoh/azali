@@ -4,12 +4,16 @@ import type {
   ClassificationDocument,
   ClassificationShipmentFacts,
 } from "@/services/agents/classification/service";
+import {
+  PGA_TRIAGE_PROMPT,
+  PGA_TRIAGE_PROMPT_NAME,
+} from "@/services/agents/pga/prompt";
 import type {
   PgaDetermination,
   PgaScreeningResult,
 } from "@/services/agents/pga/schema";
 import { anthropic } from "@/services/external/anthropic/client";
-import type { PgaFlagLookupResult } from "@/services/pga/flagLookup";
+import { resolvePrompt } from "@/services/external/langfuse/prompts";
 
 /** Slim line projection that travels between steps — classified lines only. */
 export interface PgaLineSlim {
@@ -89,23 +93,26 @@ export async function triageUnflaggedLine(
     .map((document) => `- ${document.fileName}: ${document.extraction.summary}`)
     .join("\n");
 
+  const { text: prompt } = await resolvePrompt(
+    PGA_TRIAGE_PROMPT_NAME,
+    PGA_TRIAGE_PROMPT,
+    {
+      lineDescription: line.description,
+      htsCode: line.htsCode,
+      htsDescription: line.htsDescription ? ` — ${line.htsDescription}` : "",
+      originCountry: line.originCountry ?? shipment.originCountry,
+      classificationSummary: line.classificationSummary
+        ? `Classification rationale: ${line.classificationSummary}`
+        : "",
+      documentSummaries,
+    },
+  );
+
   const { output } = await generateText({
     model: anthropic(TRIAGE_MODEL),
     output: Output.object({ schema: triageSchema }),
     telemetry: { functionId: "pga-triage" },
-    prompt: `You are screening a US import shipment line for Partner Government Agency jurisdiction. The line's HTS code carries NO PGA flags in CBP's ACE flag table — but flag tables lag HTS revisions, so decide from the product itself whether any agency plausibly regulates it.
-
-Line: ${line.description}
-HTS code: ${line.htsCode}${line.htsDescription ? ` — ${line.htsDescription}` : ""}
-Country of origin: ${line.originCountry ?? shipment.originCountry}
-${line.classificationSummary ? `Classification rationale: ${line.classificationSummary}` : ""}
-
-Shipment documents:
-${documentSummaries}
-
-Consider: FDA (food, food-contact, cosmetics, drugs, devices, radiation-emitting); APHIS (plants, wood, animal products, Lacey Act); FSIS (meat/poultry/egg); AMS (shell eggs, marketing orders, organics); EPA (vehicles/engines, chemicals/TSCA, pesticides, refrigerants); NHTSA (vehicles/equipment); FWS (wildlife-derived materials); NMFS (seafood); TTB (alcohol/tobacco); CPSC (consumer product safety); DEA (controlled substances/listed chemicals).
-
-Mark clean=true ONLY when the product is clearly outside every agency's scope. When in doubt, name the agency — a false "plausible" costs one screening run; a false "clean" is a compliance hole.`,
+    prompt,
   });
 
   return output;
@@ -141,7 +148,6 @@ export function buildPgaSummary(outcomes: PgaLineOutcome[]) {
  */
 export function buildPgaReviewPayload(
   outcomes: PgaLineOutcome[],
-  shipment: ClassificationShipmentFacts,
   flagVersion: { pubNumber: string; publishedAt: string },
   deadlineAt: string,
 ) {

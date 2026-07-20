@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { lookupPgaFlags } from "./flagLookup";
+import { PgaFlagLookupService } from "./flagLookup";
 
 const SOURCE = "CBP ACE Agency Tariff Code Reference";
 
@@ -21,7 +21,7 @@ export const pgaTools = {
         ),
     }),
     execute: async (input) => {
-      const result = await lookupPgaFlags(input.htsCode);
+      const result = await PgaFlagLookupService.lookup(input.htsCode);
       return {
         source: SOURCE,
         pubNumber: result.version.pubNumber,

@@ -20,7 +20,11 @@ import type {
   ClassificationShipmentFacts,
 } from "../classification/service";
 import { AgentRunRecorder } from "../recorder";
-import { PGA_PROMPT_NAME, PGA_SYSTEM_PROMPT } from "./prompt";
+import {
+  PGA_FLAG_REFERENCE,
+  PGA_PROMPT_NAME,
+  PGA_SYSTEM_PROMPT,
+} from "./prompt";
 import {
   type PgaScreeningResult,
   pgaCalibrationViolations,
@@ -169,6 +173,7 @@ export class PgaAgentService {
     const systemPrompt = await resolvePrompt(
       PGA_PROMPT_NAME,
       PGA_SYSTEM_PROMPT,
+      { flagReference: PGA_FLAG_REFERENCE },
     );
     const organizationSlug = await getOrganizationSlug(organizationId);
     const dossier = buildDossier(
