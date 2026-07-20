@@ -731,7 +731,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
                       </Timeline.Marker>
                       <Timeline.Content className="gap-2">
                         <Composer
-                          placeholder="Add a note to the record..."
+                          placeholder="Add a comment..."
                           value={noteDraft}
                           onSubmit={handleAddNote}
                           onValueChange={setNoteDraft}
