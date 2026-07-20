@@ -100,66 +100,73 @@ const NOISE = [
   /ACE Agency Tariff Code Reference\s+P-\d+/,
 ];
 
-const definitions: FlagDefinition[] = [];
-let current: FlagDefinition | null = null;
-let inProgramBlock = false;
+  const definitions: FlagDefinition[] = [];
+  let current: FlagDefinition | null = null;
+  let inProgramBlock = false;
 
-for (const raw of lines) {
-  const line = raw.trim();
-  if (!line || NOISE.some((pattern) => pattern.test(line))) continue;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || NOISE.some((pattern) => pattern.test(line))) continue;
 
-  const start = line.match(ROW_START);
-  if (start) {
-    const [, flagCode, agencyCode, variant, program, rest] = start;
-    current = {
-      flagCode: flagCode as string,
-      agencyCode: agencyCode as string,
-      requirement: variant === "R" ? "required" : "may_be_required",
-      programCodes: [program as string],
-      definition: rest?.trim() ?? "",
-    };
-    definitions.push(current);
-    inProgramBlock = !current.definition;
-    continue;
+    const start = line.match(ROW_START);
+    if (start) {
+      const [, flagCode, agencyCode, variant, program, rest] = start;
+      current = {
+        flagCode: flagCode as string,
+        agencyCode: agencyCode as string,
+        requirement: variant === "R" ? "required" : "may_be_required",
+        programCodes: [program as string],
+        definition: rest?.trim() ?? "",
+      };
+      definitions.push(current);
+      inProgramBlock = !current.definition;
+      continue;
+    }
+    if (!current) continue;
+
+    if (inProgramBlock && PROGRAM_CODE.test(line)) {
+      current.programCodes.push(line);
+      continue;
+    }
+    inProgramBlock = false;
+    current.definition = current.definition
+      ? `${current.definition} ${line}`
+      : line;
   }
-  if (!current) continue;
 
-  if (inProgramBlock && PROGRAM_CODE.test(line)) {
-    current.programCodes.push(line);
-    continue;
+  if (definitions.length < 30) {
+    throw new Error(
+      `Parsed only ${definitions.length} flag definitions — layout changed? Inspect the PDF text.`,
+    );
   }
-  inProgramBlock = false;
-  current.definition = current.definition
-    ? `${current.definition} ${line}`
-    : line;
-}
+  const malformed = definitions.filter(
+    (definition) =>
+      !definition.definition || definition.programCodes.length === 0,
+  );
+  if (malformed.length > 0) {
+    throw new Error(
+      `${malformed.length} malformed definitions, e.g. ${JSON.stringify(malformed[0])}`,
+    );
+  }
 
-if (definitions.length < 30) {
-  throw new Error(
-    `Parsed only ${definitions.length} flag definitions — layout changed? Inspect the PDF text.`,
+  const output = {
+    header: {
+      source: "CBP ACE Agency Tariff Code Reference",
+      pubNumber,
+      publishedAt: publishedAt.toISOString(),
+      url: source.startsWith("http") ? source : null,
+      parsedAt: new Date().toISOString(),
+    },
+    definitions,
+  };
+
+  writeFileSync(OUT_PATH, `${JSON.stringify(output, null, 2)}\n`);
+  console.log(
+    `Parsed ${definitions.length} flag definitions (${pubNumber}, ${publishedLine?.trim()}) → ${OUT_PATH}`,
   );
 }
-const malformed = definitions.filter(
-  (definition) => !definition.definition || definition.programCodes.length === 0,
-);
-if (malformed.length > 0) {
-  throw new Error(
-    `${malformed.length} malformed definitions, e.g. ${JSON.stringify(malformed[0])}`,
-  );
-}
 
-const output = {
-  header: {
-    source: "CBP ACE Agency Tariff Code Reference",
-    pubNumber,
-    publishedAt: publishedAt.toISOString(),
-    url: source.startsWith("http") ? source : null,
-    parsedAt: new Date().toISOString(),
-  },
-  definitions,
-};
-
-writeFileSync(OUT_PATH, `${JSON.stringify(output, null, 2)}\n`);
-console.log(
-  `Parsed ${definitions.length} flag definitions (${pubNumber}, ${publishedLine?.trim()}) → ${OUT_PATH}`,
-);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

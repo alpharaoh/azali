@@ -23,8 +23,7 @@ export interface PgaFlagLookupResult {
 }
 
 /** Digits only — the reference and our table store undotted prefixes. */
-export const normalizeHtsCode = (htsCode: string) =>
-  htsCode.replace(/\D/g, "");
+export const normalizeHtsCode = (htsCode: string) => htsCode.replace(/\D/g, "");
 
 /** Even-length prefixes (2–10 digits) the reference can list a code at. */
 export const expandHtsPrefixes = (htsCode: string) => {

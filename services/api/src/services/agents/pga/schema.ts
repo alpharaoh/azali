@@ -17,7 +17,9 @@ const determinationSchema = z.object({
     .describe("The ACE agency code, e.g. 'FDA', 'APH', 'EPA', 'NHT', 'FWS'."),
   agencyName: z
     .string()
-    .describe("Human-readable agency name, e.g. 'Food and Drug Administration'."),
+    .describe(
+      "Human-readable agency name, e.g. 'Food and Drug Administration'.",
+    ),
   programCode: z
     .string()
     .nullable()
@@ -62,8 +64,12 @@ const determinationSchema = z.object({
       z.object({
         name: z
           .string()
-          .describe("The required data element, e.g. 'FDA product code', 'Prior Notice confirmation number', 'HS-7 box'."),
-        description: z.string().describe("What the element is and why the agency needs it."),
+          .describe(
+            "The required data element, e.g. 'FDA product code', 'Prior Notice confirmation number', 'HS-7 box'.",
+          ),
+        description: z
+          .string()
+          .describe("What the element is and why the agency needs it."),
         present: z
           .boolean()
           .describe("Whether the shipment documents already contain it."),
@@ -82,7 +88,9 @@ const determinationSchema = z.object({
         kind: z.enum(["regulation", "guidance", "flag_table", "evidence"]),
         ref: z
           .string()
-          .describe("E.g. 'ACE Agency Tariff Code Reference 0875-0419', '21 CFR 1.276', 'APHIS Core ACE Guide'."),
+          .describe(
+            "E.g. 'ACE Agency Tariff Code Reference 0875-0419', '21 CFR 1.276', 'APHIS Core ACE Guide'.",
+          ),
         quote: z.string().describe("The load-bearing language, verbatim."),
         href: z.string().nullable().describe("Source URL when public."),
       }),
@@ -105,7 +113,9 @@ const determinationSchema = z.object({
       z.object({
         name: z.string().describe("The specific named risk."),
         type: z.enum(["irreducible", "resolvable_unresolved"]),
-        basis: z.string().describe("The authority or fact gap behind the risk."),
+        basis: z
+          .string()
+          .describe("The authority or fact gap behind the risk."),
       }),
     )
     .describe("Named risks accounting for any discount below 0.90."),
@@ -125,7 +135,8 @@ export const pgaScreeningResultSchema = z.object({
   flagTableVersion: z
     .string()
     .describe(
-      "The flag-table publication cited, echoed exactly from the lookup result (e.g. '0875-0419 (2026-03-04)')."),
+      "The flag-table publication cited, echoed exactly from the lookup result (e.g. '0875-0419 (2026-03-04)').",
+    ),
   clarifyingQuestions: z
     .array(z.string())
     .describe(

@@ -14,6 +14,8 @@ const citationMeta: Record<
 > = {
   catalog: { chip: "success", label: "Catalog" },
   evidence: { chip: "warning", label: "Evidence" },
+  flag_table: { chip: "default", label: "Flag table" },
+  guidance: { chip: "success", label: "Agency guidance" },
   regulation: { chip: "default", label: "Regulation" },
   ruling: { chip: "accent", label: "CROSS Ruling" },
 };

@@ -17,8 +17,8 @@ import {
 import { recordProcessingFailure } from "@/inngest/lib/recordProcessingFailure";
 import { langfuseSpanProcessor } from "@/instrumentation";
 import {
-  type PgaFlagLookupSnapshot,
   PgaAgentService,
+  type PgaFlagLookupSnapshot,
 } from "@/services/agents/pga/service";
 import { lookupPgaFlags } from "@/services/pga/flagLookup";
 import { inngest } from "../../client";
@@ -494,8 +494,10 @@ export const screenShipmentPga = () => {
         }),
       );
 
-      if (needsReview && flagVersion) {
-        const version = flagVersion;
+      // The cast resets control-flow narrowing: `flagVersion` is assigned
+      // inside the per-line worker, which tsc's linear analysis misses.
+      const version = flagVersion as PgaFlagLookupSnapshot["version"] | null;
+      if (needsReview && version) {
         await step.run("record-review", () =>
           insertShipmentEvent({
             ...base,

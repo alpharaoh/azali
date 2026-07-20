@@ -1,13 +1,13 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import type {
-  PgaDetermination,
-  PgaScreeningResult,
-} from "@/services/agents/pga/schema";
-import type {
   ClassificationDocument,
   ClassificationShipmentFacts,
 } from "@/services/agents/classification/service";
+import type {
+  PgaDetermination,
+  PgaScreeningResult,
+} from "@/services/agents/pga/schema";
 import { anthropic } from "@/services/external/anthropic/client";
 import type { PgaFlagLookupResult } from "@/services/pga/flagLookup";
 
@@ -33,9 +33,7 @@ export interface PgaLineOutcome {
   lineNumber: number;
   description: string;
   htsCode: string;
-  determinations: Array<
-    PgaDetermination & { determinationId: string | null }
-  >;
+  determinations: Array<PgaDetermination & { determinationId: string | null }>;
   clarifyingQuestions: string[];
   jurisdictionSweep: string | null;
   summary: string | null;
@@ -53,16 +51,24 @@ const triageSchema = z.object({
         agency: z.string().describe("Agency code, e.g. 'FDA', 'APH', 'EPA'."),
         reason: z
           .string()
-          .describe("Why this agency plausibly has jurisdiction over this product."),
+          .describe(
+            "Why this agency plausibly has jurisdiction over this product.",
+          ),
       }),
     )
-    .describe("Agencies that plausibly regulate this product despite no tariff flag. Empty when the product is clearly outside every agency's scope."),
+    .describe(
+      "Agencies that plausibly regulate this product despite no tariff flag. Empty when the product is clearly outside every agency's scope.",
+    ),
   clean: z
     .boolean()
-    .describe("True when no agency plausibly has jurisdiction — the line can pass without a full screening run."),
+    .describe(
+      "True when no agency plausibly has jurisdiction — the line can pass without a full screening run.",
+    ),
   rationale: z
     .string()
-    .describe("One or two sentences: why the line is clean, or which agency needs a closer look and why."),
+    .describe(
+      "One or two sentences: why the line is clean, or which agency needs a closer look and why.",
+    ),
 });
 
 export type PgaTriage = z.infer<typeof triageSchema>;

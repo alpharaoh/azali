@@ -130,9 +130,7 @@ function buildDossier(
     "",
     "## PGA flag lookup (deterministic, already run for this code)",
     formatFlagLookup(flagLookup),
-    ...(triageNote
-      ? ["", "## Jurisdiction triage note", triageNote]
-      : []),
+    ...(triageNote ? ["", "## Jurisdiction triage note", triageNote] : []),
     "",
     "## Shipment context",
     `- Importer: ${shipment.clientName ?? "unknown"}`,
@@ -168,7 +166,10 @@ export class PgaAgentService {
     /** Jurisdiction suspicions from the no-flag triage pass, when it ran. */
     triageNote?: string | null;
   }): Promise<PgaScreeningOutcome> {
-    const systemPrompt = await resolvePrompt(PGA_PROMPT_NAME, PGA_SYSTEM_PROMPT);
+    const systemPrompt = await resolvePrompt(
+      PGA_PROMPT_NAME,
+      PGA_SYSTEM_PROMPT,
+    );
     const organizationSlug = await getOrganizationSlug(organizationId);
     const dossier = buildDossier(
       shipment,

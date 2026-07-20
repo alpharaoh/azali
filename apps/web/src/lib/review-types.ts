@@ -67,7 +67,13 @@ export interface ActivityEvent {
   memo?: boolean;
 }
 
-export type CitationKind = "catalog" | "evidence" | "regulation" | "ruling";
+export type CitationKind =
+  | "catalog"
+  | "evidence"
+  | "flag_table"
+  | "guidance"
+  | "regulation"
+  | "ruling";
 
 /** A formal source the AI relied on — rulings, regulations, catalog precedent. */
 export interface Citation {
@@ -140,6 +146,36 @@ export interface ReviewLineItem {
   alternates?: ReviewLineAlternate[];
 }
 
+/** One data element a triggered agency's filing needs, checked against the
+ * shipment documents. */
+export interface PgaDataElement {
+  name: string;
+  description: string;
+  present: boolean;
+  sourceDocument: string | null;
+}
+
+/** One agency call from a PGA screening — file, disclaim, or not applicable. */
+export interface PgaAgencyDetermination {
+  determinationId: string | null;
+  lineItemId: string;
+  lineNumber: number;
+  lineDescription: string;
+  agencyCode: string;
+  agencyName: string;
+  programCode: string | null;
+  flagCode: string | null;
+  flagSource: "flag_table" | "jurisdictional_analysis";
+  requirement: "may_be_required" | "required" | null;
+  determination: "disclaim" | "not_applicable" | "required";
+  disclaimCode: string | null;
+  rationale: string;
+  confidence: number;
+  dataElements: PgaDataElement[];
+  citations: Citation[];
+  runId: string | null;
+}
+
 export interface ReviewItem {
   id: string;
   type: ReviewItemType;
@@ -185,6 +221,10 @@ export interface ReviewItem {
   }>;
   approveLabel: string;
   canRequestInfo?: boolean;
+  /** PGA reviews: the agency determinations the broker is confirming. */
+  pgaAgencies?: PgaAgencyDetermination[];
+  /** The ACE flag-table publication the screening cited. */
+  flagTableVersion?: { pubNumber: string; publishedAt: string };
 }
 
 export type DecisionAction = "approved" | "corrected" | "info-requested";

@@ -13,9 +13,7 @@ export const listLineItemPgaDeterminations = async (
   limit?: number,
   offset?: number,
 ) => {
-  const extraConditions: SQL[] = [
-    isNull(lineItemPgaDeterminations.deletedAt),
-  ];
+  const extraConditions: SQL[] = [isNull(lineItemPgaDeterminations.deletedAt)];
 
   return buildListQuery(lineItemPgaDeterminations, {
     where,

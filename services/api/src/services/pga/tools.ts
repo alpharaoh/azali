@@ -16,7 +16,9 @@ export const pgaTools = {
     inputSchema: z.object({
       htsCode: z
         .string()
-        .describe("The HTS code to look up, dotted or not, e.g. '2106.90.9898'."),
+        .describe(
+          "The HTS code to look up, dotted or not, e.g. '2106.90.9898'.",
+        ),
     }),
     execute: async (input) => {
       const result = await lookupPgaFlags(input.htsCode);

@@ -66,10 +66,7 @@ export const pgaFlags = pgTable(
   },
   (table) => [
     index("pga_flags_version_prefix_idx").on(table.versionId, table.htsPrefix),
-    index("pga_flags_version_agency_idx").on(
-      table.versionId,
-      table.agencyCode,
-    ),
+    index("pga_flags_version_agency_idx").on(table.versionId, table.agencyCode),
   ],
 );
 

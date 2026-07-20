@@ -49,6 +49,7 @@ import {
 import { ClampedText } from "#/components/clamped-text";
 import { ConfidenceChip } from "#/components/confidence-chip";
 import { ResponseDraftModal } from "#/components/response-draft-modal";
+import { PgaDeterminationsCard } from "#/components/review/pga-determinations-card";
 import { formatCurrency } from "#/lib/format";
 import type {
   DecisionAction,
@@ -267,6 +268,9 @@ export function ReviewDetail({
   // Multi-line mode — every line carries its own classification detail, so
   // the overview aggregates and each line drills into a drawer.
   const multiLine = isMultiLineReview(item);
+  // PGA mode — the decision card is the agency determinations; the
+  // classification proposal/line/alternate cards don't apply.
+  const isPga = item.type === "pga" && (item.pgaAgencies?.length ?? 0) > 0;
   /** Staged per-line substitutions: lineItemId → chosen alternate code. */
   const [corrections, setCorrections] = useState<Record<string, string>>({});
   const correctionEntries: LineCorrection[] = Object.entries(corrections).map(
@@ -448,8 +452,14 @@ export function ReviewDetail({
         </div>
         {view === "overview" ? (
           <div className="flex select-text flex-col gap-4 pb-4">
-            {/* Decision card — one proposal, or the all-lines aggregate */}
-            {multiLine ? (
+            {/* Decision card — agency determinations (PGA), the all-lines
+                aggregate, or one proposal */}
+            {isPga ? (
+              <PgaDeterminationsCard
+                agencies={item.pgaAgencies ?? []}
+                flagTableVersion={item.flagTableVersion}
+              />
+            ) : multiLine ? (
               <LineClassificationsCard
                 corrections={corrections}
                 lines={item.lineItems ?? []}
@@ -539,8 +549,11 @@ export function ReviewDetail({
 
             {/* Entry lines — every line's code at a glance; the reviewed
                 line is highlighted. Multi-line mode folds these rows into
-                the decision card above. */}
-            {!multiLine && item.lineItems && item.lineItems.length > 0 ? (
+                the decision card above; PGA mode groups by line there too. */}
+            {!multiLine &&
+            !isPga &&
+            item.lineItems &&
+            item.lineItems.length > 0 ? (
               <Widget>
                 <Widget.Header>
                   <Widget.Title>Line items</Widget.Title>
@@ -605,7 +618,10 @@ export function ReviewDetail({
             {/* Alternates — their own card, out of the decision's way.
                 Multi-line mode surfaces each line's own alternates in the
                 line's drawer instead. */}
-            {!multiLine && item.alternates && item.alternates.length > 0 ? (
+            {!multiLine &&
+            !isPga &&
+            item.alternates &&
+            item.alternates.length > 0 ? (
               <AlternateClassificationsCard
                 alternates={item.alternates}
                 deltaFor={(value) =>
