@@ -1,14 +1,12 @@
 import {
   Icon3dPackage2,
-  IconCircleCheck,
   IconInboxEmpty,
   IconSparklesThree,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
-import { Avatar, Button, Chip, Skeleton } from "@heroui/react";
-import { Widget } from "@heroui-pro/react";
+import { Avatar, Chip, Skeleton } from "@heroui/react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { addHours, formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict } from "date-fns";
 import {
   typeMeta as actionTypeMeta,
   bucketForEvent,
@@ -17,21 +15,20 @@ import { HomeCharts } from "#/components/home/home-charts";
 import {
   HOME_EVENTS_PARAMS,
   HOME_LATEST_PARAMS,
-  HOME_REVIEWS_PARAMS,
   HOME_SHIPMENTS_PARAMS,
 } from "#/components/home/home-params";
-import { RecommendedActions } from "#/components/home/recommended-actions";
+import {
+  RowSkeletons,
+  SnippetCard,
+  SnippetEmpty,
+} from "#/components/home/home-scaffold";
+import { HomeTodo } from "#/components/home/home-todo";
 import {
   priorityFor,
   StageTracker,
   statusFromApi,
   statusMeta,
 } from "#/components/pipeline-board";
-import type { DeadlineTone } from "#/components/review/review-detail";
-import {
-  deadlineTone,
-  typeMeta as reviewTypeMeta,
-} from "#/components/review/review-detail";
 import type { ListShipmentsResponseDtoDataItem as ApiShipment } from "#/generated/api";
 import {
   useShipmentEventsControllerFindAll,
@@ -40,13 +37,6 @@ import {
   useUsersControllerGetProfile,
 } from "#/generated/api";
 import { getInitials } from "#/lib/format";
-import type { ReviewRequestPayload } from "#/lib/review-items";
-
-const deadlineTextClass: Record<DeadlineTone, string> = {
-  danger: "text-danger font-medium",
-  default: "text-muted",
-  warning: "text-warning",
-};
 
 function compactCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -124,178 +114,6 @@ function WelcomeHeader() {
         </div>
       )}
     </div>
-  );
-}
-
-/* -------------------------------------------------------------------------------------------------
- * Snippet scaffolding — every card shares the header-with-link + list shell
- * -----------------------------------------------------------------------------------------------*/
-function SnippetCard({
-  children,
-  className,
-  linkLabel,
-  onLink,
-  title,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  linkLabel: string;
-  onLink: () => void;
-  title: string;
-}) {
-  return (
-    <Widget className={className}>
-      <Widget.Header>
-        <Widget.Title>{title}</Widget.Title>
-        <Button
-          className="text-muted"
-          size="sm"
-          variant="ghost"
-          onPress={onLink}
-        >
-          {linkLabel}
-        </Button>
-      </Widget.Header>
-      <Widget.Content className="flex flex-col">{children}</Widget.Content>
-    </Widget>
-  );
-}
-
-function RowSkeletons({ rows }: { rows: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }, (_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-        <div key={index} className="flex items-center gap-3 py-2.5">
-          <Skeleton className="size-8 shrink-0 rounded-full" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className="h-3.5 w-1/2 rounded" />
-            <Skeleton className="h-3 w-3/4 rounded" />
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function SnippetEmpty({ detail, title }: { detail: string; title: string }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
-      <div className="bg-default/60 flex size-10 items-center justify-center rounded-xl">
-        <IconCircleCheck className="text-muted size-4" />
-      </div>
-      <span className="text-foreground text-sm font-medium">{title}</span>
-      <span className="text-muted max-w-[280px] text-xs">{detail}</span>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------------------------------
- * Review queue snippet — the five most urgent open reviews
- * -----------------------------------------------------------------------------------------------*/
-function ReviewSnippet() {
-  const navigate = useNavigate();
-  const { data: reviewsResponse, isPending } = useShipmentsControllerFindAll(
-    HOME_REVIEWS_PARAMS,
-    { query: { placeholderData: keepPreviousData, refetchInterval: 10_000 } },
-  );
-  // The review question lives on the latest review_requested event, exactly
-  // as the queue derives it (same query key — deduped with that page).
-  const { data: reviewEventsResponse } = useShipmentEventsControllerFindAll(
-    { limit: 200, type: ["review_requested"] },
-    { query: { refetchInterval: 10_000 } },
-  );
-
-  const latestPayload = new Map<string, ReviewRequestPayload>();
-
-  for (const event of reviewEventsResponse?.data.data ?? []) {
-    if (!latestPayload.has(event.shipmentId)) {
-      latestPayload.set(event.shipmentId, event.payload);
-    }
-  }
-
-  const reviews = (reviewsResponse?.data.data ?? []).slice(0, 5);
-
-  return (
-    <SnippetCard
-      className="lg:col-span-2"
-      linkLabel="View queue"
-      title="Review Queue"
-      onLink={() => navigate({ to: "/dashboard/review" })}
-    >
-      {isPending ? (
-        <RowSkeletons rows={5} />
-      ) : reviews.length === 0 ? (
-        <SnippetEmpty
-          detail="Autopilot is handling everything else. New exceptions will appear here."
-          title="Queue clear"
-        />
-      ) : (
-        reviews.map((shipment) => {
-          const payload = latestPayload.get(shipment.id) ?? {};
-          const type = payload.reviewType ?? "classification";
-          const TypeIcon = reviewTypeMeta[type].icon;
-          const deadline = shipment.reviewDeadlineAt
-            ? new Date(shipment.reviewDeadlineAt)
-            : addHours(new Date(), 24);
-          const tone = deadlineTone(deadline);
-
-          return (
-            <button
-              key={shipment.id}
-              className="hover:bg-default/40 -mx-2 flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors"
-              type="button"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/review/$itemId",
-                  params: { itemId: shipment.id },
-                })
-              }
-            >
-              <div className="relative shrink-0">
-                <Avatar className="size-8">
-                  <Avatar.Image src={shipment.client?.image ?? undefined} />
-                  <Avatar.Fallback>
-                    {getInitials(shipment.client?.name)}
-                  </Avatar.Fallback>
-                </Avatar>
-                <span
-                  className="bg-background absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full border"
-                  title={reviewTypeMeta[type].label}
-                >
-                  <TypeIcon className="text-muted size-2.5" mode="raw" />
-                </span>
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="text-foreground truncate text-sm font-medium">
-                    {shipment.client?.name ?? "Unknown client"}
-                  </span>
-                  {payload.noticeForm ? (
-                    <Chip color="danger" size="sm" variant="soft">
-                      <Chip.Label className="font-semibold">
-                        {payload.noticeForm}
-                      </Chip.Label>
-                    </Chip>
-                  ) : null}
-                  <span className="text-muted shrink-0 text-xs">
-                    {shipment.reference}
-                  </span>
-                </div>
-                <span className="text-muted truncate text-xs">
-                  {payload.question ?? "Review required"}
-                </span>
-              </div>
-              <span
-                className={`shrink-0 whitespace-nowrap text-xs ${deadlineTextClass[tone]}`}
-              >
-                {formatDistanceToNowStrict(deadline)}
-              </span>
-            </button>
-          );
-        })
-      )}
-    </SnippetCard>
   );
 }
 
@@ -475,9 +293,8 @@ export function HomeOverview() {
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4">
       <WelcomeHeader />
-      <RecommendedActions />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ReviewSnippet />
+        <HomeTodo className="lg:col-span-2" />
         <ActivitySnippet />
       </div>
       <LatestShipments />

@@ -9,8 +9,8 @@ import type {
  * the loader's warm-up is actually reused.
  */
 
-/** Reviews soonest-deadline first; the snippet shows the head, the
- * recommended-actions card counts the due-soon tail over the same page. */
+/** Reviews soonest-deadline first — the Todo list shows the head and
+ * dedupes critical shipments against the full page. */
 export const HOME_REVIEWS_PARAMS = {
   status: ["needs_review"],
   sortBy: "reviewDeadlineAt",
