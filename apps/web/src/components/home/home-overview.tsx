@@ -83,7 +83,7 @@ function WelcomeHeader() {
     : 0;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pb-3">
       {me ? (
         <h1 className="text-foreground text-3xl tracking-tight">
           {greetingForHour(new Date().getHours())}
