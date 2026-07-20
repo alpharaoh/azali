@@ -274,6 +274,24 @@ export function findLineMemo(
 }
 
 /**
+ * A line's PGA screening memo — per-line documents named
+ * "Screening Memo — Line N · …"; the latest revision wins.
+ */
+export function findLineScreeningMemo(
+  documents: ReviewDocument[],
+  lineNumber: number,
+): (ReviewDocument & { kind: "pdf" }) | undefined {
+  return [...documents]
+    .reverse()
+    .find(
+      (document): document is ReviewDocument & { kind: "pdf" } =>
+        document.kind === "pdf" &&
+        /screening memo/i.test(document.name) &&
+        new RegExp(`Line ${lineNumber}(\\D|$)`).test(document.name),
+    );
+}
+
+/**
  * Shipment-level duty totals over the lines with an ad-valorem amount,
  * honoring in-flight alternate selections. Lines whose duty can't be priced
  * (specific rates, missing value) are counted in `unpricedCount`.

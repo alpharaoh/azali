@@ -66,6 +66,7 @@ re-screened). The workflow lives in
 | [`service.ts`](./service.ts) | `PgaAgentService.screen(...)` — ToolLoopAgent (Opus, Sonnet fallback), answer submitted via the `submitPgaScreening` tool, streamed live into `agent_runs` via `AgentRunRecorder`, verification + repair guard rails |
 | [`schema.ts`](./schema.ts) | `pgaScreeningResultSchema` (zod) and `pgaCalibrationViolations()` — deterministic checks fed to the repair turn |
 | [`prompt.ts`](./prompt.ts) | System + triage prompts (Langfuse-managed, code fallbacks) and the flag-reference rendered from the parsed CBP publication |
+| [`memo.ts`](./memo.ts) | `buildPgaScreeningMemo` — the per-line screening memo, a deterministic render of the determinations (never an LLM call), emitted as a `pga_memo_drafted` document event alongside the classification rationale memo |
 | [`../../pga/flagLookup.ts`](../../pga/flagLookup.ts) | Deterministic flag lookup service (unit-tested) |
 | [`../../pga/tools.ts`](../../pga/tools.ts) | `lookupPgaFlags` agent tool wrapping the service |
 | [`../../../db/schemas/pgaFlags.ts`](../../../db/schemas/pgaFlags.ts) | `pga_flag_versions` + `pga_flags` — global reference data, versioned, one active version |
@@ -99,6 +100,13 @@ or scores below 0.95 (the shared platform threshold). High-confidence
 disclaims ride autopilot — recorded, cited, and on the timeline. Approval
 (`resolveReview`) marks the proposed determinations approved and advances
 compliance → entry; it deliberately never touches classification lines.
+
+**"Approved = filable" is an invariant.** Autopilot-clean shipments promote
+their determinations to `approved` inside the workflow (the clean screening
+is the platform's approval); reviewed shipments promote on broker
+resolution. Downstream entry preparation reads only `approved`
+determination rows — the memos are a human-readable projection of the same
+rows, never the data source.
 
 ## Reference data & scripts
 

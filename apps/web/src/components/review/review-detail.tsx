@@ -59,7 +59,7 @@ import type {
   ReviewItemType,
   ReviewLineItem,
 } from "#/lib/review-types";
-import { isMultiLineReview } from "#/lib/review-types";
+import { findLineScreeningMemo, isMultiLineReview } from "#/lib/review-types";
 
 /* -------------------------------------------------------------------------------------------------
  * Meta
@@ -835,6 +835,12 @@ export function ReviewDetail({
         <LineDetailDrawer
           line={openLine}
           memo={openLine ? (memoForLine(openLine) ?? null) : null}
+          screeningMemo={
+            openLine
+              ? (findLineScreeningMemo(item.documents, openLine.lineNumber) ??
+                null)
+              : null
+          }
           selectedAlternate={
             openLine ? (corrections[openLine.lineItemId] ?? null) : null
           }

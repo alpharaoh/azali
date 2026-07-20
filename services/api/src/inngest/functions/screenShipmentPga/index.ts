@@ -1,9 +1,11 @@
 import { insertLineItemPgaDeterminations } from "@/db/queries/insert/insertLineItemPgaDeterminations";
 import { insertShipmentEvent } from "@/db/queries/insert/insertShipmentEvent";
+import { listLineItemPgaDeterminations } from "@/db/queries/select/many/listLineItemPgaDeterminations";
 import { listShipmentDocuments } from "@/db/queries/select/many/listShipmentDocuments";
 import { listShipmentLineItems } from "@/db/queries/select/many/listShipmentLineItems";
 import { selectProduct } from "@/db/queries/select/one/selectProduct";
 import { selectShipment } from "@/db/queries/select/one/selectShipment";
+import { updateLineItemPgaDetermination } from "@/db/queries/update/updateLineItemPgaDetermination";
 import { updateShipment } from "@/db/queries/update/updateShipment";
 import {
   type DocumentExtraction,
@@ -24,6 +26,7 @@ import { indexPgaScreening } from "@/services/external/pinecone/screeningRecord"
 import { PgaFlagLookupService } from "@/services/pga/flagLookup";
 import { inngest } from "../../client";
 import {
+  buildPgaMemoPayload,
   buildPgaReviewPayload,
   buildPgaSummary,
   describeLineScreening,
@@ -261,6 +264,26 @@ export const screenShipmentPga = () => {
                 },
               }),
             );
+            await step.run(`record-memo-${line.lineNumber}`, () =>
+              insertShipmentEvent({
+                ...base,
+                type: "pga_memo_drafted",
+                title: `Screening Memo — Line ${line.lineNumber}`,
+                payload: buildPgaMemoPayload(
+                  {
+                    lineNumber: line.lineNumber,
+                    description: line.description,
+                    htsCode: line.htsCode,
+                    originCountry: line.originCountry ?? shipment.originCountry,
+                    determinations: [],
+                    jurisdictionSweep: triage.rationale,
+                    clarifyingQuestions: [],
+                    summary: null,
+                  },
+                  shipment,
+                ),
+              }),
+            );
             logger.info(
               { shipmentId, lineNumber: line.lineNumber },
               "line triaged clean — no flags, no plausible jurisdiction",
@@ -394,6 +417,26 @@ export const screenShipmentPga = () => {
               payload: { runId, lineNumber: line.lineNumber },
             }),
           ),
+          step.run(`record-memo-${line.lineNumber}`, () =>
+            insertShipmentEvent({
+              ...base,
+              type: "pga_memo_drafted",
+              title: `Screening Memo — Line ${line.lineNumber}`,
+              payload: buildPgaMemoPayload(
+                {
+                  lineNumber: line.lineNumber,
+                  description: line.description,
+                  htsCode: line.htsCode,
+                  originCountry: line.originCountry ?? shipment.originCountry,
+                  determinations: result.determinations,
+                  jurisdictionSweep: result.jurisdictionSweep,
+                  clarifyingQuestions: result.clarifyingQuestions,
+                  summary: result.summary,
+                },
+                shipment,
+              ),
+            }),
+          ),
         ]);
 
         logger.info(
@@ -498,6 +541,28 @@ export const screenShipmentPga = () => {
           },
         }),
       );
+
+      // Autopilot: "approved = filable" is the invariant downstream entry
+      // prep relies on. A clean screening is the platform's approval — the
+      // determinations get promoted just as a broker resolution would;
+      // reviewed shipments promote in applyPgaResolution instead.
+      if (!needsReview) {
+        await step.run("approve-determinations", async () => {
+          const { data: proposed } = await listLineItemPgaDeterminations({
+            organizationId,
+            shipmentId,
+            status: PgaDeterminationStatus.Proposed,
+          });
+          for (const determination of proposed) {
+            await updateLineItemPgaDetermination(
+              determination.id,
+              organizationId,
+              { status: PgaDeterminationStatus.Approved },
+            );
+          }
+          return proposed.length;
+        });
+      }
 
       // Autopilot screenings become searchable precedent immediately;
       // reviewed shipments index on broker approval instead (source

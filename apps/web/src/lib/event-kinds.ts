@@ -10,6 +10,7 @@ export const DOCUMENT_EVENT_TYPES = new Set([
   "cbp_notice_received",
   "classification_memo_drafted",
   "document_received",
+  "pga_memo_drafted",
   "response_drafted",
   "ruling_request_drafted",
 ]);

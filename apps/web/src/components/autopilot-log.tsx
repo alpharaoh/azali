@@ -127,6 +127,8 @@ const EVENT_TYPE_BUCKET: Record<string, AutopilotActionType> = {
   invoice_received: "intake",
   market_comparison: "reconciliation",
   pga: "classification",
+  pga_memo_drafted: "classification",
+  pga_screened: "classification",
   review_requested: "review",
   review_resolved: "review",
   scan_received: "intake",

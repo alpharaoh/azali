@@ -230,8 +230,11 @@ export class PgaAgentService {
           ...pgaTools,
           ...htsTools,
           ...createKnowledgeBaseTools(organizationId, shipment.clientId, "pga"),
-          // Provider-executed on Anthropic's side — results carry real URLs.
-          webSearch: anthropic.tools.webSearch_20260209({ maxUses: 6 }),
+          // Provider-executed on Anthropic's side — results carry real
+          // URLs. The 20250305 version deliberately: 20260209 bundles a
+          // server-side code-execution container the model uses to wrap
+          // searches in Python (slow, flaky, opaque in traces).
+          webSearch: anthropic.tools.webSearch_20250305({ maxUses: 6 }),
           submitPgaScreening,
         },
         stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("submitPgaScreening")],

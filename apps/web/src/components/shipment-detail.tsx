@@ -51,7 +51,7 @@ import type {
   ReviewDocument,
   ReviewLineItem,
 } from "#/lib/review-types";
-import { findLineMemo } from "#/lib/review-types";
+import { findLineMemo, findLineScreeningMemo } from "#/lib/review-types";
 import { PROCESSING_POLL_MS, useCaseFile } from "#/lib/use-case-file";
 import { useShipmentLines } from "#/lib/use-shipment-lines";
 
@@ -571,6 +571,12 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
         memo={
           openLine
             ? (findLineMemo(caseFile.documents, openLine.lineNumber) ?? null)
+            : null
+        }
+        screeningMemo={
+          openLine
+            ? (findLineScreeningMemo(caseFile.documents, openLine.lineNumber) ??
+              null)
             : null
         }
         shipmentId={shipmentId}

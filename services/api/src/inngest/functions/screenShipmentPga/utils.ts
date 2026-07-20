@@ -5,6 +5,10 @@ import type {
   ClassificationShipmentFacts,
 } from "@/services/agents/classification/service";
 import {
+  buildPgaScreeningMemo,
+  type PgaMemoLine,
+} from "@/services/agents/pga/memo";
+import {
   PGA_TRIAGE_PROMPT,
   PGA_TRIAGE_PROMPT_NAME,
 } from "@/services/agents/pga/prompt";
@@ -116,6 +120,56 @@ export async function triageUnflaggedLine(
   });
 
   return output;
+}
+
+/**
+ * The pga_memo_drafted event payload — same document shape as the
+ * classification memo events, so the memo renders (and is broker-editable)
+ * in the existing document plane.
+ */
+export function buildPgaMemoPayload(
+  line: PgaMemoLine,
+  shipment: { reference: string; clientName: string | null },
+) {
+  const inPlay = line.determinations.filter(
+    (determination) => determination.determination !== "not_applicable",
+  );
+  const filings = inPlay.filter(
+    (determination) => determination.determination === "required",
+  ).length;
+  const disclaims = inPlay.filter(
+    (determination) => determination.determination === "disclaim",
+  ).length;
+  const outcome =
+    inPlay.length === 0
+      ? "Clean — no requirements"
+      : [
+          filings > 0 ? `${filings} filing${filings === 1 ? "" : "s"}` : null,
+          disclaims > 0
+            ? `${disclaims} disclaim${disclaims === 1 ? "" : "s"}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
+  return {
+    kind: "pdf",
+    name: `Screening Memo — Line ${line.lineNumber} · ${line.description.slice(0, 50)}`,
+    meta: "Azali · PGA screening",
+    lines: [
+      { label: "Line", value: `#${line.lineNumber}` },
+      { label: "HTS", value: line.htsCode },
+      {
+        label: "Agencies",
+        value:
+          [
+            ...new Set(inPlay.map((determination) => determination.agencyCode)),
+          ].join(", ") || "None",
+      },
+      { label: "Outcome", value: outcome },
+    ],
+    draft: buildPgaScreeningMemo(line, shipment),
+  };
 }
 
 /** Aggregate rollup stored on shipments.summary.pga. */
