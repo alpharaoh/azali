@@ -159,8 +159,8 @@ export function HomeTodo({ className }: { className?: string }) {
       cta: "Review",
       go: () =>
         navigate({
-          to: "/dashboard/shipments/$shipmentId",
-          params: { shipmentId: shipment.id },
+          to: "/dashboard/review/$itemId",
+          params: { itemId: shipment.id },
         }),
     };
   });

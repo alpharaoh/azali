@@ -23,7 +23,6 @@ import {
   Skeleton,
   Slider,
   Spinner,
-  Tooltip,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, InlineSelect, TextShimmer, Widget } from "@heroui-pro/react";
@@ -646,8 +645,8 @@ export function PipelineBoard() {
               variant="tertiary"
               onPress={() =>
                 navigate({
-                  params: { shipmentId: row.id },
-                  to: "/dashboard/shipments/$shipmentId",
+                  params: { itemId: row.id },
+                  to: "/dashboard/review/$itemId",
                 })
               }
             >

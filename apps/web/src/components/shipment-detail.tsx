@@ -749,7 +749,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string }) {
       {/* Decision bar — pinned while a review is pending, so the actions
           stay in reach however deep the record scrolls. */}
       {reviewItem ? (
-        <div className="bg-background/85 sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur">
+        <div className="bg-background/85 sticky bottom-4 z-10 mx-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 shadow-lg backdrop-blur">
           <span
             className={`px-2 text-xs ${
               decision.correctionEntries.length > 0
