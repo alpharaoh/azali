@@ -7,6 +7,7 @@ import {
   IconFilter1,
   IconPackageAdd,
   IconShip,
+  IconSquareArrowTopRight,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
 import {
   Avatar,
@@ -638,19 +639,35 @@ export function PipelineBoard() {
       align: "end",
       cell: (row) =>
         row.status === "blocked" ? (
-          <Button
-            size="sm"
-            variant="tertiary"
-            onPress={() =>
-              navigate({
-                params: { shipmentId: row.id },
-                to: "/dashboard/shipments/$shipmentId",
-              })
-            }
-          >
-            <IconEyeOpen />
-            Review
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              size="sm"
+              variant="tertiary"
+              onPress={() =>
+                navigate({
+                  params: { shipmentId: row.id },
+                  to: "/dashboard/shipments/$shipmentId",
+                })
+              }
+            >
+              <IconEyeOpen />
+              Review
+            </Button>
+            <Button
+              isIconOnly
+              aria-label="Open shipment"
+              size="sm"
+              variant="ghost"
+              onPress={() =>
+                navigate({
+                  params: { shipmentId: row.id },
+                  to: "/dashboard/shipments/$shipmentId",
+                })
+              }
+            >
+              <IconSquareArrowTopRight />
+            </Button>
+          </div>
         ) : (
           <Button
             size="sm"
