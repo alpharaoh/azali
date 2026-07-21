@@ -27,7 +27,6 @@ import { useDebouncedUrlSearch } from "#/lib/use-debounced-url-search";
  * decision is made and resolved.
  * -----------------------------------------------------------------------------------------------*/
 
-/** One labeled fact on the row — muted label, legible value. */
 function RowFact({
   children,
   label,
