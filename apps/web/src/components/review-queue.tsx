@@ -43,13 +43,18 @@ function RowFact({
   );
 }
 
+/** The list shell: a quiet surface lifted off the page background, with
+ * hairline dividers between rows. */
+const QUEUE_LIST_CLASS =
+  "bg-surface divide-y overflow-hidden rounded-2xl border border-border/60 divide-border/60";
+
 /** First-load placeholder mirroring the QueueRow layout. */
 function QueueSkeleton() {
   return (
-    <ul aria-label="Loading review queue" className="flex flex-col gap-1">
+    <ul aria-label="Loading review queue" className={QUEUE_LIST_CLASS}>
       {Array.from({ length: 5 }, (_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-        <li key={index} className="flex items-start gap-3.5 rounded-2xl p-4">
+        <li key={index} className="flex items-start gap-3.5 p-4">
           <Skeleton className="size-9 shrink-0 rounded-full" />
           <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
             <Skeleton className="h-3.5 w-2/3 rounded" />
@@ -81,7 +86,7 @@ function QueueRow({
   return (
     <li>
       <button
-        className="hover:bg-default/40 group flex w-full cursor-pointer items-start gap-3.5 rounded-2xl p-4 text-left transition-colors"
+        className="hover:bg-default/40 group flex w-full cursor-pointer items-start gap-3.5 p-4 text-left transition-colors"
         type="button"
         onClick={onSelect}
       >
@@ -343,7 +348,7 @@ export function ReviewQueue() {
         </div>
       ) : (
         <TableFetchingState isFetching={isFetching}>
-          <ul className="flex flex-col gap-1">
+          <ul className={QUEUE_LIST_CLASS}>
             {items.map((item) => (
               <QueueRow
                 key={item.id}
