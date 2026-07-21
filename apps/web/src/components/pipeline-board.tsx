@@ -23,6 +23,7 @@ import {
   Skeleton,
   Slider,
   Spinner,
+  Tooltip,
 } from "@heroui/react";
 import type { DataGridColumn } from "@heroui-pro/react";
 import { DataGrid, InlineSelect, TextShimmer, Widget } from "@heroui-pro/react";
@@ -685,7 +686,7 @@ export function PipelineBoard() {
         ),
       header: "",
       id: "actions",
-      minWidth: 120,
+      minWidth: 150,
       pinned: "end",
     },
   ];

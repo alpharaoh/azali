@@ -2,6 +2,9 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    // TypeScript 6 no longer auto-includes node_modules/@types packages;
+    // without this, the Bun global and bun:test are unresolvable.
+    "types": ["bun", "node"],
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
