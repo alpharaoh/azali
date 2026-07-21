@@ -270,6 +270,12 @@ export function isMemoDocument(document: ReviewDocument): boolean {
   return document.kind === "pdf" && /rationale memo/i.test(document.name);
 }
 
+/** A PGA screening memo — internal work product, not a shipment document.
+ * It opens from the agency-determinations card, never the document set. */
+export function isScreeningMemoDocument(document: ReviewDocument): boolean {
+  return document.kind === "pdf" && /screening memo/i.test(document.name);
+}
+
 /**
  * The headline rationale memo — the latest wins, so a re-classification's
  * memo always matches the proposal shown on the decision card.

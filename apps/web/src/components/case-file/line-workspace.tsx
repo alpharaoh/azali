@@ -4,9 +4,15 @@ import {
   IconLaw,
   IconSparklesThree,
 } from "@central-icons-react/square-outlined-radius-0-stroke-1.5";
-import { Button, Chip, Spinner, Tabs } from "@heroui/react";
-import { Segment, TextShimmer, Widget } from "@heroui-pro/react";
-import { useState } from "react";
+import { Button, Chip, Separator, Spinner, Tabs } from "@heroui/react";
+import {
+  ItemCard,
+  ItemCardGroup,
+  Segment,
+  TextShimmer,
+  Widget,
+} from "@heroui-pro/react";
+import { Fragment, useState } from "react";
 import {
   DeterminationRow,
   determinationKey,
@@ -40,8 +46,9 @@ import { findLineMemo, findLineScreeningMemo } from "#/lib/review-types";
 
 export type LineSelection = "overview" | number;
 
-/** Per-line agency-screening chips, one row per line — the at-a-glance
- * complement to each line tab's full determinations. */
+/** Per-line agency screening in the same idiom as the line classifications
+ * card: what the line is, each agency's verdict with its confidence, and a
+ * headline outcome on the right. Rows drill into the line's tab. */
 function AgencyScreeningSummary({
   byLine,
   flagTableVersion,
@@ -58,43 +65,96 @@ function AgencyScreeningSummary({
       <Widget.Header>
         <Widget.Title>Agency screening</Widget.Title>
       </Widget.Header>
-      <Widget.Content className="flex flex-col gap-0.5">
-        {entries.map(([lineNumber, determinations]) => (
-          <button
-            key={lineNumber}
-            className="hover:bg-default/40 -mx-2 flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors"
-            type="button"
-            onClick={() => onOpenLine(lineNumber)}
-          >
-            <span className="text-muted shrink-0 text-xs tabular-nums">
-              #{lineNumber}
-            </span>
-            <span className="text-foreground min-w-0 flex-1 truncate text-sm">
-              {determinations[0]?.lineDescription}
-            </span>
-            <span className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-              {determinations.map((determination) => (
-                <Chip
-                  key={determinationKey(determination)}
-                  color={determinationMeta[determination.determination].chip}
-                  size="sm"
-                  variant="soft"
+      <Widget.Content className="p-0">
+        <ItemCardGroup className="border-none" variant="outline">
+          {entries.map(([lineNumber, determinations], index) => {
+            const required = determinations.filter(
+              (determination) => determination.determination === "required",
+            ).length;
+            const disclaim = determinations.filter(
+              (determination) => determination.determination === "disclaim",
+            ).length;
+
+            return (
+              <Fragment key={lineNumber}>
+                {index > 0 ? <Separator /> : null}
+                <ItemCard
+                  className="hover:bg-default/40 cursor-pointer gap-8 px-5 py-4 transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onOpenLine(lineNumber)}
+                  onKeyDown={(event: React.KeyboardEvent) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onOpenLine(lineNumber);
+                    }
+                  }}
                 >
-                  <Chip.Label>
-                    {determination.agencyCode} ·{" "}
-                    {determinationMeta[determination.determination].label}
-                  </Chip.Label>
-                </Chip>
-              ))}
-            </span>
-            <IconChevronRight className="text-muted size-3.5 shrink-0" />
-          </button>
-        ))}
+                  <ItemCard.Content>
+                    <ItemCard.Title className="line-clamp-2 whitespace-normal">
+                      {determinations[0]?.lineDescription}
+                    </ItemCard.Title>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                      {determinations.map((determination) => (
+                        <span
+                          key={determinationKey(determination)}
+                          className="flex items-center gap-1"
+                        >
+                          <Chip
+                            color={
+                              determinationMeta[determination.determination]
+                                .chip
+                            }
+                            size="sm"
+                            variant="soft"
+                          >
+                            <Chip.Label>
+                              {determination.agencyCode} ·{" "}
+                              {
+                                determinationMeta[determination.determination]
+                                  .label
+                              }
+                            </Chip.Label>
+                          </Chip>
+                          <ConfidenceChip
+                            confidence={determination.confidence}
+                          />
+                        </span>
+                      ))}
+                    </div>
+                  </ItemCard.Content>
+                  <ItemCard.Action>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`whitespace-nowrap text-xs ${
+                          required > 0
+                            ? "text-danger font-medium"
+                            : disclaim > 0
+                              ? "text-warning"
+                              : "text-muted"
+                        }`}
+                      >
+                        {required > 0
+                          ? `${required} filing${required === 1 ? "" : "s"} required`
+                          : disclaim > 0
+                            ? `${disclaim} disclaimer${disclaim === 1 ? "" : "s"} to file`
+                            : "No filings applicable"}
+                      </span>
+                      <IconChevronRight className="text-muted size-4 shrink-0" />
+                    </div>
+                  </ItemCard.Action>
+                </ItemCard>
+              </Fragment>
+            );
+          })}
+        </ItemCardGroup>
         {flagTableVersion ? (
-          <span className="text-muted pt-2 text-xs">
-            Screened against the agency flag reference current as of{" "}
-            {flagTableVersion.publishedAt.slice(0, 10)}
-          </span>
+          <div className="border-t px-5 py-3">
+            <span className="text-muted text-xs">
+              Screened against the agency flag reference current as of{" "}
+              {flagTableVersion.publishedAt.slice(0, 10)}
+            </span>
+          </div>
         ) : null}
       </Widget.Content>
     </Widget>
@@ -107,6 +167,7 @@ function AgencyScreeningSummary({
 function LinePanel({
   awaitingEmails,
   determinations,
+  emphasis = "classification",
   flagTableVersion,
   line,
   memo,
@@ -121,6 +182,10 @@ function LinePanel({
 }: {
   awaitingEmails: boolean;
   determinations: PgaAgencyDetermination[];
+  /** What the broker is here to judge. "screening" (PGA reviews) leads
+   * with the agency determinations and demotes classification to a
+   * compact fact-check record. */
+  emphasis?: "classification" | "screening";
   flagTableVersion?: ReviewItem["flagTableVersion"];
   line: ReviewLineItem;
   memo: (ReviewDocument & { kind: "pdf" }) | null;
@@ -135,10 +200,15 @@ function LinePanel({
   shipmentId: string;
 }) {
   const [traceAgent, setTraceAgent] = useState<"classification" | "pga">(
-    "classification",
+    emphasis === "screening" ? "pga" : "classification",
   );
   const [isMemoOpen, setMemoOpen] = useState(false);
   const [isScreeningMemoOpen, setScreeningMemoOpen] = useState(false);
+
+  // The Compliance trace toggle only appears once there is (or is about to
+  // be) a screening run for this line — before that it's just noise.
+  const hasComplianceTrace =
+    Boolean(pgaRunIdForLine[line.lineNumber]) || screening;
 
   const duty = line.duty;
   const dutyLabel =
@@ -152,14 +222,46 @@ function LinePanel({
     line.valueUsd !== null ? formatCurrency(line.valueUsd) : null,
   ].filter(Boolean);
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Classification — the code, its rationale, and the money */}
+  // Classification: the full decision card when classification is what's
+  // being judged; a compact one-row fact-check record when the broker is
+  // here for the screening.
+  const classificationSection =
+    emphasis === "screening" ? (
+      // Not a widget — one quiet line of record above the decision, there
+      // to fact-check and otherwise out of the way.
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="text-muted text-xs">Classified as</span>
+          <span className="text-foreground font-mono text-sm font-semibold tabular-nums">
+            {line.htsCode ?? "—"}
+          </span>
+          {duty?.amountUsd !== null && duty?.amountUsd !== undefined ? (
+            <span className="text-muted text-xs tabular-nums">
+              · Duty {formatCurrency(duty.amountUsd)}
+            </span>
+          ) : null}
+        </div>
+        {memo ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            onPress={() => setMemoOpen(true)}
+          >
+            <IconFileText className="size-3.5" />
+            Rationale memo
+          </Button>
+        ) : null}
+      </div>
+    ) : (
       <Widget>
         <Widget.Header>
           <Widget.Title>Classification</Widget.Title>
           {memo ? (
-            <Button size="sm" variant="ghost" onPress={() => setMemoOpen(true)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => setMemoOpen(true)}
+            >
               <IconFileText className="size-3.5" />
               Rationale memo
             </Button>
@@ -207,69 +309,76 @@ function LinePanel({
           </div>
         </Widget.Content>
       </Widget>
+    );
 
-      {/* Alternates — a picker during a multi-line review, a record otherwise */}
-      {line.alternates && line.alternates.length > 0 ? (
-        <AlternateClassificationsCard
-          alternates={line.alternates}
-          deltaFor={(value) =>
-            line.alternates?.find((alt) => alt.value === value)?.deltaUsd
-          }
-          selected={onStageCorrection ? selectedAlternate : undefined}
-          onSelect={
-            onStageCorrection
-              ? (value) => onStageCorrection(line.lineItemId, value)
-              : undefined
-          }
-        />
-      ) : line.reused ? (
-        <span className="text-muted text-xs">
-          Reused from product memory — no alternates were scored for this line.
-        </span>
-      ) : null}
+  // Alternates — classification decision material; hidden when the broker
+  // is here for the screening.
+  const alternatesSection =
+    line.alternates && line.alternates.length > 0 ? (
+      <AlternateClassificationsCard
+        alternates={line.alternates}
+        deltaFor={(value) =>
+          line.alternates?.find((alt) => alt.value === value)?.deltaUsd
+        }
+        selected={onStageCorrection ? selectedAlternate : undefined}
+        onSelect={
+          onStageCorrection
+            ? (value) => onStageCorrection(line.lineItemId, value)
+            : undefined
+        }
+      />
+    ) : line.reused ? (
+      <span className="text-muted text-xs">
+        Reused from product memory — no alternates were scored for this line.
+      </span>
+    ) : null;
 
-      {/* Agency screening — this line's PGA determinations */}
-      {determinations.length > 0 || screeningMemo ? (
-        <Widget>
-          <Widget.Header>
-            <Widget.Title>Agency screening</Widget.Title>
-            {screeningMemo ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onPress={() => setScreeningMemoOpen(true)}
-              >
-                <IconFileText className="size-3.5" />
-                Screening memo
-              </Button>
-            ) : null}
-          </Widget.Header>
-          <Widget.Content className="flex flex-col gap-1">
-            {determinations.map((determination) => (
-              <DeterminationRow
-                key={determinationKey(determination)}
-                determination={determination}
-              />
-            ))}
-            {determinations.length === 0 ? (
-              <span className="text-muted text-sm">
-                No agency determinations recorded for this line.
-              </span>
-            ) : null}
-            {flagTableVersion ? (
-              <span className="text-muted pt-2 text-xs">
-                Screened against the agency flag reference current as of{" "}
-                {flagTableVersion.publishedAt.slice(0, 10)}
-              </span>
-            ) : null}
-          </Widget.Content>
-        </Widget>
-      ) : null}
-
-      {/* Agent traces — both audit runs for this line, one toggle apart */}
+  // Agency screening — this line's PGA determinations.
+  const screeningSection =
+    emphasis === "screening" || determinations.length > 0 || screeningMemo ? (
       <Widget>
         <Widget.Header>
-          <Widget.Title>Agent trace</Widget.Title>
+          <Widget.Title>Agency screening</Widget.Title>
+          {screeningMemo ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => setScreeningMemoOpen(true)}
+            >
+              <IconFileText className="size-3.5" />
+              Screening memo
+            </Button>
+          ) : null}
+        </Widget.Header>
+        <Widget.Content className="flex flex-col gap-1">
+          {determinations.map((determination) => (
+            <DeterminationRow
+              key={determinationKey(determination)}
+              determination={determination}
+            />
+          ))}
+          {determinations.length === 0 ? (
+            <span className="text-muted text-sm">
+              No agency determinations recorded for this line.
+            </span>
+          ) : null}
+          {flagTableVersion ? (
+            <span className="text-muted pt-2 text-xs">
+              Screened against the agency flag reference current as of{" "}
+              {flagTableVersion.publishedAt.slice(0, 10)}
+            </span>
+          ) : null}
+        </Widget.Content>
+      </Widget>
+    ) : null;
+
+  // Agent traces — both audit runs for this line, one toggle apart
+  // (classification only until a screening run exists).
+  const traceSection = (
+    <Widget>
+      <Widget.Header>
+        <Widget.Title>Agent trace</Widget.Title>
+        {hasComplianceTrace ? (
           <Segment
             selectedKey={traceAgent}
             size="sm"
@@ -286,38 +395,59 @@ function LinePanel({
               Compliance
             </Segment.Item>
           </Segment>
-        </Widget.Header>
-        <Widget.Content>
-          {traceAgent === "classification" ? (
-            <LineTraceTabs
-              activeLineNumber={line.lineNumber}
-              isProcessing={processing !== null}
-              lines={[line]}
-              pendingMessage={
-                awaitingEmails
-                  ? "Classification starts once all related emails are in."
-                  : undefined
-              }
-              runIdForLine={runIdForLine}
-              onSelect={() => {}}
-            />
-          ) : (
-            <LineTraceTabs
-              activeLineNumber={line.lineNumber}
-              agent="pga"
-              isProcessing={processing !== null}
-              lines={[line]}
-              pendingMessage={
-                screening
-                  ? "Agency screening will reach this line shortly…"
-                  : "Compliance screening starts once classification lands…"
-              }
-              runIdForLine={pgaRunIdForLine}
-              onSelect={() => {}}
-            />
-          )}
-        </Widget.Content>
-      </Widget>
+        ) : null}
+      </Widget.Header>
+      <Widget.Content>
+        {traceAgent === "classification" || !hasComplianceTrace ? (
+          <LineTraceTabs
+            activeLineNumber={line.lineNumber}
+            isProcessing={processing !== null}
+            lines={[line]}
+            pendingMessage={
+              awaitingEmails
+                ? "Classification starts once all related emails are in."
+                : undefined
+            }
+            runIdForLine={runIdForLine}
+            onSelect={() => {}}
+          />
+        ) : (
+          <LineTraceTabs
+            activeLineNumber={line.lineNumber}
+            agent="pga"
+            isProcessing={processing !== null}
+            lines={[line]}
+            pendingMessage={
+              screening
+                ? "Agency screening will reach this line shortly…"
+                : "Compliance screening starts once classification lands…"
+            }
+            runIdForLine={pgaRunIdForLine}
+            onSelect={() => {}}
+          />
+        )}
+      </Widget.Content>
+    </Widget>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {emphasis === "screening" ? (
+        <>
+          {/* One line of classification record on top, then the decision:
+              the screening itself. */}
+          {classificationSection}
+          {screeningSection}
+          {traceSection}
+        </>
+      ) : (
+        <>
+          {classificationSection}
+          {alternatesSection}
+          {screeningSection}
+          {traceSection}
+        </>
+      )}
 
       {memo ? (
         <MemoModal
@@ -349,6 +479,7 @@ export function LineWorkspace({
   corrections,
   documents,
   documentsSlot,
+  emphasis = "classification",
   flagTableVersion,
   lines,
   linesLoaded,
@@ -372,6 +503,10 @@ export function LineWorkspace({
   documents: ReviewDocument[];
   /** The shipment's documents card — rendered on the Overview tab. */
   documentsSlot?: React.ReactNode;
+  /** What the broker is here to judge. "screening" (PGA reviews) leads
+   * every surface with the agency determinations and demotes
+   * classification to a compact record. */
+  emphasis?: "classification" | "screening";
   flagTableVersion?: ReviewItem["flagTableVersion"];
   lines: ReviewLineItem[];
   linesLoaded: boolean;
@@ -474,16 +609,20 @@ export function LineWorkspace({
         </Tabs.List>
       </Tabs.ListContainer>
 
-      {/* Overview — every line at a glance, then screening across lines */}
+      {/* Overview — what the broker is here to judge leads: the screening
+          across lines for PGA reviews, every line's classification
+          otherwise. */}
       <Tabs.Panel className="flex flex-col gap-4 pt-3" id="overview">
-        <LineClassificationsCard
-          activityByLine={activityByLine}
-          corrections={corrections}
-          isLoading={!linesLoaded}
-          lines={lines}
-          onOpenLine={(line) => onSelect(line.lineNumber)}
-          onViewTrace={(lineNumber) => onSelect(lineNumber)}
-        />
+        {emphasis !== "screening" ? (
+          <LineClassificationsCard
+            activityByLine={activityByLine}
+            corrections={corrections}
+            isLoading={!linesLoaded}
+            lines={lines}
+            onOpenLine={(line) => onSelect(line.lineNumber)}
+            onViewTrace={(lineNumber) => onSelect(lineNumber)}
+          />
+        ) : null}
         {screening && processing ? (
           <span className="inline-flex items-center gap-2 px-1">
             <Spinner size="sm" />
@@ -495,6 +634,15 @@ export function LineWorkspace({
             byLine={determinationsByLine}
             flagTableVersion={flagTableVersion}
             onOpenLine={onSelect}
+          />
+        ) : emphasis === "screening" ? (
+          // Screening emphasis with nothing screened yet — fall back to the
+          // lines so the overview is never empty.
+          <LineClassificationsCard
+            activityByLine={activityByLine}
+            isLoading={!linesLoaded}
+            lines={lines}
+            onOpenLine={(line) => onSelect(line.lineNumber)}
           />
         ) : null}
         {documentsSlot}
@@ -511,6 +659,7 @@ export function LineWorkspace({
             key={line.lineItemId}
             awaitingEmails={awaitingEmails}
             determinations={determinationsByLine.get(line.lineNumber) ?? []}
+            emphasis={emphasis}
             flagTableVersion={flagTableVersion}
             line={line}
             memo={findLineMemo(documents, line.lineNumber) ?? null}

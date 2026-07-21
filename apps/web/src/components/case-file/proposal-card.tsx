@@ -32,7 +32,7 @@ export function ProposalCard({
       <Widget.Header>
         <Widget.Title>{item.proposal.label}</Widget.Title>
         {onViewMemo ? (
-          <Button size="sm" variant="ghost" onPress={onViewMemo}>
+          <Button size="sm" variant="secondary" onPress={onViewMemo}>
             <IconFileText className="size-3.5" />
             View memo
           </Button>

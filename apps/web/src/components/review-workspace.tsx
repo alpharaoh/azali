@@ -10,10 +10,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { addHours, formatDistanceToNowStrict } from "date-fns";
 import { useState } from "react";
-import {
-  DeterminationRow,
-  determinationKey,
-} from "#/components/case-file/agency-determinations";
 import { AgentRunTrace } from "#/components/case-file/agent-run-trace";
 import { AlternateClassificationsCard } from "#/components/case-file/alternate-classifications-card";
 import { ComparisonCard } from "#/components/case-file/comparison-card";
@@ -47,20 +43,19 @@ import {
   useShipmentsControllerResolve,
 } from "#/generated/api";
 import { BROKER_NOTE_TYPE } from "#/lib/event-kinds";
-import { formatDate, getInitials } from "#/lib/format";
+import { getInitials } from "#/lib/format";
 import { buildShipmentReviewItem } from "#/lib/review-items";
 import type {
   DecisionAction,
   LineCorrection,
-  PgaAgencyDetermination,
   ReviewDocument,
-  ReviewItem,
 } from "#/lib/review-types";
 import {
   findLatestMemo,
   findResponseDraft,
   isMemoDocument,
   isMultiLineReview,
+  isScreeningMemoDocument,
   isStandaloneDocument,
 } from "#/lib/review-types";
 import { useCaseFile } from "#/lib/use-case-file";
@@ -77,56 +72,6 @@ import { useShipmentLines } from "#/lib/use-shipment-lines";
 /** Poll cadence while the review is pending — picks up resolutions made
  * elsewhere (another tab, another broker) without a refresh. */
 const REVIEW_POLL_MS = 10_000;
-
-/** The PGA decision card: every agency call from the screening, grouped by
- * entry line, ready for one approval. */
-function AgencyDeterminationsCard({
-  agencies,
-  flagTableVersion,
-}: {
-  agencies: PgaAgencyDetermination[];
-  flagTableVersion?: ReviewItem["flagTableVersion"];
-}) {
-  const byLine = new Map<number, PgaAgencyDetermination[]>();
-
-  for (const determination of agencies) {
-    byLine.set(determination.lineNumber, [
-      ...(byLine.get(determination.lineNumber) ?? []),
-      determination,
-    ]);
-  }
-  const groups = [...byLine.entries()].sort(([a], [b]) => a - b);
-
-  return (
-    <Widget>
-      <Widget.Header>
-        <Widget.Title>Agency determinations</Widget.Title>
-        {flagTableVersion ? (
-          <span className="text-muted text-xs">
-            ACE flag table · {formatDate(flagTableVersion.publishedAt)}
-          </span>
-        ) : null}
-      </Widget.Header>
-      <Widget.Content className="flex flex-col gap-4">
-        {groups.map(([lineNumber, rows]) => (
-          <div key={lineNumber} className="flex flex-col gap-1">
-            <span className="text-muted text-xs font-medium">
-              Line {lineNumber} · {rows[0]?.lineDescription}
-            </span>
-            <div className="flex flex-col">
-              {rows.map((determination) => (
-                <DeterminationRow
-                  key={determinationKey(determination)}
-                  determination={determination}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </Widget.Content>
-    </Widget>
-  );
-}
 
 export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
   const navigate = useNavigate();
@@ -188,14 +133,15 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
   // keys this component by shipmentId, so it resets per item.)
   const [selectedLine, setSelectedLine] = useState<LineSelection>("overview");
   const jumpToTrace = () => {
+    const runMap = isPgaReview ? pgaRunIdForLine : runIdForLine;
     const target =
-      lines.find((line) => runIdForLine[line.lineNumber])?.lineNumber ??
+      lines.find((line) => runMap[line.lineNumber])?.lineNumber ??
       lines[0]?.lineNumber;
 
     if (target !== undefined) setSelectedLine(target);
   };
 
-  // Agent trace for PGA and single-line reviews (multi-line reviews carry
+  // Agent trace for single-line reviews (PGA and multi-line reviews carry
   // their traces inside the line workspace's per-line tabs). The payload's
   // line runIds back-fill lines the runs list hasn't loaded yet.
   const [traceLine, setTraceLine] = useState<number | null>(null);
@@ -205,9 +151,7 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
   for (const line of reviewItem?.lineItems ?? []) {
     if (line.runId) payloadRunIdForLine[line.lineNumber] = line.runId;
   }
-  const traceRunIdForLine = isPgaReview
-    ? { ...payloadRunIdForLine, ...pgaRunIdForLine }
-    : { ...payloadRunIdForLine, ...runIdForLine };
+  const traceRunIdForLine = { ...payloadRunIdForLine, ...runIdForLine };
   const activeTraceLine =
     traceLine ??
     reviewItem?.reviewLineNumber ??
@@ -300,10 +244,13 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
   // The intake documents (invoice, packing list, B/L, spec…) collapse into
   // ONE tab-switched timeline beat anchored at the earliest one — the
   // evidence the decision rests on. CBP correspondence and drafted
-  // responses keep their own slots; rationale memos open from the decision
-  // card instead of rendering as documents.
+  // responses keep their own slots; rationale and screening memos are
+  // internal work product that opens from the decision cards instead.
   const intakeDocuments = caseFile.documents.filter(
-    (document) => !isStandaloneDocument(document) && !isMemoDocument(document),
+    (document) =>
+      !isStandaloneDocument(document) &&
+      !isMemoDocument(document) &&
+      !isScreeningMemoDocument(document),
   );
 
   // The record: the document set, correspondence beats, activity events, and
@@ -498,17 +445,16 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
 
       {reviewItem ? (
         <>
-          {/* Decision content — only what this review type needs */}
-          {isPgaReview ? (
-            <AgencyDeterminationsCard
-              agencies={reviewItem.pgaAgencies ?? []}
-              flagTableVersion={reviewItem.flagTableVersion}
-            />
-          ) : multiLine ? (
+          {/* Decision content — only what this review type needs. PGA and
+              multi-line reviews share the line workspace: a simple overview
+              on top, then one comprehensive tab per line (classification,
+              determinations, memos, traces). */}
+          {isPgaReview || multiLine ? (
             <LineWorkspace
               activityByLine={activityByLine}
-              corrections={decision.corrections}
+              corrections={multiLine ? decision.corrections : undefined}
               documents={caseFile.documents}
+              emphasis={isPgaReview ? "screening" : "classification"}
               flagTableVersion={reviewItem.flagTableVersion}
               lines={lines}
               linesLoaded={linesLoaded}
@@ -521,7 +467,9 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
               shipmentId={shipmentId}
               traceRunId={reviewItem.traceRunId}
               onSelect={setSelectedLine}
-              onStageCorrection={decision.stageCorrection}
+              onStageCorrection={
+                multiLine ? decision.stageCorrection : undefined
+              }
             />
           ) : (
             <>
@@ -559,9 +507,9 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
           ) : null}
 
           {/* Agent trace — how the AI reached the answer being reviewed.
-              Multi-line reviews carry traces inside the line workspace's
-              per-line tabs instead. */}
-          {!multiLine ? (
+              PGA and multi-line reviews carry traces inside the line
+              workspace's per-line tabs instead. */}
+          {!multiLine && !isPgaReview ? (
             <Widget>
               <Widget.Header>
                 <Widget.Title>Agent trace</Widget.Title>
@@ -571,7 +519,6 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
                 Object.keys(traceRunIdForLine).length > 0 ? (
                   <LineTraceTabs
                     activeLineNumber={activeTraceLine}
-                    agent={isPgaReview ? "pga" : "classification"}
                     lines={traceLines}
                     runIdForLine={traceRunIdForLine}
                     onSelect={setTraceLine}
@@ -612,7 +559,9 @@ export function ReviewWorkspace({ shipmentId }: { shipmentId: string }) {
                       onViewMemo={
                         memoDocument ? () => setMemoOpen(true) : undefined
                       }
-                      onViewTrace={multiLine ? jumpToTrace : undefined}
+                      onViewTrace={
+                        multiLine || isPgaReview ? jumpToTrace : undefined
+                      }
                     />
                   ) : entry.kind === "document" ? (
                     <SingleDocumentTimelineItem
