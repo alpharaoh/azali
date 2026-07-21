@@ -143,7 +143,7 @@ function ActivitySnippet() {
     });
   }
 
-  const events = (eventsResponse?.data.data ?? []).slice(0, 6);
+  const events = (eventsResponse?.data.data ?? []).slice(0, 5);
 
   return (
     <SnippetCard
