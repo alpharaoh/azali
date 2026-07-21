@@ -117,7 +117,11 @@ async function main() {
     }
   }
 
-  const server = spawn("bun", ["--watch", "src/main.ts"], {
+  // The server runs under Node, not Bun: Bun's runtime leaks sockets in
+  // long-lived HTTP processes (oven-sh/bun#28396, #16503), which is why
+  // requests eventually pend until restart. This wrapper script and the
+  // test suite still run on Bun.
+  const server = spawn("bunx", ["nest", "start", "--watch"], {
     stdio: "inherit",
     // Parent-provided env wins over .env inside the child, so the tunnel
     // URL overrides the localhost placeholder.

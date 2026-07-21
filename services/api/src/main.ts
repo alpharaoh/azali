@@ -1,3 +1,5 @@
+// Path-alias hook must load before any module that imports via "@/".
+import "./aliases";
 // Tracing must initialize before anything that calls the AI SDK loads.
 import "./instrumentation";
 
@@ -14,6 +16,7 @@ import { cleanupOpenApiDoc } from "nestjs-zod";
 import { AppModule } from "./app.module";
 import { inngest } from "./inngest/client";
 import { getInngestFunctions } from "./inngest/functions";
+import { registerRequestWatchdog } from "./lib/requestWatchdog";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -67,6 +70,7 @@ async function bootstrap() {
   // garbage keys.
   await app.init();
   const fastify = app.getHttpAdapter().getInstance();
+  registerRequestWatchdog(fastify);
   fastify.removeContentTypeParser("application/x-www-form-urlencoded");
   fastify.addContentTypeParser(
     "application/x-www-form-urlencoded",

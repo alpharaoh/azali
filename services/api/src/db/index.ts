@@ -1,6 +1,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
 import * as schema from "./schema";
+
+const logger = createLogger("db");
 
 // node-postgres treats `sslrootcert=system` (PlanetScale's recommended param)
 // as a literal file path and crashes. `sslmode=verify-full` alone still fully
@@ -30,6 +33,34 @@ export const db = drizzle({
     keepAlive: true,
     // Client-side per-query ceiling — no query may pend indefinitely.
     query_timeout: 30_000,
+    // Hard cap on connection age. A connection poisoned by a timed-out query
+    // or silently killed upstream can otherwise recirculate forever; pg
+    // retires aged connections gracefully (only once idle), unlike Bun.SQL.
+    maxLifetimeSeconds: 300,
   },
   schema,
 });
+
+/** The underlying pg Pool — exposed for diagnostics and shutdown. */
+export const pool = db.$client;
+
+// A remotely-dropped idle connection (failover, LB idle kill) surfaces as an
+// 'error' event on the pool; without a listener that's an uncaught exception.
+pool.on("error", (error) => {
+  logger.error({ err: error }, "idle connection dropped");
+});
+
+// Steady-state churn here is diagnostic gold: bursts of removals right after
+// 30s-latency errors mean timed-out queries are poisoning connections.
+pool.on("remove", () => {
+  logger.info(poolStats(), "connection removed from pool");
+});
+
+/** Point-in-time pool occupancy, for hang diagnostics. */
+export function poolStats() {
+  return {
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount,
+  };
+}
